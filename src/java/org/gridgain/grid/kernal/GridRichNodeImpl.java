@@ -620,7 +620,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
             if (c != null) {
                 Runnable ca = new NodeLocalRunClosure(key, c);
 
-                return isLocal ? ctx.closure().runLocal(ca) : ctx.closure().runAsync(UNICAST, ca, nodes);
+                return isLocal ? ctx.closure().runLocalSafe(ca, false) :
+                    ctx.closure().runAsync(UNICAST, ca, nodes, false);
             }
 
             return new GridFinishedFuture(ctx);
@@ -677,7 +678,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
             if (c != null) {
                 Callable<T> co = new NodeLocalCallClosure<T>(key, c);
 
-                return isLocal ? ctx.closure().callLocal(co) : ctx.closure().callAsync(UNICAST, co, nodes);
+                return isLocal ? ctx.closure().callLocalSafe(co, false) :
+                    ctx.closure().callAsync(UNICAST, co, nodes, false);
             }
 
             return new GridFinishedFuture<T>(ctx);

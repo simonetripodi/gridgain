@@ -609,11 +609,11 @@ class GridScheduleFutureImpl<R> extends GridMetadataAwareAdapter implements Grid
             lsnr.apply(snapshot);
         else {
             try {
-                ctx.closure().runLocal(new Runnable() {
+                ctx.closure().runLocalSafe(new Runnable() {
                     @Override public void run() {
                         lsnr.apply(snapshot);
                     }
-                });
+                }, true);
             }
             catch (Throwable e) {
                 U.error(log, "Failed to notify listener: " + this, e);
@@ -640,7 +640,7 @@ class GridScheduleFutureImpl<R> extends GridMetadataAwareAdapter implements Grid
                     @Override public void run() {
                         lsnr.apply(snapshot);
                     }
-                });
+                }, true);
         }
         else {
             ctx.closure().runLocalSafe(new GPR() {
@@ -648,7 +648,7 @@ class GridScheduleFutureImpl<R> extends GridMetadataAwareAdapter implements Grid
                     for (GridInClosure<? super GridFuture<R>> lsnr : tmp)
                         lsnr.apply(snapshot);
                 }
-            });
+            }, true);
         }
     }
 

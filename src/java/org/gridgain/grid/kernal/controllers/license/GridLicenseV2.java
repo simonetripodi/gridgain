@@ -19,6 +19,30 @@ import java.util.*;
  */
 public interface GridLicenseV2 {
     /**
+     * Gets name of the node attribute that has to be present for a node to be
+     * licensed by this license.
+     * <p>
+     * If attribute name or value is {@code null} - all nodes will be licensed
+     * but his license.
+     *
+     * @return Name of the attribute or {@code null}.
+     * @see #getAttributeValue()
+     */
+    public String getAttributeName();
+
+    /**
+     * Gets value of the node attribute that has to be present for a node to be
+     * licensed by this license.
+     * <p>
+     * If attribute name or value is {@code null} - all nodes will be licensed
+     * but his license.
+     *
+     * @return Value of the attribute or {@code null}.
+     * @see #getAttributeName()
+     */
+    public String getAttributeValue();
+
+    /**
      * Gets license version.
      *
      * @return License version.

@@ -188,7 +188,7 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
 
                 return peek(modes);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */

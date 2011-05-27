@@ -1092,7 +1092,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
                 return peek(key, modes);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -1127,7 +1127,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
                 return peekAll(keys, modes);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */

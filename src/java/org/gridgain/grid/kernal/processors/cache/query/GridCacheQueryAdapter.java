@@ -204,7 +204,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
                         onDone(e);
                     }
                 }
-            });
+            }, true);
         }
 
         /** {@inheritDoc} */

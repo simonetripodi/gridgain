@@ -25,6 +25,13 @@ import java.util.*;
  */
 public interface GridEnterpriseLicense {
     /**
+     * Gets a comma separated list of disabled subsystems.
+     *
+     * @return Comma separated list of disabled subsystems or {@code null}.
+     */
+    public String getDisabledSubsystems();
+
+    /**
      * Gets license version.
      *
      * @return License version.

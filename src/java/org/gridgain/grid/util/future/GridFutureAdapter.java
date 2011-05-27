@@ -307,7 +307,7 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
                         @Override public void run() {
                             notifyListener(lsnr);
                         }
-                    });
+                    }, true);
             }
         }
     }

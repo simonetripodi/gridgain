@@ -536,7 +536,7 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
 
         final GridFutureAdapter<List<GridEvent>> fut = new GridFutureAdapter<List<GridEvent>>(ctx);
 
-        ctx.closure().runLocal(new GPR() {
+        ctx.closure().runLocalSafe(new GPR() {
             @Override public void run() {
                 try {
                     fut.onDone(query(p, nodes, timeout));

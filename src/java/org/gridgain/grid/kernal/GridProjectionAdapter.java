@@ -482,6 +482,17 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         }
     }
 
+    /** {@inheritDoc} */
+    @Override public GridProjection projectionForAttribute(final String n, @Nullable final String v) {
+        A.notNull(n, "n");
+
+        return projectionForPredicate(new PN() {
+            @Override public boolean apply(GridRichNode node) {
+                return v == null ? node.attributes().containsKey(n) : v.equals(node.attribute(n));
+            }
+        });
+    }
+
     @Override public GridProjection projectionForNodes(@Nullable Collection<? extends GridNode> nodes) {
         guard();
 

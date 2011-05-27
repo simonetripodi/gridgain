@@ -218,7 +218,7 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
                     throw new GridClosureException(e);
                 }
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */

@@ -89,6 +89,8 @@ public class GridLicenseGeneratorV2 {
         params.put("license-note", "licenseNote");
         params.put("max-nodes", "maxNodes");
         params.put("max-cpus", "maxCpus");
+        params.put("attr-name", "attributeName");
+        params.put("attr-value", "attributeValue");
         params.put("max-uptime", "maxUpTime"); // In minutes.
         params.put("grace-period", "gracePeriod"); // In minutes.
         params.put("max-computers", "maxComputers");
@@ -286,8 +288,8 @@ public class GridLicenseGeneratorV2 {
         map.put("user-org", "GridGain Evaluation");
         map.put("license-note", "Internal Evaluation Only");
         map.put("issue-date", DateFormat.getDateInstance(DateFormat.SHORT).format(new Date()));
-        map.put("max-nodes", "2");
-        map.put("max-cpus", "8");
+        map.put("max-nodes", "3");
+        map.put("max-cpus", "12");
 
         if (!F.isEmpty(args)) {
             Collection<String> usedKeys = new HashSet<String>();

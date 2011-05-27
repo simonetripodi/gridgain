@@ -243,16 +243,11 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
             }
         }
         else {
-            try {
-                return ctx.closures().callLocal(new GPC<Boolean>() {
-                        @Override public Boolean call() throws Exception {
-                            return CU.loadAllFromStore(ctx, log, GridCacheTxLocalAdapter.this, keys, closure);
-                        }
-                    }, true);
-            }
-            catch (GridException e) {
-                return new GridFinishedFuture<Boolean>(ctx.kernalContext(), e);
-            }
+            return ctx.closures().callLocalSafe(new GPC<Boolean>() {
+                    @Override public Boolean call() throws Exception {
+                        return CU.loadAllFromStore(ctx, log, GridCacheTxLocalAdapter.this, keys, closure);
+                    }
+            }, true);
         }
     }
 

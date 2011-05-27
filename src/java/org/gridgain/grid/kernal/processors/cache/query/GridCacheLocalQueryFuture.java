@@ -42,7 +42,7 @@ public class GridCacheLocalQueryFuture<K, V, R> extends GridCacheQueryFutureAdap
         boolean loc, boolean single, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
         super(ctx, qry, loc, single, pageLsnr);
 
-        locFut = ctx.closures().runLocalSafe(new LocalQueryRunnable<K, V, R>(ctx.queries(), this, single));
+        locFut = ctx.closures().runLocalSafe(new LocalQueryRunnable<K, V, R>(ctx.queries(), this, single), true);
     }
 
     /** {@inheritDoc} */

@@ -39,6 +39,8 @@ import java.util.*;
     "expireDate",
     "maxNodes",
     "maxCpus",
+    "attributeName",
+    "attributeValue",
     "maxComputers",
     "gracePeriod",
     "maxUpTime",
@@ -51,6 +53,12 @@ public class GridLicenseV2Adapter implements GridLicenseV2 {
 
     /** License ID. */
     private UUID id;
+
+    /** Node attribute name. */
+    private String attrName;
+
+    /** Node attribute value to match. */
+    private String attrVal;
 
     /** Maximum up time in minutes. */
     private long maxUpTime;
@@ -119,6 +127,36 @@ public class GridLicenseV2Adapter implements GridLicenseV2 {
      * Digest calculated based on all fields to enforce the integrity of the license.
      */
     private String sign;
+
+    /** {@inheritDoc} */
+    @XmlElement(name = "attr-name")
+    @Override public String getAttributeName() {
+        return attrName;
+    }
+
+    /**
+     * Sets node attribute name.
+     *
+     * @param attrName Node attribute name to set.
+     */
+    public void setAttributeName(String attrName) {
+        this.attrName = attrName;
+    }
+
+    /**
+     * Sets node attribute value.
+     *
+     * @param attrVal Node attribute value to set.
+     */
+    public void setAttributeValue(String attrVal) {
+        this.attrVal = attrVal;
+    }
+
+    /** {@inheritDoc} */
+    @XmlElement(name = "attr-value")
+    @Override public String getAttributeValue() {
+        return attrVal;
+    }
 
     /** {@inheritDoc} */
     @XmlAttribute(name = "version")

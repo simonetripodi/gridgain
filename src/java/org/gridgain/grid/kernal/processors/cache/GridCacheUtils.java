@@ -1218,22 +1218,8 @@ public abstract class GridCacheUtils {
      * @throws GridException If execution failed.
      */
     public static <T> T outTx(Callable<T> cmd, GridCacheContext ctx) throws GridException {
-        return outTx(cmd, ctx, true);
-    }
-
-    /**
-     * Method executes any Callable out of scope of transaction.
-     * If transaction started by this thread {@code cmd} will be executed in another thread.
-     *
-     * @param cmd Callable.
-     * @param ctx Cache context.
-     * @param sys Whether to run on system or public pool.
-     * @return T Callable result.
-     * @throws GridException If execution failed.
-     */
-    public static <T> T outTx(Callable<T> cmd, GridCacheContext ctx, boolean sys) throws GridException {
         if (ctx.tm().isInTx())
-            return ctx.closures().callLocal(cmd, sys).get();
+            return ctx.closures().callLocalSafe(cmd, true).get();
         else {
             try {
                 return cmd.call();

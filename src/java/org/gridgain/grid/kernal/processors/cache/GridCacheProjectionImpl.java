@@ -1127,7 +1127,7 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
             @Nullable @Override public V call() throws GridException {
                 return peek(key, modes);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -1154,7 +1154,7 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
             @Nullable @Override public Map<K, V> call() throws GridException {
                 return peekAll(keys, modes);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */

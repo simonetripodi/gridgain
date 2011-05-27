@@ -177,7 +177,7 @@ public class GridFinishedFuture<T> extends GridMetadataAwareAdapter implements G
                     @Override public void run() {
                         lsnr.apply(GridFinishedFuture.this);
                     }
-                });
+                }, true);
         }
     }
 

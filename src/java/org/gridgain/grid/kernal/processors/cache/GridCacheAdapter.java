@@ -583,7 +583,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Nullable @Override public V call() throws GridException {
                 return peek0(key, modes, tx);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -838,7 +838,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 forEach(vis);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -863,7 +863,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 forEach(vis, keys);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -899,7 +899,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return forAll(vis);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -930,7 +930,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return forAll(vis, keys);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -970,7 +970,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return reduce(rdc);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -997,7 +997,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return reduce(rdc, keys);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -1563,7 +1563,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Nullable @Override public V call() throws GridException {
                 return reload(key, filter);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -1797,7 +1797,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return null;
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -1940,7 +1940,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                                 return map;
                             }
-                        })),
+                        }), true),
                         new C2<Map<K, V>, Exception, GridFuture<Map<K, V>>>() {
                             @Override public GridFuture<Map<K, V>> apply(Map<K, V> map, Exception e) {
                                 if (e != null)
@@ -2765,7 +2765,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                     return null;
                 }
-            }));
+            }), true);
     }
 
     /** {@inheritDoc} */
@@ -3249,11 +3249,11 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         A.ensure(timeout >= 0, "timeout cannot be negative");
         A.ensure(!F.isEmpty(closures), "closures cannot be empty");
 
-        return ctx.closures().runLocal(ctx.projectSafe(new CAX() {
+        return ctx.closures().runLocalSafe(ctx.projectSafe(new CAX() {
             @Override public void applyx() throws GridException {
                 inTx(concurrency, isolation, timeout, invalidate, closures);
             }
-        }));
+        }), true);
     }
 
     /** {@inheritDoc} */
@@ -3310,11 +3310,11 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         A.ensure(timeout >= 0, "timeout cannot be negative");
         A.ensure(!F.isEmpty(closures), "closures cannot be empty");
 
-        return ctx.closures().callLocal(ctx.projectSafe(new GPC<Collection<R>>() {
+        return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<Collection<R>>() {
             @Override public Collection<R> call() throws GridException {
                 return inTx(concurrency, isolation, timeout, invalidate, closures);
             }
-        }));
+        }), true);
     }
 
     /**

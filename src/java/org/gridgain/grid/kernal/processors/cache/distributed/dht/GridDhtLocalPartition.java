@@ -252,18 +252,11 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
             return new GridFinishedFuture<Boolean>(cctx.kernalContext(), true);
         }
 
-        try {
-            return cctx.closures().callLocal(new GPC<Boolean>() {
-                @Override public Boolean call() {
-                    return tryEvict();
-                }
-            }, /*system pool*/true);
-        }
-        catch (GridException e) {
-            U.error(log, "Failed to execute closure for local partition: " + this, e);
-
-            return new GridFinishedFuture<Boolean>(cctx.kernalContext(), e);
-        }
+        return cctx.closures().callLocalSafe(new GPC<Boolean>() {
+            @Override public Boolean call() {
+                return tryEvict();
+            }
+        }, /*system pool*/true);
     }
 
     /**

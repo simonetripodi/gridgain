@@ -1136,6 +1136,17 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
     public GridProjection projectionForPredicate(@Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
+     * Creates monadic projection with the nodes from this projection that have given node
+     * attribute with optional value. If value is {@code null} than simple attribute presence
+     * (with any value) will be used for inclusion of the node.
+     *
+     * @param n Name of the attribute.
+     * @param v Optional attribute value to match.
+     * @return Monadic projection.
+     */
+    public GridProjection projectionForAttribute(String n, @Nullable String v);
+
+    /**
      * Splits this projection into two: first will have nodes that evaluate to {@code true} for all
      * given predicates, second will have the remaining nodes. Note that if no predicates provided the first
      * projection in returned pair will be this projection and the second object in the pair will be {@code null}.

@@ -219,11 +219,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
             switch (mode) {
                 case BROADCAST: {
-                    for (GridNode n : nodes) {
-                        for (Runnable r : jobs) {
+                    for (GridNode n : nodes)
+                        for (Runnable r : jobs)
                             map.put(new GridJobWrapper(F.job(r), true), n);
-                        }
-                    }
 
                     break;
                 }
@@ -232,9 +230,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
                     Iterator<? extends GridNode> n = nodes.iterator();
 
                     for (Runnable r : jobs) {
-                        if (!n.hasNext()) {
+                        if (!n.hasNext())
                             n = nodes.iterator();
-                        }
 
                         map.put(F.job(r), n.next());
                     }
@@ -255,9 +252,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
                 case UNICAST: {
                     GridNode n = lb.getBalancedNode(F.job(F.rand(jobs)), null);
 
-                    for (Runnable r : jobs) {
+                    for (Runnable r : jobs)
                         map.put(F.job(r), n);
-                    }
 
                     break;
                 }
@@ -292,11 +288,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
             switch (mode) {
                 case BROADCAST: {
-                    for (GridNode n : nodes) {
-                        for (Callable<R> c : jobs) {
+                    for (GridNode n : nodes)
+                        for (Callable<R> c : jobs)
                             map.put(new GridJobWrapper(F.job(c), true), n);
-                        }
-                    }
 
                     break;
                 }
@@ -305,9 +299,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
                     Iterator<? extends GridNode> n = nodes.iterator();
 
                     for (Callable<R> c : jobs) {
-                        if (!n.hasNext()) {
+                        if (!n.hasNext())
                             n = nodes.iterator();
-                        }
 
                         map.put(F.job(c), n.next());
                     }
@@ -318,9 +311,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
                 case UNICAST: {
                     GridNode n = lb.getBalancedNode(F.job(F.rand(jobs)), null);
 
-                    for (Callable<R> c : jobs) {
+                    for (Callable<R> c : jobs)
                         map.put(F.job(c), n);
-                    }
 
                     break;
                 }
@@ -359,9 +351,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Nullable GridReducer<R1, R2> rdc, @Nullable Collection<? extends GridNode> nodes) throws GridException {
         assert mode != null;
 
-        if (F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes)) {
+        if (F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
             return new GridFinishedFuture<R2>(ctx);
-        }
 
         ctx.task().setProjectionContext(nodes);
 
@@ -470,9 +461,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
             Map<GridJob, GridNode> map = new HashMap<GridJob, GridNode>(t.get2().size(), 1);
 
-            for (Runnable r : t.get2()) {
+            for (Runnable r : t.get2())
                 map.put(F.job(r), t.get1().apply(r));
-            }
 
             return map;
         }
@@ -541,9 +531,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
             Map<GridJob, GridNode> map = new HashMap<GridJob, GridNode>(t.get2().size(), 1);
 
-            for (Callable<R> c : t.get2()) {
+            for (Callable<R> c : t.get2())
                 map.put(F.job(c), t.get1().apply(c));
-            }
 
             return map;
         }
@@ -569,9 +558,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     public <R1, R2, C extends Callable<R1>> GridFuture<R2> forkjoinAsync(@Nullable GridMapper<C, GridRichNode> mapper,
         @Nullable Collection<C> jobs, @Nullable GridReducer<R1, R2> rdc,
         @Nullable Collection<? extends GridNode> nodes) throws GridException {
-        if (mapper == null || F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes)) {
+        if (mapper == null || F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
             return new GridFinishedFuture<R2>(ctx);
-        }
 
         ctx.task().setProjectionContext(nodes);
 
@@ -609,9 +597,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
             Map<GridJob, GridNode> map = new HashMap<GridJob, GridNode>(t.get2().size(), 1);
 
-            for (C c : t.get2()) {
+            for (C c : t.get2())
                 map.put(F.job(c), t.get1().apply(c));
-            }
 
             return map;
         }
@@ -784,17 +771,6 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Executes closure on public pool.
-     *
-     * @param c Closure to execute.
-     * @return Future.
-     * @throws GridException Thrown in case of any errors.
-     */
-    public GridFuture<?> runLocal(Runnable c) throws GridException {
-        return runLocal(c, false);
-    }
-
-    /**
      * Future for locally executed closure that defines cancellation logic.
      */
     private static class LocalExecutionFuture<T> extends GridFutureAdapter<T> {
@@ -819,9 +795,8 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Override public boolean cancel() throws GridException {
             assert w != null;
 
-            if (!onCancelled()) {
+            if (!onCancelled())
                 return false;
-            }
 
             w.cancel();
 
@@ -844,7 +819,7 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @return Future.
      * @throws GridException Thrown in case of any errors.
      */
-    public GridFuture<?> runLocal(@Nullable final Runnable c, boolean sys) throws GridException {
+    private GridFuture<?> runLocal(@Nullable final Runnable c, boolean sys) throws GridException {
         if (c == null)
             return new GridFinishedFuture(ctx);
 
@@ -879,14 +854,14 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Executes closure on public pool. Companion to {@link #runLocal(Runnable, boolean)} but
+     * Executes closure on system pool. Companion to {@link #runLocal(Runnable, boolean)} but
      * in case of rejected execution re-runs the closure in the current thread (blocking).
      *
      * @param c Closure to execute.
      * @return Future.
      */
     public GridFuture<?> runLocalSafe(Runnable c) {
-        return runLocalSafe(c, false);
+        return runLocalSafe(c, true);
     }
 
     /**
@@ -930,25 +905,13 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Executes closure on public pool.
-     *
-     * @param c Closure to execute.
-     * @param <R> Type of closure return value.
-     * @return Future.
-     * @throws GridException Thrown in case of any errors.
-     */
-    public <R> GridFuture<R> callLocal(Callable<R> c) throws GridException {
-        return callLocal(c, false);
-    }
-
-    /**
      * @param c Closure to execute.
      * @param sys Whether to run on system or public pool.
      * @param <R> Type of closure return value.
      * @return Future.
      * @throws GridException Thrown in case of any errors.
      */
-    public <R> GridFuture<R> callLocal(@Nullable final Callable<R> c, boolean sys) throws GridException {
+    private <R> GridFuture<R> callLocal(@Nullable final Callable<R> c, boolean sys) throws GridException {
         if (c == null)
             return new GridFinishedFuture<R>(ctx);
 
@@ -980,14 +943,14 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Executes closure on public pool. Companion to {@link #callLocal(Callable, boolean)}
+     * Executes closure on system pool. Companion to {@link #callLocal(Callable, boolean)}
      * but in case of rejected execution re-runs the closure in the current thread (blocking).
      *
      * @param c Closure to execute.
      * @return Future.
      */
     public <R> GridFuture<R> callLocalSafe(Callable<R> c) {
-        return callLocalSafe(c, false);
+        return callLocalSafe(c, true);
     }
 
     /**

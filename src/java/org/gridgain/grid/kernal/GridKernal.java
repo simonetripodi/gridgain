@@ -2505,7 +2505,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         guard();
 
         try {
-            return ctx.closure().runLocal(r, true);
+            return ctx.closure().runLocalSafe(r, false);
         }
         finally {
             unguard();
@@ -2532,7 +2532,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         guard();
 
         try {
-            return ctx.closure().callLocal(c, true);
+            return ctx.closure().callLocalSafe(c, false);
         }
         finally {
             unguard();

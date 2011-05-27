@@ -83,7 +83,7 @@ import org.gridgain.grid.typedef.X
 println()
 scalar.logo()
 println()
-println("<scalar>: Type 'scala.start' to connect to default grid.")
+println("<scalar>: Type 'scalar.start' to connect to default grid.")
 println()
 
 // Turn back on ack-ing by REPL.
