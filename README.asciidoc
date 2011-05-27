@@ -13,10 +13,10 @@ GridGain is a *Java* and *Scala* based software middleware that enables developm
 of high performance distributed application that scale up on any managed infrastructure: 
 from a single laptop, to cluster and grids, to public and private clouds. 
 
+GridGain - Community Edition
+----------------------------
 GridGain allows anyone easily develop, scale and manage compute and data intensive 
-JVM based applications.
-
-GridGain provides three major areas of functionality: 
+JVM based applications. GridGain provides three major areas of functionality: 
 
 - Compute Grids 
 - Data Grids
