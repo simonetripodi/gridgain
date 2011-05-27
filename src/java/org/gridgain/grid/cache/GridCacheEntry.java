@@ -57,7 +57,7 @@ import java.util.*;
  *  transactional and will not enlist evicted keys into ongoing transaction, if any.
  * </li>
  * <li>
- *  Methods for {@link #timeToLive(long)} to change or lookup entry's time to live. 
+ *  Methods for {@link #timeToLive(long)} to change or lookup entry's time to live.
  * </ul>
  * <h1 class="header">Extended Put And Remove Methods</h1>
  * All methods that end with {@code 'x'} provide the same functionality as their sibling
@@ -262,7 +262,7 @@ public interface GridCacheEntry<K, V> extends Map.Entry<K, V>, GridMetadataAware
 
     /**
      * Metrics containing various statistics about this entry.
-     * 
+     *
      * @return Cache entry metrics.
      */
     public GridCacheMetrics metrics();
@@ -273,6 +273,13 @@ public interface GridCacheEntry<K, V> extends Map.Entry<K, V>, GridMetadataAware
      * @return {@code true} if current grid node is the primary owner for this entry.
      */
     public boolean primary();
+
+    /**
+     * Gest affinity partition id for this entry.
+     *
+     * @return Partition id.
+     */
+    public int partition();
 
     /**
      * Gets parent grid projection for this entry.

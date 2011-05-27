@@ -1849,8 +1849,8 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
     }
 
     /** {@inheritDoc} */
-    @Override public int[] backupPartitions(GridProjection p) {
-        return cache.backupPartitions(p);
+    @Override public int[] backupPartitions(GridProjection p, @Nullable int[] levels) {
+        return cache.backupPartitions(p, levels);
     }
 
     /** {@inheritDoc} */

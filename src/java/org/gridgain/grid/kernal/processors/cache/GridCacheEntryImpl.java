@@ -174,6 +174,11 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
     }
 
     /** {@inheritDoc} */
+    @Override public int partition() {
+        return unwrap().partition();
+    }
+
+    /** {@inheritDoc} */
     @Override public V peek() {
         try {
             return peek(SMART);

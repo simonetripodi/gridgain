@@ -3067,11 +3067,11 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @Override public int[] backupPartitions(GridProjection p) {
+    @Override public int[] backupPartitions(GridProjection p, @Nullable int[] levels) {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
-            return cache.backupPartitions(p);
+            return cache.backupPartitions(p, levels);
         }
         finally {
             gate.leave(prev);

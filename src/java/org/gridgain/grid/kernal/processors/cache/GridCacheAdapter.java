@@ -3580,28 +3580,35 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
-    @Override public int[] backupPartitions(GridProjection p) {
+    @Override public int[] backupPartitions(GridProjection p, @Nullable int[] levels) {
         A.notNull(p, "p");
+
+        Collection<Integer> levelSet = new HashSet<Integer>();
+
+        if (!F.isEmpty(levels))
+            for (int l : levels)
+                levelSet.add(l);
 
         Collection<Integer> parts = new HashSet<Integer>();
 
         GridCacheAffinity<K> aff = configuration().getAffinity();
 
         for (int part = 0; part < aff.partitions(); part++) {
-            Collection<GridRichNode> affNodes = aff.nodes(part, CU.allNodes(ctx));
+            Collection<GridRichNode> backups = CU.backups(aff.nodes(part, CU.allNodes(ctx)));
 
-            if (affNodes.size() > 1) {
-                Iterator<GridRichNode> iter = affNodes.iterator();
+            int level = -1;
 
-                // Skip primary node.
-                iter.next();
+            for (GridRichNode backup : backups) {
+                level++;
 
-                while (iter.hasNext())
-                    if (p.contains(iter.next())) {
-                        parts.add(part);
+                if (!levelSet.isEmpty() && !levelSet.contains(level))
+                    continue;
 
-                        break;
-                    }
+                if (p.contains(backup)) {
+                    parts.add(part);
+
+                    break;
+                }
             }
         }
 

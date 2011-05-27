@@ -357,7 +357,7 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     @Nullable public T get() throws GridException;
 
     /**
-     * Retrieves, but does not remove, the head of this queue. Waits if no elements are present in this queue.
+     * Retrieves, but does not remove, the tail of this queue. Waits if no elements are present in this queue.
      *
      * @return The tail of this queue.
      * @throws GridException If operation failed.
@@ -365,7 +365,7 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     @Nullable public T getLast() throws GridException;
 
     /**
-     * Try to retrieve but does not remove the head of this queue during timeout.
+     * Try to retrieve but does not remove the head of this queue within given timeout.
      * Waits if no elements are present in this queue.
      *
      * @param timeout Timeout.
@@ -377,7 +377,7 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     @Nullable public T get(long timeout, TimeUnit unit) throws GridException;
 
     /**
-     * Try to retrieve but does not remove the tail of this queue during timeout.
+     * Try to retrieve but does not remove the tail of this queue within given timeout.
      * Waits if no elements are present in this queue.
      *
      * @param timeout Timeout.

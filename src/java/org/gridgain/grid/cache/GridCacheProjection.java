@@ -3647,7 +3647,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    int partitions();
+    public int partitions();
 
     /**
      * Gets partition id for the given key.
@@ -3658,11 +3658,15 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    int partition(K key);
+    public int partition(K key);
 
     /**
      * Gets partition ids for which nodes of the given projection has primary
      * ownership.
+     * <p>
+     * Note that since {@link GridRichNode} implements {@link GridProjection},
+     * to find out primary partitions for a single node just pass
+     * a single node into this method.
      *
      * @param p Grid projection.
      * @return Partition ids for which given projection has primary ownership.
@@ -3670,23 +3674,36 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    int[] primaryPartitions(GridProjection p);
+    public int[] primaryPartitions(GridProjection p);
 
     /**
      * Gets partition ids for which nodes of the given projection has backup
-     * ownership.
+     * ownership. Note that you can find a back up at a certain level, e.g.
+     * {@code first} backup or {@code third} backup by specifying the
+     * {@code 'levels} paramater. If no {@code 'level'} is specified then
+     * all backup partitions are returned.
+     * <p>
+     * Note that since {@link GridRichNode} implements {@link GridProjection},
+     * to find out backup partitions for a single node, just pass that single
+     * node into this method.
      *
      * @param p Grid projection.
+     * @param levels Optional backup levels. If they are empty then this method checks
+     *      all backup levels. Level numbers starts with {@code 0}.
      * @return Partition ids for which given projection has backup ownership.
      * @see GridCacheAffinity
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    int[] backupPartitions(GridProjection p);
+    public int[] backupPartitions(GridProjection p, @Nullable int... levels);
 
     /**
      * Gets partition ids for which nodes of the given projection has ownership
      * (either primary or backup).
+     * <p>
+     * Note that since {@link GridRichNode} implements {@link GridProjection},
+     * to find out all partitions for a single node, just pass that single
+     * node into this method.
      *
      * @param p Grid projection.
      * @return Partition ids for which given projection has ownership.
@@ -3694,7 +3711,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    int[] allPartitions(GridProjection p);
+    public int[] allPartitions(GridProjection p);
 
     /**
      * Gets primary node for the given partition.
@@ -3705,39 +3722,39 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    GridRichNode mapPartitionToNode(int part);
+    public GridRichNode mapPartitionToNode(int part);
 
     /**
      * Gets primary nodes for the given partitions.
      *
      * @param part Partition id.
-     * @param parts Additional partition ids.
+     * @param parts Optional additional partition ids.
      * @return Mapping of given partitions to their primary nodes.
      * @see GridCacheAffinity
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    Map<Integer, GridRichNode> mapPartitionsToNodes(int part, @Nullable int... parts);
+    public Map<Integer, GridRichNode> mapPartitionsToNodes(int part, @Nullable int... parts);
 
     /**
      * Gets primary nodes for the given partitions.
      *
-     * @param parts Additional partition ids.
+     * @param parts Partition ids.
      * @return Mapping of given partitions to their primary nodes.
      * @see GridCacheAffinity
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    Map<Integer, GridRichNode> mapPartitionsToNodes(int[] parts);
+    public Map<Integer, GridRichNode> mapPartitionsToNodes(int[] parts);
 
     /**
      * Gets primary nodes for the given partitions.
      *
-     * @param parts Additional partition ids.
+     * @param parts Partition ids.
      * @return Mapping of given partitions to their primary nodes.
      * @see GridCacheAffinity
      * @see GridCacheConfiguration#getAffinity()
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
-    Map<Integer, GridRichNode> mapPartitionsToNodes(Collection<Integer> parts);
+    public Map<Integer, GridRichNode> mapPartitionsToNodes(Collection<Integer> parts);
 }

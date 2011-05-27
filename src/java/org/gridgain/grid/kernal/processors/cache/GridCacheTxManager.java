@@ -187,7 +187,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         int rolledbackVersSize = rolledbackVers.size();
 
         System.out.println(">>> ");
-        System.out.println(">>> Transaction memory stats:");
+        System.out.println(">>> Transaction memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
         System.out.println(">>>   threadMapSize: " + threadMapSize);
         System.out.println(">>>   idMapSize: " + idMapSize);
         System.out.println(">>>   committedQueueSize: " + committedQueueSize);
