@@ -22,16 +22,6 @@ GridGain provides three major areas of functionality:
 - Data Grids
 - Auto-Scaling
 
-[TIP]
-.What is GridGain?
-*********************************************************************
-High Performance Cloud Computing
-
-+or+
-
-GridGain = (Java + Scala) * (Compute Grid + Data Grid + Auto-Scaling)
-*********************************************************************
-
 On top of that it provides the multitude of surrounding technologies many of 
 which are frequently used by our clients on their own. 
 
