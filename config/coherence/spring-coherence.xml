@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    _________        _____ __________________        _____
+    __  ____/___________(_)______  /__  ____/______ ____(_)_______
+    _  / __  __  ___/__  / _  __  / _  / __  _  __ `/__  / __  __ \
+    / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
+    \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
+
+    Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+    Version: 3.0.9c.27052011
+-->
+
+<!--
+    Command line (default) grid configuration.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+    <description>Main Spring file for grid configuration.</description>
+
+    <!--
+        Grid default configuration.
+
+        All configuration properties are commented. Uncomment any property to
+        provide a non-default value for it.
+    -->
+    <bean id="grid.cfg" class="org.gridgain.grid.GridConfigurationAdapter" scope="singleton">
+        <!--
+            Uncomment to specify non-default grid instance name.
+            By default, grid name will be null.
+        -->
+        <!--
+        <property name="gridName" value="mygrid"/>
+        -->
+
+        <!--
+            Uncomment the following section if you wish to add local node benchmark
+            to user attributes. You can also add any other node attribute specific
+            to your application. Attributes for this node will be available from any
+            other node in the grid.
+
+            Grid local node benchmark is a good example of a complex attribute that
+            can be added to the node at startup.
+
+            Note that you will have to use 'grid.node.benchmark' grid node attribute name
+            to get the benchmark for the given node.
+        -->
+        <!--
+        <property name="userAttributes">
+            <map>
+                <entry key="grid.node.benchmark">
+                    <bean class="org.gridgain.grid.benchmarks.GridLocalNodeBenchmark" init-method="start"/>
+                </entry>
+            </map>
+        </property>
+        -->
+
+        <!--
+            Uncomment to provide non-default configuration for Coherence Affinity Load Balancing SPI.
+        -->
+        <!--
+        <property name="loadBalancingSpi">
+            <bean class="org.gridgain.grid.spi.loadBalancing.coherence.GridCoherenceLoadBalancingSpi"/>
+        </property>
+        -->
+
+        <!--
+            Uncomment to provide non-default configuration for Tangosol Coherence Checkpoint SPI.
+        -->
+        <!--
+        <property name="checkpointSpi">
+            <bean class="org.gridgain.grid.spi.checkpoint.coherence.GridCoherenceCheckpointSpi">
+                <property name="cacheName" value="gridgain.checkpoint.cache" />
+            </bean>
+        </property>
+        -->
+
+        <!--
+            Custom configuration for Coherence communication SPI.
+
+            NOTE: JARs for Coherence should be available on classpath.
+            If you use ggstart.{sh|bat} script to start grid node than you only need
+            to change setenv.{sh|bat} script in the same directory to add necessary
+            JARs to GridGain class path.
+        -->
+        <property name="communicationSpi">
+            <bean class="org.gridgain.grid.spi.communication.coherence.GridCoherenceCommunicationSpi">
+                <property name="acknowledgment" value="false"/>
+            </bean>
+        </property>
+
+        <!--
+            Custom Coherence discovery SPI.
+
+            NOTE: JARs for Tangosol Coherence should be available on classpath.
+            If you use ggstart.{sh|bat} script to start grid node than you only need
+            to change setenv.{sh|bat} script in the same directory to add necessary
+            JARs to GridGain class path.
+        -->
+        <property name="discoverySpi">
+            <bean class="org.gridgain.grid.spi.discovery.coherence.GridCoherenceDiscoverySpi"/>
+        </property>
+    </bean>
+</beans>
