@@ -18,7 +18,7 @@ import org.gridgain.grid.spi.tracing.*;
  * This class defines a grid tracing manager manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 public class GridTracingManager extends GridManagerAdapter<GridTracingSpi> {
     /** Interception listener. */

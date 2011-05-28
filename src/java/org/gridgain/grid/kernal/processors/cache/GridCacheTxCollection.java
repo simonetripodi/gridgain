@@ -19,7 +19,7 @@ import java.util.*;
  * Grid cache transaction read or write set.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 public class GridCacheTxCollection<K, V, T> extends AbstractSet<T> implements Externalizable {
     /** Base transaction map. */

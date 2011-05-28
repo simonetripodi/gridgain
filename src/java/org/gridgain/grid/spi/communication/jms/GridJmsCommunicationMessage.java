@@ -19,7 +19,7 @@ import java.util.*;
  * source node ID and destination node IDs beside the message itself.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 class GridJmsCommunicationMessage implements Externalizable {
     /** Message that is being sent. */

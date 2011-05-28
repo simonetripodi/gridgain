@@ -13,7 +13,7 @@
  * Load script for Scala REPL.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 
 // Turn off ack-ing REPL commands.
@@ -83,7 +83,7 @@ import org.gridgain.grid.typedef.X
 println()
 scalar.logo()
 println()
-println("<scalar>: Type 'scalar.start' to connect to default grid.")
+scalar.replHelp()
 println()
 
 // Turn back on ack-ing by REPL.

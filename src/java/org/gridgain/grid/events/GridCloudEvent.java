@@ -60,7 +60,7 @@ import static org.gridgain.grid.GridEventType.*;
  * event storage SPI if they are disabled in GridGain configuration.
  * 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  * @see GridEventType#EVT_CLOUD_CHANGED
  * @see GridEventType#EVT_CLOUD_COMMAND_EXECUTED
  * @see GridEventType#EVT_CLOUD_COMMAND_FAILED

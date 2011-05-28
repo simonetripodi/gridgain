@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code never} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 @GridMBeanDescription("MBean for Never cache eviction policy (empty by definition)")
 public interface GridCacheNeverEvictionPolicyMBean {

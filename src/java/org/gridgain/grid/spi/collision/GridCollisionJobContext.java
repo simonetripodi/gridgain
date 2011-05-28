@@ -16,7 +16,7 @@ import org.gridgain.grid.*;
  * jobs that are either waiting or executing.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 public interface GridCollisionJobContext {
     /**

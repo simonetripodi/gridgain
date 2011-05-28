@@ -20,7 +20,7 @@ import java.util.*;
  * is based on Java Mail API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 public class GridSmtpOutbox implements GridMailOutbox {
     /** Mail outbox configuration. */

@@ -19,7 +19,7 @@ import java.io.*;
  * concise code in cases when readability won't be sacrificed. For more information see {@link GridTuple4}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  * @see GridFunc
  * @see GridTuple
  */

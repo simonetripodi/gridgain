@@ -22,7 +22,7 @@ import java.util.*;
  * for use by SPI implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 public class GridCloudSpiResourceAdapter extends GridMetadataAwareAdapter implements GridCloudResource {
     /** Resource ID. */

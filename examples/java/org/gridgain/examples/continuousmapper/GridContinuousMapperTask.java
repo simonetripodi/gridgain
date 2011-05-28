@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.*;
  * and therefore don't need to accumulate them be be processed at reduction step.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 @GridTaskNoResultCache
 public class GridContinuousMapperTask extends GridTaskAdapter<String, Integer> {

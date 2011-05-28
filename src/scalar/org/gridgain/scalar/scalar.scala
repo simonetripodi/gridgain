@@ -118,9 +118,18 @@ import annotation.target.field
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.0.9c.27052011
+ * @version 3.1.0c.28052011
  */
 object scalar extends ScalarMixin {
+    /** Visor copyright blurb. */
+    private val COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc."
+
+    /** Visor version number. */
+    private val VER = "3.1.0c"
+
+    /** Visor build number. */
+    private val BUILD = "28052011"
+
     /** Type alias for `GridCacheQuerySqlField`. */
     type ScalarCacheQuerySqlField = GridCacheQuerySqlField @field
 
@@ -129,15 +138,6 @@ object scalar extends ScalarMixin {
 
     /** Type alias for `GridCacheQueryH2TextField`. */
     type ScalarCacheQueryH2TextField = GridCacheQueryH2TextField @field
-
-    /** Visor copyright blurb. */
-    private val COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc."
-
-    /** Visor version number. */
-    private val VER = "3.0.9c"
-
-    /** Visor build number. */
-    private val BUILD = "27052011"
 
     /**
      * Prints Scalar ASCII-logo.
@@ -159,21 +159,34 @@ object scalar extends ScalarMixin {
     }
 
     /**
-     * Note that grid instance will be stopped with cancel flat set to `true`.
-     *
-     * @param g Grid instance.
-     * @param body Closure with grid instance as body's parameter.
+     * Prints help for REPL.
      */
-//    private def init(g: Grid, body: Grid => Unit) {
-//        assert(g != null, body != null)
-//
-//        try {
-//            body(g)
-//        }
-//        finally {
-//            GridFactory.stop(g.name, true)
-//        }
-//    }
+    def replHelp() {
+        val t = ScalarTextTable()
+
+        t #= ("Command", "Description")
+
+        t += ("scalar start", "Starts GridGain with the default configurtaion.")
+        t += ("scalar stop", "Stops GridGain.")
+        t += ("scalar start(\"path/t/my/config.xml\")", "Starts GridGain with the provided configurtaion file.")
+        t += ("grid$", "Global grid projection (including all nodes).")
+        t += ("cache$", "Default cache.")
+        t += ("scalar ?", "Prints this help.")
+
+        println("Some of the key Scalar command:")
+        t.render()
+        println()
+        println("Example:")
+        println("    scala> scalar start")
+        println("    scala> grid$ *< (BROADCAST, () => println(\"Howdy!\"))")
+    }
+
+    /**
+     * REPL help shortcut.
+     */
+    def `?` {
+        replHelp()
+    }
 
     /**
      * Note that grid instance will be stopped with cancel flat set to `true`.
