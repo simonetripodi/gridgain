@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheMvccFuture<K, V, GridCacheTx> {
@@ -533,8 +533,11 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
                 else if (log.isDebugEnabled())
                     log.debug("Entry has no near readers: " + entry);
 
-                map(entry, F.view(dhtNodes, F.remoteNodes(cctx.nodeId())), dhtMap); // Exclude local node.
-                map(entry, nearNodes, nearMap);
+                // Exclude local node.
+                map(entry, F.view(dhtNodes, F.remoteNodes(cctx.nodeId())), dhtMap);
+
+                // Exclude DHT nodes.
+                map(entry, F.view(nearNodes, F.not(F.<GridNode>nodeForNodeIds(dhtMap.keySet()))), nearMap);
 
                 break;
             }

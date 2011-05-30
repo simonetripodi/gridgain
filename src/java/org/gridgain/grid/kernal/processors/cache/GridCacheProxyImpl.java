@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Cache proxy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externalizable {
     /** Context. */
@@ -2470,7 +2470,19 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys) {
+    @Override public Collection<GridRichNode> affinityNodes(K key) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.affinityNodes(key);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys) {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
@@ -2482,7 +2494,7 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable GridPredicate<? super K>[] filter) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable GridPredicate<? super K>[] filter) {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
@@ -2494,7 +2506,7 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable K[] keys) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable K[] keys) {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
@@ -2506,7 +2518,7 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @Override public UUID mapKeyToNode(K key) {
+    @Override public GridRichNode mapKeyToNode(K key) {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {

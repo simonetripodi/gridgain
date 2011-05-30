@@ -32,7 +32,7 @@ import static org.gridgain.grid.test.GridTestVmParameters.*;
  * {@code gridified} JUnits.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridifyTest
  */
 @Aspect(scope = Scope.PER_VM)

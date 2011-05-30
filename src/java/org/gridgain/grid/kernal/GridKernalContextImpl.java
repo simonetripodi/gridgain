@@ -54,9 +54,9 @@ import static org.gridgain.grid.kernal.GridKernalState.*;
 
 /**
  * Implementation of kernal context.
- * 
+ *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @GridToStringExclude
 public class GridKernalContextImpl extends GridMetadataAwareAdapter implements GridKernalContext, Externalizable {
@@ -65,19 +65,19 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
 
     /** */
     private GridManagerRegistry mgrReg;
-    
+
     /** */
     private GridProcessorRegistry procReg;
-    
+
     /** */
     private GridControllerRegistry ctrlReg;
 
     /** */
     private Grid grid;
-    
+
     /** */
     private GridConfiguration cfg;
-    
+
     /** */
     private GridKernalGateway gw;
 

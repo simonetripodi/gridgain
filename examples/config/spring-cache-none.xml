@@ -8,7 +8,7 @@
     \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 
     Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
-    Version: 3.1.0c.28052011
+    Version: 3.1.0c.30052011
 -->
 
 <!--
@@ -44,7 +44,7 @@
         <!-- Set to local host address just for examples. -->
         <property name="localHost" value="127.0.0.1"/>
 
-        <property name="deploymentMode" value="CONTINUOUS"/>
+        <property name="deploymentMode" value="SHARED"/>
 
         <!--
             In order to make sure that no cache instance gets started,

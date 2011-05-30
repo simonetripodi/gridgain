@@ -98,7 +98,7 @@ import java.util.concurrent.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridCache#queue(String)
  * @see GridCache#queue(String, GridCacheQueueType)
  * @see GridCache#queue(String, GridCacheQueueType, int)
@@ -129,7 +129,7 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * @return {@code True} if item was added, {@code false} if item wasn't added because queue is full.
      * @throws GridRuntimeException If operation failed.
      */
-    @Override boolean add(T item) throws GridRuntimeException;
+    @Override public boolean add(T item) throws GridRuntimeException;
 
     /**
      * Adds specified item to the queue without blocking. If queue is {@code bounded} and full, then
@@ -150,10 +150,10 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * If operation fails then {@link GridException} is thrown.
      *
      * @param item Item to add.
-     * @return Future for add operation.
+     * @return Future for the operation.
      * @throws GridException If operation failed.
      */
-    GridFuture<Boolean> addAsync(T item) throws GridException;
+    public GridFuture<Boolean> addAsync(T item) throws GridException;
 
     /**
      * Bulk operation for adding more than one item to queue at once without blocking. Only one internal
@@ -168,7 +168,7 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *      fit all the items.
      * @throws GridRuntimeException If operation failed.
      */
-    @Override boolean addAll(Collection<? extends T> items) throws GridRuntimeException;
+    @Override public boolean addAll(Collection<? extends T> items) throws GridRuntimeException;
 
     /**
      * Bulk operation for adding more than one item to queue at once without blocking. Only one internal
@@ -185,7 +185,7 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *      fit all the items.
      * @throws GridException If operation failed.
      */
-     boolean addAllx(Collection<? extends T> items) throws GridException;
+    public boolean addAllx(Collection<? extends T> items) throws GridException;
 
     /**
      * Asynchronous bulk operation for adding more than one item to queue at once. Only one internal
@@ -196,10 +196,239 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * items will be added and {@code false} will be returned from the future.
      *
      * @param items Items to add.
-     * @return Future for add all operation.
+     * @return Future for the operation.
      * @throws GridException If operation failed.
      */
-    GridFuture<Boolean> addAllAsync(Collection<? extends T> items) throws GridException;
+    public GridFuture<Boolean> addAllAsync(Collection<? extends T> items) throws GridException;
+
+    /**
+     * Returns {@code true} if this queue contains the specified element.
+     *
+     * @param item Element whose presence in this queue is to be tested.
+     * @return {@code true} If this queue contains the specified
+     *      element.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public boolean contains(Object item) throws GridRuntimeException;
+
+    /**
+     * Returns {@code true} if this queue contains the specified element.
+     * <p>
+     * Unlike {@link #contains(Object)}, this method throws {@link GridException}
+     * if operation fails.
+     *
+     * @param item Element whose presence in this queue is to be tested.
+     * @return {@code True} if this queue contains the specified
+     *      element.
+     * @throws GridException If operation failed.
+     */
+    public boolean containsx(Object item) throws GridException;
+
+    /**
+     * Returns {@code true} if this queue contains all of the elements
+     * in the specified collection.
+     *
+     * @param  items Collection to be checked for containment in this queue.
+     * @return {@code True} if this queue contains all of the elements
+     *      in the specified collection.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public boolean containsAll(Collection<?> items) throws GridRuntimeException;
+
+    /**
+     * Returns {@code true} if this queue contains all of the elements
+     * in the specified collection.
+     * <p>
+     * Unlike {@link #containsAll(Collection)}, this method throws {@link GridException}
+     * if operation fails.
+     *
+     * @param  items Collection to be checked for containment in this queue.
+     * @return {@code True} if this queue contains all of the elements
+     *      in the specified collection.
+     * @throws GridException If operation failed.
+     */
+    public boolean containsAllx(Collection<?> items) throws GridException;
+
+    /**
+     * Removes all of the elements from this queue.
+     *
+     * @throws GridRuntimeException if operation failed.
+     */
+    @Override public void clear() throws GridRuntimeException;
+
+    /**
+     * Removes all of the elements from this queue.
+     *
+     * @throws GridException If operation failed.
+     */
+    public void clearx() throws GridException;
+
+    /**
+     * Removes a single instance of the specified element from this
+     * queue, if it is present.
+     *
+     * @param item Element to be removed from this queue, if present.
+     * @return {@code True} if an element was removed as a result of this call.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public boolean remove(Object item) throws GridRuntimeException;
+
+    /**
+     * Removes a single instance of the specified element from this
+     * queue, if it is present.
+     * <p>
+     * Unlike {@link #remove(Object)}, this method throws {@link GridException}
+     * if operation fails.
+     *
+     * @param item Item to delete.
+     * @return {@code True} if an element was removed as a result of this call.
+     * @throws GridException If operation failed.
+     */
+    public boolean removex(T item) throws GridException;
+
+    /**
+     * Asynchronously removes a single instance of the specified element from this
+     * queue, if it is present.
+     *
+     * @param item Item to delete.
+     * @return Future for the operation.
+     * @throws GridException If operation failed.
+     */
+    public GridFuture<Boolean> removeAsync(T item) throws GridException;
+
+    /**
+     * Bulk operation that removes all of this queue's elements that are also
+     * contained in the specified collection.  After this call returns,
+     * this queue will contain no elements in common with the specified
+     * collection.
+     *
+     * @param items collection containing elements to be removed from this queue.
+     * @return {@code True} if this queue changed as a result of the call.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public boolean removeAll(Collection<?> items) throws GridRuntimeException;
+
+    /**
+     * Bulk operation that removes all of this queue's elements that are also
+     * contained in the specified collection. After this call returns,
+     * this queue will contain no elements in common with the specified
+     * collection.
+     * <p>
+     * Unlike {@link #removeAll(Collection)} this method throws {@link GridException}
+     * if operation fails.
+     *
+     * @param items collection containing elements to be removed from this queue.
+     * @return {@code True} if this queue changed as a result of the call.
+     * @throws GridException If operation failed.
+     */
+    public boolean removeAllx(Collection<?> items) throws GridException;
+
+    /**
+     * Asynchronous bulk operation that removes all of this queue's elements that are also
+     * contained in the specified collection. After this call returns,
+     * this queue will contain no elements in common with the specified
+     * collection.
+     *
+     * @param items collection containing elements to be removed from this queue.
+     * @return Future for the operation.
+     * @throws GridException If operation failed.
+     */
+    public GridFuture<Boolean> removeAllAsync(Collection<?> items) throws GridException;
+
+    /**
+     * Returns {@code true} if this queue contains no elements.
+     *
+     * @return {@code True} if this queue contains no elements.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public boolean isEmpty() throws GridRuntimeException;
+
+    /**
+     * Returns {@code true} if this queue contains no elements.
+     * <p>
+     * Unlike {@link #isEmpty()} this method throws {@link GridException}
+     * if operation fails.
+     *
+     * @return {@code True} if this queue contains no elements.
+     * @throws GridException If operation failed.
+     */
+    public boolean isEmptyx() throws GridException;
+
+    /**
+     * Returns an iterator over the elements in this queue.
+     *
+     * @return Iterator over the elements in this queue.
+     */
+    @Override public Iterator<T> iterator() throws GridRuntimeException;
+
+    /**
+     * Returns an array containing all of the elements in this queue.
+     *
+     * @return An array containing all of the elements in this queue.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public Object[] toArray() throws GridRuntimeException;
+
+    /**
+     * Returns an array containing all of the elements in this queue;
+     * the runtime type of the returned array is that of the specified array.
+     * If the queue fits in the specified array, it is returned therein.
+     * Otherwise, a new array is allocated with the runtime type of the
+     * specified array and the size of this queue.
+     *
+     * @param a The array into which the elements of this queue are to be
+     *      stored, if it is big enough; otherwise, a new array of the same
+     *      runtime type is allocated for this purpose.
+     * @return An array containing all of the elements in this queue.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public <T> T[] toArray(T[] a) throws GridRuntimeException;
+
+    /**
+     * Retains only the elements in this queue that are contained in the
+     * specified collection.  In other words, removes from
+     * this collection all of its elements that are not contained in the
+     * specified collection.
+     *
+     * @param items Collection containing elements to be retained in this collection.
+     * @return {@code True} if this collection changed as a result of the call.
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public boolean retainAll(Collection<?> items) throws GridRuntimeException;
+
+    /**
+     * Retains only the elements in this queue that are contained in the
+     * specified collection.  In other words, removes from
+     * this collection all of its elements that are not contained in the
+     * specified collection.
+     *
+     * @param items Collection containing elements to be retained in this collection.
+     * @return {@code True} if this collection changed as a result of the call.
+     * @throws GridException If operation failed.
+     */
+    public boolean retainAllx(Collection<?> items) throws GridException;
+
+    /**
+     * Retains only the elements in this queue that are contained in the
+     * specified collection.  In other words, removes from
+     * this collection all of its elements that are not contained in the
+     * specified collection.
+     *
+     * @param items Collection containing elements to be retained in this collection.
+     * @return Future for the operation.
+     * @throws GridException If operation failed.
+     */
+    public GridFuture<Boolean> retainAllAsync(Collection<?> items) throws GridException;
+
+    /**
+     * Returns the number of elements in this queue. If this queue
+     * contains more than <tt>Integer.MAX_VALUE</tt> elements, returns
+     * <tt>Integer.MAX_VALUE</tt>.
+     *
+     * @return the number of elements in this collection
+     * @throws GridRuntimeException If operation failed.
+     */
+    @Override public int size() throws GridRuntimeException;
 
     /**
      * Retrieves and removes the head item of the queue, or returns {@code null} if this queue is empty.
@@ -210,12 +439,30 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     @Nullable public T poll() throws GridException;
 
     /**
+     * Asynchronously retrieves and removes the head item of the queue.
+     * Future returns {@code null} if this queue is empty.
+     *
+     * @return Future for the operation.
+     * @throws GridException If operation failed.
+     */
+    public GridFuture<T> pollAsync() throws GridException;
+
+    /**
      * Retrieves and removes the tail item of the queue, or returns {@code null} if this queue is empty.
      *
      * @return Item from the tail of the queue.
      * @throws GridException If operation failed.
      */
     @Nullable public T pollLast() throws GridException;
+
+    /**
+     * Retrieves and removes the tail item of the queue.
+     * Future returns {@code null} if this queue is empty.
+     *
+     * @return Future for the operation.
+     * @throws GridException If operation failed.
+     */
+    public GridFuture<T> pollLastAsync() throws GridException;
 
     /**
      * Retrieves, but does not remove, the head of this queue, or returns {@code null} if this queue is empty.
@@ -226,22 +473,30 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     @Nullable public T peek() throws GridException;
 
     /**
+     * Asynchronously retrieves, but does not remove, the head of this queue.
+     * Future returns {@code null} if this queue is empty.
+     *
+     * @return Future for the operation.
+     * @throws GridException If operation failed.
+     */
+    public GridFuture<T> peekAsync() throws GridException;
+
+    /**
      * Retrieves, but does not remove, the tail of this queue, or returns {@code null} if this queue is empty.
      *
-     * @return The tail of this queue, or {@code null} if this queue is empty.
+     * @return Future for the operation.
      * @throws GridException If operation failed.
      */
     @Nullable public T peekLast() throws GridException;
 
     /**
-     * Deletes specified item from the queue.
-     * If queue becomes empty as a result of this call.
+     * Asynchronously retrieves, but does not remove, the tail of this queue.
+     * Future returns {@code null} if this queue is empty.
      *
-     * @param item Item to delete.
-     * @return {@code true} if item was deleted, {@code false} otherwise.
+     * @return Future for the operation.
      * @throws GridException If operation failed.
      */
-    public boolean removex(T item) throws GridException;
+    public GridFuture<T> peekLastAsync() throws GridException;
 
     /**
      * Gets position of the specified item in the queue. First element (head of the queue) is at position {@code 0}.
@@ -289,8 +544,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Puts specified item to the queue asynchronously.
      *
      * @param item Queue item to put.
+     * @return Future for the operation.
      * @throws GridException If operation failed.
-     * @return Future which will complete whenever this operation completes.
      */
     public GridFuture<Boolean> putAsync(T item) throws GridException;
 
@@ -335,18 +590,18 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     /**
      * Retrieves and removes the head item of the queue asynchronously.
      *
-     * @throws GridException If operation failed.
      * @return Future for the take operation.
+     * @throws GridException If operation failed.
      */
-    @Nullable public GridFuture<T> takeAsync() throws GridException;
+    public GridFuture<T> takeAsync() throws GridException;
 
     /**
      * Try to retrieve and remove the tail item of the queue asynchronously.
      *
      * @throws GridException If operation failed.
-     * @return Future which will complete whenever this operation completes.
+     * @return Future for the operation.
      */
-    @Nullable public GridFuture<T> takeLastAsync() throws GridException;
+    public GridFuture<T> takeLastAsync() throws GridException;
 
     /**
      * Retrieves, but does not remove, the head of this queue. Waits if no elements are present in this queue.
@@ -391,41 +646,26 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
     /**
      * Try to retrieve but does not remove the tail of this queue asynchronously.
      *
+     * @return Future for the operation.
      * @throws GridException If operation failed.
-     * @return Future which will complete whenever this operation completes.
      */
     public GridFuture<T> getAsync() throws GridException;
 
     /**
      * Try to retrieve but does not remove the tail of this queue asynchronously.
      *
+     * @return Future for the operation.
      * @throws GridException If operation failed.
-     * @return Future which will complete whenever this operation completes.
      */
     public GridFuture<T> getLastAsync() throws GridException;
 
     /**
-     * Clears the queue.
-     *
-     * @throws GridException If operation failed.
-     */
-    public void clearx() throws GridException;
-
-    /**
      * Clears the queue asynchronously asynchronously.
      *
+     * @return Future for the operation.
      * @throws GridException If operation failed.
-     * @return Future which will complete whenever this operation completes.
      */
     public GridFuture<Boolean> clearAsync() throws GridException;
-
-    /**
-     * Returns {@code true} if this queue doesn't contain items.
-     *
-     * @return {@code true} if this queue is empty.
-     * @throws GridException If operation failed.
-     */
-    public boolean isEmptyx() throws GridException;
 
     /**
      * Gets size of the queue.

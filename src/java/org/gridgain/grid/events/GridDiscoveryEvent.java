@@ -10,8 +10,8 @@
 package org.gridgain.grid.events;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
-
 import java.util.*;
 
 /**
@@ -56,7 +56,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  * 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridEventType#EVT_NODE_METRICS_UPDATED
  * @see GridEventType#EVT_NODE_FAILED
  * @see GridEventType#EVT_NODE_JOINED
@@ -73,7 +73,7 @@ public class GridDiscoveryEvent extends GridEventAdapter {
 
     /** {@inheritDoc} */
     @Override public String shortDisplay() {
-        return name() + ": nodeId8=" + U.id8(evtNodeId);
+        return name() + ": id8=" + U.id8(evtNodeId) + ", ip=" + F.first(shadow().internalAddresses());
     }
 
     /**

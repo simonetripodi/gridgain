@@ -89,7 +89,7 @@ import java.util.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @param <K> Key type.
  * @param <V> Value type.
  */
@@ -255,6 +255,8 @@ public interface GridCacheEntry<K, V> extends Map.Entry<K, V>, GridMetadataAware
 
     /**
      * Sets time to live, i.e. maximum life time, of this entry in milliseconds.
+     * Note that this method is transactional - if entry is enlisted into a transaction,
+     * then time-to-live will not be set until transaction commit.
      *
      * @param ttl Time to live value for this entry.
      */

@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.0c.28052011
+# Version: 3.1.0c.30052011
 #
 
 #
@@ -135,7 +135,7 @@ JMX_MON="${JMX_MON} -Dcom.sun.management.jmxremote.port=${JMX_PORT} -Dcom.sun.ma
 #
 # ADD YOUR ADDITIONAL PARAMETERS/OPTIONS HERE
 #
-JVM_OPTS="-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSize=32m -Xms256m -Xmx256m -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0 -XX:+UseTLAB -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Djava.net.preferIPv4Stack=true"
+JVM_OPTS="-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSize=32m -Xms256m -Xmx512m -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0 -XX:+UseTLAB -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Djava.net.preferIPv4Stack=true"
 
 #
 # If using NewRelic for monitoring - uncomment the following.
@@ -150,14 +150,14 @@ JVM_OPTS="-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSi
 #
 # JVM_OPTS="${JVM_OPTS} -javaagent:${GRIDGAIN_HOME}/libs/newrelic.jar"
 
+# Remote debugging (JPDA).
+# Uncomment and change if remote debugging is required.
+# JVM_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n ${JVM_OPTS}"
+
 ERRORCODE="-1"
 
 while [ "${ERRORCODE}" -ne "130" ]
 do
-    # Remote debugging (JPDA).
-    # Uncomment and change if remote debugging is required.
-    # JVM_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n ${JVM_OPTS}"
-
     if [ -z "${INTERACTIVE}" ] ; then
         "${JAVA_HOME}/bin/java" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"
     else
@@ -166,12 +166,10 @@ do
 
     ERRORCODE="$?"
 
-    if [ -z "${RESTART_SUCCESS_FILE}" ] ; then
-        break
+    if [ ! -f "${RESTART_SUCCESS_FILE}" ] ; then
+       break
     else
-        if [ ! -f "${RESTART_SUCCESS_FILE}" ] ; then
-            break
-        fi
+        rm -f "${RESTART_SUCCESS_FILE}"
     fi
 done
 

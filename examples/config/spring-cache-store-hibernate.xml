@@ -50,7 +50,7 @@
         <!-- Set to local host address just for examples. -->
         <property name="localHost" value="127.0.0.1"/>
 
-        <property name="deploymentMode" value="CONTINUOUS"/>
+        <property name="deploymentMode" value="SHARED"/>
 
         <property name="cacheConfiguration">
             <!--

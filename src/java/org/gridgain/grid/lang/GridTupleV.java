@@ -10,6 +10,7 @@
 package org.gridgain.grid.lang;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 import java.io.*;
@@ -22,7 +23,7 @@ import java.util.*;
  * responsibility of the user of this class to provide outside synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridFunc#tv(Object...)
  */
 public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct, GridPeerDeployAware, Externalizable {
@@ -174,7 +175,7 @@ public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct,
         ClassLoader clsLdr = getClass().getClassLoader();
 
         for (Object o : this)
-            if (o != null && !o.getClass().getClassLoader().equals(clsLdr))
+            if (o != null && !F.eq(o.getClass().getClassLoader(), (clsLdr)))
                 return o.getClass();
 
         return getClass();

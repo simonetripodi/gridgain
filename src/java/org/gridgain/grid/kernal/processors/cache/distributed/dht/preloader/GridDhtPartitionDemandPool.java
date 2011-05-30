@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridDhtPartitionDemandPool<K, V> {
     /** Dummy message to wake up a blocking queue if a node leaves. */
@@ -528,7 +528,7 @@ public class GridDhtPartitionDemandPool<K, V> {
 
                         watch.step("EXCHANGE_REALIGN_STEP1");
 
-                        // After works line up and before preloading starts we initialize all futures.
+                        // After workers line up and before preloading starts we initialize all futures.
                         initAll();
 
                         watch.step("FUTURES_INITIALIZED");

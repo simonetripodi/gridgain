@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -359,6 +359,16 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
+     * @return Local transaction.
+     */
+    @SuppressWarnings({"unchecked"})
+    @Nullable public <T> T localTx() {
+        GridCacheTxEx<K, V> tx = tx();
+
+        return tx != null && tx.local() ? (T)tx : null;
+    }
+
+    /**
      * @return Transaction for current thread.
      */
     @SuppressWarnings({"unchecked"})
@@ -366,6 +376,15 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         GridCacheTxEx<K, V> tx = txContext();
 
         return tx != null ? (T)tx : (T)tx(Thread.currentThread().getId());
+    }
+
+    /**
+     * @return Local transaction.
+     */
+    @Nullable public GridCacheTxEx<K, V> localTxx() {
+        GridCacheTxEx<K, V> tx = txx();
+
+        return tx != null && tx.local() ? tx : null;
     }
 
     /**
@@ -1087,6 +1106,13 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      */
     public void txContextReset() {
         threadCtx.set(null);
+    }
+
+    /**
+     * @return All transactions.
+     */
+    public Collection<GridCacheTxEx<K, V>> txs() {
+        return idMap.values();
     }
 
     /**

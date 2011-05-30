@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
  * This class defines task processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridTaskProcessor extends GridProcessorAdapter {
     /** Wait for 5 seconds to allow discovery to take effect (best effort). */
@@ -421,7 +421,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
     @SuppressWarnings({"unchecked", "deprecation"})
     private <T, R> GridTaskFuture<R> startTask(
         @Nullable String taskName,
-        @Nullable Class<? extends GridTask<T, R>> taskCls,
+        @Nullable Class<?> taskCls,
         @Nullable GridTask<T, R> task,
         UUID sesId,
         long timeout,
@@ -458,7 +458,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
                     throw new GridException("Unknown task name or failed to auto-deploy " +
                         "task (was task (re|un)deployed?): " + taskName);
 
-                taskCls = (Class<? extends GridTask<T, R>>)dep.deployedClass(taskName);
+                taskCls = dep.deployedClass(taskName);
 
                 if (!GridTask.class.isAssignableFrom(taskCls))
                     throw new GridException("Failed to auto-deploy task (deployed class is not a task) [taskName=" +
@@ -500,8 +500,6 @@ public class GridTaskProcessor extends GridProcessorAdapter {
         }
         // Deploy user task.
         else if (task != null) {
-            taskCls = (Class<? extends GridTask<T, R>>)task.getClass();
-
             try {
                 ClassLoader ldr;
 
@@ -513,12 +511,19 @@ public class GridTaskProcessor extends GridProcessorAdapter {
                     cls = depAware.deployClass();
                     ldr = depAware.classLoader();
 
+                    // Set proper class name to make peer-loading possible.
+                    taskCls = cls;
+
                     taskName = taskNameCtxVal != null ? taskNameCtxVal : cls.getName();
 
                     // Implicit deploy.
                     dep = ctx.deploy().deploy(cls, ldr);
                 }
                 else {
+                    taskCls = task.getClass();
+
+                    assert GridTask.class.isAssignableFrom(taskCls);
+
                     cls = task.getClass();
                     ldr = U.detectClassLoader(cls);
 
@@ -1017,7 +1022,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.28052011
+     * @version 3.1.0c.30052011
      */
     private class TaskDiscoveryListener implements GridLocalEventListener {
         /** {@inheritDoc} */

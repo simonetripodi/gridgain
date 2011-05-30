@@ -12,6 +12,7 @@ package org.gridgain.grid.lang;
 import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
+
 import java.io.*;
 import java.util.*;
 
@@ -22,7 +23,7 @@ import java.util.*;
  * responsibility of the user of this class to provide outside synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridFunc#t1()
  * @see GridFunc#t(Object)
  */
@@ -56,7 +57,8 @@ public class GridTuple<V> extends GridMetadataAwareAdapter implements GridTypedP
     /** {@inheritDoc} */
     @Override public V part(int n) {
         switch (n) {
-            case 0: return get();
+            case 0:
+                return get();
 
             default:
                 throw new IndexOutOfBoundsException("Invalid product index: " + n);
@@ -107,7 +109,7 @@ public class GridTuple<V> extends GridMetadataAwareAdapter implements GridTypedP
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings( {"CloneDoesntDeclareCloneNotSupportedException"})
+    @SuppressWarnings({"CloneDoesntDeclareCloneNotSupportedException"})
     @Override public Object clone() {
         return super.clone();
     }
@@ -125,7 +127,7 @@ public class GridTuple<V> extends GridMetadataAwareAdapter implements GridTypedP
 
     /** {@inheritDoc} */
     @Override public Class<?> deployClass() {
-        return val != null ? val.getClass() : getClass();
+        return val != null && val.getClass().getClassLoader() != null ? val.getClass() : getClass();
     }
 
     /** {@inheritDoc} */
@@ -152,5 +154,7 @@ public class GridTuple<V> extends GridMetadataAwareAdapter implements GridTypedP
     }
 
     /** {@inheritDoc} */
-    @Override public String toString() { return S.toString(GridTuple.class, this); }
+    @Override public String toString() {
+        return S.toString(GridTuple.class, this);
+    }
 }

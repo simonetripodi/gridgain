@@ -22,7 +22,7 @@ import java.util.*;
  * Internal API for cache entry ({@code 'Ex'} stands for extended).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
     /**
@@ -350,7 +350,7 @@ public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
      */
     @SuppressWarnings({"RedundantTypeArguments"})
     @Nullable public V peek0(boolean failFast, GridCachePeekMode mode,
-        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter, GridCacheTxEx<K, V> tx)
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter, @Nullable GridCacheTxEx<K, V> tx)
         throws GridCacheEntryRemovedException, GridCacheFilterFailedException, GridException;
 
     /**

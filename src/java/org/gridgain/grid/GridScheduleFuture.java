@@ -41,7 +41,7 @@ import java.util.concurrent.*;
  * methods for more information.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see Grid#scheduleLocal(Runnable, String)
  * @see Grid#scheduleLocal(Callable, String) 
  */

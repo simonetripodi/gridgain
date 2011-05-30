@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Cache projection.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter implements GridCacheProjection<K, V>,
     Externalizable {
@@ -428,19 +428,19 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     @Override public <K, V> GridCacheProjection<K, V> parent() {
         return (GridCacheProjection<K, V>)parent;
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     @Override public <K, V> GridCache<K, V> cache() {
         return (GridCache<K, V>)cache;
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     @Override public <K1, V1> GridCacheProjection<K1, V1> projection(Class<?> keyType, Class<?> valType) {
         A.notNull(keyType, "keyType", valType, "valType");
 
@@ -1518,21 +1518,27 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys) {
+    @Override public Collection<GridRichNode> affinityNodes(K key) {
+        return cache.affinityNodes(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys) {
         return cache.mapKeysToNodes(keys);
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable GridPredicate<? super K>[] filter) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable GridPredicate<? super K>[] filter) {
         return cache.mapKeysToNodes(filter);
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable K[] keys) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable K[] keys) {
         return cache.mapKeysToNodes(keys);
     }
 
-    @Override public UUID mapKeyToNode(K key) {
+    /** {@inheritDoc} */
+    @Override public GridRichNode mapKeyToNode(K key) {
         return cache.mapKeyToNode(key);
     }
 

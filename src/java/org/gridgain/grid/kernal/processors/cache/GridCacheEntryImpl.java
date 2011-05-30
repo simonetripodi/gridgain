@@ -28,7 +28,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Entry wrapper that never obscures obsolete entries from user.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externalizable {
     /** Cache context. */
@@ -192,7 +192,7 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
     /** {@inheritDoc} */
     @Nullable @Override public V peek(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         try {
-            return peek0(SMART, filter, ctx.tm().<GridCacheTxEx<K, V>>tx());
+            return peek0(SMART, filter, ctx.tm().localTxx());
         }
         catch (GridException e) {
             // Should never happen.
@@ -207,7 +207,7 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
 
     /** {@inheritDoc} */
     @Override public GridFuture<V> peekAsync(@Nullable final Collection<GridCachePeekMode> modes) {
-        final GridCacheTxEx<K, V> tx = ctx.tm().tx();
+        final GridCacheTxEx<K, V> tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<V>() {
             @Nullable @Override public V call() {
@@ -229,12 +229,12 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
     /** {@inheritDoc} */
     @SuppressWarnings({"unchecked"})
     @Nullable @Override public V peek(@Nullable GridCachePeekMode mode) throws GridException {
-        return peek0(mode, CU.<K, V>empty(), ctx.tm().<GridCacheTxEx<K, V>>tx());
+        return peek0(mode, CU.<K, V>empty(), ctx.tm().localTxx());
     }
 
     /** {@inheritDoc} */
     @Override public V peek(@Nullable Collection<GridCachePeekMode> modes) throws GridException {
-        return peek0(modes, CU.<K, V>empty(), ctx.tm().<GridCacheTxEx<K, V>>tx());
+        return peek0(modes, CU.<K, V>empty(), ctx.tm().localTxx());
     }
 
     /**
@@ -246,7 +246,10 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
      */
     @SuppressWarnings({"unchecked"})
     @Nullable private V peek0(@Nullable GridCachePeekMode mode,
-        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter, GridCacheTxEx<K, V> tx) throws GridException {
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter, @Nullable GridCacheTxEx<K, V> tx)
+        throws GridException {
+        assert tx == null || tx.local();
+
         if (mode == null)
             mode = SMART;
 

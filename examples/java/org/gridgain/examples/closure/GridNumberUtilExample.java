@@ -16,7 +16,7 @@ import java.util.*;
  * This class for internal use in examples.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 class GridNumberUtilExample {
     /** Random numbers generator. */
@@ -26,7 +26,7 @@ class GridNumberUtilExample {
      * Enforces singleton.
      */
     private GridNumberUtilExample() {
-        // No-op.        
+        // No-op.
     }
 
     /**
@@ -88,9 +88,8 @@ class GridNumberUtilExample {
     static BigInteger factorial(int num) {
         BigInteger fact = new BigInteger("1");
 
-        for (int i = 2; i <= num; i++) {
+        for (int i = 2; i <= num; i++)
             fact = fact.multiply(new BigInteger(String.valueOf(i)));
-        }
 
         return fact;
     }
@@ -115,6 +114,7 @@ class GridNumberUtilExample {
                 }
             }
         }
+
         return prime;
     }
 }

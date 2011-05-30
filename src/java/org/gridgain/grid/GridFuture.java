@@ -19,7 +19,7 @@ import java.util.concurrent.*;
  * callback.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @param <R> Type of the result for the future.
  */
 public interface GridFuture<R> extends GridMetadataAware, Callable<R> {
@@ -167,13 +167,9 @@ public interface GridFuture<R> extends GridMetadataAware, Callable<R> {
     public boolean concurrentNotify();
 
     /**
-     * Registers listener predicate to be asynchronously notified whenever future completes.
-     * If predicates returns {@code false} if will be automatically unregistered. Note that
-     * for future implementations that call the listener only once this behavior is
-     * irrelevant. If future implementation changes the contract and calls this listener
-     * more than once - returning {@code false} allows for finer management of listener life-cycle.
+     * Registers listener closure to be asynchronously notified whenever future completes.
      *
-     * @param lsnr Listener predicate to register. If not provided - this method is no-op.
+     * @param lsnr Listener closure to register. If not provided - this method is no-op.
      */
     public void listenAsync(@Nullable GridInClosure<? super GridFuture<R>> lsnr);
 

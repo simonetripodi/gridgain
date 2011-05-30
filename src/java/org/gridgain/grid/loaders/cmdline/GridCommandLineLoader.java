@@ -14,7 +14,6 @@ import org.gridgain.grid.loaders.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
-import org.springframework.util.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -33,7 +32,7 @@ import static org.gridgain.grid.GridSystemProperties.*;
  * this loader and you can use them as an example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @SuppressWarnings({"CallToSystemExit"})
 @GridLoader(description = "Command line loader")
@@ -42,7 +41,7 @@ public final class GridCommandLineLoader {
     private static final String VER = "3.1.0c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "28052011";
+    private static final String BUILD = "30052011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -86,7 +85,7 @@ public final class GridCommandLineLoader {
                 "                       Path can be absolute or relative to GRIDGAIN_HOME.",
                 " ",
                 "Spring file should contain one bean definition of Java type",
-                "org.gridgain.grid.GridConfiguration. Note that bean will be",
+                "'org.gridgain.grid.GridConfiguration'. Note that bean will be",
                 "fetched by the type and its ID is not used.");
         }
 
@@ -113,21 +112,6 @@ public final class GridCommandLineLoader {
         return "?".equals(s) || "help".equalsIgnoreCase(s) || "h".equalsIgnoreCase(s);
     }
 
-    /**
-     *
-     */
-    @SuppressWarnings({"ResultOfMethodCallIgnored"})
-    private static void createSuccessFile() {
-        String file = System.getProperty(GG_SUCCESS_FILE);
-
-        if (StringUtils.hasText(file))
-            try {
-                new File(file).createNewFile();
-            }
-            catch (IOException e) {
-                X.error("Failed to create success file '" + file + "': " + e.getMessage());
-            }
-    }
 
     /**
      * Interactively asks for configuration file path.
@@ -226,9 +210,6 @@ public final class GridCommandLineLoader {
 
             exit("Failed to start grid: " + e.getMessage(), false, -1);
         }
-
-        // Create success file.
-        createSuccessFile();
 
         latch = new CountDownLatch(G.allGrids().size());
 

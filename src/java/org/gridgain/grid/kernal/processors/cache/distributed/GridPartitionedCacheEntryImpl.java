@@ -26,7 +26,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Partitioned cache entry public API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V> {
     /**
@@ -159,7 +159,7 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
 
             try {
                 return ctx.cloneOnFlag(
-                    dht().entryEx(key).peek0(false, mode, filter, ctx.tm().<GridCacheTxEx<K, V>>tx())
+                    dht().entryEx(key).peek0(false, mode, filter, ctx.tm().localTxx())
                 );
             }
             catch (GridCacheEntryRemovedException ignore) {
@@ -180,7 +180,7 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
 
     /** {@inheritDoc} */
     @Override public GridFuture<V> peekAsync(@Nullable final Collection<GridCachePeekMode> modes) {
-        final GridCacheTxEx<K, V> tx = ctx.tm().tx();
+        final GridCacheTxEx<K, V> tx = ctx.tm().localTxx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<V>() {
             @Nullable @Override public V call() throws GridException {

@@ -27,7 +27,7 @@ import org.gridgain.grid.typedef.*;
  * in system classpath, so even in this case the deployment step is unnecessary.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public final class GridDeploymentExample {
     /** Name of the deployed task. */

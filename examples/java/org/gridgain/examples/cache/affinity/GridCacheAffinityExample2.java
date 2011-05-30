@@ -35,7 +35,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * edition is used respectively.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheAffinityExample2 {
     /**
@@ -82,7 +82,7 @@ public class GridCacheAffinityExample2 {
                 // cache with given name is started on this node. Otherwise, use
                 // enterprise edition to find out mapping on nodes that don't have
                 // cache running.
-                Map<UUID, Collection<String>> mappings = g.mapKeysToNodes(NAME, keys);
+                Map<GridRichNode, Collection<String>> mappings = g.mapKeysToNodes(NAME, keys);
 
                 // If on community edition, we have to get mappings from GridCache
                 // directly as affinity mapping without have cache started
@@ -90,12 +90,10 @@ public class GridCacheAffinityExample2 {
                 if (mappings == null)
                     mappings = g.<String, String>cache(NAME).mapKeysToNodes(keys);
 
-                for (Map.Entry<UUID, Collection<String>> mapping : mappings.entrySet()) {
-                    UUID nodeId = mapping.getKey();
+                for (Map.Entry<GridRichNode, Collection<String>> mapping : mappings.entrySet()) {
+                    GridRichNode node = mapping.getKey();
 
                     final Collection<String> mappedKeys = mapping.getValue();
-
-                    GridRichNode node = g.node(nodeId);
 
                     if (node != null) {
                         // Bring computations to the nodes where the data resides (i.e. collocation).

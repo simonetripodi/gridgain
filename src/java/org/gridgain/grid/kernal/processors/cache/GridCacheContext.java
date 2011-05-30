@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -1368,7 +1368,7 @@ public class GridCacheContext<K, V> implements Externalizable {
             log.debug("Entry has no near readers: " + entry);
 
         map(entry, F.view(dhtNodes, F.remoteNodes(nodeId())), dhtMap); // Exclude local node.
-        map(entry, nearNodes, nearMap);
+        map(entry, F.view(nearNodes, F.notIn(dhtMap.keySet())), nearMap); // Exclude DHT nodes.
     }
 
     /**

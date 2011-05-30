@@ -28,11 +28,12 @@ import static org.gridgain.grid.cache.datastructures.GridCacheQueueType.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheQueueLifoExample {
     /** Cache name. */
-    private static final String CACHE_NAME = "replicated";
+    // private static final String CACHE_NAME = "replicated";
+    private static final String CACHE_NAME = "partitioned";
 
     /** Number of retries */
     private static final int RETRIES = 5;
@@ -112,7 +113,7 @@ public class GridCacheQueueLifoExample {
         final String queueName = queue.name();
 
         // Read queue items on each node.
-        G.grid().run(BROADCAST, new CAX() {
+        grid.run(BROADCAST, new CAX() {
             @Override public void applyx() throws GridException {
                 GridCacheQueue<String> queue = G.grid().cache(CACHE_NAME).queue(queueName);
 
@@ -138,7 +139,7 @@ public class GridCacheQueueLifoExample {
         final String queueName = queue.name();
 
         // Write queue items on each node.
-        G.grid().run(BROADCAST, new CAX() {
+        grid.run(BROADCAST, new CAX() {
             @Override public void applyx() throws GridException {
                 GridCacheQueue<String> queue = G.grid().cache(CACHE_NAME).queue(queueName);
 

@@ -67,7 +67,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1419,7 +1419,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.28052011
+     * @version 3.1.0c.30052011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -3798,24 +3798,34 @@ public abstract class GridUtils {
 
             boolean notAllNulls = false;
 
-            for (Object obj : c)
+            for (Object obj : c) {
                 if (obj != null) {
                     notAllNulls = true;
 
-                    ClassLoader ldr = obj.getClass().getClassLoader();
+                    ClassLoader ldr = obj instanceof GridPeerDeployAware ?
+                        ((GridPeerDeployAware)obj).classLoader() : obj.getClass().getClassLoader();
 
                     boolean found = true;
 
-                    for (Object obj2 : c)
-                        if (obj2 != null && obj2 != obj && !isLoadableBy(obj2.getClass().getName(), ldr)) {
+                    for (Object obj2 : c) {
+                        if (obj2 == null || obj2 == obj)
+                            continue;
+
+                        // Obj2 class name.
+                        String clsName = obj2 instanceof GridPeerDeployAware ?
+                            ((GridPeerDeployAware)obj2).deployClass().getName() : obj2.getClass().getName();
+
+                        if (!isLoadableBy(clsName, ldr)) {
                             found = false;
 
                             break;
                         }
+                    }
 
                     if (found)
                         return peerDeployAware(obj);
                 }
+            }
 
             // If all are nulls - don't throw an exception.
             if (notAllNulls)

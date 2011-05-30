@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Load balancing manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancingSpi> {
     /** Number of entries to keep in annotation cache. */
@@ -164,23 +164,23 @@ public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancin
                 }
             }
             else {
-                UUID id;
+                GridNode node = null;
 
                 try {
-                    id = ctx.affinity().mapKeyToNode(cacheName, nodes, key, true);
+                    node = ctx.affinity().mapKeyToNode(cacheName, nodes, key, true);
                 }
                 catch (GridException e) {
                     throw new GridException("Failed to map affinity key to node for job [gridName=" + ctx.gridName() +
                         ", job=" + job + ']', e);
                 }
 
-                if (id == null)
+                if (node == null)
                     throw new GridException("Failed to map key to node (is cache with given name started?) [gridName=" +
                         ctx.gridName() + ", key=" + key + ", cacheName=" + cacheName +
                         ", nodes=" + U.toShortString(nodes) + ']');
 
-                for (GridNode node : top)
-                    if (node.id().equals(id)) {
+                for (GridNode n : top)
+                    if (node.id().equals(n.id())) {
                         affNode = node;
 
                         break;

@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -410,7 +410,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
-    @Override public boolean containsKey(K key, GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+    @Override public boolean containsKey(K key, @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         A.notNull(key, "key");
 
         GridCacheEntryEx<K, V> e = peekEx(key);
@@ -572,12 +572,12 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** {@inheritDoc} */
     @Override public V peek(K key, @Nullable Collection<GridCachePeekMode> modes) throws GridException {
-        return peek0(key, modes, ctx.tm().<GridCacheTxEx<K, V>>tx());
+        return peek0(key, modes, ctx.tm().localTxx());
     }
 
     /** {@inheritDoc} */
     @Override public GridFuture<V> peekAsync(final K key, @Nullable final Collection<GridCachePeekMode> modes) {
-        final GridCacheTxEx<K, V> tx = ctx.tm().tx();
+        final GridCacheTxEx<K, V> tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<V>() {
             @Nullable @Override public V call() throws GridException {
@@ -589,13 +589,13 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     /** {@inheritDoc} */
     @Override public Map<K, V> peekAll(@Nullable Collection<? extends K> keys,
         @Nullable Collection<GridCachePeekMode> modes) throws GridException {
-        return peekAll0(keys, modes, ctx.tm().<GridCacheTxEx<K, V>>tx(), null);
+        return peekAll0(keys, modes, ctx.tm().localTxx(), null);
     }
 
     /** {@inheritDoc} */
     @Override public GridFuture<Map<K, V>> peekAllAsync(@Nullable final Collection<? extends K> keys,
         @Nullable final Collection<GridCachePeekMode> modes) {
-        final GridCacheTxEx<K, V> tx = ctx.tm().tx();
+        final GridCacheTxEx<K, V> tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<Map<K, V>>() {
             @Nullable @Override public Map<K, V> call() throws GridException {
@@ -640,7 +640,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             if (e != null)
                 return ctx.cloneOnFlag(failFast ? e.peekFailFast(mode, filter) : e.peek(mode, filter));
 
-            GridCacheTxEx<K, V> tx = ctx.tm().tx();
+            GridCacheTxEx<K, V> tx = ctx.tm().localTx();
 
             return tx != null ? ctx.cloneOnFlag(tx.peek(failFast, key, filter)) : null;
         }
@@ -779,7 +779,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
      */
     @SuppressWarnings({"unchecked"})
     @Nullable private V peekDb(K key) throws GridException {
-        return (V)CU.loadFromStore(ctx, log, ctx.tm().<GridCacheTx>tx(), key);
+        return (V)CU.loadFromStore(ctx, log, ctx.tm().localTxx(), key);
     }
 
     /**
@@ -830,7 +830,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     @Override public GridFuture<?> forEachAsync(final GridInClosure<? super GridCacheEntry<K, V>> vis) {
         A.notNull(vis, "vis");
 
-        final GridCacheTxEx tx = ctx.tm().tx();
+        final GridCacheTxEx tx = ctx.tm().localTx();
 
         return ctx.closures().runLocalSafe(ctx.projectSafe(new GPR() {
             @Override public void run() {
@@ -855,7 +855,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         final Collection<? extends K> keys) {
         A.notNull(vis, "vis");
 
-        final GridCacheTxEx tx = ctx.tm().tx();
+        final GridCacheTxEx tx = ctx.tm().localTx();
 
         return ctx.closures().runLocalSafe(ctx.projectSafe(new GPR() {
             @Override public void run() {
@@ -891,7 +891,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     @Override public GridFuture<Boolean> forAllAsync(final GridPredicate<? super GridCacheEntry<K, V>> vis) {
         A.notNull(vis, "vis");
 
-        final GridCacheTxEx tx = ctx.tm().tx();
+        final GridCacheTxEx tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<Boolean>() {
             @Override public Boolean call() {
@@ -922,7 +922,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         if (F.isEmpty(keys))
             return new GridFinishedFuture<Boolean>(ctx.kernalContext(), true);
 
-        final GridCacheTxEx tx = ctx.tm().tx();
+        final GridCacheTxEx tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<Boolean>() {
             @Override public Boolean call() {
@@ -962,7 +962,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     @Override public <R> GridFuture<R> reduceAsync(final GridReducer<? super GridCacheEntry<K, V>, R> rdc) {
         A.notNull(rdc, "rdc");
 
-        final GridCacheTxEx tx = ctx.tm().tx();
+        final GridCacheTxEx tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<R>() {
             @Nullable @Override public R call() {
@@ -989,7 +989,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         final Collection<? extends K> keys) {
         A.notNull(rdc, "rdc");
 
-        final GridCacheTxEx tx = ctx.tm().tx();
+        final GridCacheTxEx tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<R>() {
             @Nullable @Override public R call() {
@@ -1824,7 +1824,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         GridCacheTxLocalAdapter<K, V> tx = null;
 
         if (checkTx)
-            tx = ctx.tm().tx();
+            tx = ctx.tm().localTx();
 
         if (tx == null || tx.implicit()) {
             try {
@@ -2368,7 +2368,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** {@inheritDoc} */
     @Nullable @Override public GridCacheTx tx() {
-        GridCacheTx tx = ctx.tm().tx();
+        GridCacheTx tx = ctx.tm().localTx();
 
         return tx == null ? null : new GridCacheTxProxyImpl(tx, ctx.gate());
     }
@@ -2980,22 +2980,22 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(GridPredicate<? super K>[] filter) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(GridPredicate<? super K>[] filter) {
         return mapKeysToNodes(keySet(ctx.vararg(F.<K, V>cacheKeys(filter))));
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(K[] keys) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(K[] keys) {
         return mapKeysToNodes(F.asList(keys));
     }
 
     /** {@inheritDoc} */
-    @Override public UUID mapKeyToNode(K key) {
-        UUID id = F.first(mapKeysToNodes(F.asList(key)).keySet());
+    @Override public GridRichNode mapKeyToNode(K key) {
+        GridRichNode node = F.first(mapKeysToNodes(F.asList(key)).keySet());
 
-        assert id != null;
+        assert node != null;
 
-        return id;
+        return node;
     }
 
     /** {@inheritDoc} */
@@ -3327,7 +3327,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     @Nullable private <T> T syncOp(SyncOp<T> op) throws GridException {
         checkJta();
 
-        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().tx();
+        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().localTx();
 
         if (tx == null || tx.implicit()) {
             tx = ctx.tm().onCreated(newTx(true));
@@ -3376,7 +3376,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             return new GridFinishedFuture<T>(ctx.kernalContext(), e);
         }
 
-        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().tx();
+        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().localTx();
 
         if (tx == null) {
             tx = ctx.tm().onCreated(newTx(true));

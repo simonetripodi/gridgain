@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code FIFO} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @GridMBeanDescription("MBean for FIFO cache eviction policy.")
 public interface GridCacheFifoEvictionPolicyMBean {

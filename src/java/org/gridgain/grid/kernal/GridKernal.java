@@ -86,14 +86,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
     private static final String VER = "3.1.0c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "28052011";
+    private static final String BUILD = "30052011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -621,7 +621,9 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
         String isNotify = System.getProperty(GG_UPDATE_NOTIFIER);
 
-        if (!isDaemon() && (isNotify == null || !"false".equals(isNotify))) {
+        boolean notifyEnabled = !isDaemon() && (isNotify == null || !"false".equals(isNotify));
+
+        if (notifyEnabled) {
             verChecker = new GridUpdateNotifier(gridName, false, 0);
 
             verChecker.checkForNewVersion(cfg.getExecutorService(), log);
@@ -776,7 +778,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         if (verChecker != null)
             verChecker.reportStatus(log);
 
-        if (!isDaemon()) {
+        if (notifyEnabled) {
             updateNtfTimer = new Timer("gridgain-update-notifier-timer");
 
             // Setup periodic version check.

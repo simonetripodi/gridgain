@@ -26,7 +26,7 @@ import static org.gridgain.grid.cache.datastructures.GridCacheQueueType.*;
  * cache: {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheQueueFifoExample {
     /** Cache name. */
@@ -34,7 +34,7 @@ public class GridCacheQueueFifoExample {
     private static final String CACHE_NAME = "partitioned";
 
     /** Number of retries */
-    private static final int RETRIES = 5;
+    private static final int RETRIES = 20;
 
     /** Grid instance. */
     private static Grid grid;
@@ -110,7 +110,7 @@ public class GridCacheQueueFifoExample {
         final String queueName = queue.name();
 
         // Read queue items on each node.
-        G.grid().run(BROADCAST, new CAX() {
+        grid.run(BROADCAST, new CAX() {
             @Override public void applyx() throws GridException {
                 GridCacheQueue<String> queue = G.grid().cache(CACHE_NAME).queue(queueName);
 
@@ -136,7 +136,7 @@ public class GridCacheQueueFifoExample {
         final String queueName = queue.name();
 
         // Write queue items on each node.
-        G.grid().run(BROADCAST, new CAX() {
+        grid.run(BROADCAST, new CAX() {
             @Override public void applyx() throws GridException {
                 GridCacheQueue<String> queue = G.grid().cache(CACHE_NAME).queue(queueName);
 

@@ -19,7 +19,7 @@ import java.util.*;
  * Data affinity controller.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public interface GridAffinityController extends GridController {
     /**
@@ -30,7 +30,7 @@ public interface GridAffinityController extends GridController {
      * @return Affinity map.
      * @throws GridException If failed.
      */
-    public <K> Map<UUID, Collection<K>> mapKeysToNodes(@Nullable String cacheName, Collection<GridRichNode> nodes,
+    public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable String cacheName, Collection<GridRichNode> nodes,
         @Nullable Collection<? extends K> keys, boolean sys) throws GridException;
 
     /**
@@ -40,7 +40,7 @@ public interface GridAffinityController extends GridController {
      * @return Affinity map.
      * @throws GridException If failed.
      */
-    public <K> Map<UUID, Collection<K>> mapKeysToNodes(Collection<GridRichNode> nodes,
+    public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<GridRichNode> nodes,
         @Nullable Collection<? extends K> keys, boolean sys) throws GridException;
 
     /**
@@ -51,7 +51,7 @@ public interface GridAffinityController extends GridController {
      * @return Affinity map.
      * @throws GridException If failed.
      */
-    @Nullable public <K> UUID mapKeyToNode(@Nullable String cacheName, Collection<GridRichNode> nodes, K key,
+    @Nullable public <K> GridRichNode mapKeyToNode(@Nullable String cacheName, Collection<GridRichNode> nodes, K key,
         boolean sys) throws GridException;
 
     /**
@@ -61,5 +61,5 @@ public interface GridAffinityController extends GridController {
      * @return Affinity map.
      * @throws GridException If failed.
      */
-    @Nullable public <K> UUID mapKeyToNode(Collection<GridRichNode> nodes, K key, boolean sys) throws GridException;
+    @Nullable public <K> GridRichNode mapKeyToNode(Collection<GridRichNode> nodes, K key, boolean sys) throws GridException;
 }

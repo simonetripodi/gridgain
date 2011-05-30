@@ -25,11 +25,12 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * cache configuration, e.g. {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public final class GridCacheAtomicSequenceExample {
     /** Cache name. */
-    private static final String CACHE_NAME = "replicated";
+    // private static final String CACHE_NAME = "replicated";
+    private static final String CACHE_NAME = "partitioned";
 
     /** Number of retries */
     private static final int RETRIES = 20;
@@ -68,7 +69,7 @@ public final class GridCacheAtomicSequenceExample {
             print("Sequence initial value: " + firstVal);
 
             // Try increment atomic sequence on all grid nodes. Note that this node is also part of the grid.
-            G.grid().run(BROADCAST, new CAX() {
+            grid.run(BROADCAST, new CAX() {
                 @Override public void applyx() throws GridException {
                     GridCacheAtomicSequence seq = G.grid().cache(CACHE_NAME).atomicSequence(seqName);
 

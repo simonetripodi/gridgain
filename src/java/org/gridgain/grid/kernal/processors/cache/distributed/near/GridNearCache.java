@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -178,7 +178,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
         if (F.isEmpty(keys))
             return new GridFinishedFuture<Map<K, V>>(ctx.kernalContext(), Collections.<K, V>emptyMap());
 
-        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().tx();
+        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().localTx();
 
         if (tx != null && !tx.implicit())
             return ctx.wrapCloneMap(tx.getAllAsync(keys, filter));
@@ -932,9 +932,11 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
         return CU.mapKeysToNodes(ctx, keys);
     }
+
+
 
     /** {@inheritDoc} */
     @Override public Set<GridCacheEntry<K, V>> entrySet(
@@ -1084,7 +1086,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
     /** {@inheritDoc} */
     @Override public GridFuture<V> peekAsync(final K key, @Nullable final Collection<GridCachePeekMode> modes) {
-        final GridCacheTxEx<K, V> tx = ctx.tm().tx();
+        final GridCacheTxEx<K, V> tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<V>() {
             @Nullable @Override public V call() throws GridException {
@@ -1103,7 +1105,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
         final Collection<K> skipped = new GridLeanSet<K>();
 
-        final Map<K, V> map = peekAll0(keys, modes, ctx.tm().txx(), skipped);
+        final Map<K, V> map = peekAll0(keys, modes, ctx.tm().localTxx(), skipped);
 
         if (map.size() != keys.size()) {
             map.putAll(dht.peekAll(F.view(keys, new P1<K>() {
@@ -1119,7 +1121,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** {@inheritDoc} */
     @Override public GridFuture<Map<K, V>> peekAllAsync(@Nullable final Collection<? extends K> keys,
         @Nullable final Collection<GridCachePeekMode> modes) {
-        final GridCacheTxEx<K, V> tx = ctx.tm().tx();
+        final GridCacheTxEx<K, V> tx = ctx.tm().localTx();
 
         return ctx.closures().callLocalSafe(ctx.projectSafe(new GPC<Map<K, V>>() {
             @Nullable @Override public Map<K, V> call() throws GridException {

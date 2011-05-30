@@ -93,7 +93,7 @@ import static org.gridgain.grid.kernal.processors.port.GridPortProtocol.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridDiscoverySpi
  */
 @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
@@ -101,7 +101,7 @@ import static org.gridgain.grid.kernal.processors.port.GridPortProtocol.*;
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.0c.28052011")
+    version = "3.1.0c.30052011")
 @GridSpiMultipleInstancesSupport(false)
 public class GridCoherenceDiscoverySpi extends GridSpiAdapter implements GridDiscoverySpi,
     GridCoherenceDiscoverySpiMBean {
@@ -1002,7 +1002,7 @@ public class GridCoherenceDiscoverySpi extends GridSpiAdapter implements GridDis
      * Cluster metrics sender.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.28052011
+     * @version 3.1.0c.30052011
      */
     private class CoherenceNodesMetricsUpdater extends GridSpiThread {
         /** Heartbeat cache listener. */
@@ -1063,7 +1063,7 @@ public class GridCoherenceDiscoverySpi extends GridSpiAdapter implements GridDis
          * Listener that updates remote nodes metrics.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.0c.28052011
+         * @version 3.1.0c.30052011
          */
         private class CoherenceStateListener implements MapListener {
             /** {@inheritDoc} */

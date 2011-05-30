@@ -19,7 +19,7 @@ import org.gridgain.grid.test.*;
  * properties and variables can be used to affect the behavior of GridGain.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @see GridTestVmParameters
  */
 public final class GridSystemProperties {
@@ -278,6 +278,15 @@ public final class GridSystemProperties {
      * or not to print out every execution step or not.
      */
     public static final String GG_STOPWATCH_PRINTSTEP = "GRIDGAIN_STOPWATCH_PRINTSTEP";
+
+    /**
+     * System property to override deployment mode configuration parameter.
+     * Valid values for property are: PRIVATE, ISOLATED, SHARED or CONTINUOUS.
+     *
+     * @see GridDeploymentMode
+     * @see GridConfiguration#getDeploymentMode()
+     */
+    public static final String GG_DEP_MODE_OVERRIDE = "GRIDGAIN_DEPLOYMENT_MODE_OVERRIDE";
 
     /**
      * Enforces singleton.

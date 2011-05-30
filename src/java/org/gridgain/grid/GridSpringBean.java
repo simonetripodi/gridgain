@@ -60,7 +60,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -1475,7 +1475,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public <K> Map<UUID, Collection<K>> mapKeysToNodes(String cacheName,
+    @Override public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(String cacheName,
         @Nullable Collection<? extends K> keys) throws GridException {
         assert g != null;
 
@@ -1483,7 +1483,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public <K> Map<UUID, Collection<K>> mapKeysToNodes(
+    @Override public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(
         @Nullable Collection<? extends K> keys) throws GridException {
         assert g != null;
 
@@ -1491,14 +1491,14 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public <K> UUID mapKeyToNode(K key) throws GridException {
+    @Override public <K> GridRichNode mapKeyToNode(K key) throws GridException {
         assert g != null;
 
         return g.mapKeyToNode(key);
     }
 
     /** {@inheritDoc} */
-    @Override public <K> UUID mapKeyToNode(String cacheName, K key) throws GridException {
+    @Override public <K> GridRichNode mapKeyToNode(String cacheName, K key) throws GridException {
         assert g != null;
 
         return g.mapKeyToNode(cacheName, key);

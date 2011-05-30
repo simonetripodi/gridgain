@@ -46,7 +46,7 @@ import java.util.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @GridToStringExclude
 public interface GridKernalContext extends GridMetadataAware {
@@ -125,7 +125,7 @@ public interface GridKernalContext extends GridMetadataAware {
      * @return Grid instance.
      */
     public Grid grid();
-    
+
     /**
      * Gets grid configuration.
      *
@@ -301,10 +301,10 @@ public interface GridKernalContext extends GridMetadataAware {
      * @return Topology manager.
      */
     public GridTopologyManager topology();
-    
+
     /**
      * Gets collision manager.
-     * 
+     *
      * @return Collision manager.
      */
     public GridCollisionManager collision();
@@ -325,7 +325,7 @@ public interface GridKernalContext extends GridMetadataAware {
 
     /**
      * Gets swap space manager.
-     * 
+     *
      * @return Swap space manager.
      */
     public GridSwapSpaceManager swap();

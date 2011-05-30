@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -1079,7 +1079,7 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
             if (dhtTx == null && !F.isEmpty(req.writes()))
                 dhtTx = startRemoteTx(nodeId, req);
 
-            if (nearTx != null && !F.isEmpty(req.nearWrites()))
+            if (nearTx == null && !F.isEmpty(req.nearWrites()))
                 nearTx = near.startRemoteTx(nodeId, req);
         }
         catch (GridException e) {
@@ -2006,7 +2006,7 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
         return CU.mapKeysToNodes(ctx, keys);
     }
 

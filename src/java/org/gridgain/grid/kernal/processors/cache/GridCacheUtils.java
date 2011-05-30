@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -910,6 +910,10 @@ public abstract class GridCacheUtils {
             @Override public boolean apply(GridCacheTxEntry<K, V> e) {
                 return e.opId() == opId;
             }
+
+            @Override public String toString() {
+                return "Operation ID filter: " + opId;
+            }
         };
     }
 
@@ -928,6 +932,10 @@ public abstract class GridCacheUtils {
             new P2<K, V>() {
                 @Override public boolean apply(K k, V v) {
                     return keyType.isAssignableFrom(k.getClass()) && valType.isAssignableFrom(v.getClass());
+                }
+
+                @Override public String toString() {
+                    return "Type filter [keyType=" + keyType + ", valType=" + valType + ']';
                 }
             }
         };
@@ -951,7 +959,6 @@ public abstract class GridCacheUtils {
                 return bool.get();
             }
 
-            /** {@inheritDoc} */
             @Override public String toString() {
                 return "Bool reducer: " + bool;
             }
@@ -1131,6 +1138,10 @@ public abstract class GridCacheUtils {
                     U.error(log, "Future execution resulted in error: " + f, e);
                 }
             }
+
+            @Override public String toString() {
+                return "Error logger [excludes=" + Arrays.toString(excl) + ']';
+            }
         };
     }
 
@@ -1140,29 +1151,29 @@ public abstract class GridCacheUtils {
      * @return Mapped keys.
      */
     @SuppressWarnings( {"unchecked", "MismatchedQueryAndUpdateOfCollection"})
-    public static <K> Map<UUID, Collection<K>> mapKeysToNodes(GridCacheContext<K, ?> ctx,
+    public static <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(GridCacheContext<K, ?> ctx,
         Collection<? extends K> keys) {
         if (keys == null || keys.isEmpty())
             return Collections.emptyMap();
 
         // Map all keys to local node for local caches.
         if (ctx.config().getCacheMode() == LOCAL)
-            return F.asMap(ctx.nodeId(), (Collection<K>)keys);
+            return F.asMap(ctx.localNode(), (Collection<K>)keys);
 
         Collection<GridRichNode> nodes = CU.allNodes(ctx);
 
         if (keys.size() == 1)
-            return Collections.singletonMap(CU.primary0(ctx.affinity(F.first(keys), nodes)).id(), (Collection<K>)keys);
+            return Collections.singletonMap(CU.primary0(ctx.affinity(F.first(keys), nodes)), (Collection<K>)keys);
 
-        Map<UUID, Collection<K>> map = new GridLeanMap<UUID, Collection<K>>(5);
+        Map<GridRichNode, Collection<K>> map = new GridLeanMap<GridRichNode, Collection<K>>(5);
 
         for (K k : keys) {
             GridRichNode primary = CU.primary0(ctx.affinity(k, nodes));
 
-            Collection<K> mapped = map.get(primary.id());
+            Collection<K> mapped = map.get(primary);
 
             if (mapped == null)
-                map.put(primary.id(), mapped = new LinkedList<K>());
+                map.put(primary, mapped = new LinkedList<K>());
 
             mapped.add(k);
         }
@@ -1306,6 +1317,10 @@ public abstract class GridCacheUtils {
                 long o2 = n2.order();
 
                 return asc ? o1 < o2 ? -1 : o1 == o2 ? 0 : 1 : o1 < o2 ? 1 : o1 == o2 ? 0 : -1;
+            }
+
+            @Override public String toString() {
+                return "Node comparator [asc=" + asc + ']';
             }
         };
     }

@@ -27,7 +27,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** */
@@ -1991,7 +1991,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public <K> Map<UUID, Collection<K>> mapKeysToNodes(String cacheName,
+    @Override public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(String cacheName,
         @Nullable Collection<? extends K> keys) throws GridException {
         if (!F.isEmpty(keys)) {
             guard();
@@ -2008,7 +2008,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public <K> Map<UUID, Collection<K>> mapKeysToNodes(
+    @Override public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(
         @Nullable Collection<? extends K> keys) throws GridException {
         if (!F.isEmpty(keys)) {
             guard();
@@ -2025,7 +2025,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public <K> UUID mapKeyToNode(String cacheName, K key) throws GridException {
+    @Nullable @Override public <K> GridRichNode mapKeyToNode(String cacheName, K key) throws GridException {
         A.notNull(key, "key");
 
         guard();
@@ -2039,7 +2039,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public <K> UUID mapKeyToNode(K key) throws GridException {
+    @Nullable @Override public <K> GridRichNode mapKeyToNode(K key) throws GridException {
         A.notNull(key, "key");
 
         guard();

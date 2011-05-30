@@ -29,7 +29,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxRemoteEx<K, V> {
@@ -510,8 +510,12 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                         if (log.isDebugEnabled())
                                             log.debug("Ignoring READ entry when committing: " + txEntry);
                                     }
-                                    else if (log.isDebugEnabled())
-                                        log.debug("Ignoring NOOP entry when remotely committing: " + txEntry);
+                                    // No-op.
+                                    else {
+                                        if (nearCached != null)
+                                            nearCached.updateOrEvict(xidVer, cached.rawGet(), cached.valueBytes(),
+                                                cached.expireTime(), cached.ttl(), nodeId);
+                                    }
 
                                     // Assert after setting values as we want to make sure
                                     // that if we replaced removed entries.

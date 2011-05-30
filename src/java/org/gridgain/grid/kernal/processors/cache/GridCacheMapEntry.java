@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -613,8 +613,6 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
             synchronized (mux) {
                 checkObsolete();
 
-                newVer = ver;
-
                 assert tx == null || tx.ownsLock(this) : "Transaction does not own lock for update [entry=" + this +
                     ", tx=" + tx + ']';
 
@@ -673,7 +671,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         throws GridException, GridCacheEntryRemovedException {
         V old = null;
 
-        GridCacheVersion newVer = tx == null ? cctx.versions().next() : tx.commitVersion();
+        GridCacheVersion newVer = null;
 
         try {
             boolean valid = valid();
@@ -704,6 +702,8 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                 clearIndex();
 
                 old = val;
+
+                newVer = tx == null ? cctx.versions().next() : tx.commitVersion();
 
                 update(null, null, toExpireTime(ttl), ttl, newVer, metrics);
 
@@ -1085,7 +1085,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     @Nullable @Override public V peek(GridCachePeekMode mode, GridPredicate<? super GridCacheEntry<K, V>>[] filter)
         throws GridCacheEntryRemovedException {
         try {
-            return peek0(false, mode, filter, cctx.tm().<GridCacheTxEx<K, V>>tx());
+            return peek0(false, mode, filter, cctx.tm().localTxx());
         }
         catch (GridCacheFilterFailedException ignore) {
             assert false;
@@ -1117,7 +1117,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         GridPredicate<? super GridCacheEntry<K, V>>[] filter)
         throws GridCacheEntryRemovedException, GridCacheFilterFailedException {
         try {
-            return peek0(true, mode, filter, cctx.tm().<GridCacheTxEx<K, V>>tx());
+            return peek0(true, mode, filter, cctx.tm().localTxx());
         }
         catch (GridException e) {
             throw new GridRuntimeException("Unable to perform entry peek() operation.", e);
@@ -1136,8 +1136,9 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
      */
     @SuppressWarnings({"RedundantTypeArguments"})
     @Nullable @Override public V peek0(boolean failFast, GridCachePeekMode mode,
-        GridPredicate<? super GridCacheEntry<K, V>>[] filter, GridCacheTxEx<K, V> tx)
+        GridPredicate<? super GridCacheEntry<K, V>>[] filter, @Nullable GridCacheTxEx<K, V> tx)
         throws GridCacheEntryRemovedException, GridCacheFilterFailedException, GridException {
+        assert tx == null || tx.local();
 
         if (cctx.peekModeExcluded(mode))
             return null;
@@ -1201,7 +1202,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
      * @throws GridCacheFilterFailedException If filter failed.
      */
     @Nullable private V peekTx(boolean failFast, GridPredicate<? super GridCacheEntry<K, V>>[] filter,
-        GridCacheTxEx<K, V> tx) throws GridCacheFilterFailedException {
+        @Nullable GridCacheTxEx<K, V> tx) throws GridCacheFilterFailedException {
         return tx == null ? null : tx.peek(failFast, key, filter);
     }
 
@@ -1282,7 +1283,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                 return null;
         }
 
-        return (V)CU.loadFromStore(cctx, log, cctx.tm().<GridCacheTx>tx(), key);
+        return (V)CU.loadFromStore(cctx, log, cctx.tm().localTxx(), key);
     }
 
     /**
@@ -1822,7 +1823,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
             return false;
         }
 
-        GridCacheTxEx<K, V> tx = cctx.tm().tx();
+        GridCacheTxEx<K, V> tx = cctx.tm().localTxx();
 
         return tx == null || !tx.removed(key);
     }
@@ -1869,7 +1870,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                     (expireTime - System.currentTimeMillis()) + ']');
         }
 
-        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().tx();
+        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
 
         if (tx != null) {
             tx.entryTtl(key, ttl);
@@ -1878,7 +1879,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
         if (cctx.isDht()) {
             // Update dht tx entry.
-            tx = cctx.dht().near().context().tm().tx();
+            tx = cctx.dht().near().context().tm().localTx();
 
             if (tx != null) {
                 tx.entryTtl(key, ttl);

@@ -137,7 +137,7 @@ import java.util.concurrent.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>>, GridMetadataAware {
     /**
@@ -3159,6 +3159,16 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
     public int keySize();
 
     /**
+     * Gets primary and backup nodes for the key. Node that primary node is always
+     * first in the returned collection.
+     *
+     * @param key Key to get affinity nodes for.
+     * @return Collection of primary and backup nodes for the key with primary node
+     *      always first.
+     */
+    public Collection<GridRichNode> affinityNodes(K key);
+
+    /**
      * This method provides ability to detect which keys are mapped to which nodes.
      * Use it to determine which nodes are storing which keys prior to sending
      * jobs that access these keys.
@@ -3176,7 +3186,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @param keys Keys to map to nodes.
      * @return Map of node IDs to keys.
      */
-    public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys);
+    public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys);
 
     /**
      * This method provides ability to detect which keys are mapped to which nodes.
@@ -3196,7 +3206,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @param filter Filter for keys to check.
      * @return Map of node IDs to keys.
      */
-    public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable GridPredicate<? super K>... filter);
+    public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable GridPredicate<? super K>... filter);
 
     /**
      * This method provides ability to detect which keys are mapped to which nodes.
@@ -3216,7 +3226,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @param keys Keys to map to nodes.
      * @return Map of node IDs to keys.
      */
-    public Map<UUID, Collection<K>> mapKeysToNodes(@Nullable K... keys);
+    public Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable K... keys);
 
     /**
      * This method provides ability to detect to which primary node the given key
@@ -3236,7 +3246,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @param key Keys to map to a node.
      * @return ID of primary node for the key.
      */
-    public UUID mapKeyToNode(K key);
+    public GridRichNode mapKeyToNode(K key);
 
     /**
      * Provides grid projection for all nodes participating in this cache.

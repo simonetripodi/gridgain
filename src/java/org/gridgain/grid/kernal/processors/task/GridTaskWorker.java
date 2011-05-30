@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid task worker. Handles full task life cycle.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  * @param <T> Task argument type.
  * @param <R> Task return value type.
  */
@@ -88,7 +88,7 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
     private final GridDeployment dep;
 
     /** Task class. */
-    private final Class<? extends GridTask<T, R>> taskCls;
+    private final Class<?> taskCls;
 
     /** Optional subgrid. */
     private final Collection<? extends GridNode> subgrid;
@@ -170,7 +170,7 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
         T arg,
         GridTaskSessionImpl ses,
         GridTaskFutureImpl<R> fut,
-        Class<? extends GridTask<T, R>> taskCls,
+        Class<?> taskCls,
         GridTask<T, R> task,
         GridDeployment dep,
         GridTaskListener taskLsnr,
@@ -300,6 +300,7 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
     /**
      * Maps this task's jobs to nodes and sends them out.
      */
+    @SuppressWarnings({"unchecked"})
     @Override protected void body() {
         assert dep != null;
 
@@ -309,8 +310,11 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
 
         try {
             // Use either user task or deployed one.
-            if (task == null)
-                setTask(newTask(taskCls));
+            if (task == null) {
+                assert GridTask.class.isAssignableFrom(taskCls);
+
+                setTask(newTask((Class<? extends GridTask<T, R>>) taskCls));
+            }
 
             initializeSpis();
 

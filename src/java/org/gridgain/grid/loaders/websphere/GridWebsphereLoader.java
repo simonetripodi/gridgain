@@ -101,7 +101,7 @@ import java.util.concurrent.*;
  * with Gridify annotation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @GridLoader(description = "Websphere loader")
 public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomService {

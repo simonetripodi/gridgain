@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
@@ -3070,11 +3070,12 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * </ul>
      *
      * @param keys Cache keys to map to nodes.
-     * @return Map of node IDs to cache keys.
+     * @return Map of nodes to cache keys.
      * @throws GridException If failed to map cache keys.
      */
     @GridEnterpriseFeature("Data affinity outside of GridCache is enterprise-only feature.")
-    public <K> Map<UUID, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys) throws GridException;
+    public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable Collection<? extends K> keys)
+        throws GridException;
 
     /**
      * This method provides ability to detect which cache keys are mapped to which nodes
@@ -3097,7 +3098,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @throws GridException If failed to map cache keys.
      */
     @GridEnterpriseFeature("Data affinity outside of GridCache is enterprise-only feature.")
-    public <K> Map<UUID, Collection<K>> mapKeysToNodes(@Nullable String cacheName,
+    public <K> Map<GridRichNode, Collection<K>> mapKeysToNodes(@Nullable String cacheName,
         @Nullable Collection<? extends K> keys) throws GridException;
 
     /**
@@ -3116,12 +3117,12 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * </ul>
      *
      * @param key Cache key to map to a node.
-     * @return ID of primary node for the key or {@code null} if cache with default name
+     * @return Primary node for the key or {@code null} if cache with default name
      *      is not present in the grid.
      * @throws GridException If failed to map key.
      */
     @GridEnterpriseFeature("Data affinity outside of GridCache is enterprise-only feature.")
-    @Nullable public <K> UUID mapKeyToNode(K key) throws GridException;
+    @Nullable public <K> GridRichNode mapKeyToNode(K key) throws GridException;
 
     /**
      * This method provides ability to detect which cache keys are mapped to which nodes
@@ -3140,10 +3141,10 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *
      * @param cacheName Cache name, if {@code null}, then default cache instance is used.
      * @param key Cache key to map to a node.
-     * @return ID of primary node for the key or {@code null} if cache with given name
+     * @return Primary node for the key or {@code null} if cache with given name
      *      is not present in the grid.
      * @throws GridException If failed to map key.
      */
     @GridEnterpriseFeature("Data affinity outside of GridCache is enterprise-only feature.")
-    @Nullable public <K> UUID mapKeyToNode(@Nullable String cacheName, K key) throws GridException;
+    @Nullable public <K> GridRichNode mapKeyToNode(@Nullable String cacheName, K key) throws GridException;
 }

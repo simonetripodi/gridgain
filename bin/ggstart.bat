@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.0c.28052011
+:: Version: 3.1.0c.30052011
 ::
 
 ::
@@ -77,7 +77,6 @@ set CP=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR%
 ::
 :: Process 'restart'.
 ::
-set RESTART=true
 set RESTART_SUCCESS_FILE="%GRIDGAIN_HOME%\work\gridgain_success_%random%"
 set RESTART_SUCCESS_OPT="-DGRIDGAIN_SUCCESS_FILE=%RESTART_SUCCESS_FILE%"
 
@@ -136,7 +135,7 @@ set JMX_MON=%JMX_MON% -Dcom.sun.management.jmxremote.port=%JMX_PORT% -Dcom.sun.m
 ::
 :: ADD YOUR/CHANGE ADDITIONAL OPTIONS HERE
 ::
-set JVM_OPTS=-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSize=32m -Xms256m -Xmx256m -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0  -XX:+UseTLAB -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Djava.net.preferIPv4Stack=true
+set JVM_OPTS=-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSize=32m -Xms256m -Xmx512m -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0  -XX:+UseTLAB -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Djava.net.preferIPv4Stack=true
 
 ::
 :: If using NewRelic for monitoring - uncomment the following.
@@ -172,8 +171,6 @@ if "%INTERACTIVE%" == "1" (
 )
 
 set JAVA_ERRORLEVEL=%ERRORLEVEL%
-
-if not "%RESTART%" == "true" goto error_finish
 
 :: errorlevel 130 if aborted with Ctrl+c
 if %JAVA_ERRORLEVEL%==130 goto finish

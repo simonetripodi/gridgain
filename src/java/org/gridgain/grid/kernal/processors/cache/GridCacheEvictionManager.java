@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.*;
  * Cache eviction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     /** Eviction policy. */

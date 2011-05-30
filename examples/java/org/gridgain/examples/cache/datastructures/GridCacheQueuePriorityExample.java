@@ -28,12 +28,12 @@ import static org.gridgain.grid.cache.datastructures.GridCacheQueueType.*;
  * cache: {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridCacheQueuePriorityExample {
     /** Cache name. */
-    private static final String CACHE_NAME = "replicated";
-    // private static final String CACHE_NAME = "partitioned";
+    //private static final String CACHE_NAME = "replicated";
+    private static final String CACHE_NAME = "partitioned";
 
     /** Number of retries */
     private static final int RETRIES = 5;
@@ -97,7 +97,7 @@ public class GridCacheQueuePriorityExample {
         // Initialize queue items.
         // We will be use blocking operation and queue size must be appropriated.
         for (int i = 0; i < grid.nodes().size() * RETRIES * 2; i++)
-            queue.put(new SampleItem(i, G.grid().localNode().id().toString()));
+            queue.put(new SampleItem(i, grid.localNode().id().toString()));
 
         print("Queue size after initializing: " + queue.size());
 
@@ -113,7 +113,7 @@ public class GridCacheQueuePriorityExample {
         final String queueName = queue.name();
 
         // Read queue items on each node.
-        G.grid().run(BROADCAST, new CAX() {
+        grid.run(BROADCAST, new CAX() {
             @Override public void applyx() throws GridException {
                 GridCacheQueue<SampleItem> queue = G.grid().cache(CACHE_NAME).queue(queueName);
 
@@ -139,7 +139,7 @@ public class GridCacheQueuePriorityExample {
         final String queueName = queue.name();
 
         // Write queue items on each node.
-        G.grid().run(BROADCAST, new CAX() {
+        grid.run(BROADCAST, new CAX() {
             // IDEA doesn't understand distributed queries yet :)
             @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
             @Override public void applyx() throws GridException {
@@ -203,7 +203,7 @@ public class GridCacheQueuePriorityExample {
      * Queue item class with priority field.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.28052011
+     * @version 3.1.0c.30052011
      */
     private static class SampleItem implements Serializable {
         /** Priority field*/

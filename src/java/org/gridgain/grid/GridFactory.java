@@ -18,7 +18,6 @@ import org.gridgain.grid.loaders.servlet.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.logger.log4j.*;
 import org.gridgain.grid.marshaller.*;
-import org.gridgain.grid.marshaller.jboss.*;
 import org.gridgain.grid.marshaller.optimized.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.spi.*;
@@ -57,7 +56,6 @@ import org.springframework.beans.factory.xml.*;
 import org.springframework.context.*;
 import org.springframework.context.support.*;
 import org.springframework.core.io.*;
-
 import javax.management.*;
 import java.io.*;
 import java.lang.management.*;
@@ -129,7 +127,7 @@ import static org.gridgain.grid.GridSystemProperties.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridFactory {
     /**
@@ -467,9 +465,20 @@ public class GridFactory {
      * @see #RESTART_EXIT_CODE
      */
     public static void restart(boolean cancel, boolean wait) {
-        if (System.getProperty(GG_SUCCESS_FILE) == null)
-            U.warn(null, "Cannot restart node w/o restart enabled - use 'ggstart.{sh|bat} -r'.");
+        String file = System.getProperty(GG_SUCCESS_FILE);
+
+        if (file == null)
+            U.warn(null, "Cannot restart node when restart not enabled.");
         else {
+            try {
+                new File(file).createNewFile();
+            }
+            catch (IOException e) {
+                U.error(null, "Failed to create restart marker file (restart aborted): " + e.getMessage());
+
+                return;
+            }
+
             U.log(null, "Restarting node. Will exit(" + RESTART_EXIT_CODE + ").");
 
             // Set the exit code so that shell process can recognize it and loop
@@ -1350,7 +1359,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.28052011
+     * @version 3.1.0c.30052011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1542,13 +1551,30 @@ public class GridFactory {
                 myCfg.setLifeCycleEmailNotification(Boolean.parseBoolean(ntfStr));
 
             // Local host.
-            String locHost = X.getSystemOrEnv(GridSystemProperties.GG_LOCAL_HOST);
+            String locHost = X.getSystemOrEnv(GG_LOCAL_HOST);
 
             myCfg.setLocalHost(F.isEmpty(locHost) ? cfg.getLocalHost() : locHost);
 
             // Override daemon flag if it was set on the factory.
             if (daemon)
                 myCfg.setDaemon(true);
+
+            // Check for deployment mode override.
+            String depModeName = X.getSystemOrEnv(GG_DEP_MODE_OVERRIDE);
+
+            if (!F.isEmpty(depModeName)) {
+                try {
+                    GridDeploymentMode depMode = GridDeploymentMode.valueOf(depModeName);
+
+                    if (myCfg.getDeploymentMode() != depMode)
+                        myCfg.setDeploymentMode(depMode);
+                }
+                catch (IllegalArgumentException e) {
+                    throw new GridException("Failed to override deployment mode using system property " +
+                        "(are there any misspellings?)" +
+                        "[name=" + GG_DEP_MODE_OVERRIDE + ", value=" + depModeName + ']', e);
+                }
+            }
 
             Map<String, ?> attrs = cfg.getUserAttributes();
 
@@ -2192,7 +2218,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.0c.28052011
+         * @version 3.1.0c.30052011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

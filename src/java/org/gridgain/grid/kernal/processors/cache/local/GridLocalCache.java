@@ -24,7 +24,7 @@ import java.util.*;
  * Local cache implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 public class GridLocalCache<K, V> extends GridCacheAdapter<K, V> {
     /** */
@@ -111,7 +111,7 @@ public class GridLocalCache<K, V> extends GridCacheAdapter<K, V> {
     /** {@inheritDoc} */
     @Override public GridFuture<Boolean> lockAllAsync(Collection<? extends K> keys, long timeout,
         GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
-        GridCacheTxLocalEx<K, V> tx = ctx.tm().tx();
+        GridCacheTxLocalEx<K, V> tx = ctx.tm().localTx();
 
         return lockAllAsync(keys, timeout, tx, filter);
     }
@@ -202,9 +202,14 @@ public class GridLocalCache<K, V> extends GridCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    @Override public Collection<GridRichNode> affinityNodes(K key) {
+        return F.asList(ctx.localNode());
+    }
+
+    /** {@inheritDoc} */
     @SuppressWarnings({"unchecked"})
-    @Override public Map<UUID, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
-        return Collections.singletonMap(ctx.nodeId(), (Collection<K>)keys);
+    @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
+        return Collections.singletonMap(ctx.localNode(), (Collection<K>)keys);
     }
 
     /** {@inheritDoc} */

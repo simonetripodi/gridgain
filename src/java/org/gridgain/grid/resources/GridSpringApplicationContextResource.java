@@ -58,7 +58,7 @@ import java.lang.annotation.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.28052011
+ * @version 3.1.0c.30052011
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
