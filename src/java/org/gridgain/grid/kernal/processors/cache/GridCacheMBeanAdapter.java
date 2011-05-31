@@ -18,7 +18,7 @@ import java.util.*;
  * Management bean that provides access to {@link GridCache}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 class GridCacheMBeanAdapter implements GridCacheMBean {
     /** Cache. */

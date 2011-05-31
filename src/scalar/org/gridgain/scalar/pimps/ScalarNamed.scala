@@ -22,7 +22,7 @@ import scalaz._
  * it was called on.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 trait ScalarNamed[T <: GridProjection] { this: PimpedType[T] =>
     /**
@@ -30,6 +30,20 @@ trait ScalarNamed[T <: GridProjection] { this: PimpedType[T] =>
      *
      * @param taskName Name of the task.
      */
-    def named$(taskName: String): T =
+    def named$(taskName: String): T = {
+        assert(taskName != null)
+
         value.named(taskName).asInstanceOf[T]
+    }
+
+    /**
+     * Properly typed version of `GridProjection#named(...)` method.
+     *
+     * @param taskName Name of the task.
+     */
+    def named$(taskName: Symbol): T = {
+        assert(taskName != null)
+
+        named$(taskName.toString())
+    }
 }

@@ -25,7 +25,7 @@ import java.util.*;
  * of the user of this class to provide outside synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  * @see GridFunc#t3()
  * @see GridFunc#t(Object, Object, Object)
  */
@@ -210,7 +210,7 @@ public class GridTuple3<V1, V2, V3> extends GridMetadataAwareAdapter implements 
         ClassLoader clsLdr = getClass().getClassLoader();
 
         for (Object o : this)
-            if (o != null && !F.eq(o.getClass().getClassLoader(), (clsLdr)))
+            if (o != null && !F.eq(o.getClass().getClassLoader(), clsLdr))
                 return o.getClass();
 
         return getClass();

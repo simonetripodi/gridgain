@@ -67,10 +67,11 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
-public abstract class GridUtils {
+public abstract class
+    GridUtils {
     /** Sun-specific JDK constructor factory for objects that don't have empty constructor. */
     private static final Method CTOR_FACTORY;
 
@@ -1419,7 +1420,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.30052011
+     * @version 3.1.0c.31052011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -3838,39 +3839,50 @@ public abstract class GridUtils {
 
     /**
      * Gets the peer deploy aware instance for the object with the widest class loader.
-     * If collection is {@code null}, empty or contains only {@code null}s - the peer
+     * If array is {@code null}, empty or contains only {@code null}s - the peer
      * deploy aware object based on system class loader will be returned.
      *
-     * @param c Collection.
-     * @return Peer deploy aware object from this collection with the widest class loader.
+     * @param c Objects.
+     * @return Peer deploy aware object from this array with the widest class loader.
      * @throws IllegalArgumentException Thrown in case when common class loader for all
-     *      elements in this collection cannot be found. In such case - peer deployment
+     *      elements in this array cannot be found. In such case - peer deployment
      *      is not possible.
      */
+    @SuppressWarnings({"ZeroLengthArrayAllocation"})
     public static GridPeerDeployAware peerDeployAware0(@Nullable Object... c) {
         if (!F.isEmpty(c)) {
             assert c != null;
 
             boolean notAllNulls = false;
 
-            for (Object obj : c)
+            for (Object obj : c) {
                 if (obj != null) {
                     notAllNulls = true;
 
-                    ClassLoader ldr = obj.getClass().getClassLoader();
+                    ClassLoader ldr = obj instanceof GridPeerDeployAware ?
+                        ((GridPeerDeployAware)obj).classLoader() : obj.getClass().getClassLoader();
 
                     boolean found = true;
 
-                    for (Object obj2 : c)
-                        if (obj2 != null && obj2 != obj && !isLoadableBy(obj2.getClass().getName(), ldr)) {
+                    for (Object obj2 : c) {
+                        if (obj2 == null || obj2 == obj)
+                            continue;
+
+                        // Obj2 class name.
+                        String clsName = obj2 instanceof GridPeerDeployAware ?
+                            ((GridPeerDeployAware)obj2).deployClass().getName() : obj2.getClass().getName();
+
+                        if (!isLoadableBy(clsName, ldr)) {
                             found = false;
 
                             break;
                         }
+                    }
 
                     if (found)
                         return peerDeployAware(obj);
                 }
+            }
 
             // If all are nulls - don't throw an exception.
             if (notAllNulls)
@@ -3878,7 +3890,7 @@ public abstract class GridUtils {
                     "given collection. Peer deployment cannot be performed for such collection.");
         }
 
-        return peerDeployAware(Collections.<Object>emptyList());
+        return peerDeployAware(new Object[0]);
     }
 
     /**

@@ -20,7 +20,7 @@ import org.gridgain.grid.util.*;
  * {@link #onEvent(GridEvent)} method.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public abstract class GridCloudEventStrategyAdapter extends GridCloudEnabledAdapter implements GridCloudStrategy {
     /** Grid instance. */

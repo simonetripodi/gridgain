@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction adapter for cache transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxLocalEx<K, V> {
@@ -2060,6 +2060,18 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
 
     /**
      * @param key Key.
+     * @return Tx entry time to live.
+     */
+    long entryTtl(K key) {
+        assert key != null;
+
+        GridCacheTxEntry<K, V> e = entry(key);
+
+        return e != null ? e.ttl() : 0;
+    }
+
+    /**
+     * @param key Key.
      * @param expireTime Expire time.
      */
     void entryExpireTime(K key, long expireTime) {
@@ -2069,6 +2081,18 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
 
         if (e != null)
             e.expireTime(expireTime);
+    }
+
+    /**
+     * @param key Key.
+     * @return Tx entry expire time.
+     */
+    long entryExpireTime(K key) {
+        assert key != null;
+
+        GridCacheTxEntry<K, V> e = entry(key);
+
+        return e != null ? e.expireTime() : 0;
     }
 
     /**

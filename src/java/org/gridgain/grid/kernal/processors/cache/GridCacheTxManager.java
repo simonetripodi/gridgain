@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -401,12 +401,12 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     @Nullable public GridCacheTx userTx() {
         GridCacheTxEx<K, V> tx = txContext();
 
-        if (tx != null && !tx.implicit())
+        if (tx != null && tx.user() && tx.state() == ACTIVE)
             return tx;
 
         tx = tx(Thread.currentThread().getId());
 
-        return tx != null && !tx.implicit() && tx.state() == ACTIVE ? tx : null;
+        return tx != null && !tx.user() && tx.state() == ACTIVE ? tx : null;
     }
 
     /**
@@ -429,16 +429,8 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /**
      * @return {@code True} if current thread is currently within transaction.
      */
-    public boolean isInTx() {
-        return isInTx(Thread.currentThread().getId());
-    }
-
-    /**
-     * @param threadId Thread to check.
-     * @return {@code True} if current thread is currently within transaction.
-     */
-    public boolean isInTx(long threadId) {
-        return threadMap.containsKey(threadId);
+    public boolean inUserTx() {
+        return userTx() != null;
     }
 
     /**

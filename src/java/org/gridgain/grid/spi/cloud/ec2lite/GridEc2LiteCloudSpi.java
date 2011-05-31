@@ -403,14 +403,14 @@ import static org.gridgain.grid.util.ec2.GridEc2Helper.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  * @see GridCloudSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.0c.30052011")
+    version = "3.1.0c.31052011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridEc2LiteCloudSpi extends GridSpiAdapter implements GridCloudSpi, GridEc2LiteCloudSpiMBean {
     /** Collection parameter value delimiter. */

@@ -19,13 +19,13 @@ import java.io.*;
 import java.util.*;
 
 /**
- * GC message (either request and response).
+ * GC message (either request or response).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 class GridCacheDgcMessage<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
-    /** {@code true} - request, {@code false} - response. */
+    /** {@code True} is for request, {@code false} for response. */
     private boolean req;
 
     /** */
@@ -40,7 +40,7 @@ class GridCacheDgcMessage<K, V> extends GridCacheMessage<K, V> implements GridCa
      * Required by {@link Externalizable}.
      */
     public GridCacheDgcMessage() {
-        /* No-op. */
+        // No-op.
     }
 
     /**
@@ -83,12 +83,9 @@ class GridCacheDgcMessage<K, V> extends GridCacheMessage<K, V> implements GridCa
      * @param key Key.
      * @param ver Version.
      */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     void addCandidate(K key, GridCacheVersion ver) {
-        Collection<GridCacheVersion> col = F.addIfAbsent(map, key, new CO<Collection<GridCacheVersion>>() {
-            @Override public Collection<GridCacheVersion> apply() {
-                return new ArrayList<GridCacheVersion>();
-            }
-        });
+        Collection<GridCacheVersion> col = F.addIfAbsent(map, key, new ArrayList<GridCacheVersion>());
 
         assert col != null;
 
@@ -123,4 +120,3 @@ class GridCacheDgcMessage<K, V> extends GridCacheMessage<K, V> implements GridCa
         return S.toString(GridCacheDgcMessage.class, this);
     }
 }
-

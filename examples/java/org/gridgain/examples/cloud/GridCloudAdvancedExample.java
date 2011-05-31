@@ -31,10 +31,10 @@ import static org.gridgain.grid.GridEventType.*;
  * example will not properly work if CPU load cannot be accurately obtained.
  * <p>
  * To use Sigar library simply put its JARs and native libraries into <code>$GRIDGAIN_HOME/libs</code>
- * folder and restart the node.
+ * folder and restart the example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public class GridCloudAdvancedExample {
     /** Cloud ID. */
@@ -64,6 +64,21 @@ public class GridCloudAdvancedExample {
      * @throws Exception If example execution failed.
      */
     public static void main(String[] args) throws Exception {
+        // Detect if Sigar is available in classpath.
+        try {
+            Class.forName("org.hyperic.sigar.Sigar");
+        }
+        catch (ClassNotFoundException ignored) {
+            X.println(
+                ">>> Sigar library is not found in the classpath.",
+                ">>> This example requires working method of attaining accurate CPU load.",
+                ">>> Sigar is not shipped with enterprise edition of GridGain due to licence limitations.",
+                ">>> Please download Sigar GPL-based library from http://www.hyperic.com/products/sigar",
+                ">>> and put its JARs and native libraries into $GRIDGAIN_HOME/libs.");
+
+            return;
+        }
+
         GridConfiguration cfg = createConfiguration();
 
         // Cloud resource event latch.

@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -129,7 +129,10 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     private String idxPswd;
 
     /** */
-    private int gcFreq = DFLT_GC_FREQUENCY;
+    private int dgcFreq = DFLT_DGC_FREQUENCY;
+
+    /** */
+    private int dgcSuspectLockTimeout = DFLT_DGC_SUSPECT_LOCK_TIMEOUT;
 
     /** */
     private boolean syncCommit;
@@ -184,7 +187,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         dfltLockTimeout = cacheCfg.getDefaultLockTimeout();
         dfltTxTimeout = cacheCfg.getDefaultTxTimeout();
         evictPolicy = cacheCfg.getEvictionPolicy();
-        gcFreq = cacheCfg.getGarbageCollectorFrequency();
+        dgcFreq = cacheCfg.getDistributedGarbageCollectionFrequency();
         idxH2Opt = cacheCfg.getIndexH2Options();
         idxAnalyzeFreq = cacheCfg.getIndexAnalyzeFrequency();
         idxAnalyzeSampleSize = cacheCfg.getIndexAnalyzeSampleSize();
@@ -693,18 +696,37 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     }
 
     /** {@inheritDoc} */
-    @Override public int getGarbageCollectorFrequency() {
-        return gcFreq;
+    @Override public int getDistributedGarbageCollectionFrequency() {
+        return dgcFreq;
     }
 
     /**
-     * Sets frequency in milliseconds for internal distributed garbage collector - {@code 0} to disable
-     * distributed garbage collection.
+     * Sets frequency in milliseconds for internal distributed garbage collector.
+     * Pass {@code 0} to disable distributed garbage collection.
+     * <p>
+     * If not provided, default value is {@link GridCacheConfiguration#DFLT_DGC_FREQUENCY}.
      *
-     * @param gcFreq Frequency of GC in milliseconds. 0 to disable GC.
+     * @param dgcFreq Frequency of distributed GC in milliseconds ({@code 0} to disable GC).
      */
-    public void setGarbageCollectorFrequency(int gcFreq) {
-        this.gcFreq = gcFreq;
+    public void setDistributedGarbageCollectionFrequency(int dgcFreq) {
+        this.dgcFreq = dgcFreq;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int getDistributedGarbageCollectionSuspectLockTimeout() {
+        return dgcSuspectLockTimeout;
+    }
+
+    /**
+     * Sets suspect lock timeout in milliseconds for internal distributed garbage collector.
+     * If lock's lifetime is greater than the timeout, then lock is considered to be suspicious.
+     * <p>
+     * If not provided, default value is {@link GridCacheConfiguration#DFLT_DGC_SUSPECT_LOCK_TIMEOUT}.
+     *
+     * @param dgcSuspectLockTimeout Timeout in milliseconds.
+     */
+    public void setDistributedGarbageCollectionSuspectLockTimeout(int dgcSuspectLockTimeout) {
+        this.dgcSuspectLockTimeout = dgcSuspectLockTimeout;
     }
 
     /** {@inheritDoc} */

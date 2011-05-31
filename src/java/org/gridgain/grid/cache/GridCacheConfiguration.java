@@ -33,7 +33,7 @@ import java.util.*;
  * default configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public interface GridCacheConfiguration {
     /** Default log name. */
@@ -93,8 +93,11 @@ public interface GridCacheConfiguration {
     /** Default number samples used to run H2 "ANALYZE" command. */
     public static final int DFLT_IDX_ANALYZE_SAMPLE_SIZE = 10000;
 
-    /** */
-    public static final int DFLT_GC_FREQUENCY = 0;
+    /** Default garbage collection frequency. */
+    public static final int DFLT_DGC_FREQUENCY = 10000;
+
+    /** Default timeout for lock not to be considered as suspicious. */
+    public static final int DFLT_DGC_SUSPECT_LOCK_TIMEOUT = 3000;
 
     /** Default index parent folder name. */
     public static final String DFLT_IDX_PARENT_FOLDER_NAME = "work/cache/indexes";
@@ -404,9 +407,16 @@ public interface GridCacheConfiguration {
      * Gets frequency at which distributed garbage collector will
      * check other nodes if there are any zombie locks left over.
      *
-     * @return Frequency of GC in milliseconds ({@code 0} to disable GC).
+     * @return Frequency of distributed GC in milliseconds ({@code 0} to disable GC).
      */
-    public int getGarbageCollectorFrequency();
+    public int getDistributedGarbageCollectionFrequency();
+
+    /**
+     * Gets timeout after which locks are considered to be suspicious.
+     *
+     * @return Distributed GC suspect lock timeout.
+     */
+    public int getDistributedGarbageCollectionSuspectLockTimeout();
 
     /**
      * Flag indicating whether GridGain should wait for commit replies from all nodes. By default

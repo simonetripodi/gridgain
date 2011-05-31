@@ -96,7 +96,7 @@ import java.util.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public interface GridCacheReduceQuery<K, V, R1, R2> extends GridCacheQueryBase<K, V> {
     /**

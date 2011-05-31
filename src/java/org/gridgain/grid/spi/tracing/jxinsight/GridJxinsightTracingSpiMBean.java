@@ -16,7 +16,7 @@ import org.gridgain.grid.util.mbean.*;
  * Management bean for {@link GridJxinsightTracingSpi}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 @GridMBeanDescription("MBean that provides access to JXInsight based tracing SPI configuration.")
 public interface GridJxinsightTracingSpiMBean extends GridSpiManagementMBean {

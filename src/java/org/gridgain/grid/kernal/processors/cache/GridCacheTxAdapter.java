@@ -29,7 +29,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Managed transaction adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     implements GridCacheTxEx<K, V>, Externalizable {
@@ -250,6 +250,16 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     /** {@inheritDoc} */
     @Override public boolean local() {
         return local;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean user() {
+        return !implicit() && local() && !dht();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean dht() {
+        return false;
     }
 
     /** {@inheritDoc} */

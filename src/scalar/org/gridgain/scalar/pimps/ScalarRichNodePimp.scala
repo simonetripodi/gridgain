@@ -21,7 +21,7 @@ import org.gridgain.grid.lang._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 object ScalarRichNodePimp {
     /**
@@ -61,7 +61,7 @@ object ScalarRichNodePimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 class ScalarRichNodePimp extends ScalarProjectionPimp[GridRichNode]
     with Ordered[GridRichNode]

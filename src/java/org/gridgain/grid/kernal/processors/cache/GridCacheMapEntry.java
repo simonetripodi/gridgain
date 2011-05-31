@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -1578,6 +1578,15 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
     /** {@inheritDoc} */
     @Override public long expireTime() throws GridCacheEntryRemovedException {
+        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
+
+        if (tx != null) {
+            long time = tx.entryExpireTime(key);
+
+            if (time > 0)
+                return time;
+        }
+
         synchronized (mux) {
             checkObsolete();
 
@@ -1587,6 +1596,15 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
     /** {@inheritDoc} */
     @Override public long ttl() throws GridCacheEntryRemovedException {
+        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
+
+        if (tx != null) {
+            long ttl = tx.entryTtl(key);
+
+            if (ttl > 0)
+                return ttl;
+        }
+
         synchronized (mux) {
             checkObsolete();
 

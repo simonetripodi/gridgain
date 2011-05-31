@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -1229,7 +1229,7 @@ public abstract class GridCacheUtils {
      * @throws GridException If execution failed.
      */
     public static <T> T outTx(Callable<T> cmd, GridCacheContext ctx) throws GridException {
-        if (ctx.tm().isInTx())
+        if (ctx.tm().inUserTx())
             return ctx.closures().callLocalSafe(cmd, true).get();
         else {
             try {

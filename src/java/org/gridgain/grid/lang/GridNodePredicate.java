@@ -23,7 +23,7 @@ import java.util.*;
  * This class is also optimized for evaluation of large number of nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  * @param <T> Type of the predicate.
  */
 public class GridNodePredicate<T extends GridNode> extends GridPredicate<T> implements Iterable<UUID> {

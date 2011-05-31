@@ -21,7 +21,7 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     /**
@@ -60,9 +60,24 @@ public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     public boolean near();
 
     /**
+     * @return {@code True} if DHT transaction.
+     */
+    public boolean dht();
+
+    /**
      * @return {@code True} if transaction is local, {@code false} if it's remote.
      */
     public boolean local();
+
+    /**
+     * @return {@code True} if transaction is user transaction, which means:
+     * <ul>
+     *     <li>Explicit</li>
+     *     <li>Local</li>
+     *     <li>Not DHT</li>
+     * </ul>
+     */
+    public boolean user();
 
     /**
      * @return {@code True} if transaction is configured with synchronous commit flag.

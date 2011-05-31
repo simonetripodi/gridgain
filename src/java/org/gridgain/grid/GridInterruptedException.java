@@ -13,7 +13,7 @@ package org.gridgain.grid;
  * This exception is used to wrap standard {@link InterruptedException} into {@link GridException}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.30052011
+ * @version 3.1.0c.31052011
  */
 @SuppressWarnings({"TypeMayBeWeakened"})
 public class GridInterruptedException extends GridException {
