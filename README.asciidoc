@@ -43,6 +43,13 @@ With GridGain your applications can:
 - Grid-enable java and scala code.
 - ... and much more
 
+GridGain - Enterprise Edition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GridGain Enterprise Edition distribution can be downloaded directly from 
+http://www.gridgain.com/downloads.html[] Enterprise Edition comes with additional features
+as well as monitoring and management tools. Enterprise Edition is fully backward 
+compatible with Community Edition.
+
 Examples
 --------
 The best way to get started with GridGain is to look through examples. You can find all 
@@ -69,3 +76,15 @@ Scripts
 All scripts that you need to use on a regular basis can be found at +bin+ 
 sub-folder. To start a grid node with default configuration simply run +bin/ggstart.sh+ or 
 +bin\ggstart.bat+ script - *and you are in the grid!*
+
+Support & Documentation
+-----------------------
+GridGain comes with several support and documentation resources:
+
+. Community http://jive.gridgain.org[Support Forum]
+. Working draft of http://www.gridgain.com/book/book.html["Pragmatic Cloud Computing with GridGain using Java and Scala"] book
+. GridGain http://wiki.gridgain.org[Wiki]
+. Video http://gridgain.com/screencasts.html[screencast]
+. Online newspaper http://paper.li/gridgain/1299724823[GridGain Daily]
+. Follow us on http://www.twitter.com/gridgain[@Twitter]
+
