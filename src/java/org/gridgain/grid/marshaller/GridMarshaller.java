@@ -10,6 +10,8 @@
 package org.gridgain.grid.marshaller;
 
 import org.gridgain.grid.*;
+import org.jetbrains.annotations.*;
+
 import java.io.*;
 
 /**
@@ -84,7 +86,7 @@ import java.io.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public interface GridMarshaller {
     /**
@@ -107,5 +109,5 @@ public interface GridMarshaller {
      * @return Unmarshalled object.
      * @throws GridException If unmarshalling failed.
      */
-    public <T> T unmarshal(InputStream in, ClassLoader clsLdr) throws GridException;
+    public <T> T unmarshal(InputStream in, @Nullable ClassLoader clsLdr) throws GridException;
 }

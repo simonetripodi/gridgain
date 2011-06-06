@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Cache query index. Manages full life-cycle of query index database (h2).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public class GridCacheQueryIndex<K, V> {
@@ -340,8 +340,7 @@ public class GridCacheQueryIndex<K, V> {
     /**
      *
      */
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
-    void stop() {
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"}) void stop() {
         if (log.isDebugEnabled())
             log.debug("Stopping cache query index...");
 
@@ -569,12 +568,16 @@ public class GridCacheQueryIndex<K, V> {
         try {
             if (tables.size() > 1)
                 for (TableDescriptor table : tables)
-                    if (!table.type().valueClass().equals(valCls) && table.type().keyClass().equals(key.getClass())) {
-                        PreparedStatement stmt = statementCacheForThread().removeStatement(valCls);
+                    if (table.type().keyClass().equals(key.getClass()) && !table.type().valueClass().equals(valCls)) {
+                        PreparedStatement stmt = statementCacheForThread().removeStatement(table.type().valueClass());
 
                         bindKey(stmt, 1, key, keyBytes, table);
 
-                        stmt.executeUpdate();
+                        int updated = stmt.executeUpdate();
+
+                        if (log.isDebugEnabled())
+                            log.debug("Updated rows in query index [locId=" + cctx.nodeId() +
+                                ", updated=" + updated + ']');
                     }
         }
         catch (SQLException e) {
@@ -595,13 +598,9 @@ public class GridCacheQueryIndex<K, V> {
      */
     private void bindKey(PreparedStatement stmt, int idx, K key, @Nullable byte[] keyBytes, TableDescriptor table)
         throws SQLException, GridException {
-        if (cctx.config().isIndexFixedTyping() && DBTypeEnum.fromClass(key.getClass()) != DBTypeEnum.BINARY) {
-            if (DBTypeEnum.fromClass(table.type().keyClass()) != DBTypeEnum.fromClass(key.getClass()))
-                throw new GridException("Failed to put key to database, same key type is set in configuration but " +
-                    "you are trying to put key of different type [registeredType=" +
-                    table.type().keyClass().getName() + ", keyType=" + key.getClass().getName() +
-                    ", valeType=" + table.type().valueClass().getName() + ']');
+        DBTypeEnum dbKeyType = DBTypeEnum.fromClass(key.getClass());
 
+        if (cctx.config().isIndexFixedTyping() && dbKeyType != DBTypeEnum.BINARY) {
             bindObject(stmt, idx, key);
         }
         else {
@@ -846,6 +845,30 @@ public class GridCacheQueryIndex<K, V> {
         if (!queryType.indexed())
             return;
 
+        if (cctx.config().isIndexFixedTyping()) {
+            if (!queryType.keyClass().equals(key.getClass())) {
+                U.warn(log, "Query index was not updated since configuration property 'indexFixedTyping'" +
+                    " is set to true but you try to store value for different key type [registeredKeyType=" +
+                    queryType.keyClass().getName() + ", keyType=" + key.getClass().getName() +
+                    ", valType=" + queryType.valueClass().getName() + ']');
+
+                return;
+            }
+
+            for (TableDescriptor table : tableDescriptors(key.getClass())) {
+                Class<?> tableValClass = table.type().valueClass();
+
+                if (!tableValClass.equals(val.getClass())) {
+                    U.warn(log, "Query index was not updated since configuration property 'indexFixedTyping'" +
+                        " is set to true but you try to store different value for the same key type [keyType=" +
+                        key.getClass().getName() + ", registeredValType=" + tableValClass.getName() +
+                        ", valType=" + queryType.valueClass().getName() + ']');
+
+                    return;
+                }
+            }
+        }
+
         Connection conn = connectionForThread();
 
         schemaReadLock();
@@ -906,7 +929,7 @@ public class GridCacheQueryIndex<K, V> {
 
         try {
             for (TableDescriptor table : tables) {
-                if (table.type().keyClass().equals(key.getClass())) {
+                if (!cctx.config().isIndexFixedTyping() || table.type().keyClass().equals(key.getClass())) {
                     PreparedStatement stmt = statementCacheForThread().removeStatement(table.type().valueClass());
 
                     bindKey(stmt, 1, key, keyBytes, table);
@@ -920,7 +943,8 @@ public class GridCacheQueryIndex<K, V> {
 
                         res = true;
 
-                        break;
+                        if (cctx.config().isIndexFixedTyping())
+                            break;
                     }
                     else if (log.isDebugEnabled())
                         log.debug("Index for key was not found [locId=" + cctx.nodeId() + ", key=" + key +
@@ -1262,6 +1286,7 @@ public class GridCacheQueryIndex<K, V> {
 
         try {
             QueryType type = clsMap.get(valCls);
+
 
             if (type == null) {
                 type = new QueryType(keyCls, valCls, cctx);
@@ -1750,7 +1775,7 @@ public class GridCacheQueryIndex<K, V> {
     }
 
     /**
-     * Gets table descriptor by space name and value class.
+     * Gets table descriptor by value class.
      *
      * @param valCls Value class.
      * @return Table descriptor or {@code null} if not found.
@@ -1761,6 +1786,22 @@ public class GridCacheQueryIndex<K, V> {
                 return table;
 
         return null;
+    }
+
+    /**
+     * Gets table descriptors by key class.
+     *
+     * @param keyCls Key class.
+     * @return Table descriptor or {@code null} if not found.
+     */
+    @Nullable private Iterable<TableDescriptor> tableDescriptors(Class<?> keyCls) {
+        Collection<TableDescriptor> col = new HashSet<TableDescriptor>();
+
+        for (TableDescriptor table : tables)
+            if (table.type().keyClass().equals(keyCls))
+                col.add(table);
+
+        return col;
     }
 
     /**
@@ -1971,10 +2012,10 @@ public class GridCacheQueryIndex<K, V> {
      */
     private static class QueryType {
         /** */
-        private Class<?> valCls;
+        private Class<?> keyCls;
 
         /** */
-        private Class<?> keyCls;
+        private Class<?> valCls;
 
         /** */
         private final List<QueryTypeProperty> props = new LinkedList<QueryTypeProperty>();
@@ -2006,6 +2047,20 @@ public class GridCacheQueryIndex<K, V> {
                 valH2TextIndex = ctx.config().getAutoIndexQueryTypes().contains(H2TEXT);
                 valLuceneIndex = ctx.config().getAutoIndexQueryTypes().contains(LUCENE);
             }
+        }
+
+        /**
+         * @return Key class.
+         */
+        Class<?> keyClass() {
+            return keyCls;
+        }
+
+        /**
+         * @return Value class.
+         */
+        Class<?> valueClass() {
+            return valCls;
         }
 
         /**
@@ -2050,20 +2105,6 @@ public class GridCacheQueryIndex<K, V> {
          */
         void addProperty(QueryTypeProperty prop) {
             props.add(prop);
-        }
-
-        /**
-         * @return Key class.
-         */
-        Class<?> keyClass() {
-            return keyCls;
-        }
-
-        /**
-         * @return Value class.
-         */
-        Class<?> valueClass() {
-            return valCls;
         }
 
         /**
@@ -2428,15 +2469,15 @@ public class GridCacheQueryIndex<K, V> {
         /**
          * Gets cached remove statement.
          *
-         * @param cls Class.
+         * @param valCls Class.
          * @return Prepared statement for remove.
          * @throws GridException In case of error.
          */
-        PreparedStatement removeStatement(Class<?> cls) throws GridException {
-            PreparedStatement stmt = rmvStmts.get(cls);
+        PreparedStatement removeStatement(Class<?> valCls) throws GridException {
+            PreparedStatement stmt = rmvStmts.get(valCls);
 
             if (stmt == null) {
-                TableDescriptor table = tableDescriptor(cls);
+                TableDescriptor table = tableDescriptor(valCls);
 
                 assert table != null;
 
@@ -2448,7 +2489,7 @@ public class GridCacheQueryIndex<K, V> {
                 try {
                     stmt = conn.prepareStatement(rmvSql);
 
-                    rmvStmts.putIfAbsent(cls, stmt);
+                    rmvStmts.putIfAbsent(valCls, stmt);
                 }
                 catch (SQLException e) {
                     throw new GridException("Failed to create remove statement with SQL: " + rmvSql, e);

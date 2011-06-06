@@ -22,7 +22,7 @@ import java.util.*;
  * Every proxy object has an interceptor which is notified about method calls.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridProxyFactory {
     /** */
@@ -165,7 +165,7 @@ public class GridProxyFactory {
      * Internal method invocation handler. It is called by JavaAssist proxy.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.31052011
+     * @version 3.1.1c.05062011
      */
     private final class GridMethodHandler implements MethodHandler {
         /** Original object class. */

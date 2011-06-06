@@ -21,7 +21,7 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     /**
@@ -31,6 +31,11 @@ public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
      * @return Parent node IDs.
      */
     @Nullable public UUID otherNodeId();
+
+    /**
+     * @return All involved remote nodes, including DHT, near, and remotes.
+     */
+    public Collection<UUID> nodeIds();
 
     /**
      * @param entry Entry to check.

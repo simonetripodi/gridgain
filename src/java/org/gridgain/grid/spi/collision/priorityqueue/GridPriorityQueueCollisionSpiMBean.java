@@ -16,7 +16,7 @@ import org.gridgain.grid.util.mbean.*;
  * Management bean that provides access to the priority queue collision SPI configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @GridMBeanDescription("MBean provides access to the priority queue collision SPI.")
 public interface GridPriorityQueueCollisionSpiMBean extends GridSpiManagementMBean {

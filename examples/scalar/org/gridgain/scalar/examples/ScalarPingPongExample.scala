@@ -17,14 +17,13 @@ import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import org.gridgain.grid._
 import GridClosureCallMode._
-import collection.JavaConversions._
 
 /**
  * Demonstrates simple protocol-based exchange in playing a ping-pong between
  * two nodes. It is analogous to `GridMessagingPingPongExample` on Java side.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 object ScalarPingPongExample {
     def main(args: Array[String]) {
@@ -41,14 +40,14 @@ object ScalarPingPongExample {
         val g = grid$
 
         if (g.nodes().size < 2) {
-            error("I need a partner to play a ping pong!")
+            sys.error("I need a partner to play a ping pong!")
 
             return
         }
 
         // Pick first remote node as a partner.
         val loc = g.localNode
-        val rmt = g.remoteNodes().head
+        val rmt = g.remoteNodes$().head
 
         // Set up remote player: configure remote node 'rmt' to listen
         // for messages from local node 'loc'.
@@ -100,8 +99,8 @@ object ScalarPingPongExample {
         }
 
         // Pick two remote nodes.
-        val n1 = g.remoteNodes().head
-        val n2 = g.remoteNodes().tail.head
+        val n1 = g.remoteNodes$().head
+        val n2 = g.remoteNodes$().tail.head
 
         // Configure remote node 'n1' to receive messages from 'n2'.
         n1.remoteListenAsync(n2, new GridListenActor[String] {
@@ -117,10 +116,10 @@ object ScalarPingPongExample {
 
         // Configure remote node 'n2' to receive messages from 'n1'.
         n2.remoteListenAsync(n1, new GridListenActor[String] {
-            def receive(nid: UUID, msg: String) {
-                // Get local count down latch.
-                val latch: CountDownLatch = g.nodeLocal.get("latch")
+            // Get local count down latch.
+            private val latch: CountDownLatch = g.nodeLocal.get("latch")
 
+            def receive(nid: UUID, msg: String) {
                 println(msg)
 
                 latch.getCount match {

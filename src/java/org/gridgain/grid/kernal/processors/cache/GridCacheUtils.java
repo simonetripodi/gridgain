@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -193,8 +193,8 @@ public abstract class GridCacheUtils {
      * @param msg Message to check.
      * @return {@code True} if preloader message.
      */
-    public static boolean isPreloaderMessage(Object msg) {
-        return msg instanceof GridCacheMessage && ((GridCacheMessage)msg).isPreloaderMessage();
+    public static boolean allowForStartup(Object msg) {
+        return msg instanceof GridCacheMessage && ((GridCacheMessage)msg).allowForStartup();
     }
 
     /**
@@ -1250,7 +1250,7 @@ public abstract class GridCacheUtils {
             return "null";
 
         return tx.getClass().getSimpleName() + "[id=" + tx.xid() + ", concurrency=" + tx.concurrency() +
-            ", isolation" + tx.isolation() + ", state=" + tx.state() + ", invalidate=" + tx.isInvalidate() +
+            ", isolation=" + tx.isolation() + ", state=" + tx.state() + ", invalidate=" + tx.isInvalidate() +
             ", rollbackOnly=" + tx.isRollbackOnly() + ", nodeId=" + tx.nodeId() + "]";
     }
 
@@ -1330,5 +1330,38 @@ public abstract class GridCacheUtils {
      */
     public static GridClosure<Integer, GridCacheVersion[]> versionArrayFactory() {
         return VER_ARR_FACTORY;
+    }
+
+    /**
+     * @param ttl Time to live.
+     * @param currTtl Current time to live.
+     * @param currExpireTime Current expire time.
+     * @return Expiration time.
+     */
+    public static long toExpireTime(long ttl, long currTtl, long currExpireTime) {
+        long expireTime = 0;
+
+        if (ttl == 0 || currTtl == 0) {
+            expireTime = ttl == 0 ? 0 : System.currentTimeMillis() + ttl;
+
+            // Account for overflow.
+            if (expireTime < 0)
+                expireTime = 0;
+        }
+        else {
+            long delta = ttl - currTtl;
+
+            if (delta < 0)
+                expireTime = currExpireTime + delta < 0 ? System.currentTimeMillis() : currExpireTime + delta;
+            else {
+                expireTime = currExpireTime + delta;
+
+                // Account for overflow.
+                if (expireTime < 0)
+                    expireTime = 0;
+            }
+        }
+
+        return expireTime;
     }
 }

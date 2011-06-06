@@ -26,7 +26,7 @@ import java.util.concurrent.locks.*;
  * Caches used to improve the efficiency of standard Java reflection mechanism.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class GridResourceIoc {
     /** Number of entries to keep in annotation cache. */

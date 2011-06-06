@@ -20,7 +20,7 @@ import org.gridgain.grid.Grid
   * This example calculates Pi number in parallel on the grid.
   *
   * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-  * @version 3.1.0c.31052011
+  * @version 3.1.1c.05062011
   */
 object ScalarPiCalculationExample {
     /** Number of calculations per node. */
@@ -31,19 +31,18 @@ object ScalarPiCalculationExample {
       *
       * @param args Command line arguments - none required.
       */
-    def main(args: Array[String]) {
-        scalar { g: Grid =>
-            println("Pi estimate: " +
-                (g @< (SPREAD, for (i <- 0 until g.size()) yield () => calcPi(i * N), (_: Seq[Double]).sum)))
-        }
+    def main(args: Array[String]) = scalar { g: Grid =>
+        println("Pi estimate: " +
+            g.@<[Double, Double](SPREAD, for (i <- 0 until g.size()) yield () => calcPi(i * N), _.sum)
+        )
     }
 
     /**
-      * Calculates Pi starting with given number.
+      * Calculates Pi range starting with given number.
       *
       * @param start Start the of the `{start, start + N}` range.
       * @return Range calculation.
       */
     def calcPi(start: Int): Double =
-        (start until (start + N)) map (i => 4.0 * (1 - (i % 2) * 2) /  (2 * i + 1)) sum
+        (start until (start + N)) map (i => 4.0 * (1 - (i % 2) * 2) / (2 * i + 1)) sum
 }

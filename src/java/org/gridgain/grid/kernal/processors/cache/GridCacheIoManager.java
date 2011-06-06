@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Cache communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     /** Number of retries using to send messages. */
@@ -88,14 +88,24 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     return;
                 }
 
-                if (CU.isPreloaderMessage(msg))
+                unmarshall(nodeId, msg);
+
+                if (log.isDebugEnabled())
+                    log.debug("Received unordered cache communication message [nodeId=" + nodeId +
+                        ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+
+                if (CU.allowForStartup(msg))
                     processUnordered(nodeId, msg);
                 else {
                     GridFuture startFut = cctx.preloader().startFuture();
 
                     if (startFut.isDone())
                         processUnordered(nodeId, msg);
-                    else
+                    else {
+                        if (log.isDebugEnabled())
+                            log.debug("Waiting for start future to complete for unordered message [nodeId=" + nodeId +
+                                ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+
                         // Don't hold this thread waiting for preloading to complete.
                         startFut.listenAsync(new CI1<GridFuture<?>>() {
                             @Override public void apply(GridFuture<?> f) {
@@ -112,6 +122,10 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                                     f.get();
 
+                                    if (log.isDebugEnabled())
+                                        log.debug("Start future completed for unordered message [nodeId=" + nodeId +
+                                            ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+
                                     processUnordered(nodeId, msg);
                                 }
                                 catch (GridException e) {
@@ -125,6 +139,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                                 }
                             }
                         });
+                    }
                 }
 
             }
@@ -151,11 +166,6 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                 return;
             }
-
-            if (log.isDebugEnabled())
-                log.debug("Received cache communication message [nodeId=" + nodeId + ", msg=" + msg + ']');
-
-            unmarshall(nodeId, msg);
 
             GridNode n = cctx.discovery().node(nodeId);
 
@@ -487,6 +497,30 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
+     * Removes message handler.
+     *
+     * @param type Type of message.
+     * @param c Handler.
+     */
+    public void removeHandler(Class<?> type, GridInClosure2<UUID, ?> c) {
+        assert type != null;
+        assert c != null;
+
+        boolean res = clsHandlers.remove(type, c);
+
+        if (log != null && log.isDebugEnabled()) {
+            if (res) {
+                log.debug("Removed cache communication handler " +
+                    "[cacheName=" + cctx.name() + ", type=" + type + ", handler=" + c + ']');
+            }
+            else {
+                log.debug("Cache communication handler is not registered " +
+                    "[cacheName=" + cctx.name() + ", type=" + type + ", handler=" + c + ']');
+            }
+        }
+    }
+
+    /**
      * Adds ordered message handler.
      *
      * @param topic Topic.
@@ -664,7 +698,12 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     return;
                 }
 
-                if (CU.isPreloaderMessage(msg))
+                unmarshall(nodeId, msg);
+
+                if (log.isDebugEnabled())
+                    log.debug("Received cache ordered message [nodeId=" + nodeId + ", msg=" + msg + ']');
+
+                if (CU.allowForStartup(msg))
                     processOrdered(nodeId, msg);
                 else {
                     GridFuture<?> startFut = cctx.preloader().startFuture();
@@ -672,6 +711,10 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     if (startFut.isDone())
                         processOrdered(nodeId, msg);
                     else
+                    if (log.isDebugEnabled())
+                        log.debug("Waiting for start future to complete for ordered message [nodeId=" + nodeId +
+                            ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+
                         // Don't hold this thread waiting for preloading to complete.
                         startFut.listenAsync(new CI1<GridFuture<?>>() {
                             @Override public void apply(GridFuture<?> f) {
@@ -687,6 +730,10 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                                     }
 
                                     f.get();
+
+                                    if (log.isDebugEnabled())
+                                        log.debug("Start future completed for unordered message [nodeId=" + nodeId +
+                                            ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
 
                                     processOrdered(nodeId, msg);
                                 }
@@ -726,11 +773,6 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                     return;
                 }
-
-                if (log.isDebugEnabled())
-                    log.debug("Received cache ordered message [nodeId=" + nodeId + ", msg=" + msg + ']');
-
-                unmarshall(nodeId, msg);
 
                 GridNode n = cctx.discovery().node(nodeId);
 

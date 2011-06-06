@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<K, Boolean>, GridCacheMappedVersion {
@@ -734,7 +734,16 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
         for (GridDhtCacheEntry<K, V> entry : entries) {
             while (true) {
                 try {
+                    if (log.isDebugEnabled())
+                        log.debug("Mapping entries for DHT lock future: " + this);
+
                     cctx.dhtMap(nearNodeId, entry, log, dhtMap, nearMap);
+
+                    GridCacheMvccCandidate<K> cand = entry.candidate(lockVer);
+
+                    assert cand != null;
+
+                    cand.mappedNodeIds(F.nodeIds(F.concat(false, dhtMap.keySet(), nearMap.keySet())));
 
                     break;
                 }
@@ -752,8 +761,16 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
             tx.addNearMapping(nearMap);
         }
 
-        if (isDone())
+        if (isDone()) {
+            if (log.isDebugEnabled())
+                log.debug("Mapping won't proceed because future is done: " + this);
+
             return false;
+        }
+
+        if (log.isDebugEnabled())
+            log.debug("Mapped DHT lock future [dhtMap=" + dhtMap.keySet() + ", nearMap=" + nearMap.keySet() +
+                ", dhtLockFut=" + this + ']');
 
         boolean ret = false;
 
@@ -795,6 +812,9 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                     req.completedVersions(committed, rolledback);
 
                     assert !n.id().equals(ctx.localNodeId());
+
+                    if (log.isDebugEnabled())
+                        log.debug("Sending DHT lock request to DHT node [node=" + n.id() + ", req=" + req + ']');
 
                     cctx.io().send(n, req);
                 }
@@ -860,6 +880,10 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                             }
                         }
                         else {
+                            if (log.isDebugEnabled())
+                                log.debug("Sending DHT lock request to near node [node=" + n.id() +
+                                    ", req=" + req + ']');
+
                             cctx.io().send(n, req);
                         }
                     }
@@ -1021,8 +1045,11 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
          * @param e Node failure.
          */
         void onResult(GridTopologyException e) {
+            if (isDone())
+                return;
+            
             if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+                log.debug("Remote node left grid while sending or waiting for reply (will remap and retry): " + this);
 
             Collection<GridDhtCacheEntry<K, V>> entries = null;
 

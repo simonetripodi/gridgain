@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Query and index manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V> {

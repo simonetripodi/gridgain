@@ -16,7 +16,7 @@ import org.jetbrains.annotations.*;
  * processing by the closure processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public enum GridClosurePolicy {
     /** Public execution pool. */

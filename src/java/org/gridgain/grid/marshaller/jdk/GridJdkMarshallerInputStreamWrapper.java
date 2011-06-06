@@ -15,7 +15,7 @@ import java.io.*;
  * Wrapper for {@link InputStream}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class GridJdkMarshallerInputStreamWrapper extends InputStream {
     /** */

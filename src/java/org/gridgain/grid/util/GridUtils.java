@@ -67,7 +67,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class
@@ -462,13 +462,6 @@ public abstract class
     }
 
     /**
-     * Prints stack trace of the current thread to {@code System.out}.
-     */
-    public static void printStackTrace() {
-        new Exception("Dumping Stack").printStackTrace(System.out);
-    }
-
-    /**
      * This method should be used for adding quick debug statements in code
      * while debugging. Calls to this method should never be committed to trunk.
      *
@@ -477,6 +470,13 @@ public abstract class
      */
     public static void debug(GridLogger log, String msg) {
         log.info(msg);
+    }
+
+    /**
+     * Prints stack trace of the current thread to {@code System.out}.
+     */
+    public static void dumpStack() {
+        new Exception("Dumping Stack").printStackTrace(System.out);
     }
 
     /**
@@ -1167,7 +1167,7 @@ public abstract class
      * @throws GridException If marshalling failed.
      */
     @SuppressWarnings("unchecked")
-    public static <T> T unmarshal(GridMarshaller marshaller, GridByteArrayList buf, ClassLoader clsLdr)
+    public static <T> T unmarshal(GridMarshaller marshaller, GridByteArrayList buf, @Nullable ClassLoader clsLdr)
         throws GridException {
         assert marshaller != null;
         assert buf != null;
@@ -1420,7 +1420,7 @@ public abstract class
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.0c.31052011
+     * @version 3.1.1c.05062011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -2165,26 +2165,23 @@ public abstract class
      *
      * @param arr Array of objects.
      * @param val Value to check for containment inside of array.
+     * @param vals Additional values.
      * @return {@code true} if contains object, {@code false} otherwise.
      */
-    public static boolean containsObjectArray(Object[] arr, Object val) {
+    public static boolean containsObjectArray(Object[] arr, Object val, @Nullable Object... vals) {
         assert arr != null;
 
         if (arr.length == 0)
             return false;
 
         for (Object o : arr) {
-            // If both are nulls, then they are equal.
-            if (o == null && val == null)
+            if (F.eq(o, val))
                 return true;
 
-            // Only one is null and the other one isn't.
-            if (o == null || val == null)
-                return false;
-
-            // Both are not nulls.
-            if (o.equals(val))
-                return true;
+            if (!F.isEmpty(vals))
+                for (Object v : vals)
+                    if (F.eq(o, v))
+                        return true;
         }
 
         return false;
@@ -5238,5 +5235,30 @@ public abstract class
                 return G.grid(n.id()).name();
             }
         });
+    }
+
+    /**
+     * Adds cause to the end of cause chain.
+     *
+     * @param e Error to add cause to.
+     * @param cause Cause to add.
+     * @return {@code True} if cause was added.
+     */
+    public static boolean addLastCause(@Nullable Throwable e, @Nullable Throwable cause) {
+        if (e == null || cause == null)
+            return false;
+
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t == cause)
+                return false;
+
+            if (t.getCause() == null || t.getCause() == t) {
+                t.initCause(cause);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 }

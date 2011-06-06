@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -265,17 +265,27 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
      * Adds entry to future.
      *
      * @param entry Entry to add.
+     * @param dhtNodeId DHT node ID.
      * @return Lock candidate.
      * @throws GridCacheEntryRemovedException If entry was removed.
      */
-    @Nullable private GridCacheMvccCandidate<K> addEntry(GridDistributedCacheEntry<K, V> entry)
+    @Nullable private GridCacheMvccCandidate<K> addEntry(GridNearCacheEntry<K, V> entry, UUID dhtNodeId)
         throws GridCacheEntryRemovedException {
         // Check if lock acquisition is timed out.
         if (timedOut)
             return null;
 
+        GridCacheMvccCandidate<K> c = entry.candidate(lockVer);
+
+        // If remap.
+        if (c != null) {
+            c.otherNodeId(dhtNodeId);
+
+            return c;
+        }
+
         // Add local lock first, as it may throw GridCacheEntryRemovedException.
-        GridCacheMvccCandidate<K> c = entry.addLocal(threadId, lockVer, timeout, !inTx(), ec(), inTx());
+        c = entry.addNearLocal(dhtNodeId, threadId, lockVer, timeout, !inTx(), ec(), inTx());
 
         synchronized (mux) {
             entries.add(entry);
@@ -372,11 +382,19 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                 MiniFuture f = (MiniFuture)fut;
 
                 if (f.node().id().equals(nodeId)) {
+                    if (log.isDebugEnabled())
+                        log.debug("Found mini-future for left node [nodeId=" + nodeId + ", mini=" + f + ", fut=" +
+                            this + ']');
+
                     f.onResult(new GridTopologyException("Remote node left grid (will retry): " + nodeId));
 
                     return true;
                 }
             }
+
+        if (log.isDebugEnabled())
+            log.debug("Near lock future does not have mapping for left node (ignoring) [nodeId=" + nodeId + ", fut=" +
+                this + ']');
 
         return false;
     }
@@ -654,8 +672,15 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
             map(key, mappings, nodes, mapped);
         }
 
-        if (isDone())
+        if (isDone()) {
+            if (log.isDebugEnabled())
+                log.debug("Abandoning (re)map because future is done: " + this);
+
             return;
+        }
+
+        if (log.isDebugEnabled())
+            log.debug("Starting (re)map for mappings [mappings=" + mappings + ", fut=" + this + ']');
 
         if (tx != null)
             tx.addMapping(mappings);
@@ -694,7 +719,7 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                             }
 
                             // Removed exception may be thrown here.
-                            GridCacheMvccCandidate<K> cand = addEntry(entry);
+                            GridCacheMvccCandidate<K> cand = addEntry(entry, node.id());
 
                             if (cand != null) {
                                 if (req == null)
@@ -743,14 +768,22 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                     if (node.isLocal()) {
                         req.miniId(GridUuid.randomUuid());
 
+                        if (log.isDebugEnabled())
+                            log.debug("Before locally locking near request: " + req);
+
                         GridDhtFuture<K, GridNearLockResponse<K, V>> fut = dht().lockAllAsync(cctx.localNode(), req,
                             mappedKeys, filter);
 
                         retries.addAll(fut.retries());
 
                         // Remap.
-                        if (!retries.isEmpty())
+                        if (!retries.isEmpty()) {
+                            if (log.isDebugEnabled())
+                                log.debug("Remapping local DHT locks due to retries [locId=" + cctx.nodeId() +
+                                    ", retries=" + retries + ", nearFut=" + this + ']');
+
                             map(retries, mappings);
+                        }
 
                         // Add new future.
                         add(new GridEmbeddedFuture<Boolean, GridNearLockResponse<K, V>>(
@@ -778,6 +811,10 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
 
                                         return false;
                                     }
+
+                                    if (log.isDebugEnabled())
+                                        log.debug("Acquired lock for local DHT mapping [locId=" + cctx.nodeId() +
+                                            ", mappedKeys=" + mappedKeys + ", fut=" + GridNearLockFuture.this + ']');
 
                                     try {
                                         int i = 0;
@@ -836,6 +873,9 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                         add(fut); // Append new future.
 
                         try {
+                            if (log.isDebugEnabled())
+                                log.debug("Sending near lock request [node=" + node.id() + ", req=" + req + ']');
+
                             cctx.io().send(node, req);
                         }
                         catch (GridTopologyException ex) {
@@ -984,9 +1024,14 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
         }
 
         void onResult(GridTopologyException e) {
+            if (isDone())
+                return;
+            
             if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+                log.debug("Remote node left grid while sending or waiting for reply (will remap and retry): " + this);
 
+            tx.removeMapping(node.id());
+            
             // Remap.
             map(keys, F.t(node, keys));
 

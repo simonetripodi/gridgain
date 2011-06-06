@@ -28,12 +28,26 @@ import java.util.concurrent.locks.*;
  * <a href="http://weblogs.java.net/blog/tomwhite/archive/2007/11/consistent_hash.html">Tom White's Blog</a>.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridConsistentHash<N> implements Serializable {
+    /**
+     * Interface for pluggable hasher functions.
+     */
+    @SuppressWarnings( {"PublicInnerClass"})
+    public interface Hasher {
+        /**
+         * Produces hash code for a given object.
+         *
+         * @param o Object to hash.
+         * @return Hash code for the object.
+         */
+        public int hash(@Nullable Object o);
+    }
+
     /** MD-5 based hasher function. */
-    public static final GridClosure<Object, Integer> MD5_HASHER = new GridClosure<Object, Integer>() {
-        @Override public Integer apply(Object o) {
+    public static final Hasher MD5_HASHER = new Hasher() {
+        @Override public int hash(Object o) {
             try {
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
 
@@ -50,8 +64,8 @@ public class GridConsistentHash<N> implements Serializable {
     };
 
     /** SHA-1 based hasher function. */
-    public static final GridClosure<Object, Integer> SHA1_HASHER = new GridClosure<Object, Integer>() {
-        @Override public Integer apply(Object o) {
+    public static final Hasher SHA1_HASHER = new Hasher() {
+        @Override public int hash(Object o) {
             try {
                 MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
 
@@ -73,13 +87,13 @@ public class GridConsistentHash<N> implements Serializable {
      * <p>
      * This function is used by default if no hasher function is provided explicitly.
      */
-    public static final GridClosure<Object, Integer> MURMUR2_HASHER = new GridClosure<Object, Integer>() {
+    public static final Hasher MURMUR2_HASHER = new Hasher() {
         private static final long M = 0x5bd1e995;
         private static final int R = 24;
         private static final int seed = PRIME;
 
         @SuppressWarnings({"fallthrough"})
-        @Override public Integer apply(Object o) {
+        @Override public int hash(Object o) {
             byte[] data = toHashBytes(o);
 
             int len = data.length;
@@ -130,10 +144,13 @@ public class GridConsistentHash<N> implements Serializable {
      * @param o Object to convert.
      * @return Byte array for hashing.
      */
-    private static byte[] toHashBytes(Object o) {
+    private static byte[] toHashBytes(@Nullable Object o) {
         if (o instanceof byte[]) {
             return (byte[])o;
         }
+
+        if (o == null)
+            o = maskNull(o);
 
         if (o instanceof UUID) {
             UUID u = (UUID)o;
@@ -222,7 +239,7 @@ public class GridConsistentHash<N> implements Serializable {
     private final Object affSeed;
 
     /** Hasher function. */
-    private final GridClosure<Object, Integer> hasher;
+    private final Hasher hasher;
 
     /** Map of hash assignments. */
     private final SortedMap<Integer, N> circle = new TreeMap<Integer, N>();
@@ -255,7 +272,7 @@ public class GridConsistentHash<N> implements Serializable {
      * @param hasher Hasher function to use for generation of uniformly distributed hashes.
      *      If {@code null}, then {@code MD5} hashing is used.
      */
-    public GridConsistentHash(@Nullable GridClosure<Object, Integer> hasher) {
+    public GridConsistentHash(@Nullable Hasher hasher) {
         this(null, hasher);
     }
 
@@ -266,7 +283,7 @@ public class GridConsistentHash<N> implements Serializable {
      * @param hasher Hasher function to use for generation of uniformly distributed hashes.
      *      If {@code null}, then {@code MD5} hashing is used.
      */
-    public GridConsistentHash(@Nullable Object affSeed, @Nullable GridClosure<Object, Integer> hasher) {
+    public GridConsistentHash(@Nullable Object affSeed, @Nullable Hasher hasher) {
         this.affSeed = affSeed == null ? new Integer(PRIME) : affSeed;
         this.hasher = hasher == null ? MD5_HASHER : hasher;
     }
@@ -831,20 +848,20 @@ public class GridConsistentHash<N> implements Serializable {
     }
 
     /**
-     * @param key Key.
-     * @return Non-null key value.
-     */
-    private Object maskNull(@Nullable Object key) {
-        return key == null ? NULL : key;
-    }
-
-    /**
      * Gets hash code for a given object.
      *
      * @param o Object to get hash code for.
      * @return Hash code.
      */
     private int hash(Object o) {
-        return hasher.apply(maskNull(o));
+        return hasher.hash(maskNull(o));
+    }
+
+    /**
+     * @param key Key.
+     * @return Non-null key value.
+     */
+    private static Object maskNull(@Nullable Object key) {
+        return key == null ? NULL : key;
     }
 }

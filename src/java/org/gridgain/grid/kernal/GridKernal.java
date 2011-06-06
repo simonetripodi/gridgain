@@ -86,14 +86,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
-    private static final String VER = "3.1.0c";
+    private static final String VER = "3.1.1c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "31052011";
+    private static final String BUILD = "05062011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -1062,6 +1062,9 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                     // No-op.
                 }
         }
+
+        // Whether restart is enabled and stick the attribute.
+        add(attrs, ATTR_RESTART_ENABLED, Boolean.toString(isRestartEnabled()));
 
         /*
          * Stick in SPI versions and classes attributes.

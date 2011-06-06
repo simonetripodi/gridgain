@@ -18,14 +18,14 @@ import java.util.*;
  * Set implementation that delegates to map.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridSetWrapper<E> extends GridSerializableSet<E> {
     /** Dummy value. */
     protected static final Object VAL = Boolean.TRUE;
 
     /** Base map. */
-    @GridToStringInclude
+    @GridToStringExclude
     protected Map<E, Object> map;
 
     /**
@@ -35,7 +35,7 @@ public class GridSetWrapper<E> extends GridSerializableSet<E> {
      */
     @SuppressWarnings({"unchecked"})
     public GridSetWrapper(Map<E, ?> map) {
-        assert map != null;
+        A.notNull(map, "map");
 
         this.map = (Map<E, Object>)map;
     }
@@ -123,6 +123,6 @@ public class GridSetWrapper<E> extends GridSerializableSet<E> {
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridSetWrapper.class, this);
+        return S.toString(GridSetWrapper.class, this, "elements", map.keySet());
     }
 }

@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridFunc {
     /** */
@@ -2335,9 +2335,8 @@ public class GridFunc {
                 for (Iterator<T> iter = res.iterator(); iter.hasNext();) {
                     iter.next();
 
-                    if (i++ >= num) {
+                    if (i++ >= num)
                         iter.remove();
-                    }
                 }
             }
         }
@@ -2346,9 +2345,8 @@ public class GridFunc {
 
             Iterator<? extends T> iter = c.iterator();
 
-            for (int i = 0; i < num && iter.hasNext(); i++) {
+            for (int i = 0; i < num && iter.hasNext(); i++)
                 res.add(iter.next());
-            }
         }
 
         return res;
@@ -6398,7 +6396,25 @@ public class GridFunc {
      *      {@code c2}.
      */
     public static <T> boolean containsAny(@Nullable Collection<? extends T> c1, @Nullable Iterable<? extends T> c2) {
-        if (c1 != null && c2 != null)
+        if (!isEmpty(c1) && !isEmpty(c2))
+            for (T t : c2)
+                if (c1.contains(t))
+                    return true;
+
+        return false;
+    }
+
+    /**
+     * Checks if collection {@code c1} contains any elements from array {@code c2}.
+     *
+     * @param c1 Collection to check for containment. If {@code null} - this method returns {@code false}.
+     * @param c2 Collection of elements to check. If {@code null} - this method returns {@code false}.
+     * @param <T> Type of the elements.
+     * @return {@code true} if collection {@code c1} contains at least one element from collection
+     *      {@code c2}.
+     */
+    public static <T> boolean containsAny(@Nullable Collection<? extends T> c1, @Nullable T... c2) {
+        if (!isEmpty(c1) && !isEmpty(c2))
             for (T t : c2)
                 if (c1.contains(t))
                     return true;

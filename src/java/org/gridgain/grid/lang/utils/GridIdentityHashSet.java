@@ -18,7 +18,7 @@ import java.util.*;
  * Set counterpart for {@link IdentityHashMap}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridIdentityHashSet<E> extends GridSetWrapper<E> {
     /**
@@ -46,5 +46,10 @@ public class GridIdentityHashSet<E> extends GridSetWrapper<E> {
      */
     public GridIdentityHashSet(Collection<E> vals) {
         super(F.isEmpty(vals) ? new IdentityHashMap<E, Object>(0) : new IdentityHashMap<E, Object>(vals.size()), vals);
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return S.toString(GridIdentityHashSet.class, this, super.toString());
     }
 }

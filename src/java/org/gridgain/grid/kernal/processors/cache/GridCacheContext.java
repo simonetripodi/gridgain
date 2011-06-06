@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -1352,7 +1352,7 @@ public class GridCacheContext<K, V> implements Externalizable {
         Collection<GridNode> dhtNodes = dht().topology().nodes(entry.partition());
 
         if (log.isDebugEnabled())
-            log.debug("Mapping entry to DHT nodes [nodes=" + U.toShortString(dhtNodes) + ", entry=" + entry + ']');
+            log.debug("Mapping entry to DHT nodes [nodes=" + U.nodeIds(dhtNodes) + ", entry=" + entry + ']');
 
         Collection<UUID> readers = entry.readers();
 
@@ -1362,7 +1362,7 @@ public class GridCacheContext<K, V> implements Externalizable {
             nearNodes = discovery().nodes(readers, F.<UUID>not(F.idForNodeId(nearNodeId)));
 
             if (log.isDebugEnabled())
-                log.debug("Mapping entry to near nodes [nodes=" + U.toShortString(nearNodes) + ", entry=" + entry + ']');
+                log.debug("Mapping entry to near nodes [nodes=" + U.nodeIds(nearNodes) + ", entry=" + entry + ']');
         }
         else if (log.isDebugEnabled())
             log.debug("Entry has no near readers: " + entry);
@@ -1430,10 +1430,11 @@ public class GridCacheContext<K, V> implements Externalizable {
      * Waits for partition locks and transactions release.
      *
      * @param parts Partitions.
+     * @param exclIds Exclude IDs.
      * @return {@code true} if waiting was successful.
      */
     @SuppressWarnings({"unchecked"})
-    public GridFuture<?> partitionReleaseFuture(Collection<Integer> parts) {
+    public GridFuture<?> partitionReleaseFuture(Collection<Integer> parts, UUID... exclIds) {
         assert parts != null;
 
         if (parts.isEmpty())
@@ -1441,12 +1442,12 @@ public class GridCacheContext<K, V> implements Externalizable {
 
         GridCompoundIdentityFuture fut = new GridCompoundIdentityFuture(kernalContext());
 
-        fut.add(tm().finishPartitions(parts));
-        fut.add(mvcc().finishPartitions(parts));
+        fut.add(tm().finishPartitions(parts, exclIds));
+        fut.add(mvcc().finishPartitions(parts, exclIds));
 
         if (isDht()) {
-            fut.add(dht().near().context().tm().finishPartitions(parts));
-            fut.add(dht().near().context().mvcc().finishPartitions(parts));
+            fut.add(dht().near().context().tm().finishPartitions(parts, exclIds));
+            fut.add(dht().near().context().mvcc().finishPartitions(parts, exclIds));
         }
 
         fut.markInitialized();

@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -1081,6 +1081,13 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
             if (nearTx == null && !F.isEmpty(req.nearWrites()))
                 nearTx = near.startRemoteTx(nodeId, req);
+        }
+        catch (GridCacheTxRollbackException e) {
+            if (log.isDebugEnabled())
+                log.debug("Received finish request for completed transaction (will ignore) [req=" + req + ", err=" +
+                    e.getMessage() + ']');
+
+            return;
         }
         catch (GridException e) {
             U.error(log, "Failed to start remote DHT and Near transactions (will invalidate transactions) [dhtTx=" +

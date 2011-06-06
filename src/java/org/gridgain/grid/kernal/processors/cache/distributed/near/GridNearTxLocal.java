@@ -14,6 +14,7 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
@@ -30,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Future. */
@@ -99,6 +100,16 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
         return true;
     }
 
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> nodeIds() {
+        Collection<UUID> ids = new GridLeanSet<UUID>();
+
+        ids.add(ctx.nodeId());
+        ids.addAll(mappings.keySet());
+
+        return ids;
+    }
+
     /**
      * @return DHT map.
      */
@@ -131,28 +142,43 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     }
 
     /**
+     * @param nodeId Undo mapping.
+     */
+    public void removeMapping(UUID nodeId) {
+        mappings.remove(nodeId);
+
+        if (log.isDebugEnabled())
+            log.debug("Removed mapping for node [nodeId=" + nodeId + ", tx=" + this + ']');
+    }
+
+    /**
      * @param keyMap Key map to register.
      */
     void addMapping(Map<GridRichNode, Collection<K>> keyMap) {
         for (Map.Entry<GridRichNode, Collection<K>> mapping : keyMap.entrySet()) {
-            GridNode n = mapping.getKey();
+            GridRichNode n = mapping.getKey();
 
             for (K key : mapping.getValue()) {
                 GridCacheTxEntry<K, V> txEntry = txMap.get(key);
 
-                // Do not remap.
-                if (txEntry.nodeId() == null) {
-                    GridDistributedTxMapping<K, V> m = mappings.get(n.id());
+                assert txEntry != null;
+                
+                GridDistributedTxMapping<K, V> m = mappings.get(n.id());
 
-                    if (m == null)
-                        mappings.put(n.id(), m = new GridDistributedTxMapping<K, V>(ctx.rich().rich(n)));
+                if (m == null)
+                    mappings.put(n.id(), m = new GridDistributedTxMapping<K, V>(n));
 
-                    txEntry.nodeId(n.id());
+                txEntry.nodeId(n.id());
 
-                    m.add(txEntry);
-                }
+                m.add(txEntry);
             }
         }
+
+        if (log.isDebugEnabled())
+            log.debug("Added mappings to transaction [locId=" + ctx.nodeId() + ", mappings=" + keyMap +
+                ", tx=" + this + ']');
+
+        ctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -487,7 +513,19 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
                     commitFut.get().finish();
                 }
+                catch (Error e) {
+                    commitErr.compareAndSet(null, e);
+
+                    throw e;
+                }
+                catch (RuntimeException e) {
+                    commitErr.compareAndSet(null, e);
+
+                    throw e;
+                }
                 catch (GridException e) {
+                    commitErr.compareAndSet(null, e);
+
                     commitFut.get().onError(e);
                 }
             }
@@ -508,42 +546,57 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             return;
         }
 
-        ctx.mvcc().addFuture(fut);
-
-        if (prepFut == null) {
-            finish(false);
-
-            fut.finish();
-        }
-        else {
-            prepFut.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
-                @Override public void apply(GridFuture<GridCacheTx> f) {
-                    try {
-                        // Check for errors in prepare future.
-                        f.get();
-                    }
-                    catch (GridException e) {
-                        if (log.isDebugEnabled())
-                            log.debug("Got optimistic tx failure [tx=" + this + ", err=" + e + ']');
-                    }
-
-                    try {
-                        finish(false);
-
-                        rollbackFut.get().finish();
-                    }
-                    catch (GridException e) {
-                        U.error(log, "Failed to gracefully rollback transaction: " + this, e);
-
-                        rollbackFut.get().onError(e);
-                    }
-                }
-            });
-        }
-
         try {
+            ctx.mvcc().addFuture(fut);
+
+            if (prepFut == null) {
+                finish(false);
+
+                fut.finish();
+            }
+            else {
+                prepFut.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
+                    @Override public void apply(GridFuture<GridCacheTx> f) {
+                        try {
+                            // Check for errors in prepare future.
+                            f.get();
+                        }
+                        catch (GridException e) {
+                            if (log.isDebugEnabled())
+                                log.debug("Got optimistic tx failure [tx=" + this + ", err=" + e + ']');
+                        }
+
+                        try {
+                            finish(false);
+
+                            rollbackFut.get().finish();
+                        }
+                        catch (GridException e) {
+                            U.error(log, "Failed to gracefully rollback transaction: " + this, e);
+
+                            rollbackFut.get().onError(e);
+                        }
+                    }
+                });
+            }
+
             // TODO: Rollback Async?
             fut.get();
+        }
+        catch (Error e) {
+            U.addLastCause(e, commitErr.get());
+
+            throw e;
+        }
+        catch (RuntimeException e) {
+            U.addLastCause(e, commitErr.get());
+
+            throw e;
+        }
+        catch (GridException e) {
+            U.addLastCause(e, commitErr.get());
+
+            throw e;
         }
         finally {
             ctx.tm().txContextReset();
@@ -563,6 +616,6 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridNearTxLocal.class, this, super.toString());
+        return S.toString(GridNearTxLocal.class, this, "mappings", mappings.keySet(), "super", super.toString());
     }
 }

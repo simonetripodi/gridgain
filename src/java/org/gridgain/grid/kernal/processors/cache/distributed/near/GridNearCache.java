@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -336,6 +336,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
             GridNearTxRemote<K, V> tx = new GridNearTxRemote<K, V>(
                 ldr,
                 nodeId,
+                req.nearNodeId(),
                 req.threadId(),
                 req.version(),
                 req.commitVersion(),
@@ -425,6 +426,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                                 else {
                                     tx = new GridNearTxRemote<K, V>(
                                         nodeId,
+                                        req.nearNodeId(),
                                         req.threadId(),
                                         req.version(),
                                         null,
@@ -540,6 +542,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                             else {
                                 tx = new GridNearTxRemote<K, V>(
                                     nodeId,
+                                    req.nearNodeId(),
                                     req.threadId(),
                                     req.version(),
                                     null,

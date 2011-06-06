@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.0c.31052011
+# Version: 3.1.1c.05062011
 #
 
 #
@@ -39,7 +39,7 @@ fi
 #
 # Set propery JAR name during the Ant build.
 #
-ANT_AUGMENTED_GGJAR=gridgain-3.1.0c.jar
+ANT_AUGMENTED_GGJAR=gridgain-3.1.1c.jar
 
 #
 # Set GRIDGAIN_HOME, if needed.

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -97,50 +97,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                             if (log.isDebugEnabled())
                                 log.debug("Remaining transaction from left node: " + tx);
 
-                            GridCacheTxState state = tx.state();
-
-                            if (state == ACTIVE || state == PREPARING || state == PREPARED) {
-                                // This print out cannot print any peer-deployed entity either
-                                // directly or indirectly.
-                                U.warn(log, "Invalidating transaction because originating node either " +
-                                    "crashed or left grid [tx=" + CU.txString(tx) + ']');
-
-                                GridCacheTxRemoteEx rmtTx = (GridCacheTxRemoteEx)tx;
-
-                                try {
-                                    rmtTx.prepare();
-
-                                    rmtTx.invalidate(true);
-
-                                    rmtTx.doneRemote(rmtTx.xidVersion(), Collections.<GridCacheVersion>emptyList(),
-                                        Collections.<GridCacheVersion>emptyList());
-
-                                    rmtTx.commit();
-                                }
-                                catch (GridCacheTxOptimisticException ignore) {
-                                    if (log.isDebugEnabled())
-                                        log.debug("Optimistic failure while invalidating transaction (will rollback): " +
-                                            tx.xidVersion());
-
-                                    try {
-                                        rmtTx.rollback();
-                                    }
-                                    catch (GridException e) {
-                                        U.error(log, "Failed to rollback transaction: " + tx.xidVersion(), e);
-                                    }
-                                }
-                                catch (GridException e) {
-                                    U.error(log, "Failed to invalidate transaction: " + tx, e);
-                                }
-                            }
-                            else if (state == MARKED_ROLLBACK) {
-                                try {
-                                    tx.rollback();
-                                }
-                                catch (GridException e) {
-                                    U.error(log, "Failed to rollback transaction: " + tx.xidVersion(), e);
-                                }
-                            }
+                            salvageTx(tx, true);
                         }
                     }
                 }
@@ -150,24 +107,77 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         );
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
-            if (!tx.local() && cctx.discovery().node(tx.nodeId()) == null) {
-                U.warn(log, "Invalidating transaction because originating node either crashed of left grid: " +
-                    CU.txString(tx));
+            if (!tx.local() && !tx.ec() && cctx.discovery().node(tx.nodeId()) == null) {
+                if (log.isDebugEnabled())
+                    log.debug("Remaining transaction from left node: " + tx);
 
-                GridCacheTxRemoteEx rmtTx = (GridCacheTxRemoteEx)tx;
+                salvageTx(tx, true);
+            }
+        }
+    }
+
+    /**
+     * Invalidates transaction.
+     *
+     * @param tx Transaction.
+     */
+    public void salvageTx(GridCacheTxEx tx) {
+        salvageTx(tx, false);
+    }
+
+    /**
+     * Invalidates transaction.
+     *
+     * @param tx Transaction.
+     * @param warn {@code True} if warning should be logged.
+     */
+    private void salvageTx(GridCacheTxEx tx, boolean warn) {
+        assert tx != null;
+
+        GridCacheTxState state = tx.state();
+
+        if (state == ACTIVE || state == PREPARING || state == PREPARED) {
+            if (warn) {
+                // This print out cannot print any peer-deployed entity either
+                // directly or indirectly.
+                U.warn(log, "Invalidating transaction because originating node either " +
+                    "crashed or left grid: " + CU.txString(tx));
+            }
+
+            GridCacheTxRemoteEx rmtTx = (GridCacheTxRemoteEx)tx;
+
+            try {
+                rmtTx.prepare();
 
                 rmtTx.invalidate(true);
 
-                try {
-                    rmtTx.doneRemote(rmtTx.xidVersion(), Collections.<GridCacheVersion>emptyList(),
-                        Collections.<GridCacheVersion>emptyList());
+                rmtTx.doneRemote(rmtTx.xidVersion(), Collections.<GridCacheVersion>emptyList(),
+                    Collections.<GridCacheVersion>emptyList());
 
-                    rmtTx.prepare();
-                    rmtTx.commit();
+                rmtTx.commit();
+            }
+            catch (GridCacheTxOptimisticException ignore) {
+                if (log.isDebugEnabled())
+                    log.debug("Optimistic failure while invalidating transaction (will rollback): " +
+                        tx.xidVersion());
+
+                try {
+                    rmtTx.rollback();
                 }
                 catch (GridException e) {
-                    U.error(log, "Failed to invalidate transaction: " + CU.txString(tx), e);
+                    U.error(log, "Failed to rollback transaction: " + tx.xidVersion(), e);
                 }
+            }
+            catch (GridException e) {
+                U.error(log, "Failed to invalidate transaction: " + tx, e);
+            }
+        }
+        else if (state == MARKED_ROLLBACK) {
+            try {
+                tx.rollback();
+            }
+            catch (GridException e) {
+                U.error(log, "Failed to rollback transaction: " + tx.xidVersion(), e);
             }
         }
     }
@@ -1050,7 +1060,11 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * @return Registered transaction synchronizations
      */
     public Collection<GridCacheTxSynchronization> synchronizations() {
-        return syncs;
+        return F.view(syncs, new P1<GridCacheTxSynchronization>() {
+            @Override public boolean apply(GridCacheTxSynchronization sync) {
+                return !(sync instanceof TxSynchronization);
+            }
+        });
     }
 
     /**
@@ -1112,7 +1126,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * @return Future to wait for all transactions involving given node ID.
      */
     public GridFuture<?> finishNode(UUID nodeId) {
-        Collection<GridCacheTx> waitTxSet = new GridConcurrentHashSet<GridCacheTx>();
+        Collection<GridCacheTxEx<K, V>> waitTxSet = new GridConcurrentHashSet<GridCacheTxEx<K, V>>();
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
             UUID otherId = tx.otherNodeId();
@@ -1121,17 +1135,26 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                 waitTxSet.add(tx);
         }
 
-        return finishTransactions(waitTxSet);
+        return finishTransactions(waitTxSet, null);
     }
 
     /**
      * @param parts Partition numbers.
+     * @param excl Exclude array.
      * @return Future that signals when all transactions for given partitions will complete.
      */
-    public GridFuture<?> finishPartitions(Collection<Integer> parts) {
-        Collection<GridCacheTx> waitTxSet = new GridConcurrentHashSet<GridCacheTx>();
+    public GridFuture<?> finishPartitions(Collection<Integer> parts, UUID... excl) {
+        Collection<GridCacheTxEx<K, V>> waitTxSet = new GridConcurrentHashSet<GridCacheTxEx<K, V>>();
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
+            if (F.containsAny(tx.nodeIds(), excl)) {
+                if (log.isDebugEnabled())
+                    log.debug("Skipping transaction for partition wait [excl=" + Arrays.toString(excl) +
+                        ", tx=" + tx + ']');
+
+                continue;
+            }
+
             boolean added = false;
 
             for (GridCacheTxEntry<K, V> e : tx.writeEntries()) {
@@ -1155,39 +1178,95 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             }
         }
 
-        return finishTransactions(waitTxSet);
+        if (log.isDebugEnabled()) {
+            if (waitTxSet.isEmpty())
+                log.debug("Wait tx set is empty [excl=" + Arrays.toString(excl) + ", parts=" + parts + ']');
+            else
+                for (GridCacheTxEx<K, V> tx : waitTxSet)
+                    log.debug("Will wait for tx [excludes=" + Arrays.toString(excl) + ", nodeIds=" + tx.nodeIds() +
+                        ", contains=" + F.containsAny(tx.nodeIds(), excl) + ", tx=" + tx + ']');
+        }
+
+        return finishTransactions(waitTxSet, excl);
     }
 
     /**
      * @param waitTxSet Set of transactions to wait for.
+     * @param excl Exclude array.
      * @return Future for waiting.
      */
-    protected GridFuture<?> finishTransactions(final Collection<GridCacheTx> waitTxSet) {
+    private GridFuture<?> finishTransactions(final Collection<GridCacheTxEx<K, V>> waitTxSet,
+        @Nullable final UUID[] excl) {
         final GridFutureAdapter<?> f = new GridFutureAdapter(cctx.kernalContext());
 
-        final GridCacheTxSynchronization sync = new GridCacheTxSynchronization() {
+        final GridCacheTxSynchronization sync = new TxSynchronization() {
+            @SuppressWarnings( {"SuspiciousMethodCalls"})
             @Override public void onStateChanged(GridCacheTxState prevState, GridCacheTxState newState,
                 GridCacheTx tx) {
-                if (newState == COMMITTED || newState == ROLLED_BACK)
-                    waitTxSet.remove(tx);
+                if (newState == COMMITTED || newState == ROLLED_BACK) {
+                    if (log.isDebugEnabled())
+                        log.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
 
-                if (waitTxSet.isEmpty())
+                    waitTxSet.remove(tx);
+                }
+
+                if (waitTxSet.isEmpty()) {
+                    if (log.isDebugEnabled())
+                        log.debug("TxSynchronization finished: " + this);
+
                     f.onDone();
+                }
+            }
+
+            @Override public void recheck() {
+                if (log.isDebugEnabled())
+                    log.debug("Rechecking transactions for synchronization [excl=" + Arrays.toString(excl) +
+                    ", sync=" + this + ']');
+
+                for (Iterator<GridCacheTxEx<K, V>> it = waitTxSet.iterator(); it.hasNext();) {
+                    GridCacheTxEx<K, V> tx = it.next();
+
+                    if (F.containsAny(tx.nodeIds(), excl)) {
+                        it.remove();
+
+                        if (log.isDebugEnabled())
+                            log.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
+                    }
+                }
+
+                if (waitTxSet.isEmpty()) {
+                    if (log.isDebugEnabled())
+                        log.debug("TxSynchronization finished: " + this);
+
+                    f.onDone();
+                }
+            }
+
+            @Override public String toString() {
+                return "TxSynchronization [excl=" + Arrays.toString(excl) + ", waitTxState=" + waitTxSet + ']';
             }
         };
 
         addSynchronizations(sync);
 
         // Double check just in case some transaction completed before we added synchronization.
-        for (Iterator<GridCacheTx> it = waitTxSet.iterator(); it.hasNext();) {
-            GridCacheTx tx = it.next();
+        for (Iterator<GridCacheTxEx<K, V>> it = waitTxSet.iterator(); it.hasNext();) {
+            GridCacheTxEx<K, V> tx = it.next();
 
-            if (tx.state() == COMMITTED || tx.state() == ROLLED_BACK)
+            if (tx.state() == COMMITTED || tx.state() == ROLLED_BACK || F.containsAny(tx.nodeIds(), excl)) {
+                if (log.isDebugEnabled())
+                    log.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + sync + ']');
+
                 it.remove();
+            }
         }
 
-        if (waitTxSet.isEmpty())
+        if (waitTxSet.isEmpty()) {
+            if (log.isDebugEnabled())
+                log.debug("TxSynchronization finished: " + sync);
+
             f.onDone();
+        }
 
         f.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
@@ -1196,6 +1275,20 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         });
 
         return f;
+    }
+
+    /**
+     *
+     */
+    public void recheckFinishTransactions() {
+        if (log.isDebugEnabled())
+            log.debug("Rechecking finish transactions [locId=" + cctx.nodeId() + ", syncs=" + syncs + ']');
+
+        for (GridCacheTxSynchronization sync : syncs) {
+            if (sync instanceof TxSynchronization) {
+                ((TxSynchronization)sync).recheck();
+            }
+        }
     }
 
     /**
@@ -1219,5 +1312,15 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         @Override public int hashCode() {
             return super.hashCode();
         }
+    }
+
+    /**
+     *
+     */
+    private interface TxSynchronization extends GridCacheTxSynchronization {
+        /**
+         *
+         */
+        public void recheck();
     }
 }

@@ -22,7 +22,7 @@ import java.util._
  * Demonstrates cache ad-hoc queries with Scalar.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 object ScalarCacheQueryExample {
     /** Cache name. */
@@ -60,16 +60,16 @@ object ScalarCacheQueryExample {
 
         // Example for SQL-based querying employees based on salary ranges.
         // Gets all persons with 'salary > 1000'.
-        print("People with salary more than 1000:", cache.sql(prj, "salary > 1000").map(_._2))
+        print("People with salary more than 1000: ", cache.sql(prj, "salary > 1000").map(_._2))
 
         // Example for TEXT-based querying for a given string in people resumes.
         // Gets all persons with 'Bachelor' degree.
-        print("People with Bachelor degree:", cache.lucene(prj, "Bachelor").map(_._2))
+        print("People with Bachelor degree: ", cache.lucene(prj, "Bachelor").map(_._2))
 
         // Example for SQL-based querying with custom remote transformer to make sure
         // that only required data without any overhead is returned to caller.
         // Gets last names of all 'GridGain' employees.
-        print("Last names of all 'GridGain' employees:",
+        print("Last names of all 'GridGain' employees: ",
             cache.sqlTransform(
                 prj,
                 "from Person, Organization where Person.orgId = Organization.id " +
@@ -81,7 +81,7 @@ object ScalarCacheQueryExample {
         // Example for SQL-based querying with custom remote and local reducers
         // to calculate average salary among all employees within a company.
         // Gets average salary of persons with 'Master' degree.
-        print("Average salary of people with Master degree:",
+        print("Average salary of people with Master degree: ",
             cache.luceneReduce(
                 prj,
                 "Master",
@@ -156,7 +156,7 @@ object ScalarCacheQueryExample {
  * Organization class.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 private case class Organization(
     @ScalarCacheQuerySqlField
@@ -171,7 +171,7 @@ private case class Organization(
  * Person class.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 private case class Person(
     org: Organization,

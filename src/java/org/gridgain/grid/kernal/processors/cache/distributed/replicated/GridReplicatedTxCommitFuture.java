@@ -18,6 +18,7 @@ import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
 import org.gridgain.grid.util.tostring.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
@@ -30,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated cache transaction future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridReplicatedTxCommitFuture<K, V> extends GridFutureAdapter<GridCacheTx>
     implements GridCacheMvccFuture<K, V, GridCacheTx> {
@@ -201,6 +202,8 @@ public class GridReplicatedTxCommitFuture<K, V> extends GridFutureAdapter<GridCa
      * @param e Error.
      */
     void onError(Throwable e) {
+        tx.commitError(e);
+
         if (err.compareAndSet(null, e)) {
             boolean marked = tx.setRollbackOnly();
 
@@ -227,7 +230,7 @@ public class GridReplicatedTxCommitFuture<K, V> extends GridFutureAdapter<GridCa
      * @param entry Owner entry.
      */
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private void checkLocks(GridCacheEntryEx<K, V> entry) {
+    private void checkLocks(@Nullable GridCacheEntryEx<K, V> entry) {
         if (log.isDebugEnabled())
             log.debug("Transaction future received owner changed callback: " + entry);
 
@@ -338,6 +341,8 @@ public class GridReplicatedTxCommitFuture<K, V> extends GridFutureAdapter<GridCa
                 onComplete();
         }
         catch (GridException e) {
+            U.addLastCause(e, tx.commitError());
+
             onError(e);
         }
     }

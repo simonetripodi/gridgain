@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -187,7 +187,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         dfltLockTimeout = cacheCfg.getDefaultLockTimeout();
         dfltTxTimeout = cacheCfg.getDefaultTxTimeout();
         evictPolicy = cacheCfg.getEvictionPolicy();
-        dgcFreq = cacheCfg.getDistributedGarbageCollectionFrequency();
+        dgcFreq = cacheCfg.getDgcFrequency();
         idxH2Opt = cacheCfg.getIndexH2Options();
         idxAnalyzeFreq = cacheCfg.getIndexAnalyzeFrequency();
         idxAnalyzeSampleSize = cacheCfg.getIndexAnalyzeSampleSize();
@@ -696,7 +696,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     }
 
     /** {@inheritDoc} */
-    @Override public int getDistributedGarbageCollectionFrequency() {
+    @Override public int getDgcFrequency() {
         return dgcFreq;
     }
 
@@ -708,12 +708,12 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
      *
      * @param dgcFreq Frequency of distributed GC in milliseconds ({@code 0} to disable GC).
      */
-    public void setDistributedGarbageCollectionFrequency(int dgcFreq) {
+    public void setDgcFrequency(int dgcFreq) {
         this.dgcFreq = dgcFreq;
     }
 
     /** {@inheritDoc} */
-    @Override public int getDistributedGarbageCollectionSuspectLockTimeout() {
+    @Override public int getDgcSuspectLockTimeout() {
         return dgcSuspectLockTimeout;
     }
 
@@ -725,7 +725,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
      *
      * @param dgcSuspectLockTimeout Timeout in milliseconds.
      */
-    public void setDistributedGarbageCollectionSuspectLockTimeout(int dgcSuspectLockTimeout) {
+    public void setDgcSuspectLockTimeout(int dgcSuspectLockTimeout) {
         this.dgcSuspectLockTimeout = dgcSuspectLockTimeout;
     }
 

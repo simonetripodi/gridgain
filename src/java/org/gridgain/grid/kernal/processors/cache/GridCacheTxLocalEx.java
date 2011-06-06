@@ -12,6 +12,7 @@ package org.gridgain.grid.kernal.processors.cache;
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.lang.*;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 
@@ -19,18 +20,28 @@ import java.util.*;
  * Local transaction API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public interface GridCacheTxLocalEx<K, V> extends GridCacheTxEx<K, V> {
     /**
      * @return Minimum version involved in transaction.
      */
     public GridCacheVersion minVersion();
-    
+
     /**
      * @return Future for this transaction.
      */
     public GridFuture<GridCacheTx> future();
+
+    /**
+     * @return Commit error.
+     */
+    @Nullable public Throwable commitError();
+
+    /**
+     * @param e Commit error.
+     */
+    public void commitError(Throwable e);
 
     /**
      * @return Finish future.
@@ -83,7 +94,7 @@ public interface GridCacheTxLocalEx<K, V> extends GridCacheTxEx<K, V> {
      * @param filter Entry filter.
      * @return Future for this get.
      */
-    public GridFuture<Map<K, V>> getAllAsync(Collection<? extends K> keys, 
+    public GridFuture<Map<K, V>> getAllAsync(Collection<? extends K> keys,
         GridPredicate<? super GridCacheEntry<K, V>>[] filter);
 
 
@@ -191,7 +202,7 @@ public interface GridCacheTxLocalEx<K, V> extends GridCacheTxEx<K, V> {
     /**
      * @param keys Keys to remove.
      * @param retval Flag indicating whether a value should be returned.
-     * @param implicit Allows to externally control how transaction handles implicit flags. 
+     * @param implicit Allows to externally control how transaction handles implicit flags.
      * @param filter Filter.
      * @return Future for asynchronous remove.
      */

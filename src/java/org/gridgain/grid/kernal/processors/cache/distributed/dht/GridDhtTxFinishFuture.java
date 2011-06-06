@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheFuture<GridCacheTx> {
@@ -408,7 +408,7 @@ public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Grid
          */
         void onResult(GridTopologyException e) {
             if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+                log.debug("Remote node left grid while sending or waiting for reply (will ignore): " + this);
 
             // If node left, then there is nothing to commit on it.
             onDone();

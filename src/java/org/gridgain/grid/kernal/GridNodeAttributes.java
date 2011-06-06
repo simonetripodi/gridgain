@@ -10,10 +10,10 @@
 package org.gridgain.grid.kernal;
 
 /**
- * This class defines constants (NOT enums) for internal node attributes.
+ * This class defines constants (NOT enums) for <b>internally-used</b> node attributes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public final class GridNodeAttributes {
     /** Prefix for internally reserved attribute names. */
@@ -57,6 +57,9 @@ public final class GridNodeAttributes {
 
     /** Internal attribute name constant. */
     public static final String ATTR_JMX_PORT = ATTR_PREFIX + ".jmx.port";
+
+    /** Internal attribute name constant. */
+    public static final String ATTR_RESTART_ENABLED = ATTR_PREFIX + ".restart.enabled";
 
     /** Internal attribute name constant. */
     public static final String ATTR_IPS = ATTR_PREFIX + ".ips";

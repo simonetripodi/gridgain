@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheFuture<GridCacheTx> {
@@ -147,6 +147,8 @@ public class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Gri
      * @param e Error.
      */
     void onError(Throwable e) {
+        tx.commitError(e);
+
         if (err.compareAndSet(null, e)) {
             boolean marked = tx.setRollbackOnly();
 
@@ -443,14 +445,9 @@ public class GridNearTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Gri
          */
         void onResult(GridTopologyException e) {
             if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+                log.debug("Remote node left grid while sending or waiting for reply (will ignore): " + this);
 
-            if (!isDone()) {
-                // Remap.
-                prepare(m.reads(), m.writes());
-
-                onDone();
-            }
+            onDone(tx);
         }
 
         /**

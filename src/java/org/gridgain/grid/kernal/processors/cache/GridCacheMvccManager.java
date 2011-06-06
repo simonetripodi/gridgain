@@ -15,6 +15,7 @@ import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.*;
+import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
 import org.gridgain.grid.util.future.*;
 import org.gridgain.grid.util.tostring.*;
@@ -29,7 +30,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Manages lock order within a thread.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /** Maxim number of removed locks. */
@@ -613,27 +614,28 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
      * @return Future for waiting.
      */
     public GridFuture<?> finishNode(UUID nodeId) {
-        return finishLocks(nodeId, null);
+        return finishLocks(nodeId, null, null);
     }
 
     /**
      * @param parts Partition numbers.
+     * @param exclIds Exclude IDs.
      * @return Future that signals when all locks for given partitions will be released.
      */
-    public GridFuture<?> finishPartitions(Collection<Integer> parts) {
-        return finishLocks(null, parts);
+    public GridFuture<?> finishPartitions(Collection<Integer> parts, UUID... exclIds) {
+        return finishLocks(null, parts, exclIds);
     }
 
     /**
      * @param nodeId Node ID to wait for.
      * @param parts Partition numbers.
+     * @param exclIds Exclude IDs.
      * @return Future that signals when all locks for given partitions will be released.
      */
     @SuppressWarnings( {"unchecked"})
-    public GridFuture<?> finishLocks(@Nullable final UUID nodeId, @Nullable final Collection<Integer> parts) {
+    public GridFuture<?> finishLocks(@Nullable final UUID nodeId, @Nullable final Collection<Integer> parts,
+        @Nullable UUID[] exclIds) {
         assert nodeId != null || parts != null;
-        GridCompoundFuture<Object, Object> fut = new GridCompoundIdentityFuture<Object>(cctx.kernalContext());
-
         final FinishLockFuture finishFut = new FinishLockFuture(
             nodeId,
             F.view(locked.values(),
@@ -671,7 +673,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                         }
                     }
                 }
-        ));
+        ), exclIds);
 
         finishFuts.add(finishFut);
 
@@ -685,37 +687,9 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
             }
         });
 
-        fut.add(finishFut);
-
-        for (GridCacheFuture<?> f : F.flat(futs.values())) {
-            if (!(f instanceof GridCacheMvccLockFuture))
-                continue;
-
-            GridCacheMvccLockFuture<K, V, Object> mvccFut = (GridCacheMvccLockFuture<K, V, Object>)f;
-
-            if (nodeId != null) {
-                if (mvccFut.nodeId().equals(nodeId))
-                    fut.add((GridFuture<Object>)f);
-            }
-            else {
-                assert parts != null;
-
-                for (K k : mvccFut.keys()) {
-                    if (parts.contains(cctx.partition(k))) {
-                        fut.add((GridFuture<Object>)f);
-
-                        break;
-                    }
-                }
-            }
-        }
-
         finishFut.recheck();
 
-        // Check for completion.
-        fut.markInitialized();
-
-        return fut;
+        return finishFut;
     }
 
     /**
@@ -725,6 +699,9 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
         /** Node ID to wait for, possibly null for partition-based future. */
         private UUID nodeId;
 
+        /** Exclude IDs. */
+        private UUID[] exclIds;
+
         /** */
         @GridToStringInclude
         private final Map<K, Collection<GridCacheMvccCandidate<K>>> pending =
@@ -732,12 +709,14 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
         /**
          * @param nodeId Node ID.
+         * @param exclIds Exclude IDs.
          * @param entries Entries.
          */
-        FinishLockFuture(@Nullable UUID nodeId, Iterable<GridDistributedCacheEntry<K, V>> entries) {
+        FinishLockFuture(@Nullable UUID nodeId, Iterable<GridDistributedCacheEntry<K, V>> entries, UUID[] exclIds) {
             super(cctx.kernalContext());
 
             this.nodeId = nodeId;
+            this.exclIds = exclIds;
 
             for (GridCacheEntryEx<K, V> entry : entries) {
                 try {
@@ -752,12 +731,13 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                         Collection<GridCacheMvccCandidate<K>> cands = new LinkedList<GridCacheMvccCandidate<K>>();
 
                         if (rmts != null)
-                            cands.addAll(F.view(rmts, nodeIdFilter()));
+                            cands.addAll(F.view(rmts, nodeIdFilter(), excludeFilter()));
 
                         if (locs != null)
-                            cands.addAll(F.view(locs, nodeIdFilter()));
+                            cands.addAll(F.view(locs, nodeIdFilter(), excludeFilter()));
 
-                        pending.put(entry.key(), cands);
+                        if (!F.isEmpty(cands))
+                            pending.put(entry.key(), cands);
                     }
                 }
                 catch (GridCacheEntryRemovedException ignored) {
@@ -765,6 +745,9 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                         log.debug("Got removed entry when adding it to finish lock future (will ignore): " + entry);
                 }
             }
+
+            if (log.isDebugEnabled())
+                log.debug("Pending lock set [excludes=" + Arrays.toString(exclIds) + ", locks=" + pending + ']');
         }
 
         /**
@@ -779,6 +762,23 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                     UUID otherId = c.otherNodeId();
 
                     return c.nodeId().equals(nodeId) || (otherId != null && otherId.equals(nodeId));
+                }
+            };
+        }
+
+        /**
+         * @return Filter.
+         */
+        private GridPredicate<GridCacheMvccCandidate<K>> excludeFilter() {
+            if (F.isEmpty(exclIds))
+                return F.alwaysTrue();
+
+            return new P1<GridCacheMvccCandidate<K>>() {
+                @Override public boolean apply(GridCacheMvccCandidate<K> c) {
+                    UUID otherId = c.otherNodeId();
+
+                    return !U.containsObjectArray(exclIds, nodeId, otherId) &&
+                        !F.containsAny(c.mappedNodeIds(), exclIds);
                 }
             };
         }

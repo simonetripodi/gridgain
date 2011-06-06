@@ -118,17 +118,17 @@ import annotation.target.field
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 object scalar extends ScalarMixin {
     /** Visor copyright blurb. */
     private val COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc."
 
     /** Visor version number. */
-    private val VER = "3.1.0c"
+    private val VER = "3.1.1c"
 
     /** Visor build number. */
-    private val BUILD = "31052011"
+    private val BUILD = "05062011"
 
     /** Type alias for `GridCacheQuerySqlField`. */
     type ScalarCacheQuerySqlField = GridCacheQuerySqlField @field

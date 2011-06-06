@@ -28,7 +28,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
@@ -458,6 +458,26 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** {@inheritDoc} */
     @Override public GridCacheMvccCandidate<K> addLocal(long threadId, GridCacheVersion ver, long timeout,
         boolean reenter, boolean ec, boolean tx) throws GridCacheEntryRemovedException {
+        assert false;
+
+        return null;
+    }
+
+    /**
+     * Add near local candidate.
+     *
+     * @param dhtNodeId DHT node ID.
+     * @param threadId Owning thread ID.
+     * @param ver Lock version.
+     * @param timeout Timeout to acquire lock.
+     * @param reenter Reentry flag.
+     * @param ec Eventually consistent flag.
+     * @param tx Transaction flag.
+     * @return New candidate.
+     * @throws GridCacheEntryRemovedException If entry has been removed.
+     */
+    public GridCacheMvccCandidate<K> addNearLocal(UUID dhtNodeId, long threadId, GridCacheVersion ver, long timeout,
+        boolean reenter, boolean ec, boolean tx) throws GridCacheEntryRemovedException {
         try {
             GridCacheMvccCandidate<K> prev;
             GridCacheMvccCandidate<K> owner;
@@ -487,7 +507,7 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
                     return null;
 
                 // Local lock for near cache is a remote lock.
-                mvcc.addRemote(this, locId, null, threadId, ver, timeout, ec, tx, true);
+                mvcc.addRemote(this, locId, dhtNodeId, threadId, ver, timeout, ec, tx, true);
 
                 owner = mvcc.anyOwner();
 
@@ -518,6 +538,7 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
             return null;
         }
     }
+
 
     /** {@inheritDoc} */
     @Override public GridCacheMvccCandidate<K> readyLock(GridCacheMvccCandidate<K> cand)

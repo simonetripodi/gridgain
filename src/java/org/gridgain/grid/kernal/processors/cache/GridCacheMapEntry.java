@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -1587,6 +1587,17 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                 return time;
         }
 
+        if (cctx.isDht()) {
+            tx = cctx.dht().near().context().tm().localTx();
+
+            if (tx != null) {
+                long time = tx.entryExpireTime(key);
+
+                if (time > 0)
+                    return time;
+            }
+        }
+
         synchronized (mux) {
             checkObsolete();
 
@@ -1599,10 +1610,21 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
 
         if (tx != null) {
-            long ttl = tx.entryTtl(key);
+            long entryTtl = tx.entryTtl(key);
 
-            if (ttl > 0)
-                return ttl;
+            if (entryTtl > 0)
+                return entryTtl;
+        }
+
+        if (cctx.isDht()) {
+            tx = cctx.dht().near().context().tm().localTx();
+
+            if (tx != null) {
+                long entryTtl = tx.entryTtl(key);
+
+                if (entryTtl > 0)
+                    return entryTtl;
+            }
         }
 
         synchronized (mux) {
@@ -1850,59 +1872,34 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     @Override public void ttl(long ttl) throws GridCacheEntryRemovedException {
         assert ttl >= 0;
 
-        long time;
+        boolean txUpdated = false;
+
+        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
+
+        // Make sure to update only user transaction.
+        if (tx != null)
+            txUpdated = tx.entryTtl(key, ttl);
+
+        else if (cctx.isDht()) {
+            tx = cctx.dht().near().context().tm().localTx();
+
+            if (tx != null)
+                txUpdated |= tx.entryTtl(key, ttl);
+        }
+
+        if (txUpdated)
+            return;
 
         synchronized (mux) {
             checkObsolete();
 
-            if (ttl == 0) {
-                this.ttl = 0;
+            expireTime = CU.toExpireTime(ttl, this.ttl, expireTime);
 
-                expireTime = toExpireTime(0);
-            }
-            else if (this.ttl == 0) {
-                this.ttl = ttl;
-
-                expireTime = toExpireTime(ttl);
-            }
-            else {
-                long delta = ttl - this.ttl;
-
-                if (delta < 0)
-                    expireTime = expireTime + delta < 0 ? System.currentTimeMillis() : expireTime + delta;
-                else {
-                    expireTime += ttl - this.ttl;
-
-                    // Account for overflow.
-                    if (expireTime < 0)
-                        expireTime = 0;
-
-                    this.ttl = ttl;
-                }
-            }
-
-            time = expireTime;
+            this.ttl = ttl;
 
             if (log.isDebugEnabled())
                 log.debug("Set ttl [ttl=" + this.ttl + ", expireTime=" + expireTime + ", timeLeft=" +
                     (expireTime - System.currentTimeMillis()) + ']');
-        }
-
-        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
-
-        if (tx != null) {
-            tx.entryTtl(key, ttl);
-            tx.entryExpireTime(key, time);
-        }
-
-        if (cctx.isDht()) {
-            // Update dht tx entry.
-            tx = cctx.dht().near().context().tm().localTx();
-
-            if (tx != null) {
-                tx.entryTtl(key, ttl);
-                tx.entryExpireTime(key, time);
-            }
         }
     }
 

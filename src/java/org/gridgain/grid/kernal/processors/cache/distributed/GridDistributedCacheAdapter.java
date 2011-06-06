@@ -23,7 +23,7 @@ import java.util.*;
  * Distributed cache implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter<K, V> {
     /**
@@ -75,7 +75,7 @@ public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter
     /** {@inheritDoc} */
     @Override public GridFuture<Boolean> lockAllAsync(Collection<? extends K> keys, long timeout,
         GridPredicate<? super GridCacheEntry<K, V>>... filter) {
-        GridCacheTxLocalEx<K, V> tx = ctx.tm().tx();
+        GridCacheTxLocalEx<K, V> tx = ctx.tm().userTxx();
 
         // Return value flag is true because we choose to bring values for explicit locks.
         return lockAllAsync(keys, timeout, tx, false, false, /*retval*/true, null, filter);
@@ -95,7 +95,7 @@ public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter
      */
     protected abstract GridFuture<Boolean> lockAllAsync(Collection<? extends K> keys, long timeout,
         @Nullable GridCacheTxLocalEx<K, V> tx, boolean isInvalidate, boolean isRead, boolean retval,
-        GridCacheTxIsolation isolation, GridPredicate<? super GridCacheEntry<K, V>>[] filter);
+        @Nullable GridCacheTxIsolation isolation, GridPredicate<? super GridCacheEntry<K, V>>[] filter);
 
     /** {@inheritDoc} */
     @Override public Collection<GridRichNode> affinityNodes(K key) {

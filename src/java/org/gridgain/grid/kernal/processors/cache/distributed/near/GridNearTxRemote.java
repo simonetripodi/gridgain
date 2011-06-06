@@ -13,6 +13,7 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
@@ -27,11 +28,14 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> {
     /** Evicted keys. */
     private Collection<K> evicted = new LinkedList<K>();
+
+    /** Near node ID. */
+    private UUID nearNodeId;
 
     /** Evicted keys. */
     private Collection<byte[]> evictedBytes = new LinkedList<byte[]>();
@@ -46,6 +50,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
     /**
      * @param ldr Class loader.
      * @param nodeId Node ID.
+     * @param nearNodeId Near node ID.
      * @param rmtThreadId Remote thread ID.
      * @param xidVer XID version.
      * @param commitVer Commit version.
@@ -60,6 +65,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
     public GridNearTxRemote(
         ClassLoader ldr,
         UUID nodeId,
+        UUID nearNodeId,
         long rmtThreadId,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
@@ -70,6 +76,8 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
         Collection<GridCacheTxEntry<K, V>> writeEntries,
         GridCacheContext<K, V> ctx) throws GridException {
         super(ctx, nodeId, rmtThreadId, xidVer, commitVer, concurrency, isolation, invalidate, timeout);
+
+        this.nearNodeId = nearNodeId;
 
         readMap = Collections.emptyMap();
 
@@ -88,6 +96,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
      * This constructor is meant for pessimistic transactions.
      *
      * @param nodeId Node ID.
+     * @param nearNodeId Near node ID.
      * @param rmtThreadId Remote thread ID.
      * @param xidVer XID version.
      * @param commitVer Commit version.
@@ -104,6 +113,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
      */
     public GridNearTxRemote(
         UUID nodeId,
+        UUID nearNodeId,
         long rmtThreadId,
         GridCacheVersion xidVer,
         GridCacheVersion commitVer,
@@ -118,6 +128,8 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
         GridCacheContext<K, V> ctx) throws GridException {
         super(ctx, nodeId, rmtThreadId, xidVer, commitVer, concurrency, isolation, invalidate, timeout);
 
+        this.nearNodeId = nearNodeId;
+
         readMap = new LinkedHashMap<K, GridCacheTxEntry<K, V>>(1, 1.0f);
         writeMap = new LinkedHashMap<K, GridCacheTxEntry<K, V>>(1, 1.0f);
 
@@ -127,6 +139,18 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
     /** {@inheritDoc} */
     @Override public boolean near() {
         return true;
+    }
+
+    /**
+     * @return Near node ID.
+     */
+    public UUID nearNodeId() {
+        return nearNodeId;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> nodeIds() {
+        return nodeId.equals(nearNodeId) ? Collections.singleton(nodeId) : F.asList(nodeId, nearNodeId);
     }
 
     /**

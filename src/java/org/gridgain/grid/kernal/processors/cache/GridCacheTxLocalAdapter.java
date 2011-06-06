@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction adapter for cache transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxLocalEx<K, V> {
@@ -68,6 +68,9 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
     /** Base for completed versions. */
     protected GridCacheVersion completedBase;
 
+    /** Commit error. */
+    protected AtomicReference<Throwable> commitErr = new AtomicReference<Throwable>();
+
     /**
      * Empty constructor required for {@link Externalizable}.
      */
@@ -100,6 +103,16 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
         super(ctx, xidVer, implicit, true, concurrency, isolation, timeout, invalidate, swapEnabled, storeEnabled);
 
         minVer = xidVer;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Throwable commitError() {
+        return commitErr.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void commitError(Throwable e) {
+        commitErr.compareAndSet(null, e);
     }
 
     /** {@inheritDoc} */
@@ -330,7 +343,7 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                     cacheEntry.invalidate(null, xidVer);
             }
             catch (Throwable t) {
-                log().error("Failed to invalidate transaction entries while reverting a commit.", t);
+                U.error(log, "Failed to invalidate transaction entries while reverting a commit.", t);
 
                 break;
             }
@@ -413,11 +426,15 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                 store.txEnd(ctx.namex(), this, true);
             }
             catch (GridException ex) {
+                commitError(ex);
+
                 setRollbackOnly();
 
                 throw ex;
             }
             catch (Throwable ex) {
+                commitError(ex);
+
                 setRollbackOnly();
 
                 throw new GridException("Failed to commit transaction to database: " + this, ex);
@@ -526,6 +543,14 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                         }
                     }
                     catch (Throwable ex) {
+                        GridException err = new GridCacheTxHeuristicException("Failed to locally write to cache " +
+                            "(all transaction entries will be invalidated, however there was a window when entries " +
+                            "for this transaction were visible to others): " + this, ex);
+
+                        U.error(log, err);
+
+                        commitErr.compareAndSet(null, err);
+
                         state(UNKNOWN);
 
                         try {
@@ -536,9 +561,7 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                             U.error(log, "Failed to uncommit transaction: " + this, ex1);
                         }
 
-                        throw new GridCacheTxHeuristicException("Failed to locally write to cache " +
-                            "(all transaction entries will be invalidated, however there was a window when entries " +
-                            "for this transaction were visible to others): " + this, ex);
+                        throw err;
                     }
                 }
             }
@@ -829,8 +852,6 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                     CU.putAllToStore(ctx, log(), this, putMap);
             }
             catch (Throwable ex) {
-                // Throw rollback exception to signify that
-                // transaction has been rolled back.
                 U.error(log, "Failed to persist values to persistent store [putKeys=" +
                     (putMap != null ? putMap.keySet() : "") + ", rmvKey=" + rmvKey +
                     ", tx=" + this + ']', ex);
@@ -845,22 +866,40 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
         if (state != ROLLING_BACK && state != ROLLED_BACK) {
             setRollbackOnly();
 
-            throw new GridException("Invalid transaction state for rollback [state=" + state + ", tx=" + this + ']');
+            throw new GridException("Invalid transaction state for rollback [state=" + state + ", tx=" + this + ']',
+                commitErr.get());
         }
 
         if (doneFlag.compareAndSet(false, true)) {
-            if (near())
-                // Must evict near entries before rolling back from
-                // transaction manager, so they will be removed from cache.
-                for (GridCacheTxEntry<K, V> e : allEntries())
-                    evictNearEntry(e, false);
+            try {
+                if (near())
+                    // Must evict near entries before rolling back from
+                    // transaction manager, so they will be removed from cache.
+                    for (GridCacheTxEntry<K, V> e : allEntries())
+                        evictNearEntry(e, false);
 
-            ctx.tm().rollbackTx(this);
+                ctx.tm().rollbackTx(this);
 
-            GridCacheStore store = ctx.config().getStore();
+                GridCacheStore store = ctx.config().getStore();
 
-            if (isSingleUpdate() || isBatchUpdate())
-                store.txEnd(ctx.namex(), this, false);
+                if (isSingleUpdate() || isBatchUpdate())
+                    store.txEnd(ctx.namex(), this, false);
+            }
+            catch (Error e) {
+                U.addLastCause(e, commitErr.get());
+
+                throw e;
+            }
+            catch (RuntimeException e) {
+                U.addLastCause(e, commitErr.get());
+
+                throw e;
+            }
+            catch (GridException e) {
+                U.addLastCause(e, commitErr.get());
+
+                throw e;
+            }
         }
     }
 
@@ -2048,14 +2087,20 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
     /**
      * @param key Key.
      * @param ttl Time to live.
+     * @return {@code true} if tx entry exists for this key, {@code false} otherwise.
      */
-    void entryTtl(K key, long ttl) {
+    boolean entryTtl(K key, long ttl) {
         assert key != null;
 
         GridCacheTxEntry<K, V> e = entry(key);
 
-        if (e != null)
+        if (e != null) {
+            e.expireTime(CU.toExpireTime(ttl, e.ttl(), e.expireTime()));
+
             e.ttl(ttl);
+        }
+
+        return e != null;
     }
 
     /**
@@ -2068,19 +2113,6 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
         GridCacheTxEntry<K, V> e = entry(key);
 
         return e != null ? e.ttl() : 0;
-    }
-
-    /**
-     * @param key Key.
-     * @param expireTime Expire time.
-     */
-    void entryExpireTime(K key, long expireTime) {
-        assert key != null;
-
-        GridCacheTxEntry<K, V> e = entry(key);
-
-        if (e != null)
-            e.expireTime(expireTime);
     }
 
     /**

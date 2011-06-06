@@ -47,7 +47,7 @@ import static org.gridgain.grid.GridEventType.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
     /** Default number of partitions. */
@@ -90,11 +90,14 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
     /** */
     private String attrName = DFLT_REPLICA_COUNT_ATTR_NAME;
 
+    /** */
+    private boolean exclNeighbors;
+
     /** Optional backup filter. */
     private GridPredicate<GridRichNode> backupFilter;
 
     /** Hasher function. */
-    private GridClosure<Object, Integer> hasher = GridConsistentHash.MD5_HASHER;
+    private GridConsistentHash.Hasher hasher = GridConsistentHash.MD5_HASHER;
 
     /** Initialization flag. */
     private AtomicBoolean init = new AtomicBoolean(false);
@@ -143,18 +146,41 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
     }
 
     /**
-     * Initializes affinity with specified number of backups and partitions.
+     * Initializes affinity with flag to exclude same-host-neighbors from being backups of each other
+     * and specified number of backups.
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code #getBackupFilter()} is set.
      *
+     * @param exclNeighbors {@code True} if nodes residing on the same host may not act as backups
+     *      of each other.
+     * @param backups Number of back up servers per key.
+     */
+    public GridCachePartitionedAffinity(boolean exclNeighbors, int backups) {
+        this.exclNeighbors = exclNeighbors;
+        this.backups = backups;
+    }
+
+    /**
+     * Initializes affinity with flag to exclude same-host-neighbors from being backups of each other,
+     * and specified number of backups and partitions.
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code #getBackupFilter()} is set.
+     *
+     * @param exclNeighbors {@code True} if nodes residing on the same host may not act as backups
+     *      of each other.
      * @param backups Number of back up servers per key.
      * @param parts Total number of partitions.
      */
-    public GridCachePartitionedAffinity(int backups, int parts) {
+    public GridCachePartitionedAffinity(boolean exclNeighbors, int backups, int parts) {
+        this.exclNeighbors = exclNeighbors;
         this.backups = backups;
         this.parts = parts;
     }
 
     /**
      * Initializes optional counts for replicas and backups.
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code backupFilter} is set.
      *
      * @param backups Backups count.
      * @param parts Total number of partitions.
@@ -239,6 +265,8 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
      * Gets optional backup filter. If not {@code null}, then primary nodes will be
      * selected from all nodes outside of this filter, and backups will be selected
      * from all nodes inside it.
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code backupFilter} is set.
      *
      * @return Optional backup filter.
      */
@@ -250,6 +278,8 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
      * Sets optional backup filter. If provided, then primary nodes will be selected
      * from all nodes outside of this filter, and backups will be selected from all
      * nodes inside it.
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code backupFilter} is set.
      *
      * @param backupFilter Optional backup filter.
      */
@@ -262,7 +292,7 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
      *
      * @return Hasher function for consistent hash.
      */
-    public GridClosure<Object, Integer> getHasher() {
+    public GridConsistentHash.Hasher getHasher() {
         return hasher;
     }
 
@@ -271,7 +301,7 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
      *
      * @param hasher Hasher function for consistent hash.
      */
-    public void setHasher(GridClosure<Object, Integer> hasher) {
+    public void setHasher(GridConsistentHash.Hasher hasher) {
         this.hasher = hasher;
     }
 
@@ -293,6 +323,28 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
      */
     public void setReplicaCountAttributeName(String attrName) {
         this.attrName = attrName;
+    }
+
+    /**
+     * Checks flag to exclude same-host-neighbors from being backups of each other (default is {@code false}).
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code #getBackupFilter()} is set.
+     *
+     * @return {@code True} if nodes residing on the same host may not act as backups of each other.
+     */
+    public boolean isExcludeNeighbors() {
+        return exclNeighbors;
+    }
+
+    /**
+     * Sets flag to exclude same-host-neighbors from being backups of each other (default is {@code false}).
+     * <p>
+     * Note that {@code excludeNeighbors} parameter is ignored if {@code #getBackupFilter()} is set.
+     *
+     * @param exclNeighbors {@code True} if nodes residing on the same host may not act as backups of each other.
+     */
+    public void setExcludeNeighbors(boolean exclNeighbors) {
+        this.exclNeighbors = exclNeighbors;
     }
 
     /** {@inheritDoc} */
@@ -320,12 +372,30 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
                 return grid.nodes(F.concat(false, primaryId, backupIds));
             }
             else {
-                Collection<UUID> ids = nodeHash.nodes(part, backups + 1, nodeIds);
+                if (!exclNeighbors || nodes.size() == 1) {
+                    Collection<UUID> ids = nodeHash.nodes(part, backups + 1, nodeIds);
 
-                if (ids.size() == 1)
-                    return Collections.singletonList(grid.node(ids.iterator().next()));
+                    if (ids.size() == 1)
+                        return Collections.singletonList(grid.node(ids.iterator().next()));
 
-                return grid.nodes(ids);
+                    return grid.nodes(ids);
+                }
+                else {
+                    final Collection<UUID> ids = new GridLeanSet<UUID>();
+
+                    for (int i = 0; i < 1 + backups; i++) {
+                        UUID id = nodeHash.node(part, F.contains(nodeIds), new P1<UUID>() {
+                            @Override public boolean apply(UUID id) {
+                                return !F.containsAny(ids, F.nodeIds(grid.node(id).neighbors().nodes()));
+                            }
+                        });
+
+                        if (id != null)
+                            ids.add(id);
+                    }
+
+                    return grid.nodes(ids);
+                }
             }
         }
         finally {

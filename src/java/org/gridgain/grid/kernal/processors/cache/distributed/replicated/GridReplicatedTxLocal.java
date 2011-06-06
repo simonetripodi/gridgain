@@ -28,7 +28,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** All keys participating in transaction. */
@@ -560,6 +560,8 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                     f.get();
                 }
                 catch (GridException e) {
+                    commitErr.compareAndSet(null, e);
+
                     // Failed during prepare, can't commit.
                     fut.onError(e);
 
@@ -571,7 +573,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
                     if (state != COMMITTING && state != COMMITTED) {
                         fut.onError(new GridException("Invalid transaction state for commit [state=" + state() +
-                            ", tx=" + this + ']'));
+                            ", tx=" + this + ']', commitErr.get()));
 
                         return;
                     }
@@ -618,24 +620,41 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             return;
         }
 
-        if (!ec()) {
-            assert fin != null;
+        try {
+            if (!ec()) {
+                assert fin != null;
 
-            ctx.mvcc().addFuture(fin);
+                ctx.mvcc().addFuture(fin);
 
-            fin.init();
+                fin.init();
 
-            if (syncRollback) {
-                if (F.isEmpty(fin.nodes()))
+                if (syncRollback) {
+                    if (F.isEmpty(fin.nodes()))
+                        fin.complete();
+                }
+                else
                     fin.complete();
+
+                fin.get();
             }
             else
-                fin.complete();
-
-            fin.get();
+                finish(false);
         }
-        else
-            finish(false);
+        catch (Error e) {
+            U.addLastCause(e, commitErr.get());
+
+            throw e;
+        }
+        catch (RuntimeException e) {
+            U.addLastCause(e, commitErr.get());
+
+            throw e;
+        }
+        catch (GridException e) {
+            U.addLastCause(e, commitErr.get());
+
+            throw e;
+        }
     }
 
     /** {@inheritDoc} */

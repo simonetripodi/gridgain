@@ -34,7 +34,7 @@ import scalaz._
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class ScalarGridPimp extends ScalarProjectionPimp[Grid] with ScalarNamed[Grid]
 
@@ -42,7 +42,7 @@ class ScalarGridPimp extends ScalarProjectionPimp[Grid] with ScalarNamed[Grid]
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 object ScalarGridPimp {
     /**

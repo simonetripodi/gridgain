@@ -25,7 +25,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Local cache transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Transaction future. */
@@ -85,9 +85,8 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
             GridCacheTxState state = state();
 
             // If other thread is doing "prepare", then no-op.
-            if (state == PREPARING || state == PREPARED || state == COMMITTING || state == COMMITTED) {
+            if (state == PREPARING || state == PREPARED || state == COMMITTING || state == COMMITTED)
                 return;
-            }
 
             setRollbackOnly();
 
@@ -131,9 +130,8 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
         if (state() == COMMITTING) {
             // Special handling for EC transactions.
             try {
-                if (userCommitEC()) {
+                if (userCommitEC())
                     state(COMMITTED);
-                }
             }
             finally {
                 if (!done()) {
@@ -170,9 +168,8 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
                         state(ROLLED_BACK);
                     }
-                    else {
+                    else
                         state(COMMITTED);
-                    }
                 }
             }
         }

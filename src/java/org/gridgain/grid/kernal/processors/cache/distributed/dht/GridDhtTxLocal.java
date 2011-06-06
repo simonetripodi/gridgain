@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implements GridCacheMappedVersion {
     /** */
@@ -153,6 +153,18 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
         assert nearNodeId != null;
 
         return nearNodeId;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> nodeIds() {
+        Collection<UUID> ids = new GridLeanSet<UUID>();
+
+        Collections.addAll(ids, nearNodeId, ctx.nodeId());
+
+        ids.addAll(dhtMap.keySet());
+        ids.addAll(nearMap.keySet());
+
+        return ids;
     }
 
     /**
@@ -354,6 +366,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      */
     void addDhtMapping(Map<GridNode, List<GridDhtCacheEntry<K, V>>> mappings) {
         addMapping(mappings, dhtMap);
+
+        ctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -361,6 +375,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      */
     void addNearMapping(Map<GridNode, List<GridDhtCacheEntry<K, V>>> mappings) {
         addMapping(mappings, nearMap);
+
+        ctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -1048,6 +1064,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return GridToStringBuilder.toString(GridDhtTxLocal.class, this, "super", super.toString());
+        return GridToStringBuilder.toString(GridDhtTxLocal.class, this, "nearNodes", nearMap.keySet(),
+            "dhtNodes", dhtMap.keySet(), "super", super.toString());
     }
 }

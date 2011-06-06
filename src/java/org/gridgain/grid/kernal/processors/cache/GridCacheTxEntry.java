@@ -29,7 +29,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * equality.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheTxEntry<K, V> implements GridPeerDeployAware, Externalizable {
     /** Owning transaction. */
@@ -688,7 +688,7 @@ public class GridCacheTxEntry<K, V> implements GridPeerDeployAware, Externalizab
      * @param val Entry value.
      * @return Old value.
      */
-    public V value(V val) {
+    public V value(@Nullable V val) {
         synchronized (mutex()) {
             V oldVal = this.val;
 

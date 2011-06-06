@@ -23,7 +23,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheMvccCandidate.M
  * Lock candidate.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<GridCacheMvccCandidate<K>> {
     /** Locking node ID. */
@@ -66,10 +66,14 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     private transient GridCacheEntryEx<K, ?> parent;
 
     /** Alternate node ID specifying additional node involved in this lock. */
-    private transient UUID otherNodeId;
+    private transient volatile UUID otherNodeId;
 
     /** Other lock version (near version vs dht version). */
     private transient GridCacheVersion otherVer;
+
+    /** Mapped node IDS. */
+    @GridToStringInclude
+    private transient volatile Collection<UUID> mappedNodeIds;
 
     /**
      * Empty constructor required by {@link Externalizable}.
@@ -200,10 +204,31 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     }
 
     /**
-     * @return Near node ID.
+     * @return Near or DHT node ID.
      */
     public UUID otherNodeId() {
         return otherNodeId;
+    }
+
+    /**
+     * @param otherNodeId Near or DHT node ID.
+     */
+    public void otherNodeId(UUID otherNodeId) {
+        this.otherNodeId = otherNodeId;
+    }
+
+    /**
+     * @return Mapped node IDs.
+     */
+    public Collection<UUID> mappedNodeIds() {
+        return mappedNodeIds;
+    }
+
+    /**
+     * @param mappedNodeIds Mapped node IDs.
+     */
+    public void mappedNodeIds(Collection<UUID> mappedNodeIds) {
+        this.mappedNodeIds = mappedNodeIds;
     }
 
     /**

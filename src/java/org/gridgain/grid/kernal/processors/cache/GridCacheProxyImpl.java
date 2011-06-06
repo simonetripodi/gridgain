@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Cache proxy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externalizable {
     /** Context. */
@@ -3144,6 +3144,54 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
 
         try {
             return cache.mapPartitionsToNodes(parts);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc() {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            cache.dgc();
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc(int suspectLockTimeout) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            cache.dgc(suspectLockTimeout);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc(boolean global) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            cache.dgc(global);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc(int suspectLockTimeout, boolean global) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            cache.dgc(suspectLockTimeout, global);
         }
         finally {
             gate.leave(prev);

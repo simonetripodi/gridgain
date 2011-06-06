@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -1978,7 +1978,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** {@inheritDoc} */
     @Nullable @Override public V put(final K key, final V val,
-        final GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException {
+        @Nullable final GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException {
         A.notNull(key, "key", val, "val");
 
         ctx.denyOnLocalRead();
@@ -2436,7 +2436,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** {@inheritDoc} */
     @Override public boolean lock(K key, long timeout,
-        GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException {
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException {
         return lockAll(Collections.singletonList(key), timeout, filter);
     }
 
@@ -3357,6 +3357,12 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 throw e;
             }
+            finally {
+                ctx.tm().txContextReset();
+
+                if (ctx.isNear())
+                    ctx.near().dht().context().tm().txContextReset();
+            }
         }
         else {
             return op.op(tx);
@@ -3676,6 +3682,26 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 map.put(p, mapPartitionToNode(p));
 
         return map;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc() {
+        ctx.dgc().dgc();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc(int suspectLockTimeout) {
+        ctx.dgc().dgc(suspectLockTimeout);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc(boolean global) {
+        ctx.dgc().dgc(global);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void dgc(int suspectLockTimeout, boolean global) {
+        ctx.dgc().dgc(suspectLockTimeout, global);
     }
 
     /**

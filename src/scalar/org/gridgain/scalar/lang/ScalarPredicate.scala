@@ -18,7 +18,7 @@ import org.gridgain.grid.lang.GridPredicate
  * Peer deploy aware adapter for Java's `GridPredicate`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  */
 class ScalarPredicate[T](private val p: T => Boolean) extends GridPredicate[T] {
     assert(p != null)

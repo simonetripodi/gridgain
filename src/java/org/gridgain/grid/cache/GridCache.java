@@ -62,7 +62,7 @@ import java.util.*;
  * To do that, {@link GridSystemProperties#GG_NO_DISCO_ORDER} must be provided at startup.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.0c.31052011
+ * @version 3.1.1c.05062011
  * @param <K> Cache key type.
  * @param <V> Cache value type.
  */
@@ -446,4 +446,47 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
      */
     @GridEnterpriseFeature
     public boolean removeAtomicStamped(String name) throws GridException;
+
+    /**
+     * Runs DGC procedure locally on demand using
+     * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
+     * <p>
+     * Method blocks current thread until locks are examined and all DGC requests are sent
+     * to remote nodes.
+     */
+    public void dgc();
+
+    /**
+     * Runs DGC procedure on demand using
+     * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
+     * <p>
+     * Method blocks current thread until locks are examined and all DGC requests are sent
+     * to remote nodes and (if {@code global} is {@code true}) all nodes having this cache
+     * get signal to start GC procedure.
+     *
+     * @param global If {@code true} then GC procedure will start on all nodes having this cache.
+     */
+    public void dgc(boolean global);
+
+    /**
+     * Runs DGC procedure locally on demand using provided parameter to identify suspect locks.
+     * <p>
+     * Method blocks current thread until locks are examined and all DGC requests are sent
+     * to remote nodes.
+     *
+     * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
+     */
+    public void dgc(int suspectLockTimeout);
+
+    /**
+     * Runs DGC procedure on demand using provided parameter to identify suspect locks.
+     * <p>
+     * Method blocks current thread until locks are examined and all DGC requests are sent
+     * to remote nodes and (if {@code global} is {@code true}) all nodes having this cache
+     * get signal to start GC procedure.
+     *
+     * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
+     * @param global If {@code true} then GC procedure will start on all nodes having this cache.
+     */
+    public void dgc(int suspectLockTimeout, boolean global);
 }
