@@ -25,10 +25,10 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.*;
 
-import static org.gridgain.grid.cache.GridCacheFlag.*;
 import static org.gridgain.grid.cache.GridCacheConfiguration.*;
+import static org.gridgain.grid.cache.GridCacheFlag.*;
 
 /**
  * Query adapter.
@@ -38,8 +38,8 @@ import static org.gridgain.grid.cache.GridCacheConfiguration.*;
  */
 public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareAdapter implements
     GridCacheQueryBase<K, V> {
-    /** Sequence of query id.  */
-    protected static final AtomicInteger seq = new AtomicInteger();
+    /** Sequence of query id. */
+    protected static final AtomicInteger idGen = new AtomicInteger();
 
     /** Query id.  */
     protected final int id;
@@ -64,52 +64,58 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     protected final GridLogger log;
 
     /** */
-    private GridCacheQueryType type;
+    private final GridCacheQueryType type;
 
     /** */
-    private String clause;
+    private volatile String clause;
 
     /** */
-    private String clsName;
+    private volatile String clsName;
 
     /** */
-    private Class<?> cls;
+    private volatile Class<?> cls;
 
     /** */
-    private GridClosure<Object[], GridPredicate<? super K>> rmtKeyFilter;
+    private volatile GridClosure<Object[], GridPredicate<? super K>> rmtKeyFilter;
 
     /** */
-    private GridClosure<Object[], GridPredicate<? super V>> rmtValFilter;
+    private volatile GridClosure<Object[], GridPredicate<? super V>> rmtValFilter;
 
     /** */
-    private GridPredicate<GridCacheEntry<K, V>> prjFilter;
+    private volatile GridPredicate<GridCacheEntry<K, V>> prjFilter;
 
     /** */
-    private int pageSize = GridCacheQuery.DFLT_PAGE_SIZE;
+    private volatile int pageSize = GridCacheQuery.DFLT_PAGE_SIZE;
 
     /** */
-    private long timeout = DFLT_TIMEOUT;
+    private volatile long timeout = DFLT_TIMEOUT;
 
     /** */
-    private Object[] args;
+    private volatile Object[] args;
 
     /** */
-    private Object[] closureArgs;
+    private volatile Object[] closureArgs;
 
     /** */
-    private boolean keepAll = true;
+    private volatile boolean keepAll = true;
 
     /** */
-    private boolean incBackups;
+    private volatile boolean incBackups;
 
     /** */
-    private boolean readThrough;
+    private volatile boolean readThrough;
 
     /** */
-    private boolean clone;
+    private volatile boolean clone;
 
     /** Query metrics.*/
-    protected GridCacheQueryMetricsAdapter metrics;
+    private volatile GridCacheQueryMetricsAdapter metrics;
+
+    /** Sealed flag. Query cannot be modified once it's set to true. */
+    private volatile boolean sealed;
+
+    /** */
+    protected final Object mux = new Object();
 
     /**
      * @param cacheCtx Cache registry.
@@ -145,17 +151,17 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         this.clsName = clsName;
         this.prjFilter = prjFilter;
 
+        validateSql();
+
         log = cacheCtx.logger(getClass());
 
         qryLog = cacheCtx.kernalContext().config().getGridLogger().getLogger(DFLT_QUERY_LOGGER_NAME);
 
         clone = prjFlags.contains(CLONE);
 
-        id = qryId < 0 ? seq.incrementAndGet() : qryId;
+        metrics = new GridCacheQueryMetricsAdapter(new GridCacheQueryMetricsKey(type, clsName, clause));
 
-        validateSql();
-
-        createMetrics();
+        id = qryId < 0 ? idGen.incrementAndGet() : qryId;
     }
 
     /**
@@ -188,7 +194,9 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         id = qry.id;
     }
 
-    /** */
+    /**
+     * Validates sql clause.
+     */
     private void validateSql() {
         if (type == GridCacheQueryType.SQL) {
             if (clause == null)
@@ -208,6 +216,16 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         return cacheCtx;
     }
 
+    /**
+     * Checks if metrics should be recreated and does it in this case.
+     */
+    private void checkMetrics() {
+        synchronized (mux) {
+            if (!F.eq(metrics.clause(), clause) || !F.eq(metrics.className(), clsName))
+                metrics = new GridCacheQueryMetricsAdapter(new GridCacheQueryMetricsKey(type, clsName, clause));
+        }
+    }
+
     /** {@inheritDoc} */
     @Override public int id() {
         return id;
@@ -225,11 +243,15 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void clause(String clause) {
-        this.clause = clause;
+        synchronized (mux) {
+            checkSealed();
 
-        validateSql();
+            this.clause = clause;
 
-        createMetrics();
+            validateSql();
+
+            checkMetrics();
+        }
     }
 
     /** {@inheritDoc} */
@@ -239,7 +261,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void pageSize(int pageSize) {
-        this.pageSize = pageSize < 1 ? GridCacheQuery.DFLT_PAGE_SIZE : pageSize;
+        synchronized (mux) {
+            checkSealed();
+
+            this.pageSize = pageSize < 1 ? GridCacheQuery.DFLT_PAGE_SIZE : pageSize;
+        }
     }
 
     /** {@inheritDoc} */
@@ -249,7 +275,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void timeout(long timeout) {
-        this.timeout = timeout <= 0 ? DFLT_TIMEOUT : timeout;
+        synchronized (mux) {
+            checkSealed();
+
+            this.timeout = timeout <= 0 ? DFLT_TIMEOUT : timeout;
+        }
     }
 
     /** {@inheritDoc} */
@@ -259,7 +289,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void keepAll(boolean keepAll) {
-        this.keepAll = keepAll;
+        synchronized (mux) {
+            checkSealed();
+
+            this.keepAll = keepAll;
+        }
     }
 
     /** {@inheritDoc} */
@@ -269,7 +303,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void includeBackups(boolean incBackups) {
-        this.incBackups = incBackups;
+        synchronized (mux) {
+            checkSealed();
+
+            this.incBackups = incBackups;
+        }
     }
 
     /** {@inheritDoc} */
@@ -286,7 +324,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void readThrough(boolean readThrough) {
-        this.readThrough = readThrough;
+        synchronized (mux) {
+            checkSealed();
+
+            this.readThrough = readThrough;
+        }
     }
 
     /** {@inheritDoc} */
@@ -296,9 +338,13 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
     /** {@inheritDoc} */
     @Override public void className(String clsName) {
-        this.clsName = clsName;
+        synchronized (mux) {
+            checkSealed();
 
-        createMetrics();
+            this.clsName = clsName;
+
+            checkMetrics();
+        }
     }
 
     /**
@@ -327,7 +373,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
      * @param rmtKeyFilter Remote key filter
      */
     @Override public void remoteKeyFilter(GridClosure<Object[], GridPredicate<? super K>> rmtKeyFilter) {
-        this.rmtKeyFilter = rmtKeyFilter;
+        synchronized (mux) {
+            checkSealed();
+
+            this.rmtKeyFilter = rmtKeyFilter;
+        }
     }
 
     /**
@@ -341,7 +391,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
      * @param rmtValFilter Remote value filter.
      */
     @Override public void remoteValueFilter(GridClosure<Object[], GridPredicate<? super V>> rmtValFilter) {
-        this.rmtValFilter = rmtValFilter;
+        synchronized (mux) {
+            checkSealed();
+
+            this.rmtValFilter = rmtValFilter;
+        }
     }
 
     /**
@@ -355,7 +409,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
      * @param prjFilter Projection filter.
      */
     public void projectionFilter(GridPredicate<GridCacheEntry<K, V>> prjFilter) {
-        this.prjFilter = prjFilter;
+        synchronized (mux) {
+            checkSealed();
+
+            this.prjFilter = prjFilter;
+        }
     }
 
     /**
@@ -410,6 +468,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         return stmt.get();
     }
 
+    /** {@inheritDoc} */
+    @Override public GridCacheQueryMetrics metrics() {
+        return metrics;
+    }
+
     /**
      * @throws GridException In case of error.
      */
@@ -424,10 +487,9 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
      */
     protected <R> GridCacheQueryFuture<R> execute(Collection<GridRichNode> nodes, boolean single,
         @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
-        /*
-            This logging is used only for debugging. For all other cases should be use
-            {@code GridCacheConfiguration.isLogQueries()} flag.
-        */
+        // Seal the query.
+        seal();
+
         if (log.isDebugEnabled())
             log.debug("Executing query [query=" + this + ", nodes=" + nodes + ']');
 
@@ -456,6 +518,45 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     }
 
     /**
+     * Check if this query is sealed.
+     */
+    protected void checkSealed() {
+        assert Thread.holdsLock(mux);
+
+        if (sealed)
+            throw new IllegalStateException("Query cannot be modified after first execution: " + this);
+    }
+
+    /**
+     * Seal this query so that it can't be modified.
+     */
+    private void seal() {
+        synchronized (mux) {
+            sealed = true;
+        }
+    }
+
+    /**
+     * @param res Query result.
+     * @param err Error or {@code null} if query executed successfully.
+     * @param startTime Start time.
+     * @param duration Duration.
+     */
+    public void onExecuted(Object res, Throwable err, long startTime, long duration) {
+        boolean fail = err != null;
+
+        // Update own metrics.
+        metrics.onQueryExecute(startTime, duration, fail);
+
+        // Update metrics in query manager.
+        cacheCtx.queries().onMetricsUpdate(metrics, startTime, duration, fail);
+
+        if (qryLog.isDebugEnabled())
+            qryLog.debug("Query execution finished [qry=" + this + ", startTime=" + startTime +
+                ", duration=" + duration + ", fail=" + fail + ", res=" + res + ']');
+    }
+
+    /**
      * @param grid Grid.
      * @return Predicates for nodes.
      */
@@ -472,11 +573,6 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         return res;
     }
 
-    /** {@inheritDoc} */
-    @Override public String toString() {
-        return S.toString(GridCacheQueryBaseAdapter.class, this);
-    }
-
     /**
      * @param nodes Nodes.
      * @return Short representation of query.
@@ -484,6 +580,11 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     public String toShortString(Collection<? extends GridNode> nodes) {
         return "[id=" + id + ", clause=" + clause + ", type=" + type + ", clsName=" + clsName + ", nodes=" +
             U.toShortString(nodes) + ']';
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return S.toString(GridCacheQueryBaseAdapter.class, this);
     }
 
     /**
@@ -543,45 +644,5 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
             return false;
         }
-    }
-
-    /**
-     * Create new metric if metrics hasn't created or instead of already existed metrics;
-     */
-    @SuppressWarnings("unchecked")
-    private void createMetrics() {
-        if (metrics == null || metrics.executions() > 0) {
-            metrics = new GridCacheQueryMetricsAdapter(this);
-
-            GridCacheQueryManager qryMgr = cacheCtx.queries();
-
-            assert qryMgr != null;
-
-            qryMgr.addMetrics(metrics);
-        }
-    }
-
-    /**
-     *
-     * @param fut Future which was executed.
-     * @param msg Prefix for log message.
-     */
-    public void onQueryExecuted(String msg, GridFuture fut) {
-        boolean fail = false;
-        Object res = null;
-
-        // Get future result.
-        try {
-            res = fut.get();
-        }
-        catch (GridException ignored) {
-            fail = true;
-        }
-
-        metrics.onQueryExecute(fut.startTime(), fut.duration(), fail);
-
-        if (qryLog.isDebugEnabled())
-            qryLog.debug(msg + (!F.isEmpty(msg) ? " " : "") +
-                "[id=" + id + ", duration=" + fut.duration() + ", fail=" + fail + ", res=" + res + ']');
     }
 }

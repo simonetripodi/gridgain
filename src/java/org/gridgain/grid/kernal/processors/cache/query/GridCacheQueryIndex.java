@@ -851,9 +851,9 @@ public class GridCacheQueryIndex<K, V> {
 
         if (cctx.config().isIndexFixedTyping()) {
             if (!queryType.keyClass().equals(key.getClass())) {
-                U.warn(log, "Query index was not updated since configuration property 'indexFixedTyping'" +
-                    " is set to true but you try to store value for different key type [registeredKeyType=" +
-                    queryType.keyClass().getName() + ", keyType=" + key.getClass().getName() +
+                U.error(log, "Query index was not updated since configuration property 'indexFixedTyping'" +
+                    " is 'true' but passed in value type was already associated with different key type" +
+                    " [registeredKeyType=" + queryType.keyClass().getName() + ", keyType=" + key.getClass().getName() +
                     ", valType=" + queryType.valueClass().getName() + ']');
 
                 return;
@@ -863,9 +863,9 @@ public class GridCacheQueryIndex<K, V> {
                 Class<?> tableValClass = table.type().valueClass();
 
                 if (!tableValClass.equals(val.getClass())) {
-                    U.warn(log, "Query index was not updated since configuration property 'indexFixedTyping'" +
-                        " is set to true but you try to store different value for the same key type [keyType=" +
-                        key.getClass().getName() + ", registeredValType=" + tableValClass.getName() +
+                    U.error(log, "Query index was not updated since configuration property 'indexFixedTyping'" +
+                        " is 'true' but passed in key type was already associated with different value type" +
+                        " [keyType=" + key.getClass().getName() + ", registeredValType=" + tableValClass.getName() +
                         ", valType=" + queryType.valueClass().getName() + ']');
 
                     return;

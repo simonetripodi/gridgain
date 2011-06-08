@@ -11,16 +11,21 @@ package org.gridgain.grid.kernal.processors.cache.query;
 
 import org.gridgain.grid.cache.query.*;
 import org.gridgain.grid.typedef.internal.*;
+import org.gridgain.grid.util.tostring.*;
 
 import java.io.*;
 
 /**
- * Adapter for {@link GridCacheQueryMetrics} interface.
+ * Adapter for {@link GridCacheQueryMetrics}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
  * @version 3.1.1c.08062011
  */
 public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Externalizable {
+    /** Query metrics key. */
+    @GridToStringExclude
+    private GridCacheQueryMetricsKey key;
+
     /** Query creation time. */
     private long createTime = System.currentTimeMillis();
 
@@ -45,15 +50,6 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
     /** Number of fails. */
     private volatile int fails;
 
-    /** Queue clause. */
-    private String clause;
-
-    /**  */
-    private GridCacheQueryType type;
-
-    /**  */
-    private String clsName;
-
     /** Mutex. */
     private final Object mux = new Object();
 
@@ -66,12 +62,34 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
 
     /**
      *
-     * @param query Query which
+     * @param key Query metrics key.
      */
-    public GridCacheQueryMetricsAdapter(GridCacheQueryBase query) {
-        clause = query.clause();
-        type = query.type();
-        clsName = query.className();
+    public GridCacheQueryMetricsAdapter(GridCacheQueryMetricsKey key) {
+        assert key != null;
+
+        this.key = key;
+    }
+
+    /**
+     * @return Metrics key.
+     */
+    GridCacheQueryMetricsKey key() {
+        return key;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridCacheQueryType type() {
+        return key.type();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String className() {
+        return key.className();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String clause() {
+        return key.clause();
     }
 
     /** {@inheritDoc} */
@@ -109,21 +127,6 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
         return fails;
     }
 
-    /** {@inheritDoc} */
-    @Override public String clause() {
-        return clause;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCacheQueryType type() {
-        return type;
-    }
-
-    /** {@inheritDoc} */
-    @Override public String className() {
-        return clsName;
-    }
-
     /**
      * Callback for query execution.
      *
@@ -159,8 +162,30 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
         }
     }
 
+    /**
+     * Merge with given metrics.
+     *
+     * @return Copy.
+     */
+    public GridCacheQueryMetricsAdapter copy() {
+        GridCacheQueryMetricsAdapter m = new GridCacheQueryMetricsAdapter(key);
+
+        synchronized (mux) {
+            m.fails = fails;
+            m.firstTime = firstTime;
+            m.lastTime = lastTime;
+            m.minTime = minTime;
+            m.maxTime = maxTime;
+            m.execs = execs;
+            m.avgTime = avgTime;
+        }
+
+        return m;
+    }
+
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeObject(key);
         out.writeLong(createTime);
         out.writeLong(firstTime);
         out.writeLong(lastTime);
@@ -169,13 +194,11 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
         out.writeLong(avgTime);
         out.writeInt(execs);
         out.writeInt(fails);
-        out.writeByte(type.ordinal());
-        out.writeUTF(clause);
-        out.writeUTF(clsName);
     }
 
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        key = (GridCacheQueryMetricsKey)in.readObject();
         createTime = in.readLong();
         firstTime = in.readLong();
         lastTime = in.readLong();
@@ -184,13 +207,29 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
         avgTime = in.readLong();
         execs = in.readInt();
         fails = in.readInt();
-        type = GridCacheQueryType.fromOrdinal(in.readByte());
-        clause = in.readUTF();
-        clsName = in.readUTF();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+
+        if (!(obj instanceof GridCacheQueryMetricsAdapter))
+            return false;
+
+        GridCacheQueryMetricsAdapter oth = (GridCacheQueryMetricsAdapter)obj;
+
+        return oth.key.equals(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override public int hashCode() {
+        return key.hashCode();
     }
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridCacheQueryMetricsAdapter.class, this);
+        return S.toString(GridCacheQueryMetricsAdapter.class, this,
+            "type", key.type(), "clsName", key.className(), "clause", key.clause());
     }
 }

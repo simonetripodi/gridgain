@@ -108,8 +108,8 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     public GridCacheMetrics metrics();
 
     /**
-     * Gets metrics (statistics) for all queries executed in this cache. The metrics
-     * are grouped by the query clause (e.g. SQL clause), query type, and return value.
+     * Gets metrics (statistics) for all queries executed in this cache. Metrics
+     * are grouped by query clause (e.g. SQL clause), query type, and return value.
      * <p>
      * Note that only the last {@code 1000} query metrics are kept. This should be
      * enough for majority of the applications, as generally applications have

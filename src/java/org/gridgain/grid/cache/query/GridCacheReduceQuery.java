@@ -100,12 +100,13 @@ import java.util.*;
  */
 public interface GridCacheReduceQuery<K, V, R1, R2> extends GridCacheQueryBase<K, V> {
     /**
-     * Optional remote reducer factory to provide reducers for reduction of multiple queried values
-     * on queried nodes into one. The factory is a closure which accepts array of objects provided
-     * by {@link #closureArguments(Object...)} method ar parameter and returns reducer to reduce
-     * queried values.
+     * Optional remote reducer factory to provide reducers for reduction of multiple
+     * queried values on queried nodes into one. The factory is a closure which
+     * accepts array of objects provided by {@link #closureArguments(Object...)}
+     * method ar parameter and returns reducer to reduce queried values.
      * <p>
-     * If factory is set, then it should provide a new instance of reducer for every query execution.
+     * If factory is set, then it should provide a new instance of reducer for every
+     * query execution.
      *
      * @param factory Optional remote reducer factory to create reducers for use on queried nodes.
      */
@@ -115,12 +116,12 @@ public interface GridCacheReduceQuery<K, V, R1, R2> extends GridCacheQueryBase<K
      * Optional local reducer factory to provide reducers for reduction of multiple queried values
      * returned from remote nodes into one. The factory is a closure which accepts array of objects provided
      * by {@link #closureArguments(Object...)} method ar parameter and returns reducer to locally reduce
-     * multiple query results returned from remote nodes into one. 
+     * multiple query results returned from remote nodes into one.
      * <p>
      * If factory is set, then it should provide a new instance of reducer for every query execution.
      *
      * @param factory Optional reducer factory to create local reducers to reduce query results returned
-     *      from queried nodes. 
+     *      from queried nodes.
      */
     public void localReducer(@Nullable GridClosure<Object[], GridReducer<R1, R2>> factory);
 
@@ -148,6 +149,9 @@ public interface GridCacheReduceQuery<K, V, R1, R2> extends GridCacheQueryBase<K
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.), except
+     * arguments, if this method was called at least once.
      *
      * @param grid Grid projection to execute query on, if not provided, all grid nodes will be used.
      * @return Future for the reduced query result.
@@ -163,6 +167,9 @@ public interface GridCacheReduceQuery<K, V, R1, R2> extends GridCacheQueryBase<K
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.), except
+     * arguments, if this method was called at least once.
      *
      * @param grid Grid projection to execute query on, if not provided, all grid nodes will be used.
      * @return Future for the reduced query result.

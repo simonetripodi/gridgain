@@ -300,14 +300,20 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
             }
 
             if (done) {
-                if (syncNotify)
-                    notifyListener(lsnr);
-                else
-                    ctx.closure().runLocalSafe(new GPR() {
-                        @Override public void run() {
-                            notifyListener(lsnr);
-                        }
-                    }, true);
+                try {
+                    if (syncNotify) {
+                        notifyListener(lsnr);
+                    }
+                    else
+                        ctx.closure().runLocalSafe(new GPR() {
+                            @Override public void run() {
+                                notifyListener(lsnr);
+                            }
+                        }, true);
+                }
+                catch (IllegalStateException ignore) {
+                    U.warn(null, "Future notification will not proceed because grid is stopped: " + ctx.gridName());
+                }
             }
         }
     }
@@ -357,9 +363,17 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
                     }
                 }, true);
             }
-            else
-                for (GridInClosure<? super GridFuture<R>> lsnr : tmp)
-                    notifyListener(lsnr);
+            else {
+                ctx.gateway().readLock();
+
+                try {
+                    for (GridInClosure<? super GridFuture<R>> lsnr : tmp)
+                        notifyListener(lsnr);
+                }
+                finally {
+                    ctx.gateway().readUnlock();
+                }
+            }
         }
     }
 
@@ -374,12 +388,16 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
         try {
             lsnr.apply(this);
         }
+        catch (IllegalStateException ignore) {
+            U.warn(null, "Failed to notify listener (grid is stopped) [grid=" + ctx.gridName() +
+                ", lsnr=" + lsnr + ']');
+        }
         catch (RuntimeException e) {
             U.error(log, "Failed to notify listener: " + lsnr, e);
 
             throw e;
         }
-        catch (AssertionError e) {
+        catch (Error e) {
             U.error(log, "Failed to notify listener: " + lsnr, e);
 
             throw e;

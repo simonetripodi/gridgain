@@ -19,8 +19,9 @@ import java.util.*;
 /**
  * Convenience class representing mutable tuple of a single value.
  * <h2 class="header">Thread Safety</h2>
- * This class doesn't provide any synchronization for multi-threaded access and it is
- * responsibility of the user of this class to provide outside synchronization, if needed.
+ * This class doesn't provide any synchronization for multi-threaded access
+ * and it is responsibility of the user of this class to provide outside
+ * synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
  * @version 3.1.1c.08062011
@@ -93,9 +94,8 @@ public class GridTuple<V> extends GridMetadataAwareAdapter implements GridTypedP
             }
 
             @Override public V next() {
-                if (!hasNext()) {
+                if (!hasNext())
                     throw new NoSuchElementException();
-                }
 
                 hasNext = false;
 
@@ -141,11 +141,12 @@ public class GridTuple<V> extends GridMetadataAwareAdapter implements GridTypedP
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
     @Override public boolean equals(Object obj) {
-        if (!(obj instanceof GridTuple)) {
+        if (obj == this)
+            return true;
+
+        if (!(obj instanceof GridTuple))
             return false;
-        }
 
         GridTuple t = (GridTuple)obj;
 

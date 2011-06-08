@@ -31,13 +31,13 @@ import java.util.*;
 public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBaseAdapter<K, V>
     implements GridCacheReduceQuery<K, V, R1, R2> {
     /** Remote reducer. */
-    private GridClosure<Object[], GridReducer<Map.Entry<K, V>, R1>> rmtRdc;
+    private volatile GridClosure<Object[], GridReducer<Map.Entry<K, V>, R1>> rmtRdc;
 
     /** Local reducer. */
-    private GridClosure<Object[], GridReducer<R1, R2>> locRdc;
+    private volatile GridClosure<Object[], GridReducer<R1, R2>> locRdc;
 
     /** */
-    private boolean rmtOnly;
+    private volatile boolean rmtOnly;
 
     /**
      * @param ctx Cache registry.
@@ -71,7 +71,11 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
 
     /** {@inheritDoc} */
     @Override public void remoteReducer(GridClosure<Object[], GridReducer<Map.Entry<K, V>, R1>> rmtRdc) {
-        this.rmtRdc = rmtRdc;
+        synchronized (mux) {
+            checkSealed();
+
+            this.rmtRdc = rmtRdc;
+        }
     }
 
     /**
@@ -83,7 +87,11 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
 
     /** {@inheritDoc} */
     @Override public void localReducer(GridClosure<Object[], GridReducer<R1, R2>> locRdc) {
-        this.locRdc = locRdc;
+        synchronized (mux) {
+            checkSealed();
+
+            this.locRdc = locRdc;
+        }
     }
 
     /**
@@ -127,15 +135,7 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing reduce query " + toShortString(nodes)));
 
-        final GridFuture<R2> fut = reduce(F.retain(CU.allNodes(context()), true, nodes(grid)));
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                onQueryExecuted("Executed reduce query", fut);
-            }
-        });
-
-        return fut;
+        return reduce(F.retain(CU.allNodes(context()), true, nodes(grid)));
     }
 
     /**
@@ -198,20 +198,7 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing reduce remote query " + toShortString(nodes)));
 
-        final GridFuture<Collection<R1>> fut = execute(nodes, false, null);
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                onQueryExecuted("Executed reduce remote query", fut);
-            }
-        });
-
-        return fut;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCacheQueryMetrics metrics() {
-        return metrics;
+        return execute(nodes, false, null);
     }
 
     /** {@inheritDoc} */

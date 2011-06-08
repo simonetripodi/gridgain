@@ -266,13 +266,18 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                 cctx.gridIO().send(node, topic, msg, SYSTEM_POOL);
 
+                // Even if there is no exception, we still check here, as node could have
+                // ignored the message during stopping.
+                if (!cctx.discovery().alive(node.id()))
+                    throw new GridTopologyException("Node left grid while sending message: " + msg);
+
                 return;
             }
             catch (GridInterruptedException e) {
                 throw e;
             }
             catch (GridException e) {
-                if (cctx.discovery().node(node.id()) == null)
+                if (!cctx.discovery().alive(node.id()))
                     throw new GridTopologyException("Node left grid while sending message: " + msg, e);
 
                 if (cnt == RETRY_CNT)
@@ -286,32 +291,6 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
         if (log.isDebugEnabled())
             log.debug("Sent cache message [msg=" + msg + ", node=" + U.toShortString(node) + ']');
-    }
-
-    /**
-     * Sends communication message.
-     *
-     * @param nodes Nodes to send the message to.
-     * @param msg Message to send.
-     * @throws GridException If sending failed.
-     */
-    public void send(Collection<? extends GridNode> nodes, GridCacheMessage<K, V> msg) throws GridException {
-        onSend(msg);
-
-        if (nodes.isEmpty()) {
-            if (log.isDebugEnabled())
-                log.debug("Message will not be sent as collection of nodes is empty: " + msg);
-
-            return;
-        }
-
-        if (log.isDebugEnabled())
-            log.debug("Sending cache message [msg=" + msg + ", node=" + U.toShortString(nodes) + ']');
-
-        cctx.gridIO().send(nodes, topic, msg, SYSTEM_POOL);
-
-        if (log.isDebugEnabled())
-            log.debug("Sent cache message [msg=" + msg + ", node=" + U.toShortString(nodes) + ']');
     }
 
     /**
@@ -342,7 +321,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
         if (log.isDebugEnabled())
             log.debug("Sending cache message [msg=" + msg + ", node=" + U.toShortString(nodes) + ']');
 
-        final Collection<UUID> leftIds = new LinkedList<UUID>();
+        final Collection<UUID> leftIds = new GridLeanSet<UUID>();
 
         int cnt = 0;
 
@@ -354,13 +333,39 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     }
                 }), topic, msg, SYSTEM_POOL);
 
+                boolean added = false;
+
+                // Even if there is no exception, we still check here, as node could have
+                // ignored the message during stopping.
+                for (GridNode n : nodes) {
+                    if (!leftIds.contains(n.id()) && !cctx.discovery().alive(n.id())) {
+                        leftIds.add(n.id());
+
+                        if (fallback != null && !fallback.apply(n))
+                            // If fallback signalled to stop.
+                            return false;
+
+                        added = true;
+                    }
+                }
+
+                if (added) {
+                    if (!F.exist(F.nodeIds(nodes), F.not(F.contains(leftIds)))) {
+                        if (log.isDebugEnabled())
+                            log.debug("Message will not be sent because all nodes left topology [msg=" + msg +
+                                ", nodes=" + U.toShortString(nodes) + ']');
+
+                        return false;
+                    }
+                }
+
                 break;
             }
             catch (GridException e) {
                 boolean added = false;
 
                 for (GridNode n : nodes) {
-                    if (!leftIds.contains(n.id()) && cctx.discovery().node(n.id()) == null) {
+                    if (!leftIds.contains(n.id()) && !cctx.discovery().alive(n.id())) {
                         leftIds.add(n.id());
 
                         if (fallback != null && !fallback.apply(n))
@@ -380,11 +385,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     U.sleep(RETRY_DELAY);
                 }
 
-                if (!F.exist(nodes, new P1<GridNode>() {
-                    @Override public boolean apply(GridNode e) {
-                        return !leftIds.contains(e.id());
-                    }
-                })) {
+                if (!F.exist(F.nodeIds(nodes), F.not(F.contains(leftIds)))) {
                     if (log.isDebugEnabled())
                         log.debug("Message will not be sent because all nodes left topology [msg=" + msg + ", nodes=" +
                             U.toShortString(nodes) + ']');

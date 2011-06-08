@@ -54,13 +54,8 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
     private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
 
     /** Queries metrics bounded cache. */
-    private final Set<GridCacheQueryMetrics> metrics;
-
-    /** */
-    protected GridCacheQueryManager() {
-        metrics = Collections.synchronizedSet(
-            new GridBoundedLinkedHashSet<GridCacheQueryMetrics>(DFLT_CLASS_CACHE_SIZE));
-    }
+    private final Map<GridCacheQueryMetricsKey, GridCacheQueryMetricsAdapter> metrics =
+        new GridBoundedLinkedHashMap<GridCacheQueryMetricsKey, GridCacheQueryMetricsAdapter>(DFLT_CLASS_CACHE_SIZE);
 
     /** {@inheritDoc} */
     @Override public void start0() throws GridException {
@@ -701,16 +696,28 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      * @return Cache queries metrics.
      */
     public Collection<GridCacheQueryMetrics> metrics() {
-        return Collections.unmodifiableSet(metrics);
+        synchronized (metrics) {
+            return new GridBoundedLinkedHashSet<GridCacheQueryMetrics>(metrics.values(), DFLT_CLASS_CACHE_SIZE);
+        }
     }
 
     /**
-     * @param metrics Metrics to add.
+     * @param m Updated metrics.
+     * @param startTime Execution start time.
+     * @param duration Execution duration.
+     * @param fail {@code true} if execution failed.
      */
-    public void addMetrics(GridCacheQueryMetrics metrics) {
-        assert metrics != null;
+    public void onMetricsUpdate(GridCacheQueryMetricsAdapter m, long startTime, long duration, boolean fail) {
+        assert m != null;
 
-        this.metrics.add(metrics);
+        synchronized (metrics) {
+            GridCacheQueryMetricsAdapter prev = metrics.get(m.key());
+
+            if (prev == null)
+                metrics.put(m.key(), m.copy());
+            else
+                prev.onQueryExecute(startTime, duration, fail);
+        }
     }
 
     /**

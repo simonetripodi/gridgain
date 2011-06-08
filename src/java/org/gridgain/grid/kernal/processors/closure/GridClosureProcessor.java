@@ -829,7 +829,7 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
         final LocalExecutionFuture fut = new LocalExecutionFuture(ctx);
 
-        GridWorker w = new GridWorker(ctx.config().getGridName(), "closure-proc-worker", log) {
+        GridWorker w = new GridWorker(ctx.gridName(), "closure-proc-worker", log) {
             @SuppressWarnings({"ConstantConditions"})
             @Override protected void body() {
                 try {
@@ -921,7 +921,7 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
         final LocalExecutionFuture<R> fut = new LocalExecutionFuture<R>(ctx);
 
-        GridWorker w = new GridWorker(ctx.config().getGridName(), "closure-proc-worker", log) {
+        GridWorker w = new GridWorker(ctx.gridName(), "closure-proc-worker", log) {
             @Override protected void body() {
                 try {
                     fut.onDone(c.call());

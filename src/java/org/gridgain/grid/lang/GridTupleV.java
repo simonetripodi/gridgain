@@ -13,14 +13,16 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
+
 import java.io.*;
 import java.util.*;
 
 /**
  * Constructs a tuple over a given array.
  * <h2 class="header">Thread Safety</h2>
- * This class doesn't provide any synchronization for multi-threaded access and it is
- * responsibility of the user of this class to provide outside synchronization, if needed.
+ * This class doesn't provide any synchronization for multi-threaded access
+ * and it is responsibility of the user of this class to provide outside
+ * synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
  * @version 3.1.1c.08062011
@@ -28,7 +30,8 @@ import java.util.*;
  */
 public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct, GridPeerDeployAware, Externalizable {
     /** Tuple values. */
-    @GridToStringInclude private Object[] vals;
+    @GridToStringInclude
+    private Object[] vals;
 
     /**
      * Empty constructor required by {@link Externalizable}.
@@ -102,9 +105,8 @@ public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct,
     public void set(Object... v) {
         A.ensure(v.length <= vals.length, "v.length <= vals.length");
 
-        if (v.length > 0) {
+        if (v.length > 0)
             System.arraycopy(v, 0, vals, 0, v.length);
-        }
     }
 
     /**
@@ -117,9 +119,8 @@ public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct,
         A.ensure(pos > 0, "pos > 0");
         A.ensure(v.length + pos <= vals.length, "v.length + pos <= vals.length");
 
-        if (v.length > 0) {
+        if (v.length > 0)
             System.arraycopy(v, 0, vals, pos, v.length);
-        }
     }
 
     /**
@@ -141,9 +142,8 @@ public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct,
             }
 
             @Override public Object next() {
-                if (!hasNext()) {
+                if (!hasNext())
                     throw new NoSuchElementException();
-                }
 
                 return vals[nextIdx++];
             }
@@ -155,7 +155,7 @@ public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct,
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings( {"CloneDoesntDeclareCloneNotSupportedException"})
+    @SuppressWarnings({"CloneDoesntDeclareCloneNotSupportedException"})
     @Override public Object clone() {
         return super.clone();
     }
@@ -199,5 +199,7 @@ public class GridTupleV extends GridMetadataAwareAdapter implements GridProduct,
     }
 
     /** {@inheritDoc} */
-    @Override public String toString() { return S.toString(GridTupleV.class, this); }
+    @Override public String toString() {
+        return S.toString(GridTupleV.class, this);
+    }
 }

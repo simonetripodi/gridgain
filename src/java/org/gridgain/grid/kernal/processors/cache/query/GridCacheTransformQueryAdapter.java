@@ -31,7 +31,7 @@ import java.util.*;
 public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseAdapter<K, V>
     implements GridCacheTransformQuery<K, V, T> {
     /** Transformation closure. */
-    private GridClosure<Object[], GridClosure<V, T>> trans;
+    private volatile GridClosure<Object[], GridClosure<V, T>> trans;
 
     /**
      * @param ctx Cache registry.
@@ -49,7 +49,7 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
     /**
      * @param query Query to copy from (ignoring arguments).
      */
-    @SuppressWarnings( {"TypeMayBeWeakened"})
+    @SuppressWarnings({"TypeMayBeWeakened"})
     private GridCacheTransformQueryAdapter(GridCacheTransformQueryAdapter<K, V, T> query) {
         super(query);
 
@@ -89,15 +89,7 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
         if (qryLog.isDebugEnabled())
             qryLog.debug("Executing transform query for single result " + toShortString(nodes));
 
-        final GridFuture<Map.Entry<K, T>> fut = new SingleFuture<Map.Entry<K, T>>(nodes);
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                 onQueryExecuted("Executing transform query for single result", fut);
-            }
-        });
-
-        return fut;
+        return new SingleFuture<Map.Entry<K, T>>(nodes);
     }
 
     /** {@inheritDoc} */
@@ -111,20 +103,7 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing transform query " + toShortString(nodes)));
 
-        final GridCacheQueryFuture<Map.Entry<K, T>> fut = execute(nodes, false, null);
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                onQueryExecuted("Executing transform query", fut);
-            }
-        });
-
-        return fut;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCacheQueryMetrics metrics() {
-        return metrics;
+        return execute(nodes, false, null);
     }
 
     /** {@inheritDoc} */
@@ -134,7 +113,11 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
 
     /** {@inheritDoc} */
     @Override public void remoteTransformer(GridClosure<Object[], GridClosure<V, T>> trans) {
-        this.trans = trans;
+        synchronized (mux) {
+            checkSealed();
+
+            this.trans = trans;
+        }
     }
 
     /**

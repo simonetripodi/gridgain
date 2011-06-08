@@ -293,6 +293,12 @@ public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V>
                 res = new GridDistributedLockResponse(msg.version(), msg.futureId(), new GridException(err));
             }
         }
+        catch (GridCacheTxRollbackException e) {
+            if (log.isDebugEnabled())
+                log.debug("Received lock request for completed transaction (will ignore): " + e);
+
+            res = new GridDistributedLockResponse(msg.version(), msg.futureId(), e);
+        }
         catch (GridException e) {
             String err = "Failed to unmarshal at least one of the keys for lock request message: " + msg;
 
@@ -620,7 +626,7 @@ public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V>
                             req.writes(),
                             ctx));
 
-                    if (tx == null)
+                    if (tx == null || !ctx.tm().onStarted(tx))
                         throw new GridCacheTxRollbackException("Attempt to start a completed " +
                             "transaction: " + req);
                 }
@@ -681,6 +687,10 @@ public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V>
                         U.error(log, "Failed to send finish response to node [nodeId=" + nodeId + ", res=" + res + ']', e);
                 }
             }
+        }
+        catch (GridCacheTxRollbackException e) {
+            if (log.isDebugEnabled())
+                log.debug("Attempted to start a completed transaction (will ignore): " + e);
         }
         catch (Throwable e) {
             U.error(log, "Failed completing transaction [commit=" + req.commit() + ", tx=" + CU.txString(tx) + ']', e);

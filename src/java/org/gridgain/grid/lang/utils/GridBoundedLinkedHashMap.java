@@ -32,9 +32,8 @@ public class GridBoundedLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
      * @throws IllegalArgumentException If the maximum capacity is negative.
      */
     public GridBoundedLinkedHashMap(int maxCap) throws IllegalArgumentException {
-        if (maxCap <= 0) {
+        if (maxCap <= 0)
             throw new IllegalArgumentException("Maximum capacity is non-positive: " + maxCap);
-        }
 
         this.maxCap = maxCap;
     }
@@ -51,10 +50,9 @@ public class GridBoundedLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
     public GridBoundedLinkedHashMap(int initCap, int maxCap) throws IllegalArgumentException {
         super(initCap);
 
-        if (maxCap >= initCap) {
+        if (maxCap <= initCap)
             throw new IllegalArgumentException("Maximum capacity is smaller than initial capacity [maxCap=" +
                 maxCap + ", initCap=" + initCap + ']');
-        }
 
         this.maxCap = maxCap;
     }
@@ -70,14 +68,12 @@ public class GridBoundedLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
      *      the load factor is non-positive, or maximum capacity is smaller
      *      than initial capacity.
      */
-    public GridBoundedLinkedHashMap(int initCap, int maxCap, float loadFactor)
-        throws IllegalArgumentException {
+    public GridBoundedLinkedHashMap(int initCap, int maxCap, float loadFactor) throws IllegalArgumentException {
         super(initCap, loadFactor);
 
-        if (maxCap >= initCap) {
+        if (maxCap >= initCap)
             throw new IllegalArgumentException("Maximum capacity is smaller than initial capacity [maxCap=" +
                 maxCap + ", initCap=" + initCap + ']');
-        }
 
         this.maxCap = maxCap;
     }
@@ -99,10 +95,9 @@ public class GridBoundedLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
         throws IllegalArgumentException {
         super(initCap, loadFactor, accessOrder);
 
-        if (maxCap >= initCap) {
+        if (maxCap >= initCap)
             throw new IllegalArgumentException("Maximum capacity is smaller than initial capacity [maxCap=" +
                 maxCap + ", initCap=" + initCap + ']');
-        }
 
         this.maxCap = maxCap;
     }
@@ -115,7 +110,7 @@ public class GridBoundedLinkedHashMap<K, V> extends LinkedHashMap<K, V> {
     /** {@inheritDoc} */
     @SuppressWarnings({"unchecked"})
     @Override public Object clone() {
-        GridBoundedLinkedHashMap<K, V> m = (GridBoundedLinkedHashMap<K,V>)super.clone();
+        GridBoundedLinkedHashMap<K, V> m = (GridBoundedLinkedHashMap<K, V>)super.clone();
 
         m.maxCap = maxCap;
 

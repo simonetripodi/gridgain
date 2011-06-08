@@ -1686,7 +1686,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     }
 
     /** {@inheritDoc} */
-    @Nullable @Override public byte[] valueBytes(GridCacheVersion ver)
+    @Nullable @Override public byte[] valueBytes(@Nullable GridCacheVersion ver)
         throws GridException, GridCacheEntryRemovedException {
         V val = null;
         byte[] valBytes = null;

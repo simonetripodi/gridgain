@@ -260,7 +260,7 @@ public class GridTuple2<V1, V2> extends GridMetadataAwareAdapter implements Map<
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"CloneDoesntDeclareCloneNotSupportedException", "OverriddenMethodCallDuringObjectConstruction"})
+    @SuppressWarnings({"OverriddenMethodCallDuringObjectConstruction", "CloneDoesntDeclareCloneNotSupportedException"})
     @Override public Object clone() {
         return super.clone();
     }
@@ -300,6 +300,7 @@ public class GridTuple2<V1, V2> extends GridMetadataAwareAdapter implements Map<
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     @Override public boolean equals(Object o) {
         if (this == o)
             return true;

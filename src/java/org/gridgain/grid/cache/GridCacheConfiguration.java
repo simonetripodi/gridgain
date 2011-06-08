@@ -36,7 +36,7 @@ import java.util.*;
  * @version 3.1.1c.08062011
  */
 public interface GridCacheConfiguration {
-    /** Default log name. */
+    /** Default query log name. */
     public static final String DFLT_QUERY_LOGGER_NAME = "org.gridgain.cache.queries";
 
     /** Default atomic sequence reservation size. */
@@ -84,7 +84,10 @@ public interface GridCacheConfiguration {
     /** Default preload batch size in bytes. */
     public static final int DFLT_PRELOAD_BATCH_SIZE = 102400;
 
-    /** */
+    /**
+     * Default value for maximum memory used per single operation with query index
+     * (store and remove), in bytes.
+     */
     public static final int DFLT_IDX_MAX_OPERATIONAL_MEM = 100000;
 
     /** Default frequency of running H2 "ANALYZE" command. */

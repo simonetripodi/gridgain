@@ -33,7 +33,7 @@ import java.util.*;
  *  If {@code read-through} flag is enabled, then all values that are {@code null}
  *  (possible if {@code 'invalidation'} mode is set to {@code true}) will be loaded
  *  from the persistent store, otherwise only values that are available in memory will
- *  be returned. 
+ *  be returned.
  * </li>
  * <li>
  *  If there is a value filter provided via {@link #remoteValueFilter(GridClosure)} method,
@@ -50,7 +50,7 @@ import java.util.*;
  *  flag is set to false, then the received page will be immediately discarded after it has been
  *  returned to user. In this case, the {@link GridCacheQueryFuture#get()} method will always return
  *  only the last page. If {@link #keepAll(boolean)} flag is {@code true}, then all query result pages
- *  will be accumulated in memory and the full query result will be returned to user. 
+ *  will be accumulated in memory and the full query result will be returned to user.
  * </li>
  * </ol>
  * <h1 class="header">SQL Queries</h1>
@@ -101,7 +101,7 @@ import java.util.*;
  * immediately return all query results that are currently available and will block on page
  * boundaries, whenever the next page is not available yet. Whenever the full result set is
  * needed as a collection, then {@link #keepAll(boolean)} flag should be set to {@code true}
- * and any of the future's {@code get(..)} methods should be called. 
+ * and any of the future's {@code get(..)} methods should be called.
  * <h1 class="header">Query usage</h1>
  * As an example, suppose we have data model consisting of {@code 'Employee'} and {@code 'Organization'}
  * classes defined as follows:
@@ -194,6 +194,9 @@ public interface GridCacheQuery<K, V> extends GridCacheQueryBase<K, V> {
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.) if this
+     * method was called at least once.
      *
      * @param grid Optional subgrid projection to execute this query on
      *      (if not provided, then the whole grid is used).
@@ -214,6 +217,9 @@ public interface GridCacheQuery<K, V> extends GridCacheQueryBase<K, V> {
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.), except
+     * arguments, if this method was called at least once.
      *
      * @param grid Optional subgrid projection to execute this query on
      *      (if not provided, then the whole grid is used).
@@ -230,6 +236,9 @@ public interface GridCacheQuery<K, V> extends GridCacheQueryBase<K, V> {
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.), except
+     * arguments, if this method was called at least once.
      *
      * @param vis Visitor predicate.
      * @param grid Optional subgrid projection to execute this query on

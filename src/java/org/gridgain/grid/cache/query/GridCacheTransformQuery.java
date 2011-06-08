@@ -80,7 +80,7 @@ public interface GridCacheTransformQuery<K, V, T> extends GridCacheQueryBase<K, 
      * that transforms one value into another. Transformers are especially useful whenever
      * only a subset of queried values needs to be returned to caller and can help save on
      * network overhead. Transformer will usually take the queried values and return
-     * smaller, more light weight values to the caller. 
+     * smaller, more light weight values to the caller.
      * <p>
      * If factory is set, then it will be invoked for every query execution. If state of
      * the transformer closure changes every time a query is executed, then factory should
@@ -96,6 +96,9 @@ public interface GridCacheTransformQuery<K, V, T> extends GridCacheQueryBase<K, 
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.), except
+     * arguments, if this method was called at least once.
      *
      * @param grid Optional subgrid projection to execute this query on (if not provided, then the whole grid is used).
      * @return Future for the single query result.
@@ -115,6 +118,9 @@ public interface GridCacheTransformQuery<K, V, T> extends GridCacheQueryBase<K, 
      * <p>
      * Note that if the passed in grid projection is a local node, then query
      * will be executed locally without distribution to other nodes.
+     * <p>
+     * Also note that query state cannot be changed (clause, timeout etc.), except
+     * arguments, if this method was called at least once.
      *
      * @param grid Optional subgrid projection to execute this query on (if not provided, then the whole grid is used).
      * @return Future for the query result.

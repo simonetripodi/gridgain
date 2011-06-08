@@ -95,15 +95,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing query for single result." + toShortString(nodes)));
 
-        final GridFuture<Map.Entry<K, V>> fut = new SingleFuture<Map.Entry<K, V>>(nodes);
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                onQueryExecuted("Executed query for single result", fut);
-            }
-        });
-
-        return fut;
+        return new SingleFuture<Map.Entry<K, V>>(nodes);
     }
 
     /** {@inheritDoc} */
@@ -113,15 +105,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing query: " + toShortString(nodes)));
 
-        final GridCacheQueryFuture<Map.Entry<K, V>> fut = execute(nodes, false, null);
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                onQueryExecuted("Executed query", fut);
-            }
-        });
-
-        return fut;
+        return execute(nodes, false, null);
     }
 
     /** {@inheritDoc} */
@@ -131,20 +115,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing query with visitor " + toShortString(nodes)));
 
-        final GridFuture<?> fut = visit(vis, nodes);
-
-        fut.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                onQueryExecuted("Executed query with visitor", fut);
-            }
-        });
-
-        return fut;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCacheQueryMetrics metrics() {
-        return metrics;
+        return visit(vis, nodes);
     }
 
     /**

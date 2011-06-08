@@ -21,8 +21,9 @@ import java.util.*;
 /**
  * Convenience class representing mutable tuple of three values.
  * <h2 class="header">Thread Safety</h2>
- * This class doesn't provide any synchronization for multi-threaded access and it is responsibility
- * of the user of this class to provide outside synchronization, if needed.
+ * This class doesn't provide any synchronization for multi-threaded access
+ * and it is responsibility of the user of this class to provide outside
+ * synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
  * @version 3.1.1c.08062011
@@ -71,9 +72,12 @@ public class GridTuple3<V1, V2, V3> extends GridMetadataAwareAdapter implements 
     /** {@inheritDoc} */
     @Override public Object part(int n) {
         switch (n) {
-            case 0: return get1();
-            case 1: return get2();
-            case 2: return get3();
+            case 0:
+                return get1();
+            case 1:
+                return get2();
+            case 2:
+                return get3();
 
             default:
                 throw new IndexOutOfBoundsException("Invalid product index: " + n);
@@ -157,21 +161,17 @@ public class GridTuple3<V1, V2, V3> extends GridMetadataAwareAdapter implements 
             }
 
             @Nullable @Override public Object next() {
-                if (!hasNext()) {
+                if (!hasNext())
                     throw new NoSuchElementException();
-                }
 
                 Object res = null;
 
-                if (nextIdx == 1) {
+                if (nextIdx == 1)
                     res = get1();
-                }
-                else if (nextIdx == 2) {
+                else if (nextIdx == 2)
                     res = get2();
-                }
-                else if (nextIdx == 3) {
+                else if (nextIdx == 3)
                     res = get3();
-                }
 
                 nextIdx++;
 
@@ -185,7 +185,7 @@ public class GridTuple3<V1, V2, V3> extends GridMetadataAwareAdapter implements 
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings( {"CloneDoesntDeclareCloneNotSupportedException"})
+    @SuppressWarnings({"OverriddenMethodCallDuringObjectConstruction", "CloneDoesntDeclareCloneNotSupportedException"})
     @Override public Object clone() {
         return super.clone();
     }
@@ -223,17 +223,11 @@ public class GridTuple3<V1, V2, V3> extends GridMetadataAwareAdapter implements 
 
     /** {@inheritDoc} */
     @Override public boolean equals(Object o) {
-        if (this == o) {
+        if (this == o)
             return true;
-        }
 
-        if (o == null) {
+        if (!(o instanceof GridTuple3))
             return false;
-        }
-
-        if (!(o instanceof GridTuple3)) {
-            return false;
-        }
 
         GridTuple3<?, ?, ?> t = (GridTuple3<?, ?, ?>)o;
 
@@ -251,5 +245,7 @@ public class GridTuple3<V1, V2, V3> extends GridMetadataAwareAdapter implements 
     }
 
     /** {@inheritDoc} */
-    @Override public String toString() { return S.toString(GridTuple3.class, this); }
+    @Override public String toString() {
+        return S.toString(GridTuple3.class, this);
+    }
 }

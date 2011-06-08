@@ -2350,20 +2350,19 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return GridCacheMetricsAdapter.copyOf(metrics);
     }
 
-    /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
-    @Nullable @Override public Collection<GridCacheQueryMetrics> queryMetrics() {
-        // Query manager can be null.
-        GridCacheQueryManager qryMgr = ctx.queries();
-
-        return qryMgr != null ? qryMgr.metrics() : null;
-    }
-
     /**
      * @return Metrics.
      */
     public GridCacheMetricsAdapter metrics0() {
         return metrics;
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public Collection<GridCacheQueryMetrics> queryMetrics() {
+        // Query manager can be null.
+        GridCacheQueryManager<K, V> qryMgr = ctx.queries();
+
+        return qryMgr != null ? qryMgr.metrics() : null;
     }
 
     /** {@inheritDoc} */

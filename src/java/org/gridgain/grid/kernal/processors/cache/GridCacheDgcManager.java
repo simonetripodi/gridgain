@@ -312,7 +312,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
          * Constructor.
          */
         private GcWorker() {
-            super(cctx.gridName(), "cache-dgc", log);
+            super(cctx.gridName(), "cache-dgc-wrk", log);
         }
 
         /** {@inheritDoc} */
@@ -345,7 +345,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
          * Default constructor.
          */
         RequestWorker() {
-            super(cctx.gridName(), "cache-gc-req", log);
+            super(cctx.gridName(), "cache-dgc-req-wrk", log);
         }
 
         /**
@@ -414,7 +414,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
          * Default constructor.
          */
         ResponseWorker() {
-            super(cctx.gridName(), "cache-gc-req", log);
+            super(cctx.gridName(), "cache-dgc-res-wrk", log);
         }
 
         /**
