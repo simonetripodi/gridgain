@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheMvccFuture<K, V, GridCacheTx> {
@@ -46,9 +46,6 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
     /** Transaction. */
     @GridToStringExclude
     private GridNearTxLocal<K, V> tx;
-
-    /** Mappings. */
-    private Map<UUID, GridDistributedTxMapping<K, V>> mappings;
 
     /** Logger. */
     private GridLogger log;
@@ -85,8 +82,6 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
 
         this.cacheCtx = cacheCtx;
         this.tx = tx;
-
-        mappings = tx.mappings();
 
         futId = GridUuid.randomUuid();
 
@@ -288,7 +283,7 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
     void prepare() {
         prepare(
             tx.optimistic() && tx.serializable() ? tx.readEntries() : Collections.<GridCacheTxEntry<K, V>>emptyList(),
-            tx.writeEntries());
+            tx.writeEntries(), Collections.<UUID, GridDistributedTxMapping<K,V>>emptyMap());
 
         markInitialized();
     }
@@ -296,20 +291,33 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
     /**
      * @param reads Read entries.
      * @param writes Write entries.
+     * @param mapped Previous mappings.
      */
     @SuppressWarnings({"unchecked"})
-    private void prepare(Iterable<GridCacheTxEntry<K, V>> reads, Iterable<GridCacheTxEntry<K, V>> writes) {
+    private void prepare(Iterable<GridCacheTxEntry<K, V>> reads, Iterable<GridCacheTxEntry<K, V>> writes,
+        Map<UUID, GridDistributedTxMapping<K, V>> mapped) {
         Collection<GridRichNode> nodes = CU.allNodes(cacheCtx);
 
-        if (mappings == null)
-            mappings = new ConcurrentHashMap<UUID, GridDistributedTxMapping<K, V>>(nodes.size());
+        ConcurrentMap<UUID, GridDistributedTxMapping<K, V>> mappings =
+            new ConcurrentHashMap<UUID, GridDistributedTxMapping<K, V>>(nodes.size());
 
         // Assign keys to primary nodes.
         for (GridCacheTxEntry<K, V> read : reads)
-            map(read, nodes);
+            map(read, mappings, nodes, mapped);
 
         for (GridCacheTxEntry<K, V> write : writes)
-            map(write, nodes);
+            map(write, mappings, nodes, mapped);
+
+        if (isDone()) {
+            if (log.isDebugEnabled())
+                log.debug("Abandoning (re)map because future is done: " + this);
+
+            return;
+        }
+
+        tx.addEntryMapping(mappings);
+
+        cacheCtx.mvcc().recheckPendingLocks();
 
         Collection<K> retries = new LinkedList<K>();
 
@@ -385,20 +393,31 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
             }
         }
 
-        // Remap.
-        prepareRetries(tx.readEntries(), tx.writeEntries(), retries);
+        // Remap. TODO
+        prepareRetries(tx.readEntries(), tx.writeEntries(), retries,
+            Collections.<UUID, GridDistributedTxMapping<K, V>>emptyMap());
     }
 
     /**
      * @param entry Transaction entry.
+     * @param mappings Mappings.
      * @param nodes Nodes.
+     * @param mapped Previous mappings.
      */
-    private void map(GridCacheTxEntry<K, V> entry, Collection<GridRichNode> nodes) {
+    private void map(GridCacheTxEntry<K, V> entry, ConcurrentMap<UUID, GridDistributedTxMapping<K, V>> mappings,
+        Collection<GridRichNode> nodes, Map<UUID, GridDistributedTxMapping<K, V>> mapped) {
         GridRichNode primary = CU.primary0(cacheCtx.affinity(entry.key(), nodes));
 
         if (log.isDebugEnabled())
-            log.debug("Mapped key to primary node [key=" + entry.key() + ", partition=" + cacheCtx.partition(entry.key()) +
+            log.debug("Mapped key to primary node [key=" + entry.key() + ", part=" + cacheCtx.partition(entry.key()) +
                 ", primary=" + U.toShortString(primary) + ", allNodes=" + U.toShortString(nodes) + ']');
+
+        if (mapped != null && mapped.containsKey(primary.id())) {
+            onDone(new GridException("Failed to remap key to a new node " +
+                "(key got remapped to the same node) [primaryId=" + primary.id() + ", mapped=" + mapped + ']'));
+
+            return;
+        }
 
         GridDistributedTxMapping<K, V> m = mappings.get(primary.id());
 
@@ -408,15 +427,29 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
         m.add(entry);
 
         entry.nodeId(primary.id());
+
+        while (true) {
+            try {
+                GridNearCacheEntry<K, V> cached = (GridNearCacheEntry<K, V>)entry.cached();
+
+                cached.dhtNodeId(tx.xidVersion(), primary.id());
+
+                break;
+            }
+            catch (GridCacheEntryRemovedException ignore) {
+                entry.cached(cacheCtx.near().entryEx(entry.key()), entry.keyBytes());
+            }
+        }
     }
 
     /**
      * @param reads Reads.
      * @param writes Writes.
      * @param retries Retries.
+     * @param mapped Mapped entries.
      */
     private void prepareRetries(Collection<GridCacheTxEntry<K, V>> reads, Collection<GridCacheTxEntry<K, V>> writes,
-        final Collection<K> retries) {
+        final Collection<K> retries, Map<UUID, GridDistributedTxMapping<K, V>> mapped) {
         if (!F.isEmpty(retries)) {
             if (log.isDebugEnabled())
                 log.debug("Remapping mini get future [leftOvers=" + retries + ", fut=" + this + ']');
@@ -428,7 +461,7 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
             };
 
             // This will append new futures to compound list.
-            prepare(F.view(reads, p), F.view(writes, p));
+            prepare(F.view(reads, p), F.view(writes, p), mapped);
         }
     }
 
@@ -505,10 +538,10 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
                 log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
 
             // Remove previous mapping.
-            mappings.remove(m.node().id());
+            tx.removeMapping(m.node().id());
 
             // Remap.
-            prepare(m.reads(), m.writes());
+            prepare(m.reads(), m.writes(), new T2<UUID, GridDistributedTxMapping<K, V>>(m.node().id(), m));
 
             onDone();
         }
@@ -522,7 +555,8 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
                 onError(res.error());
             }
             else {
-                prepareRetries(m.reads(), m.writes(), res.retries());
+                prepareRetries(m.reads(), m.writes(), res.retries(),
+                    new T2<UUID, GridDistributedTxMapping<K, V>>(m.node().id(), m));
 
                 // Register DHT version.
                 tx.addDhtVersion(m.node().id(), res.dhtVersion());

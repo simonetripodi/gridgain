@@ -18,7 +18,7 @@ import org.jetbrains.annotations.*;
  * Manager of data structures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheManager<K, V> {
     /**
@@ -131,10 +131,11 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
      * Remove queue from cache.
      *
      * @param name Queue name.
+     * @param batchSize Batch size.
      * @return Method returns {@code true} if queue has been removed and {@code false} if it's not cached.
      * @throws GridException If removing failed.
      */
-    public abstract boolean removeQueue(String name) throws GridException;
+    public abstract boolean removeQueue(String name, int batchSize) throws GridException;
 
     /**
      * Transaction committed callback for transaction manager.

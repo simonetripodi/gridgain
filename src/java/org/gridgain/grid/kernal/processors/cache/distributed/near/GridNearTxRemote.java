@@ -28,7 +28,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> {
     /** Evicted keys. */
@@ -76,6 +76,8 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
         Collection<GridCacheTxEntry<K, V>> writeEntries,
         GridCacheContext<K, V> ctx) throws GridException {
         super(ctx, nodeId, rmtThreadId, xidVer, commitVer, concurrency, isolation, invalidate, timeout);
+
+        assert nearNodeId != null;
 
         this.nearNodeId = nearNodeId;
 
@@ -128,6 +130,8 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
         GridCacheContext<K, V> ctx) throws GridException {
         super(ctx, nodeId, rmtThreadId, xidVer, commitVer, concurrency, isolation, invalidate, timeout);
 
+        assert nearNodeId != null;
+
         this.nearNodeId = nearNodeId;
 
         readMap = new LinkedHashMap<K, GridCacheTxEntry<K, V>>(1, 1.0f);
@@ -141,11 +145,21 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
         return true;
     }
 
+    /** {@inheritDoc} */
+    @Override public boolean enforceSerializable() {
+        return false; // Serializable will be enforced on primary mode.
+    }
+
     /**
      * @return Near node ID.
      */
     public UUID nearNodeId() {
         return nearNodeId;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> masterNodeIds() {
+        return Arrays.asList(nodeId, nearNodeId);
     }
 
     /** {@inheritDoc} */

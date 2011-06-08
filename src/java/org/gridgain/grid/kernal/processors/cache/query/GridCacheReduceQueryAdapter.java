@@ -26,7 +26,7 @@ import java.util.*;
  * Adapter for reduce cache queries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBaseAdapter<K, V>
     implements GridCacheReduceQuery<K, V, R1, R2> {
@@ -131,7 +131,7 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                queryExecuted("Executed reduce query ", fut);
+                onQueryExecuted("Executed reduce query", fut);
             }
         });
 
@@ -202,7 +202,7 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                queryExecuted("Executed reduce remote query ", fut);
+                onQueryExecuted("Executed reduce remote query", fut);
             }
         });
 

@@ -62,7 +62,7 @@ import java.util.*;
  * To do that, {@link GridSystemProperties#GG_NO_DISCO_ORDER} must be provided at startup.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  * @param <K> Cache key type.
  * @param <V> Cache value type.
  */
@@ -131,7 +131,7 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     public long overflowSize() throws GridException;
 
     /**
-     * Delegates to {@link GridCacheStore#loadAll(String, GridInClosure2 , Object...)} method
+     * Delegates to {@link GridCacheStore#loadAll(String,GridInClosure2,Object...)} method
      * to load state from the underlying persistent storage. The loaded values
      * will then be given to the optionally passed in predicate, and, if the predicate returns
      * {@code true}, will be stored in cache. If predicate is {@code null}, then
@@ -149,13 +149,13 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
      * @param p Optional predicate (may be {@code null}). If provided, will be used to
      *      filter values to be put into cache.
      * @param args Optional user arguments to be passed into
-     *      {@link GridCacheStore#loadAll(String, GridInClosure2 , Object...)} method.
+     *      {@link GridCacheStore#loadAll(String, GridInClosure2, Object...)} method.
      * @throws GridException If loading failed.
      */
     public void loadCache(@Nullable GridPredicate2<K, V> p, long ttl, @Nullable Object... args) throws GridException;
 
     /**
-     * Asynchronously delegates to {@link GridCacheStore#loadAll(String, GridInClosure2 , Object...)} method
+     * Asynchronously delegates to {@link GridCacheStore#loadAll(String, GridInClosure2, Object...)} method
      * to reload state from the underlying persistent storage. The reloaded values
      * will then be given to the optionally passed in predicate, and if the predicate returns
      * {@code true}, will be stored in cache. If predicate is {@code null}, then
@@ -173,7 +173,7 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
      *      filter values to be put into cache.
      * @param ttl Time to live for loaded entries ({@code 0} for infinity).
      * @param args Optional user arguments to be passed into
-     *      {@link GridCacheStore#loadAll(String, GridInClosure2 , Object...)} method.
+     *      {@link GridCacheStore#loadAll(String,GridInClosure2,Object...)} method.
      * @return Future to be completed whenever loading completes.
      */
     public GridFuture<?> loadCacheAsync(@Nullable GridPredicate2<K, V> p, long ttl, @Nullable Object... args);
@@ -238,7 +238,7 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     /**
      * Will get a atomic long from cache or create one with initial value of
      * {@code 0} if it has not been created yet. This method is analogous to
-     * calling {@link #atomicLong(String, long, boolean) atomicLong(name, 0, false)}.
+     * calling {@link #atomicLong(String,long,boolean) atomicLong(name, 0, false)}.
      * <p>
      * Note that atomic long is only available in Enterprise Edition.
      *
@@ -280,7 +280,7 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     /**
      * Will get a named queue from cache and create one if it has not been created yet.
      * If queue is present in cache already, queue properties will not be changed.
-     * This method is analogous to calling {@link #queue(String, GridCacheQueueType, int, boolean)}
+     * This method is analogous to calling {@link #queue(String,GridCacheQueueType, int, boolean)}
      * queue(name, FIFO, 0 , true)}.
      * <p>
      * Note that queue is only available in Enterprise Edition.
@@ -295,7 +295,7 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     /**
      * Will get a named queue from cache and create one if it has not been created yet.
      * If queue is present in cache already, queue properties will not be changed.
-     * This method is analogous to calling {@link #queue(String, GridCacheQueueType, int, boolean)}
+     * This method is analogous to calling {@link #queue(String,GridCacheQueueType, int, boolean)}
      * queue(name, type, 0, true)}.
      * <p>
      * Note that queue is only available in Enterprise Edition.
@@ -311,7 +311,7 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     /**
      * Will get a named queue from cache and create one if it has not been created yet.
      * If queue is present in cache already, queue properties will not be changed.
-     * This method is analogous to calling {@link #queue(String, GridCacheQueueType, int, boolean)}
+     * This method is analogous to calling {@link #queue(String,GridCacheQueueType, int, boolean)}
      * queue(name, type, capacity, true)}.
      * <p>
      * Note that queue is only available in Enterprise Edition.
@@ -351,21 +351,41 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
         throws GridException;
 
     /**
-     * Remove queue from cache.
+     * Remove queue from cache. Internally one transaction will be created for all elements
+     * in the queue. If you anticipate that queue may be large, then it's better to use
+     * {@link #removeQueue(String, int)} which allows to specify batch size. In that case
+     * transaction will be split into multiple transactions which will have upto {@code batchSize}
+     * elements in it.
      * <p>
      * Note that queue is only available in Enterprise Edition.
      *
      * @param name Name queue.
-     * @return Method returns true if queue has been removed and false if it's not cached.
+     * @return {@code True} if queue has been removed and false if it's not cached.
      * @throws GridException If remove failed.
      */
     @GridEnterpriseFeature
     public boolean removeQueue(String name) throws GridException;
 
     /**
+     * Remove queue from cache. Internally multiple transactions will be created
+     * with no more than {@code batchSize} elements in them. For larger queues, this
+     * method is preferrable over {@link #removeQueue(String)} which will create only
+     * one transaction for the whole operation.
+     * <p>
+     * Note that queue is only available in Enterprise Edition.
+     *
+     * @param name Name queue.
+     * @param batchSize Batch size.
+     * @return {@code True} if queue has been removed and false if it's not cached.
+     * @throws GridException If remove failed.
+     */
+    @GridEnterpriseFeature
+    public boolean removeQueue(String name, int batchSize) throws GridException;
+
+    /**
      * Will get a atomic reference from cache or create one with initial value of
      * {@code null} if it has not been created yet. This method is analogous to
-     * calling {@link #atomicReference(String, Object, boolean)} atomicReference(name, null, false)}.
+     * calling {@link #atomicReference(String,Object, boolean)} atomicReference(name, null, false)}.
      * <p>
      * Note that atomic reference is only available in Enterprise Edition.
      *

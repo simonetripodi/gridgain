@@ -29,13 +29,19 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * Distributed Garbage Collector for cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     /** GC thread. */
     private GridThread gcThread;
 
-    /** Response thread. */
+    /** Request worker thread. */
+    private GridThread reqThread;
+
+    /** Request worker. */
+    private RequestWorker reqWorker;
+
+    /** Response worker thread. */
     private GridThread resThread;
 
     /** Response worker. */
@@ -53,7 +59,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
             if (log.isDebugEnabled())
                 log.debug("Received DGC request [rmtNodeId=" + nodeId + ", req=" + req + ']');
 
-            resWorker.addDgcRequest(nodeId, req);
+            reqWorker.addDgcRequest(nodeId, req);
         }
     };
 
@@ -63,7 +69,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
             if (log.isDebugEnabled())
                 log.debug("Received DGC response [rmtNodeId=" + nodeId + ", res=" + res + ']');
 
-            removeLocks(res);
+            resWorker.addDgcResponse(res);
         }
     };
 
@@ -92,6 +98,10 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
             gcThread.start();
         }
 
+        reqThread = new GridThread(reqWorker = new RequestWorker());
+
+        reqThread.start();
+
         resThread = new GridThread(resWorker = new ResponseWorker());
 
         resThread.start();
@@ -113,6 +123,12 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
         cctx.io().removeHandler(GridCacheDgcRequest.class, reqHandler);
         cctx.io().removeHandler(GridCacheDgcResponse.class, resHandler);
+
+        if (reqThread != null) {
+            U.interrupt(reqThread);
+
+            U.join(reqThread, log);
+        }
 
         if (resThread != null) {
             U.interrupt(resThread);
@@ -174,7 +190,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
      * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
      * @param global If {@code true} then GC procedure will start on all nodes having this cache.
      */
-    public void dgc(final int suspectLockTimeout, boolean global) {
+    public void dgc(int suspectLockTimeout, boolean global) {
         A.ensure(suspectLockTimeout >= 0, "suspectLockTimeout cannot be negative");
 
         if (log.isDebugEnabled())
@@ -220,7 +236,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
             if (cctx.discovery().node(nodeId) == null)
                 // Node has left the topology, safely remove all locks.
-                removeLocks(req);
+                resWorker.addDgcResponse(createFakeResponse(req));
             else
                 sendMessage(nodeId, req);
         }
@@ -248,135 +264,22 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * Removes all locks using the information provided in response.
-     *
-     * @param res Response.
+     * @param req Request to create fake response for.
+     * @return Fake response.
      */
-    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-    private void removeLocks(GridCacheDgcResponse<K, V> res) {
-        assert res != null;
-
-        int salvagedTxCnt = 0;
-        int rolledbackTxCnt = 0;
-        int rmvLockCnt = 0;
-
-        Map<K, Collection<GridCacheVersion>> nonTx = new HashMap<K, Collection<GridCacheVersion>>();
-
-        for (Map.Entry<K, Collection<GridTuple2<GridCacheVersion, Boolean>>> e : res.candidatesMap().entrySet()) {
-            for (GridTuple2<GridCacheVersion, Boolean> t : e.getValue()) {
-                GridCacheTxEx<K, V> tx = cctx.tm().<GridCacheTxEx<K, V>>tx(t.get1());
-
-                if (tx != null && t.get2() != null && t.get2()) {
-                    cctx.tm().rollbackTx(tx);
-
-                    rolledbackTxCnt++;
-                }
-                else if (tx != null) {
-                    cctx.tm().salvageTx(tx);
-
-                    salvagedTxCnt++;
-                }
-                else {
-                    Collection<GridCacheVersion> col =
-                        F.addIfAbsent(nonTx, e.getKey(), new ArrayList<GridCacheVersion>());
-
-                    assert col != null;
-
-                    col.add(t.get1());
-
-                    rmvLockCnt++;
-                }
-            }
-        }
-
-        if (!nonTx.isEmpty())
-            removeLocksExplicitly(nonTx);
-
-        U.warn(log, "GCed suspicious transactions and locks " +
-            "[salvagedTxCnt=" + salvagedTxCnt + ", rolledbackTxCnt=" + rolledbackTxCnt +
-            ", rmvLockCnt=" + rmvLockCnt + ']');
-    }
-
-    /**
-     * Removes all locks using the information provided in request.
-     * This method is called when it is impossible to query remote node
-     * (e.g. it has left or failed).
-     *
-     * @param req Request.
-     */
-    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-    private void removeLocks(GridCacheDgcRequest<K, V> req) {
+    private GridCacheDgcResponse<K, V> createFakeResponse(GridCacheDgcRequest<K, V> req) {
         assert req != null;
 
-        int salvagedTxCnt = 0;
-        int rmvLockCnt = 0;
+        GridCacheDgcResponse<K, V> res = new GridCacheDgcResponse<K, V>();
 
-        Map<K, Collection<GridCacheVersion>> nonTx = new HashMap<K, Collection<GridCacheVersion>>();
+        for (Map.Entry<K, Collection<GridCacheVersion>> entry : req.candidatesMap().entrySet()) {
+            K key = entry.getKey();
 
-        for (Map.Entry<K, Collection<GridCacheVersion>> e : req.candidatesMap().entrySet()) {
-            for (GridCacheVersion ver : e.getValue()) {
-                GridCacheTxEx<K, V> tx = cctx.tm().<GridCacheTxEx<K, V>>tx(ver);
-
-                if (tx != null) {
-                    cctx.tm().salvageTx(tx);
-
-                    salvagedTxCnt++;
-                }
-                else {
-                    Collection<GridCacheVersion> col =
-                        F.addIfAbsent(nonTx, e.getKey(), new ArrayList<GridCacheVersion>());
-
-                    assert col != null;
-
-                    col.add(ver);
-
-                    rmvLockCnt++;
-                }
-            }
+            for (GridCacheVersion ver : entry.getValue())
+                res.addCandidate(key, ver, false);
         }
 
-        if (!nonTx.isEmpty())
-            removeLocksExplicitly(nonTx);
-
-        U.warn(log, "GCed suspicious transactions and locks " +
-            "[salvagedTxCnt=" + salvagedTxCnt + ", rmvLockCnt=" + rmvLockCnt + ']');
-    }
-
-    /**
-     * @param map Map containing locks to remove.
-     */
-    private void removeLocksExplicitly(Map<K, Collection<GridCacheVersion>> map) {
-        assert !F.isEmpty(map);
-
-        for (Map.Entry<K, Collection<GridCacheVersion>> e : map.entrySet()) {
-            GridCacheVersion newVer = cctx.versions().next();
-
-            while (true) {
-                GridCacheEntryEx<K, V> cached = cctx.cache().peekEx(e.getKey());
-
-                if (cached != null)
-                    try {
-                        // Invalidate before removing lock.
-                        try {
-                            cached.invalidate(null, newVer);
-                        }
-                        catch (GridException ex) {
-                            U.error(log, "Failed to invalidate entry: " + cached, ex);
-                        }
-
-                        for (GridCacheVersion ver : e.getValue())
-                            cached.removeLock(ver);
-
-                        break; // While loop.
-                    }
-                    catch (GridCacheEntryRemovedException ignored) {
-                        if (log.isDebugEnabled())
-                            log.debug("Attempted to remove lock on obsolete entry (will retry).");
-                    }
-                else
-                    break;
-            }
-        }
+        return res;
     }
 
     /**
@@ -425,10 +328,15 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         }
     }
 
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return S.toString(GridCacheDgcManager.class, this);
+    }
+
     /**
      * Worker that processes GC requests and sends responses back.
      */
-    private class ResponseWorker extends GridWorker {
+    private class RequestWorker extends GridWorker {
         /** */
         private BlockingQueue<GridTuple2<UUID, GridCacheDgcRequest<K, V>>> queue =
             new LinkedBlockingQueue<GridTuple2<UUID, GridCacheDgcRequest<K, V>>>();
@@ -436,13 +344,13 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         /**
          * Default constructor.
          */
-        ResponseWorker() {
-            super(cctx.gridName(), "cache-gc-response", log);
+        RequestWorker() {
+            super(cctx.gridName(), "cache-gc-req", log);
         }
 
         /**
          * @param nodeId Node id.
-         * @param req request.
+         * @param req Request.
          */
         void addDgcRequest(UUID nodeId, GridCacheDgcRequest<K, V> req) {
             assert nodeId != null;
@@ -494,9 +402,107 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         }
     }
 
-    /** {@inheritDoc} */
-    @Override public String toString() {
-        return S.toString(GridCacheDgcManager.class, this);
+    /**
+     * Worker that processes GC responses.
+     */
+    private class ResponseWorker extends GridWorker {
+        /** */
+        private BlockingQueue<GridCacheDgcResponse<K, V>> queue =
+            new LinkedBlockingQueue<GridCacheDgcResponse<K, V>>();
+
+        /**
+         * Default constructor.
+         */
+        ResponseWorker() {
+            super(cctx.gridName(), "cache-gc-req", log);
+        }
+
+        /**
+         * @param res Response.
+         */
+        void addDgcResponse(GridCacheDgcResponse<K, V> res) {
+            assert res != null;
+
+            queue.add(res);
+        }
+
+        /** {@inheritDoc} */
+        @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection", "TooBroadScope"})
+        @Override public void body() throws InterruptedException {
+            while (!isCancelled()) {
+                GridCacheDgcResponse<K, V> res = queue.take();
+
+                int salvagedTxCnt = 0;
+                int rolledbackTxCnt = 0;
+                int rmvLockCnt = 0;
+
+                Map<K, Collection<GridCacheVersion>> nonTx = new HashMap<K, Collection<GridCacheVersion>>();
+
+                for (Map.Entry<K, Collection<GridTuple2<GridCacheVersion, Boolean>>> e : res.candidatesMap().entrySet()) {
+                    for (GridTuple2<GridCacheVersion, Boolean> t : e.getValue()) {
+                        GridCacheTxEx<K, V> tx = cctx.tm().<GridCacheTxEx<K, V>>tx(t.get1());
+
+                        if (tx != null && t.get2() != null && t.get2()) {
+                            cctx.tm().rollbackTx(tx);
+
+                            rolledbackTxCnt++;
+                        }
+                        else if (tx != null) {
+                            cctx.tm().salvageTx(tx);
+
+                            salvagedTxCnt++;
+                        }
+                        else {
+                            Collection<GridCacheVersion> col =
+                                F.addIfAbsent(nonTx, e.getKey(), new ArrayList<GridCacheVersion>());
+
+                            assert col != null;
+
+                            col.add(t.get1());
+                        }
+                    }
+                }
+
+                if (!nonTx.isEmpty()) {
+                    for (Map.Entry<K, Collection<GridCacheVersion>> e : nonTx.entrySet()) {
+                        GridCacheVersion newVer = cctx.versions().next();
+
+                        while (true) {
+                            GridCacheEntryEx<K, V> cached = cctx.cache().peekEx(e.getKey());
+
+                            if (cached != null)
+                                try {
+                                    // Invalidate before removing lock.
+                                    try {
+                                        cached.invalidate(null, newVer);
+                                    }
+                                    catch (GridException ex) {
+                                        U.error(log, "Failed to invalidate entry: " + cached, ex);
+                                    }
+
+                                    for (GridCacheVersion ver : e.getValue()) {
+                                        if (cached.removeLock(ver))
+                                            rmvLockCnt++;
+                                    }
+
+                                    break; // While loop.
+                                }
+                                catch (GridCacheEntryRemovedException ignored) {
+                                    if (log.isDebugEnabled())
+                                        log.debug("Attempted to remove lock on obsolete entry (will retry).");
+                                }
+                            else
+                                break;
+                        }
+                    }
+                }
+
+                if (salvagedTxCnt != 0 || rolledbackTxCnt != 0 || rmvLockCnt != 0)
+                    U.warn(log, "GCed suspicious transactions and locks " +
+                        "[salvagedTxCnt=" + salvagedTxCnt + ", rolledbackTxCnt=" + rolledbackTxCnt +
+                        ", rmvLockCnt=" + rmvLockCnt + ']');
+            }
+        }
     }
 
     /**

@@ -18,7 +18,7 @@ import java.io.*;
  * Adapter for {@link GridCacheQueryMetrics} interface.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Externalizable {
     /** Query creation time. */
@@ -52,7 +52,7 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
     private GridCacheQueryType type;
 
     /**  */
-    private String className;
+    private String clsName;
 
     /** Mutex. */
     private final Object mux = new Object();
@@ -70,10 +70,8 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
      */
     public GridCacheQueryMetricsAdapter(GridCacheQueryBase query) {
         clause = query.clause();
-
         type = query.type();
-
-        className = query.className();
+        clsName = query.className();
     }
 
     /** {@inheritDoc} */
@@ -123,7 +121,7 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
 
     /** {@inheritDoc} */
     @Override public String className() {
-        return className;
+        return clsName;
     }
 
     /**
@@ -173,7 +171,7 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
         out.writeInt(fails);
         out.writeByte(type.ordinal());
         out.writeUTF(clause);
-        out.writeUTF(className);
+        out.writeUTF(clsName);
     }
 
     /** {@inheritDoc} */
@@ -188,7 +186,7 @@ public class GridCacheQueryMetricsAdapter implements GridCacheQueryMetrics, Exte
         fails = in.readInt();
         type = GridCacheQueryType.fromOrdinal(in.readByte());
         clause = in.readUTF();
-        className = in.readUTF();
+        clsName = in.readUTF();
     }
 
     /** {@inheritDoc} */

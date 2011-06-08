@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Cache projection.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter implements GridCacheProjection<K, V>,
     Externalizable {
@@ -1675,16 +1675,6 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
         GridCacheTxIsolation isolation, long timeout, boolean invalidate,
         GridOutClosure<? super R>[] closures) throws IllegalStateException, GridException {
         return cache.inTxAsync(concurrency, isolation, timeout, invalidate, closures);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCacheQuery<K, V> createQuery() {
-        GridCacheQueryManager<K,V> qryMgr = ctx.queries();
-
-        if (qryMgr == null)
-            throw new GridEnterpriseFeatureException("Distributed Cache Queries");
-
-        return qryMgr.createQuery(noNullEntryFilter, flags);
     }
 
     /** {@inheritDoc} */

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -93,7 +93,8 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     GridDiscoveryEvent discoEvt = (GridDiscoveryEvent)evt;
 
                     for (GridCacheTxEx<K, V> tx : idMap.values()) {
-                        if (!tx.local() && !tx.ec() && tx.nodeId().equals(discoEvt.eventNodeId())) {
+                        if ((!tx.local() || tx.dht()) && !tx.ec() &&
+                            tx.masterNodeIds().contains(discoEvt.eventNodeId())) {
                             if (log.isDebugEnabled())
                                 log.debug("Remaining transaction from left node: " + tx);
 
@@ -102,12 +103,10 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     }
                 }
             },
-            EVT_NODE_FAILED,
-            EVT_NODE_LEFT
-        );
+            EVT_NODE_FAILED, EVT_NODE_LEFT);
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
-            if (!tx.local() && !tx.ec() && cctx.discovery().node(tx.nodeId()) == null) {
+            if ((!tx.local() || tx.dht()) && !tx.ec() && !cctx.discovery().aliveAll(tx.masterNodeIds())) {
                 if (log.isDebugEnabled())
                     log.debug("Remaining transaction from left node: " + tx);
 
@@ -121,7 +120,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      *
      * @param tx Transaction.
      */
-    public void salvageTx(GridCacheTxEx tx) {
+    public void salvageTx(GridCacheTxEx<K, V> tx) {
         salvageTx(tx, false);
     }
 
@@ -131,7 +130,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * @param tx Transaction.
      * @param warn {@code True} if warning should be logged.
      */
-    private void salvageTx(GridCacheTxEx tx, boolean warn) {
+    private void salvageTx(GridCacheTxEx<K, V> tx, boolean warn) {
         assert tx != null;
 
         GridCacheTxState state = tx.state();
@@ -144,17 +143,27 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     "crashed or left grid: " + CU.txString(tx));
             }
 
-            GridCacheTxRemoteEx rmtTx = (GridCacheTxRemoteEx)tx;
-
             try {
-                rmtTx.prepare();
+                tx.invalidate(true);
 
-                rmtTx.invalidate(true);
+                tx.prepare();
 
-                rmtTx.doneRemote(rmtTx.xidVersion(), Collections.<GridCacheVersion>emptyList(),
-                    Collections.<GridCacheVersion>emptyList());
+                if (tx.state() == PREPARING) {
+                    if (log.isDebugEnabled())
+                        log.debug("Ignoring transaction in PREPARING state as it is currently handled " +
+                            "by another thread: " + tx);
 
-                rmtTx.commit();
+                    return;
+                }
+
+                if (tx instanceof GridCacheTxRemoteEx) {
+                    GridCacheTxRemoteEx<K, V> rmtTx = (GridCacheTxRemoteEx<K, V>)tx;
+
+                    rmtTx.doneRemote(tx.xidVersion(), Collections.<GridCacheVersion>emptyList(),
+                        Collections.<GridCacheVersion>emptyList());
+                }
+
+                tx.commit();
             }
             catch (GridCacheTxOptimisticException ignore) {
                 if (log.isDebugEnabled())
@@ -162,7 +171,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                         tx.xidVersion());
 
                 try {
-                    rmtTx.rollback();
+                    tx.rollback();
                 }
                 catch (GridException e) {
                     U.error(log, "Failed to rollback transaction: " + tx.xidVersion(), e);
@@ -196,15 +205,15 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         int committedVersSize = committedVers.size();
         int rolledbackVersSize = rolledbackVers.size();
 
-        System.out.println(">>> ");
-        System.out.println(">>> Transaction memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
-        System.out.println(">>>   threadMapSize: " + threadMapSize);
-        System.out.println(">>>   idMapSize: " + idMapSize);
-        System.out.println(">>>   committedQueueSize: " + committedQueueSize);
-        System.out.println(">>>   prepareQueueSize: " + prepareQueueSize);
-        System.out.println(">>>   startVerCntsSize: " + startVerCntsSize);
-        System.out.println(">>>   committedVersSize: " + committedVersSize);
-        System.out.println(">>>   rolledbackVersSize: " + rolledbackVersSize);
+        X.println(">>> ");
+        X.println(">>> Transaction memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   threadMapSize: " + threadMapSize);
+        X.println(">>>   idMapSize: " + idMapSize);
+        X.println(">>>   committedQueueSize: " + committedQueueSize);
+        X.println(">>>   prepareQueueSize: " + prepareQueueSize);
+        X.println(">>>   startVerCntsSize: " + startVerCntsSize);
+        X.println(">>>   committedVersSize: " + committedVersSize);
+        X.println(">>>   rolledbackVersSize: " + rolledbackVersSize);
     }
 
     /**

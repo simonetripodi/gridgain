@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -1643,61 +1643,64 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
             GridNearLockResponse<K, V> res = new GridNearLockResponse<K, V>(
                 req.version(), req.futureId(), req.miniId(), entries.size(), err);
 
-            res.pending(ctx.mvcc().localPendingVersions(req.keys(), req.version()));
+            if (err == null) {
+                res.pending(ctx.mvcc().localPendingVersions(req.keys(), req.version()));
 
-            // We have to add completed versions for cases when nearLocal and remote transactions
-            // execute concurrently.
-            res.completedVersions(ctx.tm().committedVersions(req.version()), ctx.tm().rolledbackVersions(req.version()));
+                // We have to add completed versions for cases when nearLocal and remote transactions
+                // execute concurrently.
+                res.completedVersions(ctx.tm().committedVersions(req.version()),
+                    ctx.tm().rolledbackVersions(req.version()));
 
-            int i = 0;
+                int i = 0;
 
-            for (ListIterator<GridCacheEntryEx<K, V>> it = entries.listIterator(); it.hasNext();) {
-                GridCacheEntryEx<K, V> e = it.next();
+                for (ListIterator<GridCacheEntryEx<K, V>> it = entries.listIterator(); it.hasNext();) {
+                    GridCacheEntryEx<K, V> e = it.next();
 
-                GridCacheVersion dhtVer = req.dhtVersion(i);
+                    GridCacheVersion dhtVer = req.dhtVersion(i);
 
-                while (true) {
-                    try {
-                        GridCacheVersion ver = e.version();
+                    while (true) {
+                        try {
+                            GridCacheVersion ver = e.version();
 
-                        boolean ret = req.returnValue(i) || dhtVer == null || !dhtVer.equals(ver);
+                            boolean ret = req.returnValue(i) || dhtVer == null || !dhtVer.equals(ver);
 
-                        if (ret)
-                            // Ignore transaction for DHT reads.
-                            e.innerGet(/*tx*/null, true/*swap*/, true/*read-through*/, /*fail-fast.*/false,
-                                /*update-metrics*/false, /*event notification*/req.returnValue(i), CU.<K, V>empty());
+                            if (ret)
+                                // Ignore transaction for DHT reads.
+                                e.innerGet(/*tx*/null, true/*swap*/, true/*read-through*/, /*fail-fast.*/false,
+                                    /*update-metrics*/false, /*event notification*/req.returnValue(i), CU.<K, V>empty());
 
-                        assert e.candidate(mappedVer).owner() :
-                            "Entry does not own lock for tx [entry=" + e + ", tx=" + tx + ", req=" + req + ']';
+                            assert e.candidate(mappedVer).owner() :
+                                "Entry does not own lock for tx [entry=" + e + ", tx=" + tx + ", req=" + req + ']';
 
-                        // We include values into response since they are required for local
-                        // calls and won't be serialized. We are also including DHT version.
-                        res.addValueBytes(
-                            e.peek(GLOBAL, CU.<K, V>empty()),
-                            ret ? e.valueBytes(null) : null,
-                            mappedVer,
-                            ctx);
+                            // We include values into response since they are required for local
+                            // calls and won't be serialized. We are also including DHT version.
+                            res.addValueBytes(
+                                e.peek(GLOBAL, CU.<K, V>empty()),
+                                ret ? e.valueBytes(null) : null,
+                                mappedVer,
+                                ctx);
 
-                        break;
+                            break;
+                        }
+                        catch (GridCacheEntryRemovedException ignore) {
+                            if (log.isDebugEnabled())
+                                log.debug("Got removed entry when sending reply to DHT lock request (will retry): " + e);
+
+                            e = entryExx(e.key());
+
+                            it.set(e);
+                        }
+                        catch (GridCacheFilterFailedException ex) {
+                            assert false : "Filter should never fail if fail-fast is false.";
+
+                            ex.printStackTrace();
+
+                            break;
+                        }
                     }
-                    catch (GridCacheEntryRemovedException ignore) {
-                        if (log.isDebugEnabled())
-                            log.debug("Got removed entry when sending reply to DHT lock request (will retry): " + e);
 
-                        e = entryExx(e.key());
-
-                        it.set(e);
-                    }
-                    catch (GridCacheFilterFailedException ex) {
-                        assert false : "Filter should never fail if fail-fast is false.";
-
-                        ex.printStackTrace();
-
-                        break;
-                    }
+                    i++;
                 }
-
-                i++;
             }
 
             // Don't send reply message to this node.

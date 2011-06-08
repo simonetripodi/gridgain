@@ -67,7 +67,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class
@@ -371,6 +371,9 @@ public abstract class
         for (Field field : GridEventType.class.getFields()) {
             if (field.getType().equals(int.class)) {
                 try {
+                    assert field.getName().startsWith("EVT_") : "Invalid event name (should start with 'EVT_': " +
+                        field.getName();
+
                     int type = field.getInt(null);
 
                     String prev = GRID_EVT_NAMES.put(type, field.getName());
@@ -387,8 +390,6 @@ public abstract class
 
         // Event array initialization.
         GRID_EVTS = toIntArray(GRID_EVT_NAMES.keySet());
-
-        assert GRID_EVTS.length == GridEventType.EVTS_ALL.length;
 
         // Sort for fast event lookup.
         Arrays.sort(GRID_EVTS);
@@ -465,6 +466,17 @@ public abstract class
      * This method should be used for adding quick debug statements in code
      * while debugging. Calls to this method should never be committed to trunk.
      *
+     * @param msg Message to debug.
+     */
+    public static void debugx(String msg) {
+        X.error('<' + DEBUG_DATE_FMT.format(new Date(System.currentTimeMillis())) + "><DEBUG><" +
+            Thread.currentThread().getName() + "> " + msg);
+    }
+
+    /**
+     * This method should be used for adding quick debug statements in code
+     * while debugging. Calls to this method should never be committed to trunk.
+     *
      * @param log Logger.
      * @param msg Message to debug.
      */
@@ -477,6 +489,25 @@ public abstract class
      */
     public static void dumpStack() {
         new Exception("Dumping Stack").printStackTrace(System.out);
+    }
+
+    /**
+     * Prints stack trace of the current thread to {@code System.out}.
+     *
+     * @param msg Message to print with the stack.
+     */
+    public static void dumpStack(String msg) {
+        new Exception(msg).printStackTrace(System.out);
+    }
+
+    /**
+     * Prints stack trace of the current thread to {@code System.out}.
+     *
+     * @param msg Message to print with the stack.
+     * @param out Output to dump stack to.
+     */
+    public static void dumpStack(String msg, PrintStream out) {
+        new Exception(msg).printStackTrace(out);
     }
 
     /**
@@ -1420,7 +1451,7 @@ public abstract class
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.05062011
+     * @version 3.1.1c.08062011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -2168,10 +2199,8 @@ public abstract class
      * @param vals Additional values.
      * @return {@code true} if contains object, {@code false} otherwise.
      */
-    public static boolean containsObjectArray(Object[] arr, Object val, @Nullable Object... vals) {
-        assert arr != null;
-
-        if (arr.length == 0)
+    public static boolean containsObjectArray(@Nullable Object[] arr, Object val, @Nullable Object... vals) {
+        if (arr == null || arr.length == 0)
             return false;
 
         for (Object o : arr) {
@@ -2182,6 +2211,26 @@ public abstract class
                 for (Object v : vals)
                     if (F.eq(o, v))
                         return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks for containment of the value in the array.
+     * Both array cells and value may be {@code null}. Two {@code null}s are considered equal.
+     *
+     * @param arr Array of objects.
+     * @param c Collection to check.
+     * @return {@code true} if contains object, {@code false} otherwise.
+     */
+    public static boolean containsObjectArray(@Nullable Object[] arr, @Nullable Collection<Object> c) {
+        if (arr == null || arr.length == 0 || c == null || c.isEmpty())
+            return false;
+
+        for (Object o : arr) {
+            if (c.contains(o))
+                return true;
         }
 
         return false;

@@ -26,7 +26,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichNode, Externalizable {
     /** */

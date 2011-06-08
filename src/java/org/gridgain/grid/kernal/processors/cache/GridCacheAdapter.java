@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -2791,16 +2791,6 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
-    @Override public GridCacheQuery<K, V> createQuery() {
-        GridCacheQueryManager<K, V> qryMgr = ctx.queries();
-
-        if (qryMgr == null)
-            throw new GridEnterpriseFeatureException("Distributed Cache Queries");
-
-        return qryMgr.createQuery(null, flags());
-    }
-
-    /** {@inheritDoc} */
     @Override public GridCacheQuery<K, V> createQuery(GridCacheQueryType type) {
         GridCacheQueryManager<K, V> qryMgr = ctx.queries();
 
@@ -3435,6 +3425,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         GridTuple2<String, String> t = stash.get();
 
@@ -3547,7 +3538,12 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** {@inheritDoc} */
     @Override public boolean removeQueue(String name) throws GridException {
-        return ctx.dataStructures().removeQueue(name);
+        return ctx.dataStructures().removeQueue(name, 0);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean removeQueue(String name, int batchSize) throws GridException {
+        return ctx.dataStructures().removeQueue(name, batchSize);
     }
 
     /**

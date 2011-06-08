@@ -14,6 +14,7 @@ import org.gridgain.grid.events.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.logger.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
@@ -21,6 +22,7 @@ import org.gridgain.grid.util.future.*;
 import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -30,7 +32,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Manages lock order within a thread.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /** Maxim number of removed locks. */
@@ -695,12 +697,36 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /**
      *
      */
+    public void recheckPendingLocks() {
+        if (log.isDebugEnabled())
+            log.debug("Rechecking pending locks for completion.");
+
+        for (FinishLockFuture fut : finishFuts)
+            fut.recheck();
+    }
+
+    /**
+     *
+     */
     private class FinishLockFuture extends GridFutureAdapter<Object> {
         /** Node ID to wait for, possibly null for partition-based future. */
-        private UUID nodeId;
+        private final UUID nodeId;
 
         /** Exclude IDs. */
-        private UUID[] exclIds;
+        private final UUID[] exclIds;
+
+        /** Logger. */
+        private final GridLogger log = GridCacheMvccManager.this.log;
+
+        /**
+         * Empty constructor required for {@link Externalizable}.
+         */
+        public FinishLockFuture() {
+            assert false;
+
+            nodeId = null;
+            exclIds = null;
+        }
 
         /** */
         @GridToStringInclude
@@ -784,13 +810,6 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
         }
 
         /**
-         * Empty constructor required for {@link java.io.Externalizable}.
-         */
-        public FinishLockFuture() {
-            assert false;
-        }
-
-        /**
          *
          */
         void recheck() {
@@ -817,9 +836,12 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
          * @param entry Entry.
          */
         @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter"})
-        void recheck(GridCacheEntryEx<K, V> entry) {
+        void recheck(@Nullable GridCacheEntryEx<K, V> entry) {
             if (entry == null)
                 return;
+
+            if (log.isDebugEnabled())
+                log.debug("Rechecking entry for completion: " + entry);
 
             Collection<GridCacheMvccCandidate<K>> cands = pending.get(entry.key());
 
@@ -834,13 +856,24 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                         for (Iterator<GridCacheMvccCandidate<K>> it = cands.iterator(); it.hasNext();) {
                             GridCacheMvccCandidate<K> cand = it.next();
 
-                            boolean found = false;
+                            if (U.containsObjectArray(exclIds, cand.nodeId(), cand.otherNodeId()) ||
+                                U.containsObjectArray(exclIds, cand.mappedNodeIds())) {
+                                if (log.isDebugEnabled())
+                                    log.debug("Removing candidate from mapping list [exclIds=" +
+                                        Arrays.toString(exclIds) + ", cand=" + cand + ", pending=" + pending + ']');
 
-                            if (rmts != null && rmts.contains(cand) || dht && locs != null && locs.contains(cand))
-                                found = true;
-
-                            if (!found)
                                 it.remove();
+                            }
+                            else {
+                                if ((rmts == null || !rmts.contains(cand)) &&
+                                    (!dht || locs == null || !locs.contains(cand))) {
+                                    if (log.isDebugEnabled())
+                                        log.debug("Removing candidate from mapping list [exclIds=" +
+                                            Arrays.toString(exclIds) + ", cand=" + cand + ", pending=" + pending + ']');
+
+                                    it.remove();
+                                }
+                            }
                         }
 
                         if (cands.isEmpty())

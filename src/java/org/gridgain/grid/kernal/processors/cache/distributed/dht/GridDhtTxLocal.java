@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implements GridCacheMappedVersion {
     /** */
@@ -146,6 +146,13 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     /** {@inheritDoc} */
     @Override public boolean dht() {
         return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> masterNodeIds() {
+        assert nearNodeId != null;
+
+        return Collections.singleton(nearNodeId);
     }
 
     /** {@inheritDoc} */
@@ -720,7 +727,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     /** {@inheritDoc} */
     @SuppressWarnings({"CatchGenericClass", "ThrowableInstanceNeverThrown"})
     @Override public void finish(boolean commit) throws GridException {
-        assert nearFinFutId != null;
+        assert nearFinFutId != null || isInvalidate();
         assert nearMiniId != null;
 
         if (log.isDebugEnabled())

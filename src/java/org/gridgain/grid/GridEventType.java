@@ -10,6 +10,8 @@
 package org.gridgain.grid;
 
 import org.gridgain.grid.events.*;
+import org.gridgain.grid.typedef.internal.*;
+
 import java.util.*;
 
 /**
@@ -48,7 +50,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public interface GridEventType {
     /**
@@ -805,157 +807,10 @@ public interface GridEventType {
     /**
      * All GridGain events (<b>including</b> metric update event).
      */
-    public static final int[] EVTS_ALL = {
-        // Swap events.
-        EVT_SWAP_SPACE_CLEARED,
-        EVT_SWAP_SPACE_DATA_REMOVED,
-        EVT_SWAP_SPACE_DATA_READ,
-        EVT_SWAP_SPACE_DATA_STORED,
-
-        // Cloud events.
-        EVT_CLOUD_CHANGED,
-        EVT_CLOUD_COMMAND_EXECUTED,
-        EVT_CLOUD_COMMAND_REJECTED_BY_POLICY,
-        EVT_CLOUD_COMMAND_REJECTED_BY_ID,
-        EVT_CLOUD_COMMAND_FAILED,
-        EVT_CLOUD_RESOURCE_ADDED,
-        EVT_CLOUD_RESOURCE_CHANGED,
-        EVT_CLOUD_RESOURCE_REMOVED,
-
-        // Cache events.
-        EVT_CACHE_ENTRY_CREATED,
-        EVT_CACHE_ENTRY_DESTROYED,
-        EVT_CACHE_OBJECT_PUT,
-        EVT_CACHE_OBJECT_READ,
-        EVT_CACHE_OBJECT_REMOVED,
-        EVT_CACHE_OBJECT_LOCKED,
-        EVT_CACHE_OBJECT_UNLOCKED,
-        EVT_CACHE_OBJECT_SWAPPED,
-        EVT_CACHE_OBJECT_UNSWAPPED,
-        EVT_CACHE_OBJECT_EXPIRED,
-
-        // Preload events.
-        EVT_CACHE_PRELOAD_STARTED,
-        EVT_CACHE_PRELOAD_STOPPED,
-        EVT_CACHE_PRELOAD_PART_LOADED,
-
-        // Job execution events.
-        EVT_JOB_MAPPED,
-        EVT_JOB_RESULTED,
-        EVT_JOB_FAILED_OVER,
-        EVT_JOB_STARTED,
-        EVT_JOB_FINISHED,
-        EVT_JOB_TIMEDOUT,
-        EVT_JOB_REJECTED,
-        EVT_JOB_FAILED,
-        EVT_JOB_QUEUED,
-        EVT_JOB_CANCELLED,
-
-        // Task execution events.
-        EVT_TASK_STARTED,
-        EVT_TASK_FINISHED,
-        EVT_TASK_FAILED,
-        EVT_TASK_TIMEDOUT,
-        EVT_TASK_SESSION_ATTR_SET,
-        EVT_TASK_REDUCED,
-
-        // Discovery events.
-        EVT_NODE_JOINED,
-        EVT_NODE_LEFT,
-        EVT_NODE_FAILED,
-        EVT_NODE_METRICS_UPDATED,
-        EVT_NODE_DISCONNECTED,
-        EVT_NODE_RECONNECTED,
-
-        // Checkpoint events.
-        EVT_CHECKPOINT_SAVED,
-        EVT_CHECKPOINT_LOADED,
-        EVT_CHECKPOINT_REMOVED,
-
-        // Deployment events.
-        EVT_CLASS_DEPLOYED,
-        EVT_CLASS_UNDEPLOYED,
-        EVT_CLASS_DEPLOY_FAILED,
-        EVT_TASK_DEPLOYED,
-        EVT_TASK_UNDEPLOYED,
-        EVT_TASK_DEPLOY_FAILED
-    };
+    public static final int[] EVTS_ALL = U.gridEvents();
 
     /**
      * All GridGain events (<b>excluding</b> metric update event).
      */
-    public static final int[] EVTS_ALL_MINUS_METRIC_UPDATE = {
-        // Swap events.
-        EVT_SWAP_SPACE_CLEARED,
-        EVT_SWAP_SPACE_DATA_REMOVED,
-        EVT_SWAP_SPACE_DATA_READ,
-        EVT_SWAP_SPACE_DATA_STORED,
-
-        // Cloud events.
-        EVT_CLOUD_CHANGED,
-        EVT_CLOUD_COMMAND_EXECUTED,
-        EVT_CLOUD_COMMAND_REJECTED_BY_POLICY,
-        EVT_CLOUD_COMMAND_REJECTED_BY_ID,
-        EVT_CLOUD_COMMAND_FAILED,
-        EVT_CLOUD_RESOURCE_ADDED,
-        EVT_CLOUD_RESOURCE_CHANGED,
-        EVT_CLOUD_RESOURCE_REMOVED,
-
-        // Cache events.
-        EVT_CACHE_ENTRY_CREATED,
-        EVT_CACHE_ENTRY_DESTROYED,
-        EVT_CACHE_OBJECT_PUT,
-        EVT_CACHE_OBJECT_READ,
-        EVT_CACHE_OBJECT_REMOVED,
-        EVT_CACHE_OBJECT_LOCKED,
-        EVT_CACHE_OBJECT_UNLOCKED,
-        EVT_CACHE_OBJECT_SWAPPED,
-        EVT_CACHE_OBJECT_UNSWAPPED,
-        EVT_CACHE_OBJECT_EXPIRED,
-
-        // Preload events.
-        EVT_CACHE_PRELOAD_STARTED,
-        EVT_CACHE_PRELOAD_STOPPED,
-        EVT_CACHE_PRELOAD_PART_LOADED,
-
-        // Job execution events.
-        EVT_JOB_MAPPED,
-        EVT_JOB_RESULTED,
-        EVT_JOB_FAILED_OVER,
-        EVT_JOB_STARTED,
-        EVT_JOB_FINISHED,
-        EVT_JOB_TIMEDOUT,
-        EVT_JOB_REJECTED,
-        EVT_JOB_FAILED,
-        EVT_JOB_QUEUED,
-        EVT_JOB_CANCELLED,
-
-        // Task execution events.
-        EVT_TASK_STARTED,
-        EVT_TASK_FINISHED,
-        EVT_TASK_FAILED,
-        EVT_TASK_TIMEDOUT,
-        EVT_TASK_SESSION_ATTR_SET,
-        EVT_TASK_REDUCED,
-
-        // Discovery events.
-        EVT_NODE_JOINED,
-        EVT_NODE_LEFT,
-        EVT_NODE_FAILED,
-        EVT_NODE_DISCONNECTED,
-        EVT_NODE_RECONNECTED,
-
-        // Checkpoint events.
-        EVT_CHECKPOINT_SAVED,
-        EVT_CHECKPOINT_LOADED,
-        EVT_CHECKPOINT_REMOVED,
-
-        // Deployment events.
-        EVT_CLASS_DEPLOYED,
-        EVT_CLASS_UNDEPLOYED,
-        EVT_CLASS_DEPLOY_FAILED,
-        EVT_TASK_DEPLOYED,
-        EVT_TASK_UNDEPLOYED,
-        EVT_TASK_DEPLOY_FAILED
-    };
+    public static final int[] EVTS_ALL_MINUS_METRIC_UPDATE = U.gridEvents(EVT_NODE_METRICS_UPDATED);
 }

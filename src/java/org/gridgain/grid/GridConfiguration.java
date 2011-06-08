@@ -52,7 +52,7 @@ import java.util.concurrent.*;
  * property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public interface GridConfiguration {
     /**
@@ -93,6 +93,15 @@ public interface GridConfiguration {
 
     /** Default FROM email address. */
     public static final String DFLT_SMTP_FROM_EMAIL = "info@gridgain.com";
+
+    /** Default size of public thread pool. */
+    public static final int DFLT_PUBLIC_THREAD_CNT = 100;
+
+    /** Default size of system thread pool. */
+    public static final int DFLT_SYSTEM_THREAD_CNT = DFLT_PUBLIC_THREAD_CNT;
+
+    /** Default size of peer class loading thread pool. */
+    public static final int DFLT_P2P_THREAD_CNT = 20;
 
     /**
      * Whether or not send email notifications on node start and stop. Note if enabled

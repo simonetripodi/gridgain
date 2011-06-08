@@ -26,7 +26,7 @@ import java.util.*;
  * Adapter for transforming cache queries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseAdapter<K, V>
     implements GridCacheTransformQuery<K, V, T> {
@@ -93,7 +93,7 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                 queryExecuted("Executing transform query for single result ", fut);
+                 onQueryExecuted("Executing transform query for single result", fut);
             }
         });
 
@@ -115,7 +115,7 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                queryExecuted("Executing transform query ", fut);
+                onQueryExecuted("Executing transform query", fut);
             }
         });
 

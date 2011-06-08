@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction adapter for cache transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxLocalEx<K, V> {
@@ -103,6 +103,11 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
         super(ctx, xidVer, implicit, true, concurrency, isolation, timeout, invalidate, swapEnabled, storeEnabled);
 
         minVer = xidVer;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> masterNodeIds() {
+        return Collections.singleton(nodeId);
     }
 
     /** {@inheritDoc} */
@@ -2018,7 +2023,10 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
 
         checkInternal(key);
 
-        assert state() == GridCacheTxState.ACTIVE : "Invalid tx state for adding entry [op=" + op + ", opId=" + opId +
+        GridCacheTxState state = state();
+
+        assert state == GridCacheTxState.ACTIVE || timedOut() :
+            "Invalid tx state for adding entry [op=" + op + ", opId=" + opId +
             ", val=" + val + ", entry=" + entry + ", filter=" + Arrays.toString(filter) +
             ", txCtx=" + ctx.tm().txContextVersion() + ", tx=" + this + ']';
 

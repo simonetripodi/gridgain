@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Cache communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     /** Number of retries using to send messages. */
@@ -141,7 +141,6 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                         });
                     }
                 }
-
             }
             catch (Throwable e) {
                 U.error(log, "Failed processing message [senderId=" + nodeId + ']', e);
@@ -710,10 +709,10 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                     if (startFut.isDone())
                         processOrdered(nodeId, msg);
-                    else
-                    if (log.isDebugEnabled())
-                        log.debug("Waiting for start future to complete for ordered message [nodeId=" + nodeId +
-                            ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+                    else {
+                        if (log.isDebugEnabled())
+                            log.debug("Waiting for start future to complete for ordered message [nodeId=" + nodeId +
+                                ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
 
                         // Don't hold this thread waiting for preloading to complete.
                         startFut.listenAsync(new CI1<GridFuture<?>>() {
@@ -748,8 +747,8 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                                 }
                             }
                         });
+                    }
                 }
-
             }
             catch (Throwable e) {
                 U.error(log, "Failed processing ordered message [senderId=" + nodeId + ']', e);

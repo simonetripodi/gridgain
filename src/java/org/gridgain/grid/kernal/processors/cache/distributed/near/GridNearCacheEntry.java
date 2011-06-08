@@ -28,7 +28,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
@@ -458,9 +458,7 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** {@inheritDoc} */
     @Override public GridCacheMvccCandidate<K> addLocal(long threadId, GridCacheVersion ver, long timeout,
         boolean reenter, boolean ec, boolean tx) throws GridCacheEntryRemovedException {
-        assert false;
-
-        return null;
+        return addNearLocal(null, threadId, ver, timeout, reenter, ec, tx);
     }
 
     /**
@@ -476,8 +474,8 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
      * @return New candidate.
      * @throws GridCacheEntryRemovedException If entry has been removed.
      */
-    public GridCacheMvccCandidate<K> addNearLocal(UUID dhtNodeId, long threadId, GridCacheVersion ver, long timeout,
-        boolean reenter, boolean ec, boolean tx) throws GridCacheEntryRemovedException {
+    public GridCacheMvccCandidate<K> addNearLocal(@Nullable UUID dhtNodeId, long threadId, GridCacheVersion ver,
+        long timeout, boolean reenter, boolean ec, boolean tx) throws GridCacheEntryRemovedException {
         try {
             GridCacheMvccCandidate<K> prev;
             GridCacheMvccCandidate<K> owner;
@@ -539,6 +537,26 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
         }
     }
 
+    /**
+     * @param ver Version to set DHT node ID for.
+     * @param dhtNodeId DHT node ID.
+     * @return {@code true} if candidate was found.
+     * @throws GridCacheEntryRemovedException If entry is removed.
+     */
+    public boolean dhtNodeId(GridCacheVersion ver, UUID dhtNodeId) throws GridCacheEntryRemovedException {
+        synchronized (mux) {
+            checkObsolete();
+
+            GridCacheMvccCandidate<K> cand = mvcc.candidate(ver);
+
+            if (cand == null)
+                return false;
+
+            cand.otherNodeId(dhtNodeId);
+
+            return true;
+        }
+    }
 
     /** {@inheritDoc} */
     @Override public GridCacheMvccCandidate<K> readyLock(GridCacheMvccCandidate<K> cand)

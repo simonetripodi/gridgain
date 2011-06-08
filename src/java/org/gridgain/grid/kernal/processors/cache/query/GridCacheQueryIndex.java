@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Cache query index. Manages full life-cycle of query index database (h2).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public class GridCacheQueryIndex<K, V> {
@@ -107,35 +107,20 @@ public class GridCacheQueryIndex<K, V> {
     /** Index db folder. */
     private volatile File folder;
 
-    static {
-        Collections.<Class<?>>addAll(simpleTypes,
-            int.class,
-            Integer.class,
-            boolean.class,
-            Boolean.class,
-            byte.class,
-            Byte.class,
-            short.class,
-            Short.class,
-            long.class,
-            Long.class,
-            BigDecimal.class,
-            double.class,
-            Double.class,
-            float.class,
-            Float.class,
-            Time.class,
-            Timestamp.class,
-            java.util.Date.class,
-            java.sql.Date.class,
-            char.class,
-            Character.class,
-            String.class,
-            UUID.class);
-    }
-
     /** */
     private String dbUrl;
+
+    /** */
+    private ThreadLocal<SqlStatementCache> stmtCache = new ThreadLocal<SqlStatementCache>();
+
+    /** */
+    private final Collection<Connection> conns = new GridConcurrentWeakHashSet<Connection>();
+
+    /** */
+    private final Collection<SqlStatementCache> stmtCaches = new GridConcurrentWeakHashSet<SqlStatementCache>();
+
+    /** */
+    private GridThread analyzeThread;
 
     /** */
     private ThreadLocal<GridByteArrayOutputStream> streamCache = new ThreadLocal<GridByteArrayOutputStream>() {
@@ -153,7 +138,7 @@ public class GridCacheQueryIndex<K, V> {
     };
 
     /** */
-    private ThreadLocal<ConnectionWrapper> connectionCache = new ThreadLocal<ConnectionWrapper>() {
+    private ThreadLocal<ConnectionWrapper> connCache = new ThreadLocal<ConnectionWrapper>() {
         @Nullable @Override public ConnectionWrapper get() {
             ConnectionWrapper c = super.get();
 
@@ -180,7 +165,7 @@ public class GridCacheQueryIndex<K, V> {
                 c = user != null || password != null ? DriverManager.getConnection(dbUrl, user, password) :
                     DriverManager.getConnection(dbUrl);
 
-                connections.add(c);
+                conns.add(c);
 
                 return new ConnectionWrapper(c);
             }
@@ -197,17 +182,35 @@ public class GridCacheQueryIndex<K, V> {
         }
     };
 
-    /** */
-    private ThreadLocal<SqlStatementCache> stmtCache = new ThreadLocal<SqlStatementCache>();
-
-    /** */
-    private final Collection<Connection> connections = new GridConcurrentWeakHashSet<Connection>();
-
-    /** */
-    private final Collection<SqlStatementCache> stmtCaches = new GridConcurrentWeakHashSet<SqlStatementCache>();
-
-    /** */
-    private GridThread analyzeThread;
+    /**
+     * Simple types.
+     */
+    static {
+        Collections.<Class<?>>addAll(simpleTypes,
+            int.class,
+            Integer.class,
+            boolean.class,
+            Boolean.class,
+            byte.class,
+            Byte.class,
+            short.class,
+            Short.class,
+            long.class,
+            Long.class,
+            BigDecimal.class,
+            double.class,
+            Double.class,
+            float.class,
+            Float.class,
+            Time.class,
+            Timestamp.class,
+            java.util.Date.class,
+            java.sql.Date.class,
+            char.class,
+            Character.class,
+            String.class,
+            UUID.class);
+    }
 
     /**
      * @param cctx Cache context.
@@ -340,7 +343,8 @@ public class GridCacheQueryIndex<K, V> {
     /**
      *
      */
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"}) void stop() {
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
+    void stop() {
         if (log.isDebugEnabled())
             log.debug("Stopping cache query index...");
 
@@ -392,10 +396,10 @@ public class GridCacheQueryIndex<K, V> {
 
                 stmtCaches.clear();
 
-                for (Connection conn : connections)
+                for (Connection conn : conns)
                     U.close(conn, log);
 
-                connections.clear();
+                conns.clear();
             }
 
             tables.clear();
@@ -458,7 +462,7 @@ public class GridCacheQueryIndex<K, V> {
      * @throws GridException In case of error.
      */
     private Connection connectionForThread(boolean setSchema) throws GridException {
-        ConnectionWrapper c = connectionCache.get();
+        ConnectionWrapper c = connCache.get();
 
         if (c == null)
             throw new GridException("Failed to get DB connection for thread (check log for details).");
@@ -810,12 +814,12 @@ public class GridCacheQueryIndex<K, V> {
      *
      */
     private void onSqlException() {
-        Connection conn = connectionCache.get().connection();
+        Connection conn = connCache.get().connection();
 
-        connectionCache.set(null);
+        connCache.set(null);
 
         if (conn != null) {
-            connections.remove(conn);
+            conns.remove(conn);
 
             // Reset connection to receive new one at next call.
             U.close(conn, log);
@@ -1109,7 +1113,7 @@ public class GridCacheQueryIndex<K, V> {
                 stmt = conn.createStatement();
 
                 // Need to update "schemaSet" flag to enforce schema to be set during the next call.
-                ConnectionWrapper wrap = connectionCache.get();
+                ConnectionWrapper wrap = connCache.get();
 
                 if (wrap != null)
                     wrap.schemaSet(false);
@@ -2583,6 +2587,16 @@ public class GridCacheQueryIndex<K, V> {
                 }
             }
         }
+    }
+
+    /**
+     * Prints memory statistics for debugging purposes.
+     */
+    void printMemoryStats() {
+        X.println("    Classes: " + clsMap.size());
+        X.println("    Tables: " + tables.size());
+        X.println("    Statement caches: " + stmtCaches.size());
+        X.println("    Connections: " + conns.size());
     }
 
     /**

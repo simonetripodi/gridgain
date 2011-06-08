@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheMvccFuture<K, V, GridCacheTx> {
@@ -638,30 +638,9 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
          */
         void onResult(GridTopologyException e) {
             if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+                log.debug("Remote node left grid while sending or waiting for reply (will ignore): " + this);
 
-            Collection<GridCacheTxEntry<K, V>> reads = null;
-            Collection<GridCacheTxEntry<K, V>> writes = null;
-
-            // Remove previous mapping.
-            if (dhtMapping != null) {
-                reads = dhtMapping.reads();
-                writes = dhtMapping.writes();
-
-                dhtMap.remove(dhtMapping.node().id());
-            }
-
-            if (nearMapping != null) {
-                reads = F.concat(false, reads, nearMapping.reads());
-                writes = F.concat(false, writes, nearMapping.writes());
-
-                nearMap.remove(nearMapping.node().id());
-            }
-
-            // Remap.
-            prepare(reads, writes);
-
-            onDone();
+            onDone(tx);
         }
 
         /**

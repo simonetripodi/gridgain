@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Cache proxy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externalizable {
     /** Context. */
@@ -115,13 +115,13 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"RedundantTypeArguments"})
+    @SuppressWarnings( {"RedundantTypeArguments"})
     @Override public <V1> V1 meta(String name) {
         return cache.<V1>meta(name);
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"RedundantTypeArguments"})
+    @SuppressWarnings( {"RedundantTypeArguments"})
     @Override public <V1> V1 removeMeta(String name) {
         return cache.<V1>removeMeta(name);
     }
@@ -1431,18 +1431,6 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
 
         try {
             return cache.entrySet(filter);
-        }
-        finally {
-            gate.leave(prev);
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCacheQuery<K, V> createQuery() {
-        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
-
-        try {
-            return cache.createQuery();
         }
         finally {
             gate.leave(prev);
@@ -3035,7 +3023,19 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
-            return cache.removeQueue(name);
+            return cache.removeQueue(name, 0);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean removeQueue(String name, int batchSize) throws GridException {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.removeQueue(name, batchSize);
         }
         finally {
             gate.leave(prev);
@@ -3204,7 +3204,7 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings( {"unchecked"})
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         ctx = (GridCacheContext<K, V>)in.readObject();
 

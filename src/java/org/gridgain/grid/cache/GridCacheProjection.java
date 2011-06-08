@@ -137,7 +137,7 @@ import java.util.concurrent.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>>, GridMetadataAware {
     /**
@@ -1903,14 +1903,6 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @return Entries that pass through key filter.
      */
     public Set<GridCacheEntry<K, V>> entrySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
-
-    /**
-     * Creates user's query without any parameters. For more information refer to
-     * {@link GridCacheQuery} documentation.
-     *
-     * @return Created query.
-     */
-    public GridCacheQuery<K, V> createQuery();
 
     /**
      * Creates user's query for given query type. For more information refer to

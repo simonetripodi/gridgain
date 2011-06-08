@@ -125,14 +125,14 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.05062011")
+    version = "3.1.1c.08062011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
 public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscoverySpi, GridTcpDiscoverySpiMBean {
@@ -947,8 +947,11 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     private boolean ipFinderHasLocalAddress() throws GridSpiException {
         for (InetSocketAddress addr : ipFinder.getRegisteredAddresses())
             try {
+                int port = addr.getPort() != 0 ? addr.getPort() : DFLT_PORT;
+
                 InetSocketAddress resolved = addr.isUnresolved() ?
-                    new InetSocketAddress(InetAddress.getByName(addr.getHostName()), addr.getPort()) : addr;
+                    new InetSocketAddress(InetAddress.getByName(addr.getHostName()), port) :
+                    new InetSocketAddress(addr.getAddress(), port);
 
                 if (resolved.equals(locNode.address()))
                     return true;
@@ -970,7 +973,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
         GridTcpDiscoveryNode node = ring.node(nodeId);
 
         if (node != null) {
-            assert node.visible() :  "Invisible node has been requested to ping: " + node;
+            assert node.visible() : "Invisible node has been requested to ping: " + node;
 
             return pingNode(node);
         }
@@ -1239,9 +1242,9 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                     log.debug("Concurrent discovery SPI start has been detected (local node should wait).");
 
                 synchronized (mux) {
-                    long threshold = System.currentTimeMillis() + netTimeout;
+                    long threshold = System.currentTimeMillis() + 2000;
 
-                    long timeout = netTimeout;
+                    long timeout = 2000;
 
                     while (timeout > 0)
                         try {
@@ -1259,7 +1262,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                     "the addresses responds): " + addrs);
 
                 synchronized (mux) {
-                    long threshold = System.currentTimeMillis() + netTimeout;
+                    long threshold = System.currentTimeMillis() + 2000;
 
                     long timeout = 2000;
 
@@ -1417,8 +1420,8 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
         for (InetSocketAddress addr : ipFinder.getRegisteredAddresses()) {
             if (addr.getPort() == 0)
-                addr = addr.isUnresolved() ? new InetSocketAddress(addr.getHostName(), locPort) :
-                    new InetSocketAddress(addr.getAddress(), locPort);
+                addr = addr.isUnresolved() ? new InetSocketAddress(addr.getHostName(), DFLT_PORT) :
+                    new InetSocketAddress(addr.getAddress(), DFLT_PORT);
 
             res.add(addr);
         }
@@ -2919,7 +2922,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                 notifyDiscovery(EVT_NODE_METRICS_UPDATED, locNode);
 
-                // If ring does not have remote nodes, evict with current topology  version.
+                // If ring does not have remote nodes, evict with current topology version.
                 if (topStore != null)
                     evictNodes(topVer.get());
             }
@@ -2998,7 +3001,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             if (ring.hasRemoteNodes())
                 sendMessageAcrossRing(msg);
             else
-                // If ring does not have remote nodes, evict with current topology  version.
+                // If ring does not have remote nodes, evict with current topology version.
                 if (topStore != null)
                     evictNodes(topVer.get());
         }

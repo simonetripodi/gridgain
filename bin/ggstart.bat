@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.05062011
+:: Version: 3.1.1c.08062011
 ::
 
 ::
@@ -78,7 +78,7 @@ set CP=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR%
 :: Process 'restart'.
 ::
 set RESTART_SUCCESS_FILE="%GRIDGAIN_HOME%\work\gridgain_success_%random%"
-set RESTART_SUCCESS_OPT="-DGRIDGAIN_SUCCESS_FILE=%RESTART_SUCCESS_FILE%"
+set RESTART_SUCCESS_OPT=-DGRIDGAIN_SUCCESS_FILE=%RESTART_SUCCESS_FILE%
 
 ::
 :: Process 'interactive' and 'verbose' modes and optional Spring configuration file.
@@ -114,7 +114,7 @@ if [%1] == [-i] (
 ::
 :: Find available port for JMX
 ::
-for /F "tokens=*" %%A in ('java -cp %GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR% org.gridgain.grid.tools.portscanner.GridPortScanner') do set JMX_PORT=%%A
+for /F "tokens=*" %%A in ('java -cp "%GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR%" org.gridgain.grid.tools.portscanner.GridPortScanner') do set JMX_PORT=%%A
 
 ::
 :: This variable defines necessary parameters for JMX

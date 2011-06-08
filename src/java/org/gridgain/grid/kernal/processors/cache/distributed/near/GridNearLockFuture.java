@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -653,24 +653,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
             new ConcurrentHashMap<GridRichNode, Collection<K>>(nodes.size());
 
         // Assign keys to primary nodes.
-        for (K key : keys) {
-            if (tx != null) {
-                UUID nodeId = tx.mapping(key);
-
-                // Do not remap if mapped already.
-                if (nodeId != null) {
-                    GridRichNode n = ctx.discovery().richNode(nodeId);
-
-                    if (n != null) {
-                        CU.getOrSet(mappings, n).add(key);
-
-                        continue; // For loop.
-                    }
-                }
-            }
-
+        for (K key : keys)
             map(key, mappings, nodes, mapped);
-        }
 
         if (isDone()) {
             if (log.isDebugEnabled())
@@ -683,7 +667,7 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
             log.debug("Starting (re)map for mappings [mappings=" + mappings + ", fut=" + this + ']');
 
         if (tx != null)
-            tx.addMapping(mappings);
+            tx.addKeyMapping(mappings);
 
         Collection<K> retries = new LinkedList<K>();
 
@@ -1026,12 +1010,12 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
         void onResult(GridTopologyException e) {
             if (isDone())
                 return;
-            
+
             if (log.isDebugEnabled())
                 log.debug("Remote node left grid while sending or waiting for reply (will remap and retry): " + this);
 
             tx.removeMapping(node.id());
-            
+
             // Remap.
             map(keys, F.t(node, keys));
 

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Discovery SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     /** System line separator. */
@@ -349,6 +349,36 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
      */
     public GridNodeShadow shadow(GridNode node) {
         return new GridDiscoveryNodeShadowAdapter(node);
+    }
+
+    /**
+     * @param nodeIds Node IDs to check.
+     * @return {@code True} if at least one ID belongs to an alive node.
+     */
+    public boolean aliveAny(@Nullable Collection<UUID> nodeIds) {
+        if (F.isEmpty(nodeIds))
+            return false;
+
+        for (UUID id : nodeIds)
+            if (alive(id))
+                return true;
+
+        return false;
+    }
+
+    /**
+     * @param nodeIds Node IDs to check.
+     * @return {@code True} if at least one ID belongs to an alive node.
+     */
+    public boolean aliveAll(@Nullable Collection<UUID> nodeIds) {
+        if (F.isEmpty(nodeIds))
+            return true;
+
+        for (UUID id : nodeIds)
+            if (!alive(id))
+                return false;
+
+        return true;
     }
 
     /**

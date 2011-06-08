@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -122,6 +122,18 @@ public abstract class GridCacheUtils {
 
         @Override public String toString() {
             return "Cache transaction entry to key converter.";
+        }
+    };
+
+    /** Transaction entry to key. */
+    private static final GridClosure txCol2key = new C1<Collection<GridCacheTxEntry>, Collection<Object>>() {
+        @SuppressWarnings( {"unchecked"})
+        @Override public Collection<Object> apply(Collection<GridCacheTxEntry> e) {
+            return F.viewReadOnly(e, tx2key);
+        }
+
+        @Override public String toString() {
+            return "Cache transaction entry collection to key collection converter.";
         }
     };
 
@@ -853,6 +865,14 @@ public abstract class GridCacheUtils {
     }
 
     /**
+     * @return Closure that converts tx entry collection to key collection.
+     */
+    @SuppressWarnings({"unchecked"})
+    public static <K, V> GridClosure<Collection<GridCacheTxEntry<K, V>>, Collection<K>> txCol2Key() {
+        return (GridClosure<Collection<GridCacheTxEntry<K,V>>, Collection<K>>)txCol2key;
+    }
+
+    /**
      * @return Closure that converts tx entry to key.
      */
     @SuppressWarnings({"unchecked"})
@@ -860,11 +880,17 @@ public abstract class GridCacheUtils {
         return (GridClosure<GridCacheTxEntry<K, V>, byte[]>)tx2keyBytes;
     }
 
+    /**
+     * @return Closure which converts transaction entry xid to XID version.
+     */
     @SuppressWarnings( {"unchecked"})
     public static <K, V> GridClosure<GridCacheTxEx<K, V>, GridCacheVersion> tx2xidVersion() {
         return (GridClosure<GridCacheTxEx<K, V>, GridCacheVersion>)tx2xidVer;
     }
 
+    /**
+     * @return Closure which converts transaction to xid.
+     */
     public static GridClosure<GridCacheTx, UUID> tx2xid() {
         return tx2xid;
     }
@@ -1339,7 +1365,7 @@ public abstract class GridCacheUtils {
      * @return Expiration time.
      */
     public static long toExpireTime(long ttl, long currTtl, long currExpireTime) {
-        long expireTime = 0;
+        long expireTime;
 
         if (ttl == 0 || currTtl == 0) {
             expireTime = ttl == 0 ? 0 : System.currentTimeMillis() + ttl;

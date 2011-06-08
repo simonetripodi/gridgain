@@ -23,7 +23,7 @@ import java.util.*;
  * Near transaction finish request.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest<K, V> {
     /** Near node ID. */
@@ -88,6 +88,11 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
         this.isolation = isolation;
         this.nearWrites = nearWrites;
         this.miniId = miniId;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean allowForStartup() {
+        return true;
     }
 
     /**

@@ -26,7 +26,7 @@ import java.util.*;
  * Adapter for cache queries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V> implements GridCacheQuery<K, V> {
     /**
@@ -99,7 +99,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                queryExecuted("Executed query for single result.", fut);
+                onQueryExecuted("Executed query for single result", fut);
             }
         });
 
@@ -111,13 +111,13 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
         Collection<GridRichNode> nodes = F.retain(CU.allNodes(cacheCtx), true, nodes(grid));
 
         if (qryLog.isDebugEnabled())
-            qryLog.debug(U.compact("Executing query " + toShortString(nodes)));
+            qryLog.debug(U.compact("Executing query: " + toShortString(nodes)));
 
         final GridCacheQueryFuture<Map.Entry<K, V>> fut = execute(nodes, false, null);
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                queryExecuted("Executed query ", fut);
+                onQueryExecuted("Executed query", fut);
             }
         });
 
@@ -135,7 +135,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
 
         fut.listenAsync(new CI1<GridFuture<?>>() {
             @Override public void apply(GridFuture<?> e) {
-                queryExecuted("Executed query with visitor ", fut);
+                onQueryExecuted("Executed query with visitor", fut);
             }
         });
 

@@ -65,7 +65,7 @@ import java.util.Map.*;
 import java.util.concurrent.*;
 
 import static org.gridgain.grid.GridSystemProperties.*;
-
+import static org.gridgain.grid.GridConfiguration.*;
 /**
  * This class defines a factory for the main GridGain API. It controls Grid life cycle
  * and allows listening for grid events.
@@ -127,7 +127,7 @@ import static org.gridgain.grid.GridSystemProperties.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridFactory {
     /**
@@ -149,12 +149,6 @@ public class GridFactory {
 
     /** Default configuration path relative to GridGain home. */
     private static final String DFLT_CFG = "config/default-spring.xml";
-
-    /** */
-    private static final int P2P_THREADS = 20;
-
-    /** */
-    private static final int SYSTEM_THREADS = 5;
 
     /** Default grid. */
     private static GridNamedInstance dfltGrid;
@@ -1359,7 +1353,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.05062011
+     * @version 3.1.1c.08062011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1628,7 +1622,8 @@ public class GridFactory {
             if (execSvc == null) {
                 isAutoExecSvc = true;
 
-                execSvc = new GridThreadPoolExecutor(cfg.getGridName());
+                execSvc = new GridThreadPoolExecutor(cfg.getGridName(), DFLT_PUBLIC_THREAD_CNT,
+                    DFLT_PUBLIC_THREAD_CNT, 0, new LinkedBlockingQueue<Runnable>());
 
                 // Pre-start all threads as they are guaranteed to be needed.
                 ((ThreadPoolExecutor)execSvc).prestartAllCoreThreads();
@@ -1641,8 +1636,8 @@ public class GridFactory {
                 // maximum threads has no effect.
                 // Note, that we do not pre-start threads here as system pool may
                 // not be needed.
-                sysExecSvc = new GridThreadPoolExecutor(cfg.getGridName(), SYSTEM_THREADS,
-                    SYSTEM_THREADS, 0, new LinkedBlockingQueue<Runnable>());
+                sysExecSvc = new GridThreadPoolExecutor(cfg.getGridName(), DFLT_SYSTEM_THREAD_CNT,
+                    DFLT_SYSTEM_THREAD_CNT, 0, new LinkedBlockingQueue<Runnable>());
             }
 
             if (p2pExecSvc == null) {
@@ -1652,8 +1647,8 @@ public class GridFactory {
                 // maximum threads has no effect.
                 // Note, that we do not pre-start threads here as class loading pool may
                 // not be needed.
-                p2pExecSvc = new GridThreadPoolExecutor(cfg.getGridName(), P2P_THREADS,
-                    P2P_THREADS, 0, new LinkedBlockingQueue<Runnable>());
+                p2pExecSvc = new GridThreadPoolExecutor(cfg.getGridName(), DFLT_P2P_THREAD_CNT,
+                    DFLT_P2P_THREAD_CNT, 0, new LinkedBlockingQueue<Runnable>());
             }
 
             if (traceSpi != null) {
@@ -2218,7 +2213,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.05062011
+         * @version 3.1.1c.08062011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

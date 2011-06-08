@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<K, Boolean>, GridCacheMappedVersion {
@@ -1045,29 +1045,8 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
          * @param e Node failure.
          */
         void onResult(GridTopologyException e) {
-            if (isDone())
-                return;
-            
             if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will remap and retry): " + this);
-
-            Collection<GridDhtCacheEntry<K, V>> entries = null;
-
-            // Remove previous mapping.
-            if (dhtMapping != null) {
-                entries = dhtMapping;
-
-                dhtMap.remove(node);
-            }
-
-            if (nearMapping != null) {
-                entries = F.concat(false, entries, nearMapping);
-
-                nearMap.remove(node);
-            }
-
-            // Remap.
-            map(entries);
+                log.debug("Remote node left grid while sending or waiting for reply (will ignore): " + this);
 
             onDone(true);
         }

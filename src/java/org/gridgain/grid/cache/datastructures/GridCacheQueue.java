@@ -17,39 +17,46 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * This interface provides a rich API for working with Data Grid-based distributed queue.
+ * This interface provides a rich API for working with Data Grid-based distributed queues.
  * <p>
- * Note that queue is only available in <b>Enterprise Edition</b>.
+ * Note that queues are only available in <b>Enterprise Edition</b>.
  * <p>
- * <h1 class="header">Functionality</h1>
+ * <h1 class="header">Overview</h1>
  * Cache queue provides an access to cache elements using typical queue API. Cache queue also implements
- * {@link Collection} interface.
+ * {@link Collection} interface and provides all methods from collections including
+ * {@link Collection#addAll(Collection)}, {@link Collection#removeAll(Collection)}, and
+ * {@link Collection#retainAll(Collection)} methods for bulk operations. Note that all
+ * {@link Collection} methods in the queue may throw {@link GridRuntimeException} in case
+ * of failure. If you prefer to catch checked exceptions, use methods that end with
+ * {@code 'x'}, such as {@link #addx(Object)} for example, which throw {@link GridException}.
  * <p>
- * Note that all {@link Collection} methods in the queue can throw {@link GridRuntimeException}.
- * <p>
- * Queue can be unbounded or bounded. Capacity of queue can be set when queue will be created and can't be
- * changed later. Here is an example of how create bounded {@code LIFO} queue with capacity of 1000 items
- * {@link GridCache#queue(String, GridCacheQueueType, int)}
+ * All queue operations have synchronous and asynchronous counterparts.
+ * <h1 class="header">Bounded vs Unbounded</h1>
+ * Queues can be {@code unbounded} or {@code bounded}. {@code Bounded} queues can
+ * have maximum capacity. Queue capacity can be set at creation time and cannot be
+ * changed later. Here is an example of how to create {@code bounded} {@code LIFO} queue with
+ * capacity of {@code 1000} items.
  * <pre name="code" class="java">
  * GridCacheQueue&lt;String&gt; queue = cache().queue("anyName", LIFO, 1000);
  * ...
  * queue.add("item");
  * </pre>
- * <p>
- * Queue provides different access to queue elements:
+ * For {@code bounded} queues <b>blocking</b> operations, such as {@link #take()} or {@link #put(Object)}
+ * are available. These operations will block until queue capacity changes to make the operation
+ * possible.
+ * <h1 class="header">Queue Types</h1>
+ * The following types of queues are available in GridGain:
  * <ul>
  *      <li>{@link GridCacheQueueType#FIFO} (default)</li>
  *      <li>{@link GridCacheQueueType#LIFO}</li>
  *      <li>{@link GridCacheQueueType#PRIORITY}</li>
  * </ul>
- * For more information about types of queue refer to {@link GridCacheQueueType} documentation.
+ * For more information about queue types refer to {@link GridCacheQueueType} documentation.
  * <p>
- * Priority queue provides sorting queue items by priority.
- * Priority in the queue item can be set using annotation {@link GridCacheQueuePriority}.
- * Only one field or method can be annotated in queue item class.
- * Annotated field must be {@code int} or {@code Integer} and annotated method must
- * return {@code int} or {@code Integer} result.
- * Here is an example of how annotate queue item:
+ * {@code Priority} queues allow for sorting queue items by priority. Priority in the queue item can
+ * be set using annotation {@link GridCacheQueuePriority}. Only one field or method can be annotated
+ * with priority in queue item class. Annotated fields or methods must be of {@code int} or {@code Integer}
+ * types. Here is an example of how annotate queue item:
  * <pre name="code" class="java">
  * private static class PriorityMethodItem {
  *       // Priority field.
@@ -66,30 +73,23 @@ import java.util.concurrent.*;
  *       }
  *   }
  * </pre>
+ * <h1 class="header">Collocated vs Non-collocated</h1>
+ * Queue items can be placed on one node or distributed throughout grid nodes
+ * (governed by {@code collocated} parameter). {@code Non-collocated} mode is provided only
+ * for partitioned caches. If {@code collocated} parameter is {@code true}, then all queue items
+ * will be collocated on one node, otherwise items will be distributed through all grid nodes.
+ * Unless explicitly specified, by default queues are {@code collocated}.
  * <p>
- * Queue items can be placed on one node or distributed through grid nodes (governed by the cache that
- * created that queue).
- * Distributed mode provides only for partitioned cache and it is configured via {@code collocated} parameter.
- * If {@code collocated} is {@code true} all queue items will be placed on one node, else items will be distributed
- * through all grid nodes.
- * <p>
- * Here is an example of how create unbounded {@link GridCacheQueueType#PRIORITY} queue with items
- * distributed through grid topology.
- * {@link GridCache#queue(String, GridCacheQueueType, int)}
+ * Here is an example of how create {@code unbounded} {@link GridCacheQueueType#PRIORITY} queue
+ * in non-collocated mode.
  * <pre name="code" class="java">
- * GridCacheQueue&lt;String&gt; queue = cache().queue("anyName", PRIORITY, Integer.MAX_VALUE, false);
+ * GridCacheQueue&lt;String&gt; queue = cache().queue("anyName", PRIORITY, 0 &#047;*unbounded*&#047;, false &#047;*non-collocated*&#047;);
  * ...
  * queue.add("item");
  * </pre>
- * <p>
- * Distributed Cache Queue provides implementation for:
- * <ul>
- *      <li>blocking,</li>
- *      <li>non-blocking,</li>
- *      <li>and asynchronous operations.</li>
- * </ul>
- * <h1 class="header">Creating Distributed Cache Queue</h1>
- * Instance of distributed cache queue can be created by calling one of the following methods:
+ * <h1 class="header">Creating Cache Queues</h1>
+ * Instances of distributed cache queues can be created by calling one of the following methods
+ * on {@link GridCache} API:
  * <ul>
  *     <li>{@link GridCache#queue(String)}</li>
  *     <li>{@link GridCache#queue(String, GridCacheQueueType)}</li>
@@ -98,7 +98,7 @@ import java.util.concurrent.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  * @see GridCache#queue(String)
  * @see GridCache#queue(String, GridCacheQueueType)
  * @see GridCache#queue(String, GridCacheQueueType, int)
@@ -262,6 +262,22 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * @throws GridException If operation failed.
      */
     public void clearx() throws GridException;
+
+    /**
+     * Removes all of the elements from this queue. Method is used in massive queues with huge numbers of elements.
+     *
+     * @param batchSize Batch size.
+     * @throws GridRuntimeException if operation failed.
+     */
+    public void clear(int batchSize) throws GridRuntimeException;
+
+    /**
+     * Removes all of the elements from this queue. Method is used in massive queues with huge numbers of elements.
+     *
+     * @param batchSize Batch size.
+     * @throws GridException If operation failed.
+     */
+    public void clearx(int batchSize) throws GridException;
 
     /**
      * Removes a single instance of the specified element from this

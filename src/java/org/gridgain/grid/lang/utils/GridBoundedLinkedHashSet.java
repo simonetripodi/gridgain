@@ -28,7 +28,7 @@ import java.util.*;
  *
  * @param <E> Set element.
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridBoundedLinkedHashSet<E> extends GridSerializableSet<E> implements Cloneable {
     /** */
@@ -79,6 +79,21 @@ public class GridBoundedLinkedHashSet<E> extends GridSerializableSet<E> implemen
         assert maxCap > 0;
 
         map = new GridBoundedLinkedHashMap<E, Object>(initCap, maxCap, loadFactor);
+    }
+
+    /**
+     * Constructs a new, empty set; the backing {@code LinkedHashMap}
+     * instance has the specified initial capacity and the specified load factor.
+     *
+     * @param initCap The initial capacity of the hash map.
+     * @param maxCap Maximum set capacity.
+     * @param loadFactor the Load factor of the hash map.
+     * @param accessOrder {@code True} for access order, {@code false} for insertion order.
+     */
+    public GridBoundedLinkedHashSet(int initCap, int maxCap, float loadFactor, boolean accessOrder) {
+        assert maxCap > 0;
+
+        map = new GridBoundedLinkedHashMap<E, Object>(initCap, maxCap, loadFactor, accessOrder);
     }
 
     /**

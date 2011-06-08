@@ -21,7 +21,7 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     /**
@@ -31,6 +31,11 @@ public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
      * @return Parent node IDs.
      */
     @Nullable public UUID otherNodeId();
+
+    /**
+     * @return Master node IDs.
+     */
+    public Collection<UUID> masterNodeIds();
 
     /**
      * @return All involved remote nodes, including DHT, near, and remotes.
@@ -51,8 +56,8 @@ public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     public boolean ownsLockUnsafe(GridCacheEntryEx<K, V> entry);
 
     /**
-     * For Partitioned caches, this flag is {@code false} for remote DHT transactions
-     * because serializability of transaction is enforced on primary node. All
+     * For Partitioned caches, this flag is {@code false} for remote DHT and remote NEAR
+     * transactions because serializability of transaction is enforced on primary node. All
      * other transaction types must enforce it.
      *
      * @return Enforce serializable flag.

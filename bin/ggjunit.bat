@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.05062011
+:: Version: 3.1.1c.08062011
 ::
 
 ::
@@ -92,7 +92,7 @@ goto parseParameters
 ::
 :: Find available port for JMX
 ::
-for /F "tokens=*" %%A in ('java -cp %GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR% org.gridgain.grid.tools.portscanner.GridPortScanner') do set JMX_PORT=%%A
+for /F "tokens=*" %%A in ('java -cp "%GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR%" org.gridgain.grid.tools.portscanner.GridPortScanner') do set JMX_PORT=%%A
 
 ::
 :: This variable defines necessary parameters for JMX

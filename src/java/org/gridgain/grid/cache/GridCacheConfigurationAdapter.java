@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -808,7 +808,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     }
 
     /**
-     * Gets default number of sequence values reserved for {@link GridCacheAtomicSequence} instances. After
+     * Sets default number of sequence values reserved for {@link GridCacheAtomicSequence} instances. After
      * a certain number has been reserved, consequent increments of sequence will happen locally,
      * without communication with other nodes, until the next reservation has to be made.
      *

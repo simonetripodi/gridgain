@@ -18,7 +18,7 @@ import org.gridgain.grid.kernal.processors.cache.*;
  * Community manager of data structures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public class GridCacheCommunityDataStructuresManager<K, V> extends GridCacheDataStructuresManager<K, V> {
     /** Error message. */
@@ -75,7 +75,7 @@ public class GridCacheCommunityDataStructuresManager<K, V> extends GridCacheData
     }
 
     /** {@inheritDoc} */
-    @Override public boolean removeQueue(String name) throws GridException {
+    @Override public boolean removeQueue(String name, int batchSize) throws GridException {
         throw new GridEnterpriseFeatureException(MSG);
     }
 

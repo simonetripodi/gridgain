@@ -138,7 +138,7 @@ import static org.gridgain.grid.spi.discovery.jms.GridJmsDiscoveryMessageType.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  * @see GridDiscoverySpi
  */
 @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
@@ -146,7 +146,7 @@ import static org.gridgain.grid.spi.discovery.jms.GridJmsDiscoveryMessageType.*;
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.05062011")
+    version = "3.1.1c.08062011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridJmsDiscoverySpi extends GridSpiAdapter implements GridDiscoverySpi, GridJmsDiscoverySpiMBean {
     /** Default heartbeat thread priority. */
@@ -1051,7 +1051,7 @@ public class GridJmsDiscoverySpi extends GridSpiAdapter implements GridDiscovery
      * {@code LEAVE_GRID} message.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.05062011
+     * @version 3.1.1c.08062011
      */
     private class HeartbeatSender extends GridSpiThread {
         /** */
@@ -1138,7 +1138,7 @@ public class GridJmsDiscoverySpi extends GridSpiAdapter implements GridDiscovery
      * all failed nodes from list.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.05062011
+     * @version 3.1.1c.08062011
      */
     private class NodeSweeper extends GridSpiThread {
         /**
@@ -1196,7 +1196,7 @@ public class GridJmsDiscoverySpi extends GridSpiAdapter implements GridDiscovery
      * with remote node.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.05062011
+     * @version 3.1.1c.08062011
      */
     @SuppressWarnings({"NonStaticInitializer"})
     private class HandshakeRunnable extends GridWorker {

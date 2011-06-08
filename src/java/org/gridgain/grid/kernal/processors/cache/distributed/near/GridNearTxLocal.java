@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Future. */
@@ -154,7 +154,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /**
      * @param keyMap Key map to register.
      */
-    void addMapping(Map<GridRichNode, Collection<K>> keyMap) {
+    void addKeyMapping(Map<GridRichNode, Collection<K>> keyMap) {
         for (Map.Entry<GridRichNode, Collection<K>> mapping : keyMap.entrySet()) {
             GridRichNode n = mapping.getKey();
 
@@ -162,7 +162,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                 GridCacheTxEntry<K, V> txEntry = txMap.get(key);
 
                 assert txEntry != null;
-                
+
                 GridDistributedTxMapping<K, V> m = mappings.get(n.id());
 
                 if (m == null)
@@ -179,6 +179,21 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                 ", tx=" + this + ']');
 
         ctx.tm().recheckFinishTransactions();
+    }
+
+    /**
+     * @param mappings Mappings.
+     */
+    void addEntryMapping(@Nullable Map<UUID, GridDistributedTxMapping<K, V>> mappings) {
+        if (!F.isEmpty(mappings)) {
+            this.mappings.putAll(mappings);
+
+            if (log.isDebugEnabled())
+                log.debug("Added mappings to transaction [locId=" + ctx.nodeId() + ", mappings=" + mappings +
+                    ", tx=" + this + ']');
+
+            ctx.tm().recheckFinishTransactions();
+        }
     }
 
     /**

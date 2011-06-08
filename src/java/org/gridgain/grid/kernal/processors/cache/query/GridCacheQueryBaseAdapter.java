@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheConfiguration.*;
  * Query adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareAdapter implements
     GridCacheQueryBase<K, V> {
@@ -216,13 +216,6 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     /** {@inheritDoc} */
     @Override public GridCacheQueryType type() {
         return type;
-    }
-
-    /** {@inheritDoc} */
-    @Override public void type(GridCacheQueryType type) {
-        this.type = type;
-
-        createMetrics();
     }
 
     /** {@inheritDoc} */
@@ -564,7 +557,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
             assert qryMgr != null;
 
-            qryMgr.metrics().add(metrics);
+            qryMgr.addMetrics(metrics);
         }
     }
 
@@ -573,7 +566,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
      * @param fut Future which was executed.
      * @param msg Prefix for log message.
      */
-    public void queryExecuted(String msg, GridFuture fut) {
+    public void onQueryExecuted(String msg, GridFuture fut) {
         boolean fail = false;
         Object res = null;
 
@@ -588,6 +581,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         metrics.onQueryExecute(fut.startTime(), fut.duration(), fail);
 
         if (qryLog.isDebugEnabled())
-            qryLog.debug(msg + "[id=" + id + ", duration=" + fut.duration() + ", fail=" + fail + ", res=" + res + ']');
+            qryLog.debug(msg + (!F.isEmpty(msg) ? " " : "") +
+                "[id=" + id + ", duration=" + fut.duration() + ", fail=" + fail + ", res=" + res + ']');
     }
 }

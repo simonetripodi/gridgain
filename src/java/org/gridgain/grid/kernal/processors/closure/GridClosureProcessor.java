@@ -25,7 +25,7 @@ import java.util.concurrent.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class GridClosureProcessor extends GridProcessorAdapter {
@@ -55,10 +55,10 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     /** {@inheritDoc} */
     @Override public void stop(boolean cancel, boolean wait) throws GridException {
         if (sysPool != null)
-            sysPool.join(true);
+            sysPool.join(cancel);
 
         if (pubPool != null)
-            pubPool.join(true);
+            pubPool.join(cancel);
 
         if (log.isDebugEnabled())
             log.debug("Stopped closure processor.");

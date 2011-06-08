@@ -32,7 +32,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  *
  * @param <T> SPI wrapped by this manager.
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.05062011
+ * @version 3.1.1c.08062011
  */
 public abstract class GridManagerAdapter<T extends GridSpi> implements GridManager {
     /** Kernal context. */
