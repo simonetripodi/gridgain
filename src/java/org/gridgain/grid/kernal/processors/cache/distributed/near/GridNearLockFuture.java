@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -275,11 +275,12 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
         if (timedOut)
             return null;
 
-        GridCacheMvccCandidate<K> c = entry.candidate(lockVer);
+        GridCacheMvccCandidate<K> c = entry.dhtNodeId(lockVer, dhtNodeId);
 
         // If remap.
         if (c != null) {
-            c.otherNodeId(dhtNodeId);
+            // If remapping, then we need to recheck locks in case if any node left.
+            cctx.mvcc().recheckPendingLocks();
 
             return c;
         }

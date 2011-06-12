@@ -29,7 +29,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * Distributed Garbage Collector for cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     /** GC thread. */
@@ -530,7 +530,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
         /** {@inheritDoc} */
         @Nullable @Override public Object call() throws Exception {
-            grid.cache(cacheName).dgc(suspectLockTimeout);
+            grid.cache(cacheName).dgc(suspectLockTimeout, false);
 
             return null;
         }

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Discovery SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     /** System line separator. */
@@ -317,7 +317,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStop() {
+    @Override public void onKernalStop0(boolean cancel, boolean wait) {
         // Stop receiving notifications.
         getSpi().setListener(null);
 
@@ -328,12 +328,10 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         U.join(discoWrkThread, log);
 
         discoWrkThread = null;
-
-        super.onKernalStop();
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         // Stop SPI itself.
         stopSpi();
 

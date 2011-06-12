@@ -31,28 +31,10 @@ import java.util.concurrent.*;
  * remote node this class will throw exception.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
-@SuppressWarnings({"CustomClassloader"}) class GridDeploymentClassLoader extends ClassLoader
-    implements GridDeploymentInfo {
-    /**
-     * Sets up custom protocol handler factory.
-     * TODO: Uncomment when custom protocol to load resources is tested.
-     */
-//    static {
-//        URL.setURLStreamHandlerFactory(
-//            new URLStreamHandlerFactory() {
-//                private final URLStreamHandler handler = new GridProtocolHandler();
-//
-//                @Override @Nullable public URLStreamHandler createURLStreamHandler(String proto) {
-//                    assert proto != null;
-//
-//                    return "gg".equals(proto.toLowerCase()) ? handler : null;
-//                }
-//            }
-//        );
-//    }
-
+@SuppressWarnings({"CustomClassloader"})
+class GridDeploymentClassLoader extends ClassLoader implements GridDeploymentInfo {
     /** Class loader ID. */
     private final UUID id;
 
@@ -129,10 +111,22 @@ import java.util.concurrent.*;
      *      {@code checkCreateClassLoader} method doesn't allow creation
      *      of a new class loader.
      */
-    GridDeploymentClassLoader(UUID id, String usrVer, GridDeploymentMode depMode, boolean singleNode,
-        GridKernalContext ctx, ClassLoader parent, UUID clsLdrId, UUID nodeId, long seqNum,
-        GridDeploymentCommunication comm, long p2pTimeout, GridLogger log, String[] p2pExclude,
-        int missedResourcesCacheSize, boolean clsBytesCacheEnabled) throws SecurityException {
+    GridDeploymentClassLoader(
+        UUID id,
+        String usrVer,
+        GridDeploymentMode depMode,
+        boolean singleNode,
+        GridKernalContext ctx,
+        ClassLoader parent,
+        UUID clsLdrId,
+        UUID nodeId,
+        long seqNum,
+        GridDeploymentCommunication comm,
+        long p2pTimeout,
+        GridLogger log,
+        String[] p2pExclude,
+        int missedResourcesCacheSize,
+        boolean clsBytesCacheEnabled) throws SecurityException {
         super(parent);
 
         assert id != null;
@@ -189,10 +183,20 @@ import java.util.concurrent.*;
      *      {@code checkCreateClassLoader} method doesn't allow creation
      *      of a new class loader.
      */
-    GridDeploymentClassLoader(UUID id, String usrVer, GridDeploymentMode depMode, boolean singleNode,
-        GridKernalContext ctx, ClassLoader parent, Map<UUID, GridTuple2<UUID, Long>> participants,
-        GridDeploymentCommunication comm, long p2pTimeout, GridLogger log, String[] p2pExclude,
-        int missedResourcesCacheSize, boolean clsBytesCacheEnabled) throws SecurityException {
+    GridDeploymentClassLoader(
+        UUID id,
+        String usrVer,
+        GridDeploymentMode depMode,
+        boolean singleNode,
+        GridKernalContext ctx,
+        ClassLoader parent,
+        Map<UUID, GridTuple2<UUID, Long>> participants,
+        GridDeploymentCommunication comm,
+        long p2pTimeout,
+        GridLogger log,
+        String[] p2pExclude,
+        int missedResourcesCacheSize,
+        boolean clsBytesCacheEnabled) throws SecurityException {
         super(parent);
 
         assert id != null;
@@ -261,9 +265,7 @@ import java.util.concurrent.*;
         synchronized (mux) {
             // Make sure to do get in order to change iteration order,
             // i.e. put this node first.
-            GridTuple2<UUID, Long> pair = nodeLdrMap.get(nodeId);
-
-            if (pair == null)
+            if (nodeLdrMap.get(nodeId) == null)
                 nodeLdrMap.put(nodeId, F.t(ldrId, seqNum));
         }
     }
@@ -506,7 +508,6 @@ import java.util.concurrent.*;
      * @return Class byte source.
      * @throws ClassNotFoundException If class was not found.
      */
-    @SuppressWarnings({"CallToNativeMethodWhileLocked", "ThrowableInstanceNeverThrown"})
     private GridByteArrayList sendClassRequest(String name, String path) throws ClassNotFoundException {
         assert !Thread.holdsLock(mux);
 
@@ -567,7 +568,7 @@ import java.util.concurrent.*;
                 // In case of shared resources/classes all nodes should have it.
                 if (log.isDebugEnabled())
                     log.debug("Failed to find class on remote node [class=" + name + ", nodeId=" + node.id() +
-                        ", clsLdrId=" + entry.getValue());
+                        ", clsLdrId=" + entry.getValue() + ", reason=" + res.getErrorMessage() + ']');
 
                 synchronized (mux) {
                     if (missedRsrcs != null)
@@ -575,7 +576,7 @@ import java.util.concurrent.*;
                 }
 
                 throw new ClassNotFoundException("Failed to peer load class [class=" + name + ", nodeClsLdrs=" +
-                    entries + ", parentClsLoader=" + getParent() + ']');
+                    entries + ", parentClsLoader=" + getParent() + ", reason=" + res.getErrorMessage() + ']');
             }
             catch (GridException e) {
                 // This thread should be interrupted again in communication if it
@@ -598,7 +599,8 @@ import java.util.concurrent.*;
     }
 
     /** {@inheritDoc} */
-    @Override @Nullable public InputStream getResourceAsStream(String name) {
+    @Override @Nullable
+    public InputStream getResourceAsStream(String name) {
         assert !Thread.holdsLock(mux);
 
         if (byteMap != null && name.endsWith(".class")) {

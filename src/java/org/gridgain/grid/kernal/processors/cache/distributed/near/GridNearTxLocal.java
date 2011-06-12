@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Future. */
@@ -145,10 +145,12 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
      * @param nodeId Undo mapping.
      */
     public void removeMapping(UUID nodeId) {
-        mappings.remove(nodeId);
-
-        if (log.isDebugEnabled())
-            log.debug("Removed mapping for node [nodeId=" + nodeId + ", tx=" + this + ']');
+        if (mappings.remove(nodeId) != null) {
+            if (log.isDebugEnabled())
+                log.debug("Removed mapping for node [nodeId=" + nodeId + ", tx=" + this + ']');
+        }
+        else if (log.isDebugEnabled())
+            log.debug("Mapping for node was not found [nodeId=" + nodeId + ", tx=" + this + ']');
     }
 
     /**

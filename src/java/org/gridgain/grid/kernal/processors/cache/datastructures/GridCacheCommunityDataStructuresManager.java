@@ -9,7 +9,6 @@
 
 package org.gridgain.grid.kernal.processors.cache.datastructures;
 
-import org.gridgain.grid.*;
 import org.gridgain.grid.cache.datastructures.*;
 import org.gridgain.grid.editions.*;
 import org.gridgain.grid.kernal.processors.cache.*;
@@ -18,64 +17,72 @@ import org.gridgain.grid.kernal.processors.cache.*;
  * Community manager of data structures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
-public class GridCacheCommunityDataStructuresManager<K, V> extends GridCacheDataStructuresManager<K, V> {
+public final class GridCacheCommunityDataStructuresManager<K, V> extends GridCacheDataStructuresManager<K, V> {
     /** Error message. */
     private static final String MSG = "Cache data structures";
 
     /** {@inheritDoc} */
-    @Override public GridCacheAtomicSequence sequence(String name, long initVal, boolean persistent, boolean create)
-        throws GridException {
+    @Override public GridCacheAtomicSequence sequence(String name, long initVal, boolean persistent, boolean create) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
-    @Override public boolean removeSequence(String name) throws GridException {
+    @Override public boolean removeSequence(String name) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
-    @Override public GridCacheAtomicLong atomicLong(String name, long initVal, boolean persistent, boolean create)
-        throws GridException {
+    @Override public GridCacheAtomicLong atomicLong(String name, long initVal, boolean persistent, boolean create) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
-    @Override public boolean removeAtomicLong(String name) throws GridException {
+    @Override public boolean removeAtomicLong(String name) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
     @Override public <T> GridCacheAtomicReference<T> atomicReference(String name, T initVal, boolean persistent,
-        boolean create) throws GridException {
+        boolean create) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
-    @Override public boolean removeAtomicReference(String name) throws GridException {
+    @Override public boolean removeAtomicReference(String name) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
     @Override public <T, S> GridCacheAtomicStamped<T, S> atomicStamped(String name, T initVal, S initStamp,
-        boolean create) throws GridException {
+        boolean create) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
-    @Override public boolean removeAtomicStamped(String name) throws GridException {
+    @Override public boolean removeAtomicStamped(String name) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
     @Override public <T> GridCacheQueue<T> queue(String name, GridCacheQueueType type, int capacity,
-        boolean collocated, boolean create) throws GridException {
+        boolean collocated, boolean create) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 
     /** {@inheritDoc} */
-    @Override public boolean removeQueue(String name, int batchSize) throws GridException {
+    @Override public boolean removeQueue(String name, int batchSize) {
+        throw new GridEnterpriseFeatureException(MSG);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridCacheCountDownLatch countDownLatch(String name, int cnt, boolean autoDel, boolean create) {
+        throw new GridEnterpriseFeatureException(MSG);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean removeCountDownLatch(String name) {
         throw new GridEnterpriseFeatureException(MSG);
     }
 

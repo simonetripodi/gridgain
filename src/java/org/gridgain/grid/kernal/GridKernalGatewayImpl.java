@@ -22,10 +22,10 @@ import static org.gridgain.grid.kernal.GridKernalState.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @GridToStringExclude
-class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
+public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
     /** */
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
 
@@ -41,7 +41,7 @@ class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
     /**
      * @param gridName Grid name.
      */
-    GridKernalGatewayImpl(String gridName) {
+    public GridKernalGatewayImpl(String gridName) {
         this.gridName = gridName;
     }
 

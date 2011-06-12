@@ -18,7 +18,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.gridgain.grid.GridFactoryState.*;
+import static org.gridgain.grid.GridFactoryState.STOPPED;
 import static org.gridgain.grid.GridSystemProperties.*;
 
 /**
@@ -32,7 +32,7 @@ import static org.gridgain.grid.GridSystemProperties.*;
  * this loader and you can use them as an example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"CallToSystemExit"})
 @GridLoader(description = "Command line loader")
@@ -41,7 +41,7 @@ public final class GridCommandLineLoader {
     private static final String VER = "3.1.1c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "08062011";
+    private static final String BUILD = "12062011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -179,13 +179,6 @@ public final class GridCommandLineLoader {
         if (args.length > 0 && args[0].charAt(0) == '-')
             exit("Invalid arguments: " + args[0], true, -1);
 
-        G.addListener(new GridFactoryListener() {
-            @Override public void onStateChange(String name, GridFactoryState state) {
-                if (state == STOPPED && latch != null)
-                    latch.countDown();
-            }
-        });
-
         String cfg = null;
 
         if (args.length > 0)
@@ -213,8 +206,15 @@ public final class GridCommandLineLoader {
 
         latch = new CountDownLatch(G.allGrids().size());
 
+        G.addListener(new GridFactoryListener() {
+            @Override public void onStateChange(String name, GridFactoryState state) {
+                if (state == STOPPED)
+                    latch.countDown();
+            }
+        });
+
         try {
-            while (latch.getCount() > 0)
+            while (!G.allGrids().isEmpty() && latch.getCount() > 0)
                 latch.await();
         }
         catch (InterruptedException e) {

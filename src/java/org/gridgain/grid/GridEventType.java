@@ -50,7 +50,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public interface GridEventType {
     /**
@@ -627,6 +627,52 @@ public interface GridEventType {
      * @see GridCloudEvent
      */
     public static final int EVT_CLOUD_RESOURCE_REMOVED = 107;
+
+    /**
+     * Built-in event type: license violation detected. Note that this event
+     * can only be triggered in Enterprise Edition.
+     * <p>
+     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
+     * internal GridGain events and should not be used by user-defined events.
+     *
+     * @see GridLicenseEvent
+     */
+    public static final int EVT_LIC_VIOLATION = 108;
+
+    /**
+     * Built-in event type: license violation cleared. Note that this event
+     * can only be triggered in Enterprise Edition.
+     * <p>
+     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
+     * internal GridGain events and should not be used by user-defined events.
+     *
+     * @see GridLicenseEvent
+     */
+    public static final int EVT_LIC_CLEARED = 109;
+
+    /**
+     * Built-in event type: license violation grace period is expired. Note that this event
+     * can only be triggered in Enterprise Edition.
+     * <p>
+     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
+     * internal GridGain events and should not be used by user-defined events.
+     *
+     * @see GridLicenseEvent
+     */
+    public static final int EVT_LIC_GRACE_EXPIRED = 110;
+
+    /**
+     * All license events. This array can be directly passed into
+     * {@link Grid#addLocalEventListener(GridLocalEventListener, int...)} method to
+     * subscribe to all license events.
+     *
+     * @see GridLicenseEvent
+     */
+    public static final int[] EVTS_LICENSE = {
+        EVT_LIC_CLEARED,
+        EVT_LIC_VIOLATION,
+        EVT_LIC_GRACE_EXPIRED
+    };
 
     /**
      * All checkpoint events. This array can be directly passed into

@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.*;
  * Represents single class deployment.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDeployment extends GridMetadataAwareAdapter implements GridDeploymentInfo {
     /** Timestamp. */
@@ -51,6 +51,7 @@ public class GridDeployment extends GridMetadataAwareAdapter implements GridDepl
     /** */
     private final AtomicReference<Class<?>> sampleCls = new AtomicReference<Class<?>>();
 
+    /** */
     private final String sampleClsName;
 
     /** {@code True} if undeployed. */
@@ -67,8 +68,8 @@ public class GridDeployment extends GridMetadataAwareAdapter implements GridDepl
 
     /** Class annotations. */
     @GridToStringExclude
-    private final ConcurrentMap<Class<?>, ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>>> anns =
-        new ConcurrentHashMap<Class<?>, ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>>>(1);
+    private final ConcurrentMap<Class<?>, ConcurrentMap<Class<? extends Annotation>,
+        AtomicReference<Annotation>>> anns = new ConcurrentHashMap<Class<?>, ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>>>(1);
 
     /** Classes. */
     @GridToStringExclude

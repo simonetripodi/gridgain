@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Query adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareAdapter implements
     GridCacheQueryBase<K, V> {
@@ -100,7 +100,10 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     private volatile boolean keepAll = true;
 
     /** */
-    private volatile boolean incBackups;
+    private volatile boolean incBackups = true;
+
+    /** */
+    private volatile boolean dedup = true;
 
     /** */
     private volatile boolean readThrough;
@@ -182,6 +185,8 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         pageSize = qry.pageSize;
         timeout = qry.timeout;
         keepAll = qry.keepAll;
+        incBackups = qry.incBackups;
+        dedup = qry.dedup;
         readThrough = qry.readThrough;
         clone = qry.clone;
 
@@ -307,6 +312,20 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
             checkSealed();
 
             this.incBackups = incBackups;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean enableDedup() {
+        return dedup;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void enableDedup(boolean dedup) {
+        synchronized (mux) {
+            checkSealed();
+
+            this.dedup = dedup;
         }
     }
 
@@ -481,11 +500,13 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     /**
      * @param nodes Nodes.
      * @param single {@code true} if single result requested, {@code false} if multiple.
+     * @param rmtRdcOnly {@code true} for reduce query when using remote reducer only,
+     *      otherwise it is always {@code false}.
      * @param pageLsnr Page listener.
      * @param <R> Result type.
      * @return Future.
      */
-    protected <R> GridCacheQueryFuture<R> execute(Collection<GridRichNode> nodes, boolean single,
+    protected <R> GridCacheQueryFuture<R> execute(Collection<GridRichNode> nodes, boolean single, boolean rmtRdcOnly,
         @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
         // Seal the query.
         seal();
@@ -513,8 +534,8 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         assert qryMgr != null;
 
         return nodes.size() == 1 && nodes.iterator().next().equals(cacheCtx.discovery().localNode()) ?
-            qryMgr.queryLocal(this, single, pageLsnr) :
-            qryMgr.queryDistributed(this, nodes, single, pageLsnr);
+            qryMgr.queryLocal(this, single, rmtRdcOnly, pageLsnr) :
+            qryMgr.queryDistributed(this, nodes, single, rmtRdcOnly, pageLsnr);
     }
 
     /**
@@ -609,7 +630,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         SingleFuture(Collection<GridRichNode> nodes) {
             super(cacheCtx.kernalContext());
 
-            fut = execute(nodes, true, new CI2<UUID, Collection<R>>() {
+            fut = execute(nodes, true, false, new CI2<UUID, Collection<R>>() {
                 @Override public void apply(UUID uuid, Collection<R> pageData) {
                     try {
                         if (!F.isEmpty(pageData))

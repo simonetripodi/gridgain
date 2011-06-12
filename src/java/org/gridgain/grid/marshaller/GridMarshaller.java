@@ -86,7 +86,7 @@ import java.io.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public interface GridMarshaller {
     /**
@@ -97,7 +97,7 @@ public interface GridMarshaller {
      * @param out Output stream to marshal into.
      * @throws GridException If marshalling failed.
      */
-    public void marshal(Object obj, OutputStream out) throws GridException;
+    public void marshal(@Nullable Object obj, OutputStream out) throws GridException;
 
     /**
      * Unmarshalls object from the output stream using given class loader.

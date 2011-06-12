@@ -10,11 +10,9 @@
 package org.gridgain.grid.kernal;
 
 import org.gridgain.grid.*;
-import org.gridgain.grid.kernal.controllers.*;
 import org.gridgain.grid.kernal.controllers.affinity.*;
 import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
-import org.gridgain.grid.kernal.managers.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
 import org.gridgain.grid.kernal.managers.cloud.*;
 import org.gridgain.grid.kernal.managers.collision.*;
@@ -28,7 +26,6 @@ import org.gridgain.grid.kernal.managers.metrics.*;
 import org.gridgain.grid.kernal.managers.swapspace.*;
 import org.gridgain.grid.kernal.managers.topology.*;
 import org.gridgain.grid.kernal.managers.tracing.*;
-import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.closure.*;
 import org.gridgain.grid.kernal.processors.email.*;
@@ -56,21 +53,142 @@ import static org.gridgain.grid.kernal.GridKernalState.*;
  * Implementation of kernal context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @GridToStringExclude
 public class GridKernalContextImpl extends GridMetadataAwareAdapter implements GridKernalContext, Externalizable {
     /** */
     private static final ThreadLocal<String> stash = new ThreadLocal<String>();
 
-    /** */
-    private GridManagerRegistry mgrReg;
+    /*
+     * Managers.
+     * ========
+     */
 
     /** */
-    private GridProcessorRegistry procReg;
+    @GridToStringExclude
+    private GridDeploymentManager depMgr;
 
     /** */
-    private GridControllerRegistry ctrlReg;
+    @GridToStringExclude
+    private GridIoManager ioMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridDiscoveryManager discoMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridCheckpointManager cpMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridEventStorageManager evtMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridFailoverManager failoverMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridTopologyManager topMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridCollisionManager colMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridLoadBalancerManager loadMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridLocalMetricsManager metricsMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridTracingManager traceMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridCloudManager cloudMgr;
+
+    /** */
+    @GridToStringExclude
+    private GridSwapSpaceManager swapspaceMgr;
+
+    /*
+     * Processors.
+     * ==========
+     */
+
+    /** */
+    @GridToStringInclude
+    private GridTaskProcessor taskProc;
+
+    /** */
+    @GridToStringInclude
+    private GridJobProcessor jobProc;
+
+    /** */
+    @GridToStringInclude
+    private GridTimeoutProcessor timeProc;
+
+    /** */
+    @GridToStringInclude
+    private GridResourceProcessor rsrcProc;
+
+    /** */
+    @GridToStringInclude
+    private GridJobMetricsProcessor metricsProc;
+
+    /** */
+    @GridToStringInclude
+    private GridClosureProcessor closureProc;
+
+    /** */
+    @GridToStringInclude
+    private GridCacheProcessor cacheProc;
+
+    /** */
+    @GridToStringInclude
+    private GridTaskSessionProcessor sesProc;
+
+    /** */
+    @GridToStringInclude
+    private GridPortProcessor portProc;
+
+    /** */
+    @GridToStringInclude
+    private GridEmailProcessor emailProc;
+
+    /** */
+    @GridToStringInclude
+    private GridRichProcessor richProc;
+
+    /** */
+    @GridToStringInclude
+    private GridScheduleProcessor scheduleProc;
+
+    /*
+     * Controlelrs.
+     * ===========
+     */
+
+    /** */
+    @GridToStringInclude
+    private GridRestController restCtrl;
+
+    /** */
+    @GridToStringInclude
+    private GridLicenseController licCtrl;
+
+    @GridToStringInclude
+    private GridAffinityController affCtrl;
+
+    /** */
+    @GridToStringExclude
+    private List<GridComponent> comps = new LinkedList<GridComponent>();
 
     /** */
     private Grid grid;
@@ -91,28 +209,113 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     /**
      * Creates new kernal context.
      *
-     * @param mgrReg Managers registry.
-     * @param procReg Processors registry.
-     * @param ctrlReg Controller registry.
      * @param grid Grid instance managed by kernal.
      * @param cfg Grid configuration.
      * @param gw Kernal gateway.
      */
-    GridKernalContextImpl(GridManagerRegistry mgrReg, GridProcessorRegistry procReg, GridControllerRegistry ctrlReg,
-        Grid grid, GridConfiguration cfg, GridKernalGateway gw) {
-        assert mgrReg != null;
-        assert procReg != null;
-        assert ctrlReg != null;
+    protected GridKernalContextImpl(Grid grid, GridConfiguration cfg, GridKernalGateway gw) {
         assert grid != null;
         assert cfg != null;
         assert gw != null;
 
-        this.mgrReg = mgrReg;
-        this.procReg = procReg;
-        this.ctrlReg = ctrlReg;
         this.grid = grid;
         this.cfg = cfg;
         this.gw = gw;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Iterator<GridComponent> iterator() {
+        return comps.iterator();
+    }
+
+    /** {@inheritDoc} */
+    @Override public List<GridComponent> components() {
+        return Collections.unmodifiableList(comps);
+    }
+
+    /**
+     * @param comp Manager to add.
+     */
+    public void add(GridComponent comp) {
+        assert comp != null;
+
+        /*
+         * Managers.
+         * ========
+         */
+
+        if (comp instanceof GridDeploymentManager)
+            depMgr = (GridDeploymentManager)comp;
+        else if (comp instanceof GridIoManager)
+            ioMgr = (GridIoManager)comp;
+        else if (comp instanceof GridDiscoveryManager)
+            discoMgr = (GridDiscoveryManager)comp;
+        else if (comp instanceof GridCheckpointManager)
+            cpMgr = (GridCheckpointManager)comp;
+        else if (comp instanceof GridEventStorageManager)
+            evtMgr = (GridEventStorageManager)comp;
+        else if (comp instanceof GridFailoverManager)
+            failoverMgr = (GridFailoverManager)comp;
+        else if (comp instanceof GridTopologyManager)
+            topMgr = (GridTopologyManager)comp;
+        else if (comp instanceof GridCollisionManager)
+            colMgr = (GridCollisionManager)comp;
+        else if (comp instanceof GridLocalMetricsManager)
+            metricsMgr = (GridLocalMetricsManager)comp;
+        else if (comp instanceof GridLoadBalancerManager)
+            loadMgr = (GridLoadBalancerManager)comp;
+        else if (comp instanceof GridTracingManager)
+            traceMgr = (GridTracingManager)comp;
+        else if (comp instanceof GridCloudManager)
+            cloudMgr = (GridCloudManager)comp;
+        else if (comp instanceof GridSwapSpaceManager)
+            swapspaceMgr = (GridSwapSpaceManager)comp;
+
+        /*
+         * Processors.
+         * ==========
+         */
+
+        else if (comp instanceof GridTaskProcessor)
+            taskProc = (GridTaskProcessor)comp;
+        else if (comp instanceof GridJobProcessor)
+            jobProc = (GridJobProcessor)comp;
+        else if (comp instanceof GridTimeoutProcessor)
+            timeProc = (GridTimeoutProcessor)comp;
+        else if (comp instanceof GridResourceProcessor)
+            rsrcProc = (GridResourceProcessor)comp;
+        else if (comp instanceof GridJobMetricsProcessor)
+            metricsProc = (GridJobMetricsProcessor)comp;
+        else if (comp instanceof GridCacheProcessor)
+            cacheProc = (GridCacheProcessor)comp;
+        else if (comp instanceof GridTaskSessionProcessor)
+            sesProc = (GridTaskSessionProcessor)comp;
+        else if (comp instanceof GridPortProcessor)
+            portProc = (GridPortProcessor)comp;
+        else if (comp instanceof GridEmailProcessor)
+            emailProc = (GridEmailProcessor)comp;
+        else if (comp instanceof GridClosureProcessor)
+            closureProc = (GridClosureProcessor)comp;
+        else if (comp instanceof GridRichProcessor)
+            richProc = (GridRichProcessor)comp;
+        else if (comp instanceof GridScheduleProcessor)
+            scheduleProc = (GridScheduleProcessor)comp;
+
+        /*
+         * Controllers.
+         * ===========
+         */
+        else if (comp instanceof GridRestController)
+            restCtrl = (GridRestController)comp;
+        else if (comp instanceof GridLicenseController)
+            licCtrl = (GridLicenseController)comp;
+        else if (comp instanceof GridAffinityController)
+            affCtrl = (GridAffinityController)comp;
+
+        else
+            assert false : "Unknown manager class: " + comp.getClass();
+
+        comps.add(comp);
     }
 
     /** {@inheritDoc} */
@@ -163,11 +366,6 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     }
 
     /** {@inheritDoc} */
-    @Override public GridLicenseController license() {
-        return ctrlReg.license();
-    }
-
-    /** {@inheritDoc} */
     @Override public UUID localNodeId() {
         return discovery() == null ? cfg.getNodeId() : discovery().localNode().id();
     }
@@ -189,7 +387,7 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
 
     /** {@inheritDoc} */
     @Override public GridRichProcessor rich() {
-        return procReg.rich();
+        return richProc;
     }
 
     /** {@inheritDoc} */
@@ -199,132 +397,137 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
 
     /** {@inheritDoc} */
     @Override public GridTaskProcessor task() {
-        return procReg.task();
+        return taskProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridJobProcessor job() {
-        return procReg.job();
+        return jobProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridTimeoutProcessor timeout() {
-        return procReg.timeout();
+        return timeProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridResourceProcessor resource() {
-        return procReg.resource();
+        return rsrcProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridJobMetricsProcessor jobMetric() {
-        return procReg.metric();
+        return metricsProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridCacheProcessor cache() {
-        return procReg.cache();
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridAffinityController affinity() {
-        return ctrlReg.affinity();
+        return cacheProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridTaskSessionProcessor session() {
-        return procReg.session();
+        return sesProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridClosureProcessor closure() {
-        return procReg.closure();
+        return closureProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridPortProcessor ports() {
-        return procReg.ports();
+        return portProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridEmailProcessor email() {
-        return procReg.email();
+        return emailProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridCloudManager cloud() {
-        return mgrReg.cloud();
+        return cloudMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridScheduleProcessor schedule() {
-        return procReg.schedule();
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridRestController rest() {
-        return procReg.rest();
+        return scheduleProc;
     }
 
     /** {@inheritDoc} */
     @Override public GridDeploymentManager deploy() {
-        return mgrReg.deploy();
+        return depMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridIoManager io() {
-        return mgrReg.io();
+        return ioMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridDiscoveryManager discovery() {
-        return mgrReg.discovery();
+        return discoMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridCheckpointManager checkpoint() {
-        return mgrReg.checkpoint();
+        return cpMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridEventStorageManager event() {
-        return mgrReg.event();
+        return evtMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridTracingManager tracing() {
-        return mgrReg.tracing();
+        return traceMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridFailoverManager failover() {
-        return mgrReg.failover();
+        return failoverMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridTopologyManager topology() {
-        return mgrReg.topology();
+        return topMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridCollisionManager collision() {
-        return mgrReg.collision();
+        return colMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridLocalMetricsManager localMetric() {
-        return mgrReg.metric();
+        return metricsMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridLoadBalancerManager loadBalancing() {
-        return mgrReg.loadBalancing();
+        return loadMgr;
     }
 
     /** {@inheritDoc} */
     @Override public GridSwapSpaceManager swap() {
-        return mgrReg.swap();
+        return swapspaceMgr;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridLicenseController license() {
+        return licCtrl;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridAffinityController affinity() {
+        return affCtrl;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRestController rest() {
+        return restCtrl;
     }
 
     /** {@inheritDoc} */

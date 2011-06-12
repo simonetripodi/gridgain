@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Load balancing manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancingSpi> {
     /** Number of entries to keep in annotation cache. */
@@ -66,7 +66,7 @@ public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancin
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         stopSpi();
 
         if (log.isDebugEnabled())
@@ -164,7 +164,7 @@ public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancin
                 }
             }
             else {
-                GridNode node = null;
+                GridNode node;
 
                 try {
                     node = ctx.affinity().mapKeyToNode(cacheName, nodes, key, true);

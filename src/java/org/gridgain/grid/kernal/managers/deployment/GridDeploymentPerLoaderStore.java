@@ -26,7 +26,7 @@ import static org.gridgain.grid.GridEventType.*;
  * {@link GridDeploymentMode#ISOLATED} modes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
     /** Cache keyed by class loader ID. */
@@ -55,9 +55,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
     @Override public void start() throws GridException {
         ctxLdr = U.detectClassLoader(getClass());
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(startInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -76,13 +75,11 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
             cache.clear();
         }
 
-        for (IsolatedDeployment dep : copy) {
+        for (IsolatedDeployment dep : copy)
             dep.recordUndeployed();
-        }
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -111,9 +108,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
                         }
                     }
 
-                    for (IsolatedDeployment dep : rmv) {
+                    for (IsolatedDeployment dep : rmv)
                         dep.recordUndeployed();
-                    }
                 }
             }
         };
@@ -142,13 +138,11 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
             }
         }
 
-        for (IsolatedDeployment dep : rmv) {
+        for (IsolatedDeployment dep : rmv)
             dep.recordUndeployed();
-        }
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug("Registered deployment discovery listener: " + discoLsnr);
-        }
     }
 
     /** {@inheritDoc} */
@@ -156,9 +150,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
         if (discoLsnr != null) {
             ctx.event().removeLocalEventListener(discoLsnr);
 
-            if (log.isDebugEnabled()) {
+            if (log.isDebugEnabled())
                 log.debug("Unregistered deployment discovery listener: " + discoLsnr);
-            }
         }
     }
 
@@ -187,9 +180,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
         assert meta.senderNodeId() != null;
         assert meta.sequenceNumber() > 0;
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug("Starting to peer-load class based on deployment metadata: " + meta);
-        }
 
         GridNode sender = ctx.discovery().node(meta.senderNodeId());
 
@@ -276,9 +268,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
                 ClassLoader parent = meta.parentLoader() == null ? ctxLdr : meta.parentLoader();
 
                 // Safety.
-                if (parent == null) {
+                if (parent == null)
                     parent = getClass().getClassLoader();
-                }
 
                 // Create peer class loader.
                 ClassLoader clsLdr = new GridDeploymentClassLoader(
@@ -304,9 +295,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
                 cache.put(meta.classLoaderId(), dep);
 
                 // In case if deploying stale class.
-                if (undeployTimeout > 0) {
+                if (undeployTimeout > 0)
                     scheduleUndeploy(dep, undeployTimeout);
-                }
             }
         }
 
@@ -363,9 +353,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
                         }
                     }
 
-                    if (removed) {
+                    if (removed)
                         dep.recordUndeployed();
-                    }
                 }
             });
         }
@@ -390,17 +379,15 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
 
                         undeployed.add(dep);
 
-                        if (log.isInfoEnabled()) {
+                        if (log.isInfoEnabled())
                             log.info("Undeployed Private or Isolated deployment: " + dep);
-                        }
                     }
                 }
             }
         }
 
-        for (IsolatedDeployment dep : undeployed) {
+        for (IsolatedDeployment dep : undeployed)
             dep.recordUndeployed();
-        }
     }
 
     /** {@inheritDoc} */
@@ -468,9 +455,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
                 ctx.event().record(evt);
             }
 
-            if (log.isInfoEnabled()) {
+            if (log.isInfoEnabled())
                 log.info(msg);
-            }
         }
 
         /**
@@ -499,9 +485,8 @@ public class GridDeploymentPerLoaderStore extends GridDeploymentStoreAdapter {
                         evts.record(evt);
                     }
 
-                    if (log.isInfoEnabled()) {
+                    if (log.isInfoEnabled())
                         log.info(msg);
-                    }
                 }
             }
 

@@ -78,6 +78,7 @@ org.gridgain.grid.spi.discovery.tcp.ipfinder
 org.gridgain.grid.spi.discovery.tcp.ipfinder.vm
 org.gridgain.grid.spi.discovery.tcp.metricsstore
 org.gridgain.grid.spi.discovery.tcp.metricsstore.vm
+org.gridgain.grid.spi.discovery.tcp.segmentation
 org.gridgain.grid.spi.discovery.tcp.topologystore
 org.gridgain.grid.spi.discovery.tcp.topologystore.vm
 org.gridgain.grid.spi.eventstorage

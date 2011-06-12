@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
  * It uses communication manager as a way of sending and receiving requests.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"deprecation"})
 @GridToStringExclude class GridDeploymentCommunication {
@@ -62,7 +62,8 @@ import static org.gridgain.grid.kernal.GridTopic.*;
      */
     void start() {
         peerLsnr = new GridMessageListener() {
-            @Override public void onMessage(UUID nodeId, Object msg) {
+            @Override
+            public void onMessage(UUID nodeId, Object msg) {
                 assert nodeId != null;
                 assert msg != null;
 
@@ -95,18 +96,50 @@ import static org.gridgain.grid.kernal.GridTopic.*;
                 if (log.isDebugEnabled())
                     log.debug("Received peer class/resource loading request [node=" + nodeId + ", req=" + req + ']');
 
-                String errMsg;
-
                 GridDeploymentResponse res = new GridDeploymentResponse();
 
                 GridDeployment dep = ctx.deploy().getDeployment(req.getClassLoaderId());
 
                 // Null class loader means failure here.
                 if (dep != null) {
-                    InputStream in = dep.classLoader().getResourceAsStream(req.getResourceName());
+                    ClassLoader ldr = dep.classLoader();
+
+                    // In case the class loader is ours - skip the check
+                    // since it was already performed before (and was successful).
+                    if (!(ldr instanceof GridDeploymentClassLoader))
+                        // First check for @GridNotPeerDeployable annotation.
+                        try {
+                            String clsName = req.getResourceName().replace('/', '.');
+
+                            int idx = clsName.indexOf(".class");
+
+                            if (idx >= 0)
+                                clsName = clsName.substring(0, idx);
+
+                            Class<?> cls = Class.forName(clsName, true, ldr);
+
+                            if (U.getAnnotation(cls, GridNotPeerDeployable.class) != null) {
+                                String errMsg = "Attempt to peer deploy class that has @GridNotPeerDeployable " +
+                                    "annotation: " + clsName;
+
+                                log.error(errMsg);
+
+                                res.setErrorMessage(errMsg);
+                                res.setSuccess(false);
+
+                                sendResponse(nodeId, req.getResponseTopic(), res);
+
+                                return;
+                            }
+                        }
+                        catch (ClassNotFoundException ignore) {
+                            // Safely ignore it here - resource wasn't a class name.
+                        }
+
+                    InputStream in = ldr.getResourceAsStream(req.getResourceName());
 
                     if (in == null) {
-                        errMsg = "Requested resource not found: " + req.getResourceName();
+                        String errMsg = "Requested resource not found (ignoring locally): " + req.getResourceName();
 
                         // Java requests the same class with BeanInfo suffix during
                         // introspection automatically. Usually nobody uses this kind
@@ -131,7 +164,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
                             res.setByteSource(bytes);
                         }
                         catch (IOException e) {
-                            errMsg = "Failed to read resource due to IO failure: " + req.getResourceName();
+                            String errMsg = "Failed to read resource due to IO failure: " + req.getResourceName();
 
                             log.error(errMsg, e);
 
@@ -144,7 +177,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
                     }
                 }
                 else {
-                    errMsg = "Failed to find local deployment for peer request: " + req;
+                    String errMsg = "Failed to find local deployment for peer request: " + req;
 
                     U.warn(log, errMsg);
 

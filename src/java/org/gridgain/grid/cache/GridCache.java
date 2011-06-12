@@ -62,7 +62,7 @@ import java.util.*;
  * To do that, {@link GridSystemProperties#GG_NO_DISCO_ORDER} must be provided at startup.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  * @param <K> Cache key type.
  * @param <V> Cache value type.
  */
@@ -468,6 +468,47 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     public boolean removeAtomicStamped(String name) throws GridException;
 
     /**
+     * Gets or creates count down latch. If count down latch is not found in cache,
+     * it is created using provided name and count parameter.
+     * <p>
+     * Note that count down latch is only available in Enterprise Edition.
+     *
+     * @param name Name of the latch.
+     * @param count Count for new latch creation.
+     * @param autoDelete {@code True} to automatically delete latch from cache
+     *      when its count reaches zero.
+     * @return Count down latch for the given name.
+     * @throws GridException If operation failed.
+     */
+    @GridEnterpriseFeature
+    public GridCacheCountDownLatch countDownLatch(String name, int count, boolean autoDelete) throws GridException;
+
+    /**
+     * Gets count down latch. If count down latch is not found in cache
+     * {@code null} is returned.
+     * <p>
+     * Note that count down latch is only available in Enterprise Edition.
+     *
+     * @param name Name of the latch.
+     * @return Count down latch for the given name or {@code null}.
+     * @throws GridException If operation failed.
+     */
+    @GridEnterpriseFeature
+    @Nullable public GridCacheCountDownLatch countDownLatch(String name) throws GridException;
+
+    /**
+     * Removes count down latch from cache.
+     * <p>
+     * Note that count down latch is only available in Enterprise Edition.
+     *
+     * @param name Name of the latch.
+     * @return Count down latch for the given name.
+     * @throws GridException If operation failed.
+     */
+    @GridEnterpriseFeature
+    public boolean removeCountDownLatch(String name) throws GridException;
+
+    /**
      * Runs DGC procedure locally on demand using
      * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
      * <p>
@@ -475,28 +516,6 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
      * to remote nodes.
      */
     public void dgc();
-
-    /**
-     * Runs DGC procedure on demand using
-     * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
-     * <p>
-     * Method blocks current thread until locks are examined and all DGC requests are sent
-     * to remote nodes and (if {@code global} is {@code true}) all nodes having this cache
-     * get signal to start GC procedure.
-     *
-     * @param global If {@code true} then GC procedure will start on all nodes having this cache.
-     */
-    public void dgc(boolean global);
-
-    /**
-     * Runs DGC procedure locally on demand using provided parameter to identify suspect locks.
-     * <p>
-     * Method blocks current thread until locks are examined and all DGC requests are sent
-     * to remote nodes.
-     *
-     * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
-     */
-    public void dgc(int suspectLockTimeout);
 
     /**
      * Runs DGC procedure on demand using provided parameter to identify suspect locks.

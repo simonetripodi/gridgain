@@ -16,6 +16,7 @@ import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.logger.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
@@ -34,7 +35,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -81,6 +82,13 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      */
     private final ConcurrentMap<GridCacheVersion, GridCacheVersion> mappedVers =
         new ConcurrentHashMap<GridCacheVersion, GridCacheVersion>(5120);
+
+    private GridLogger exchLog;
+
+    /** {@inheritDoc} */
+    @Override protected void start0() throws GridException {
+        exchLog = cctx.logger(getClass().getName() + ".exchange");
+    }
 
     /** {@inheritDoc} */
     @Override protected void onKernalStart0() {
@@ -1152,13 +1160,13 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * @param excl Exclude array.
      * @return Future that signals when all transactions for given partitions will complete.
      */
-    public GridFuture<?> finishPartitions(Collection<Integer> parts, UUID... excl) {
+    public GridFuture<?> finishPartitions(Collection<Integer> parts, UUID[] excl) {
         Collection<GridCacheTxEx<K, V>> waitTxSet = new GridConcurrentHashSet<GridCacheTxEx<K, V>>();
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
             if (F.containsAny(tx.nodeIds(), excl)) {
-                if (log.isDebugEnabled())
-                    log.debug("Skipping transaction for partition wait [excl=" + Arrays.toString(excl) +
+                if (exchLog.isDebugEnabled())
+                    exchLog.debug("Skipping transaction for partition wait [excl=" + Arrays.toString(excl) +
                         ", tx=" + tx + ']');
 
                 continue;
@@ -1187,12 +1195,12 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             }
         }
 
-        if (log.isDebugEnabled()) {
+        if (exchLog.isDebugEnabled()) {
             if (waitTxSet.isEmpty())
-                log.debug("Wait tx set is empty [excl=" + Arrays.toString(excl) + ", parts=" + parts + ']');
+                exchLog.debug("Wait tx set is empty [excl=" + Arrays.toString(excl) + ", parts=" + parts + ']');
             else
                 for (GridCacheTxEx<K, V> tx : waitTxSet)
-                    log.debug("Will wait for tx [excludes=" + Arrays.toString(excl) + ", nodeIds=" + tx.nodeIds() +
+                    exchLog.debug("Will wait for tx [excludes=" + Arrays.toString(excl) + ", nodeIds=" + tx.nodeIds() +
                         ", contains=" + F.containsAny(tx.nodeIds(), excl) + ", tx=" + tx + ']');
         }
 
@@ -1213,23 +1221,23 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             @Override public void onStateChanged(GridCacheTxState prevState, GridCacheTxState newState,
                 GridCacheTx tx) {
                 if (newState == COMMITTED || newState == ROLLED_BACK) {
-                    if (log.isDebugEnabled())
-                        log.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
+                    if (exchLog.isDebugEnabled())
+                        exchLog.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
 
                     waitTxSet.remove(tx);
                 }
 
                 if (waitTxSet.isEmpty()) {
-                    if (log.isDebugEnabled())
-                        log.debug("TxSynchronization finished: " + this);
+                    if (exchLog.isDebugEnabled())
+                        exchLog.debug("TxSynchronization finished: " + this);
 
                     f.onDone();
                 }
             }
 
             @Override public void recheck() {
-                if (log.isDebugEnabled())
-                    log.debug("Rechecking transactions for synchronization [excl=" + Arrays.toString(excl) +
+                if (exchLog.isDebugEnabled())
+                    exchLog.debug("Rechecking transactions for synchronization [excl=" + Arrays.toString(excl) +
                     ", sync=" + this + ']');
 
                 for (Iterator<GridCacheTxEx<K, V>> it = waitTxSet.iterator(); it.hasNext();) {
@@ -1238,14 +1246,14 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     if (F.containsAny(tx.nodeIds(), excl)) {
                         it.remove();
 
-                        if (log.isDebugEnabled())
-                            log.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
+                        if (exchLog.isDebugEnabled())
+                            exchLog.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
                     }
                 }
 
                 if (waitTxSet.isEmpty()) {
-                    if (log.isDebugEnabled())
-                        log.debug("TxSynchronization finished: " + this);
+                    if (exchLog.isDebugEnabled())
+                        exchLog.debug("TxSynchronization finished: " + this);
 
                     f.onDone();
                 }
@@ -1263,16 +1271,16 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             GridCacheTxEx<K, V> tx = it.next();
 
             if (tx.state() == COMMITTED || tx.state() == ROLLED_BACK || F.containsAny(tx.nodeIds(), excl)) {
-                if (log.isDebugEnabled())
-                    log.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + sync + ']');
+                if (exchLog.isDebugEnabled())
+                    exchLog.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + sync + ']');
 
                 it.remove();
             }
         }
 
         if (waitTxSet.isEmpty()) {
-            if (log.isDebugEnabled())
-                log.debug("TxSynchronization finished: " + sync);
+            if (exchLog.isDebugEnabled())
+                exchLog.debug("TxSynchronization finished: " + sync);
 
             f.onDone();
         }
@@ -1290,8 +1298,8 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      *
      */
     public void recheckFinishTransactions() {
-        if (log.isDebugEnabled())
-            log.debug("Rechecking finish transactions [locId=" + cctx.nodeId() + ", syncs=" + syncs + ']');
+        if (exchLog.isDebugEnabled())
+            exchLog.debug("Rechecking finish transactions [locId=" + cctx.nodeId() + ", syncs=" + syncs + ']');
 
         for (GridCacheTxSynchronization sync : syncs) {
             if (sync instanceof TxSynchronization) {

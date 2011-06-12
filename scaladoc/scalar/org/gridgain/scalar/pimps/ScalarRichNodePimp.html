@@ -48,7 +48,7 @@ Scala GridGain counterparts in <code>ScalarMixin</code> object</p><h4>Suffix '$'
 that Scala pimp is shadowing or with Java package name that your Scala code is importing.
 Instead of giving two different names to the same function we've decided to simply mark
 Scala's side method with <code>$</code> suffix.
-</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.1 build#08062011
+</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.1 build#12062011
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span name="scala.math.Ordered" class="extype">Ordered</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="java.lang.Comparable" class="extype">Comparable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <a name="org.gridgain.scalar.pimps.ScalarNamed" class="extype" href="ScalarNamed.html">ScalarNamed</a>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.IterableLike" class="extype">IterableLike</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scala.Equals" class="extype">Equals</span>, <span name="scala.collection.GenIterable" class="extype">GenIterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.GenIterableLike" class="extype">GenIterableLike</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scala.collection.Traversable" class="extype">Traversable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.GenTraversable" class="extype">GenTraversable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.generic.GenericTraversableTemplate" class="extype">GenericTraversableTemplate</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>], <span name="scala.collection.TraversableLike" class="extype">TraversableLike</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scala.collection.GenTraversableLike" class="extype">GenTraversableLike</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scala.collection.Parallelizable" class="extype">Parallelizable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.parallel.ParIterable" class="extype">ParIterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scala.collection.TraversableOnce" class="extype">TraversableOnce</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.GenTraversableOnce" class="extype">GenTraversableOnce</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], <span name="scala.collection.generic.FilterMonadic" class="extype">FilterMonadic</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scala.collection.generic.HasNewBuilder" class="extype">HasNewBuilder</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>, <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]], <span name="scalaz.PimpedType" class="extype">PimpedType</span>[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>], AnyRef, <span name="scala.Any" class="extype">Any</span></div>
@@ -746,6 +746,41 @@ return immediately with the future that can be used to wait asynchronously for t
      nodes in projection will be used.</p></dd><dt>returns</dt><dd class="cmt"><p>Future of Java collection containing result values from all nodes where given
      closures were executed or <code>null</code> (see above).</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.call(...)</code>
 </p></span></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#callSafe" data-isabs="false">
+      <a id="callSafe[R](GridClosureCallMode,Call[R],() ⇒ Seq[R],NodeFilter*):Seq[R]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">callSafe</span>
+        <span class="tparams">[<span name="R">R</span>]</span>
+        <span class="params">(<span name="mode">mode: <span name="org.gridgain.grid.GridClosureCallMode" class="extype">GridClosureCallMode</span></span>, <span name="s">s: Call[R]</span>, <span name="dflt">dflt: () ⇒ Seq[R]</span>, <span name="p">p: NodeFilter*</span>)</span><span class="result">: Seq[R]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Synchronous closure call on this projection with return value.</p><div class="fullcomment"><div class="comment cmt"><p>Synchronous closure call on this projection with return value.
+This call will block until all results are received and ready. If this projection
+is empty than <code>dflt</code> closure will be executed and its result returned.
+</p></div><dl class="paramcmts block"><dt class="param">mode</dt><dd class="cmt"><p>Closure call mode.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional closure to call. If <code>null</code> - this method is no-op and returns <code>null</code>.</p></dd><dt class="param">dflt</dt><dd class="cmt"><p>Closure to execute if projection is empty.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
+     nodes in projection will be used.</p></dd><dt>returns</dt><dd class="cmt"><p>Sequence of result values from all nodes where given closures were executed
+     or <code>null</code> (see above).</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.call(...)</code>
+</p></span></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#callSafe" data-isabs="false">
+      <a id="callSafe[R](GridClosureCallMode,Seq[Call[R]],() ⇒ Seq[R],NodeFilter*):Seq[R]"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">callSafe</span>
+        <span class="tparams">[<span name="R">R</span>]</span>
+        <span class="params">(<span name="mode">mode: <span name="org.gridgain.grid.GridClosureCallMode" class="extype">GridClosureCallMode</span></span>, <span name="s">s: Seq[Call[R]]</span>, <span name="dflt">dflt: () ⇒ Seq[R]</span>, <span name="p">p: NodeFilter*</span>)</span><span class="result">: Seq[R]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Synchronous closures call on this projection with return value.</p><div class="fullcomment"><div class="comment cmt"><p>Synchronous closures call on this projection with return value.
+This call will block until all results are received and ready. If this projection
+is empty than <code>dflt</code> closure will be executed and its result returned.
+</p></div><dl class="paramcmts block"><dt class="param">mode</dt><dd class="cmt"><p>Closure call mode.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional sequence of closures to call. If empty or <code>null</code> - this
+     method is no-op and returns <code>null</code>.</p></dd><dt class="param">dflt</dt><dd class="cmt"><p>Closure to execute if projection is empty.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
+     nodes in projection will be used.</p></dd><dt>returns</dt><dd class="cmt"><p>Sequence of result values from all nodes where given closures were executed
+     or <code>null</code> (see above).
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd></dl></div>
     </li><li visbl="pub" name="scala.collection.IterableLike#canEqual" data-isabs="false">
       <a id="canEqual(Any):Boolean"></a>
       <h4 class="signature">
@@ -1382,6 +1417,24 @@ the results.
      is no-op and will return <code>null</code>.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
      nodes in projection will be used.</p></dd><dt>returns</dt><dd class="cmt"><p>Future over the reduced result or <code>null</code> (see above).</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.mapreduce(...)</code>
 </p></span></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#mapreduceSafe" data-isabs="false">
+      <a id="mapreduceSafe[R1, R2]((Seq[GridRichNode]) ⇒ (Callable[R1]) ⇒ GridRichNode,Seq[Call[R1]],(Seq[R1]) ⇒ R2,() ⇒ R2,NodeFilter*):R2"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">mapreduceSafe</span>
+        <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
+        <span class="params">(<span name="m">m: (Seq[<span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span>]) ⇒ (<span name="java.util.concurrent.Callable" class="extype">Callable</span>[R1]) ⇒ <span name="org.gridgain.grid.GridRichNode" class="extype">GridRichNode</span></span>, <span name="s">s: Seq[Call[R1]]</span>, <span name="r">r: (Seq[R1]) ⇒ R2</span>, <span name="dflt">dflt: () ⇒ R2</span>, <span name="p">p: NodeFilter*</span>)</span><span class="result">: R2</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Synchronous closures execution on this projection with mapping and reduction.</p><div class="fullcomment"><div class="comment cmt"><p>Synchronous closures execution on this projection with mapping and reduction.
+This call will block until all results are reduced. If this projection
+is empty than <code>dflt</code> closure will be executed and its result returned.
+</p></div><dl class="paramcmts block"><dt class="param">m</dt><dd class="cmt"><p>Mapping function.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional sequence of closures to call. If empty or <code>null</code> - this method
+     is no-op and will return <code>null</code>.</p></dd><dt class="param">r</dt><dd class="cmt"><p>Optional reduction function. If <code>null</code> - this method
+     is no-op and will return <code>null</code>.</p></dd><dt class="param">dflt</dt><dd class="cmt"><p>Closure to execute if projection is empty.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
+     nodes in projection will be used.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced result or <code>null</code> (see above).</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.mapreduce(...)</code>
+</p></span></dd></dl></div>
     </li><li visbl="pub" name="scala.collection.TraversableOnce#max" data-isabs="false">
       <a id="max[B<span class='angle_bracket'>&gt;</span>:GridRichNode](Ordering[B]):GridRichNode"></a>
       <h4 class="signature">
@@ -1698,6 +1751,24 @@ return immediately with the future that can be used to wait asynchronously for t
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TraversableOnce → GenTraversableOnce</dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#reduceSafe" data-isabs="false">
+      <a id="reduceSafe[R1, R2](GridClosureCallMode,Seq[Call[R1]],(Seq[R1]) ⇒ R2,() ⇒ R2,NodeFilter*):R2"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">reduceSafe</span>
+        <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
+        <span class="params">(<span name="mode">mode: <span name="org.gridgain.grid.GridClosureCallMode" class="extype">GridClosureCallMode</span></span>, <span name="s">s: Seq[Call[R1]]</span>, <span name="r">r: (Seq[R1]) ⇒ R2</span>, <span name="dflt">dflt: () ⇒ R2</span>, <span name="p">p: NodeFilter*</span>)</span><span class="result">: R2</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Synchronous closures execution on this projection with reduction.</p><div class="fullcomment"><div class="comment cmt"><p>Synchronous closures execution on this projection with reduction.
+This call will block until all results are reduced. If this projection
+is empty than <code>dflt</code> closure will be executed and its result returned.
+</p></div><dl class="paramcmts block"><dt class="param">mode</dt><dd class="cmt"><p>Closure call mode.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional sequence of closures to call. If empty or <code>null</code> - this method
+     is no-op and will return <code>null</code>.</p></dd><dt class="param">r</dt><dd class="cmt"><p>Optional reduction function. If <code>null</code> - this method
+     is no-op and will return <code>null</code>.</p></dd><dt class="param">dflt</dt><dd class="cmt"><p>Closure to execute if projection is empty.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
+     nodes in projection will be used.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced result or <code>null</code> (see above).</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.reduce(...)</code>
+</p></span></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#remoteNodes$" data-isabs="false">
       <a id="remoteNodes$(NodeFilter*):Seq[GridRichNode]"></a>
       <h4 class="signature">
@@ -1796,6 +1867,39 @@ return immediately with the future that can be used to wait asynchronously for t
 </p></div><dl class="paramcmts block"><dt class="param">mode</dt><dd class="cmt"><p>Closure call mode.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional sequence of absolute closures to call. If empty or <code>null</code> - this method
      is no-op and finished future over <code>null</code> will be returned.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
      nodes in projection will be used.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.call(...)</code>
+</p></span></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#runSafe" data-isabs="false">
+      <a id="runSafe(GridClosureCallMode,Call[Unit],() ⇒ Unit,NodeFilter*):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">runSafe</span>
+        
+        <span class="params">(<span name="mode">mode: <span name="org.gridgain.grid.GridClosureCallMode" class="extype">GridClosureCallMode</span></span>, <span name="s">s: Call[<span name="scala.Unit" class="extype">Unit</span>]</span>, <span name="dflt">dflt: () ⇒ <span name="scala.Unit" class="extype">Unit</span></span>, <span name="p">p: NodeFilter*</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Synchronous closure call on this projection without return value.</p><div class="fullcomment"><div class="comment cmt"><p>Synchronous closure call on this projection without return value.
+This call will block until all executions are complete. If this projection
+is empty than <code>dflt</code> closure will be executed.
+</p></div><dl class="paramcmts block"><dt class="param">mode</dt><dd class="cmt"><p>Closure call mode.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional closure to call. If empty or <code>null</code> - this method is no-op.</p></dd><dt class="param">dflt</dt><dd class="cmt"><p>Closure to execute if projection is empty.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
+     nodes in projection will be used.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.run(...)</code>
+</p></span></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp#runSafe" data-isabs="false">
+      <a id="runSafe(GridClosureCallMode,Seq[Call[Unit]],() ⇒ Unit,NodeFilter*):Unit"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">runSafe</span>
+        
+        <span class="params">(<span name="mode">mode: <span name="org.gridgain.grid.GridClosureCallMode" class="extype">GridClosureCallMode</span></span>, <span name="s">s: Seq[Call[<span name="scala.Unit" class="extype">Unit</span>]]</span>, <span name="dflt">dflt: () ⇒ <span name="scala.Unit" class="extype">Unit</span></span>, <span name="p">p: NodeFilter*</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Synchronous closures call on this projection without return value.</p><div class="fullcomment"><div class="comment cmt"><p>Synchronous closures call on this projection without return value.
+This call will block until all executions are complete. If this projection
+is empty than <code>dflt</code> closure will be executed.
+</p></div><dl class="paramcmts block"><dt class="param">mode</dt><dd class="cmt"><p>Closure call mode.</p></dd><dt class="param">s</dt><dd class="cmt"><p>Optional sequence of closures to call. If empty or <code>null</code> - this
+     method is no-op.</p></dd><dt class="param">dflt</dt><dd class="cmt"><p>Closure to execute if projection is empty.</p></dd><dt class="param">p</dt><dd class="cmt"><p>Optional node filter predicate. If none provided or <code>null</code> - all
+     nodes in projection will be used.</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.pimps.ScalarProjectionPimp" class="extype" href="ScalarProjectionPimp.html">ScalarProjectionPimp</a></dd><dt>See also</dt><dd><span class="cmt"><p><code>org.gridgain.grid.GridProjection.run(...)</code>
 </p></span></dd></dl></div>
     </li><li visbl="pub" name="scala.collection.IterableLike#sameElements" data-isabs="false">
       <a id="sameElements[B<span class='angle_bracket'>&gt;</span>:GridRichNode](Iterable[B]):Boolean"></a>
@@ -2505,7 +2609,7 @@ return immediately with the future that can be used to wait asynchronously for t
                         <td align="left" valign="center">
                             <nobr>GridGain = High Performance Cloud Computing</nobr>
                             <br>
-                            <b>Version:</b> 3.1 build#08062011
+                            <b>Version:</b> 3.1 build#12062011
                             <br>
                             <a target=_blank href="http://www.gridgain.com"><nobr>2005-2011 Copyright &#169; GridGain Systems, Inc.</nobr></a>
                         </td>

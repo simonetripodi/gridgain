@@ -27,7 +27,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** */
@@ -43,6 +43,9 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** */
     private GridProjection parent;
+
+    /** */
+    private Random rand = new Random();
 
     /**
      *
@@ -719,9 +722,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override @Nullable public GridRichNode oldest() {
         guard();
 
@@ -743,6 +744,65 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         }
     }
 
+    /** {@inheritDoc} */
+    @Override public GridRichNode randomx() throws GridEmptyProjectionException {
+        GridRichNode n = random();
+
+        if (n != null)
+            return n;
+        else
+            throw emptyProjection();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode oldestx() throws GridEmptyProjectionException {
+        GridRichNode n = oldest();
+
+        if (n != null)
+            return n;
+        else
+            throw emptyProjection();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode youngestx() throws GridEmptyProjectionException {
+        GridRichNode n = youngest();
+
+        if (n != null)
+            return n;
+        else
+            throw emptyProjection();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode random() {
+        guard();
+
+        try {
+            GridRichNode rn = null;
+
+            Collection<GridRichNode> c = nodes();
+
+            if (!c.isEmpty()) {
+                int rnd = rand.nextInt(c.size());
+
+                Iterator<GridRichNode> iter = c.iterator();
+
+                int i = 0;
+
+                do {
+                    rn = iter.next();
+                }
+                while (i++ < rnd);
+            }
+
+            return rn;
+        }
+        finally {
+            unguard();
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -750,9 +810,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         return neighborhood().size();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override public boolean hasRemoteNodes() {
         guard();
 
@@ -776,9 +834,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override public boolean hasLocalNode() {
         guard();
 

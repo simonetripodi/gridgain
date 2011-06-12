@@ -19,7 +19,7 @@ import java.io.*;
  * This class defines own object output stream.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 class GridJBossMarshallerObjectOutputStream extends JBossObjectOutputStream {
     /**
@@ -34,7 +34,7 @@ class GridJBossMarshallerObjectOutputStream extends JBossObjectOutputStream {
 
     /** {@inheritDoc} */
     @Nullable @Override protected Object replaceObject(Object o) throws IOException {
-        return o != null && GridMarshallerController.isExcluded(o.getClass()) ? null : super.replaceObject(o);
+        return o != null && GridMarshallerExclusions.isExcluded(o.getClass()) ? null : super.replaceObject(o);
     }
 }
 

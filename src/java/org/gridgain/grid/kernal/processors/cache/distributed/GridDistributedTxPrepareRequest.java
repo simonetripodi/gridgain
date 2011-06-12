@@ -25,7 +25,7 @@ import java.util.*;
  * transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDistributedTxPrepareRequest<K, V> extends GridDistributedBaseMessage<K, V> {
     /** Thread ID. */
@@ -214,7 +214,7 @@ public class GridDistributedTxPrepareRequest<K, V> extends GridDistributedBaseMe
      */
     private void writeCollection(ObjectOutput out, Collection<GridCacheTxEntry<K, V>> col) throws IOException {
         boolean empty = F.isEmpty(col);
-        
+
         // Write null flag.
         out.writeBoolean(empty);
 
@@ -226,9 +226,8 @@ public class GridDistributedTxPrepareRequest<K, V> extends GridDistributedBaseMe
 
                 try {
                     // Don't serialize value if invalidate is set to true.
-                    if (invalidate) {
+                    if (invalidate)
                         e.value(null);
-                    }
 
                     out.writeObject(e);
                 }

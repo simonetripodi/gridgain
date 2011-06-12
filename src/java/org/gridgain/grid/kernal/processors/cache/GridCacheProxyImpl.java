@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Cache proxy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externalizable {
     /** Context. */
@@ -3151,35 +3151,48 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public GridCacheCountDownLatch countDownLatch(String name, int count, boolean autoDelete)
+        throws GridException {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.countDownLatch(name, count, autoDelete);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public GridCacheCountDownLatch countDownLatch(String name) throws GridException {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.countDownLatch(name);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean removeCountDownLatch(String name) throws GridException {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.removeCountDownLatch(name);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public void dgc() {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
             cache.dgc();
-        }
-        finally {
-            gate.leave(prev);
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public void dgc(int suspectLockTimeout) {
-        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
-
-        try {
-            cache.dgc(suspectLockTimeout);
-        }
-        finally {
-            gate.leave(prev);
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public void dgc(boolean global) {
-        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
-
-        try {
-            cache.dgc(global);
         }
         finally {
             gate.leave(prev);

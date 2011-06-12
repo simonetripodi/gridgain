@@ -22,10 +22,11 @@ import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class GridClosureProcessor extends GridProcessorAdapter {
@@ -34,6 +35,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
     /** */
     private GridWorkerPool pubPool;
+
+    /** Lock to control execution after stop. */
+    private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
 
     /**
      *
@@ -53,7 +57,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     }
 
     /** {@inheritDoc} */
-    @Override public void stop(boolean cancel, boolean wait) throws GridException {
+    @Override public void onKernalStop(boolean cancel, boolean wait) {
+        busyLock.writeLock();
+
         if (sysPool != null)
             sysPool.join(cancel);
 
@@ -62,6 +68,36 @@ public class GridClosureProcessor extends GridProcessorAdapter {
 
         if (log.isDebugEnabled())
             log.debug("Stopped closure processor.");
+    }
+
+    /**
+     * @param r Either runnable or callable.
+     * @return {@code True} if entered.
+     */
+    private boolean enterBusy(Object r) {
+        if (!busyLock.readLock().tryLock()) {
+            U.warn(log, "Ignoring closure execution (grid is stopping): " + r);
+
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * @throws IllegalStateException If grid is stopped.
+     */
+    private void enterBusy2() throws IllegalStateException {
+        if (!busyLock.readLock().tryLock())
+            throw new IllegalStateException("Closure processor cannot be used on stopped grid: " + ctx.gridName());
+    }
+
+    /**
+     * Unlocks busy lock.
+     */
+    private void leaveBusy() {
+        busyLock.readLock().unlock();
     }
 
     /**
@@ -90,12 +126,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Nullable Collection<? extends GridNode> nodes, boolean sys) throws GridException {
         assert mode != null;
 
-        if (F.isEmpty(jobs) || F.isEmpty(nodes))
-            return new GridFinishedFuture(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (F.isEmpty(jobs) || F.isEmpty(nodes))
+                return new GridFinishedFuture(ctx);
 
-        return ctx.task().execute(new T1(mode, jobs, nodes), null, 0, null, sys);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T1(mode, jobs, nodes), null, 0, null, sys);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -158,12 +201,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Nullable Collection<? extends GridNode> nodes, boolean sys) throws GridException {
         assert mode != null;
 
-        if (job == null || F.isEmpty(nodes))
-            return new GridFinishedFuture(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (job == null || F.isEmpty(nodes))
+                return new GridFinishedFuture(ctx);
 
-        return ctx.task().execute(new T2(mode, job, nodes), null, 0, null, sys);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T2(mode, job, nodes), null, 0, null, sys);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -351,12 +401,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Nullable GridReducer<R1, R2> rdc, @Nullable Collection<? extends GridNode> nodes) throws GridException {
         assert mode != null;
 
-        if (F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
-            return new GridFinishedFuture<R2>(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
+                return new GridFinishedFuture<R2>(ctx);
 
-        return ctx.task().execute(new T3<R1, R2>(mode, jobs, rdc, nodes), null, 0, null);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T3<R1, R2>(mode, jobs, rdc, nodes), null, 0, null);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -423,12 +480,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     public GridFuture<?> runAsync(@Nullable GridMapper<Runnable, GridRichNode> mapper,
         @Nullable Collection<? extends Runnable> jobs, @Nullable Collection<? extends GridNode> nodes, boolean sys)
         throws GridException {
-        if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
-            return new GridFinishedFuture(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
+                return new GridFinishedFuture(ctx);
 
-        return ctx.task().execute(new T4(mapper, jobs, nodes, ctx), null, 0, null, sys);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T4(mapper, jobs, nodes, ctx), null, 0, null, sys);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -491,14 +555,20 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     public <R> GridFuture<Collection<R>> callAsync(@Nullable GridMapper<Callable<R>, GridRichNode> mapper,
         @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes,
-        boolean sys)
-        throws GridException {
-        if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
-            return new GridFinishedFuture<Collection<R>>(ctx);
+        boolean sys) throws GridException {
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
+                return new GridFinishedFuture<Collection<R>>(ctx);
 
-        return ctx.task().execute(new T5<R>(mapper, jobs, nodes, ctx), null, 0, null, sys);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T5<R>(mapper, jobs, nodes, ctx), null, 0, null, sys);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -558,12 +628,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
     public <R1, R2, C extends Callable<R1>> GridFuture<R2> forkjoinAsync(@Nullable GridMapper<C, GridRichNode> mapper,
         @Nullable Collection<C> jobs, @Nullable GridReducer<R1, R2> rdc,
         @Nullable Collection<? extends GridNode> nodes) throws GridException {
-        if (mapper == null || F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
-            return new GridFinishedFuture<R2>(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (mapper == null || F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
+                return new GridFinishedFuture<R2>(ctx);
 
-        return ctx.task().execute(new T6<R1, R2, C>(mapper, jobs, rdc, nodes, ctx), null, 0, null);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T6<R1, R2, C>(mapper, jobs, rdc, nodes, ctx), null, 0, null);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -636,16 +713,22 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     public <R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes,
-        boolean sys)
-        throws GridException {
+        boolean sys) throws GridException {
         assert mode != null;
 
-        if (F.isEmpty(jobs) || F.isEmpty(nodes))
-            return new GridFinishedFuture<Collection<R>>(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (F.isEmpty(jobs) || F.isEmpty(nodes))
+                return new GridFinishedFuture<Collection<R>>(ctx);
 
-        return ctx.task().execute(new T7<R>(mode, jobs, nodes), null, 0, null, sys);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T7<R>(mode, jobs, nodes), null, 0, null, sys);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -715,12 +798,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Nullable Callable<R> job, @Nullable Collection<? extends GridNode> nodes, boolean sys) throws GridException {
         assert mode != null;
 
-        if (job == null || F.isEmpty(nodes))
-            return new GridFinishedFuture<R>(ctx);
+        enterBusy2();
 
-        ctx.task().setProjectionContext(nodes);
+        try {
+            if (job == null || F.isEmpty(nodes))
+                return new GridFinishedFuture<R>(ctx);
 
-        return ctx.task().execute(new T8<R>(mode, job, nodes), null, 0, null, sys);
+            ctx.task().setProjectionContext(nodes);
+
+            return ctx.task().execute(new T8<R>(mode, job, nodes), null, 0, null, sys);
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -823,34 +913,47 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         if (c == null)
             return new GridFinishedFuture(ctx);
 
-        // Inject only if needed.
-        if (!(c instanceof GridPlainRunnable))
-            ctx.resource().inject(ctx.deploy().getDeployment(c.getClass().getName()), c.getClass(), c);
+        enterBusy2();
 
-        final LocalExecutionFuture fut = new LocalExecutionFuture(ctx);
+        try {
+            // Inject only if needed.
+            if (!(c instanceof GridPlainRunnable))
+                ctx.resource().inject(ctx.deploy().getDeployment(c.getClass().getName()), c.getClass(), c);
 
-        GridWorker w = new GridWorker(ctx.gridName(), "closure-proc-worker", log) {
-            @SuppressWarnings({"ConstantConditions"})
-            @Override protected void body() {
-                try {
-                    c.run();
+            final LocalExecutionFuture fut = new LocalExecutionFuture(ctx);
 
-                    fut.onDone();
+            GridWorker w = new GridWorker(ctx.gridName(), "closure-proc-worker", log) {
+                @SuppressWarnings({"ConstantConditions"})
+                @Override protected void body() {
+                    if (!enterBusy(c))
+                        return;
+
+                    try {
+                        c.run();
+
+                        fut.onDone();
+                    }
+                    catch (Throwable e) {
+                        if (e instanceof Error)
+                            U.error(log, "Closure execution failed with error.", e);
+
+                        fut.onDone(U.cast(e));
+                    }
+                    finally {
+                        leaveBusy();
+                    }
                 }
-                catch (Throwable e) {
-                    if (e instanceof Error)
-                        U.error(log, "Closure execution failed with error.", e);
+            };
 
-                    fut.onDone(U.cast(e));
-                }
-            }
-        };
+            fut.setWorker(w);
 
-        fut.setWorker(w);
+            pool(sys).execute(w);
 
-        pool(sys).execute(w);
-
-        return fut;
+            return fut;
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**
@@ -915,31 +1018,44 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         if (c == null)
             return new GridFinishedFuture<R>(ctx);
 
-        // Inject only if needed.
-        if (!(c instanceof GridPlainCallable))
-            ctx.resource().inject(ctx.deploy().getDeployment(c.getClass().getName()), c.getClass(), c);
+        enterBusy2();
 
-        final LocalExecutionFuture<R> fut = new LocalExecutionFuture<R>(ctx);
+        try {
+            // Inject only if needed.
+            if (!(c instanceof GridPlainCallable))
+                ctx.resource().inject(ctx.deploy().getDeployment(c.getClass().getName()), c.getClass(), c);
 
-        GridWorker w = new GridWorker(ctx.gridName(), "closure-proc-worker", log) {
-            @Override protected void body() {
-                try {
-                    fut.onDone(c.call());
+            final LocalExecutionFuture<R> fut = new LocalExecutionFuture<R>(ctx);
+
+            GridWorker w = new GridWorker(ctx.gridName(), "closure-proc-worker", log) {
+                @Override protected void body() {
+                    if (!enterBusy(c))
+                        return;
+
+                    try {
+                        fut.onDone(c.call());
+                    }
+                    catch (Throwable e) {
+                        if (e instanceof Error)
+                            U.error(log, "Closure execution failed with error.", e);
+
+                        fut.onDone(U.cast(e));
+                    }
+                    finally {
+                        leaveBusy();
+                    }
                 }
-                catch (Throwable e) {
-                    if (e instanceof Error)
-                        U.error(log, "Closure execution failed with error.", e);
+            };
 
-                    fut.onDone(U.cast(e));
-                }
-            }
-        };
+            fut.setWorker(w);
 
-        fut.setWorker(w);
+            pool(sys).execute(w);
 
-        pool(sys).execute(w);
-
-        return fut;
+            return fut;
+        }
+        finally {
+            leaveBusy();
+        }
     }
 
     /**

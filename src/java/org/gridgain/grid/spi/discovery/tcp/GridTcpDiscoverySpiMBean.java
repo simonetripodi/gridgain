@@ -12,6 +12,7 @@ package org.gridgain.grid.spi.discovery.tcp;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.discovery.tcp.ipfinder.*;
 import org.gridgain.grid.spi.discovery.tcp.metricsstore.*;
+import org.gridgain.grid.spi.discovery.tcp.segmentation.*;
 import org.gridgain.grid.spi.discovery.tcp.topologystore.*;
 import org.gridgain.grid.util.mbean.*;
 import org.jetbrains.annotations.*;
@@ -22,7 +23,7 @@ import java.util.*;
  * Management bean for {@link GridTcpDiscoverySpi}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public interface GridTcpDiscoverySpiMBean extends GridSpiManagementMBean {
     /**
@@ -246,7 +247,7 @@ public interface GridTcpDiscoverySpiMBean extends GridSpiManagementMBean {
     /**
      * Gets check all addresses flag.
      *
-     * @return {@code true} if all addresses reachability is required by configuration.
+     * @return {@code True} if all addresses reachability is required by configuration.
      */
     @GridMBeanDescription("All addresses reachability required.")
     public boolean isAllAddressesReachabilityRequired();
@@ -254,8 +255,50 @@ public interface GridTcpDiscoverySpiMBean extends GridSpiManagementMBean {
     /**
      * Gets check segment flag. If {@code false} segment check will be omitted.
      *
-     * @return {@code true} if segment check is enabled.
+     * @return {@code True} if segment check is enabled.
      */
     @GridMBeanDescription("Check segment enabled.")
     public boolean isCheckSegmentEnabled();
+
+    /**
+     * Gets timeout for each of segment check addresses reachability test.
+     * <p>
+     * Each address reachability is tested using this timeout.
+     *
+     * @return Segment check addresses reachability test timeout.
+     */
+    @GridMBeanDescription("Segment check addresses reachability test timeout.")
+    public int getCheckSegmentAddressTimeout();
+
+    /**
+     * Gets wait for segment on start flag.
+     *
+     * @return {@code True} if node should wait for segment on start.
+     */
+    @GridMBeanDescription("Wait for segment on start.")
+    public boolean isWaitForSegmentOnStart();
+
+    /**
+     * Gets {@link GridTcpDiscoveryAddressReachabilityChecker} (string representation).
+     *
+     * @return Address reachability checker string representation.
+     */
+    @GridMBeanDescription("Address reachability checker.")
+    public String getAddressReachabilityCheckerName();
+
+    /**
+     * Gets segmentation policy.
+     *
+     * @return Segmentation policy.
+     */
+    @GridMBeanDescription("Segmentation policy.")
+    public GridTcpDiscoverySegmentationPolicy getSegmentationPolicy();
+
+    /**
+     * Gets TTL for segment check addresses reachability test.
+     *
+     * @return TTL for segment check addresses reachability test.
+     */
+    @GridMBeanDescription("TTL for segment check addresses reachability test.")
+    public int getCheckSegmentAddressTtl();
 }

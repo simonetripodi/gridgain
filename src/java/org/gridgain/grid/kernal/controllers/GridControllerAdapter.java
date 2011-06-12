@@ -18,7 +18,7 @@ import org.gridgain.grid.util.tostring.*;
  * Convenient adapter for grid controllers.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridControllerAdapter implements GridController {
     /** Kernal context. */
@@ -30,34 +30,36 @@ public class GridControllerAdapter implements GridController {
     protected GridLogger log;
 
     /**
-     * {@inheritDoc}
+     * @param ctx Kernal context.
      */
-    @Override public void init() throws GridException {
-        // No-op.
+    public GridControllerAdapter(GridKernalContext ctx) {
+        this.ctx = ctx;
+
+        log = ctx.log(getClass());
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override public boolean implemented() {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override public void afterKernalStart(GridKernalContext ctx) throws GridException {
-        assert ctx != null;
-
-        this.ctx = ctx;
-
-        log = ctx.config().getGridLogger().getLogger(getClass());
+    /** {@inheritDoc} */
+    @Override public void start() throws GridException {
+        // No-op.
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override public void beforeKernalStop(boolean cancel) {
+    /** {@inheritDoc} */
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
+    @Override public void onKernalStart() throws GridException {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
+    @Override public void onKernalStop(boolean cancel, boolean wait) {
         // No-op.
     }
 }

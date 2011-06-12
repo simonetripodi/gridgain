@@ -13,6 +13,7 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jboss.serial.io.*;
+import org.jetbrains.annotations.*;
 import java.io.*;
 
 /**
@@ -74,11 +75,11 @@ import java.io.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridJBossMarshaller implements GridMarshaller {
     /** {@inheritDoc} */
-    @Override public void marshal(Object obj, OutputStream out) throws GridException {
+    @Override public void marshal(@Nullable Object obj, OutputStream out) throws GridException {
         assert out != null;
 
         JBossObjectOutputStream objOut = null;
@@ -101,9 +102,11 @@ public class GridJBossMarshaller implements GridMarshaller {
 
     /** {@inheritDoc} */
     @SuppressWarnings({"unchecked"})
-    @Override public <T> T unmarshal(InputStream in, ClassLoader clsLdr) throws GridException {
+    @Override public <T> T unmarshal(InputStream in, @Nullable ClassLoader clsLdr) throws GridException {
         assert in != null;
-        assert clsLdr != null;
+
+        if (clsLdr == null)
+            clsLdr = getClass().getClassLoader();
 
         ObjectInputStream objIn = null;
 

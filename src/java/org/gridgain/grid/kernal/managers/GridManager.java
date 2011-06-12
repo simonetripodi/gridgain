@@ -10,6 +10,7 @@
 package org.gridgain.grid.kernal.managers;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.util.tostring.*;
 import java.util.*;
 
@@ -19,10 +20,10 @@ import java.util.*;
  * rather calls manager that further delegate the apply to specific SPI module.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @GridToStringExclude
-public interface GridManager {
+public interface GridManager extends GridComponent {
     /**
      * Adds attributes from underlying SPI to map of all attributes.
      *
@@ -30,31 +31,4 @@ public interface GridManager {
      * @throws GridException Wrapper for exception thrown by underlying SPI.
      */
     public void addSpiAttributes(Map<String, Object> attrs) throws GridException;
-
-    /**
-     * Starts grid manager.
-     *
-     * @throws GridException Throws in case of any errors.
-     */
-    public void start() throws GridException;
-
-    /**
-     * Stops grid managers.
-     *
-     * @throws GridException Thrown in case of any errors.
-     */
-    public void stop() throws GridException;
-
-    /**
-     * Callback that notifies that kernal has successfully started,
-     * including all managers and processors.
-     *
-     * @throws GridException If manager of SPI could not be initialized.
-     */
-    public void onKernalStart() throws GridException;
-
-    /**
-     * Callback to notify that kernal is about to stop.
-     */
-    public void onKernalStop();
 }

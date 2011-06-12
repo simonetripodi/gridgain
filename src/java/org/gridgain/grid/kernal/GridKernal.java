@@ -33,7 +33,6 @@ import org.gridgain.grid.kernal.managers.metrics.*;
 import org.gridgain.grid.kernal.managers.swapspace.*;
 import org.gridgain.grid.kernal.managers.topology.*;
 import org.gridgain.grid.kernal.managers.tracing.*;
-import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.closure.*;
 import org.gridgain.grid.kernal.processors.email.*;
@@ -86,14 +85,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
     private static final String VER = "3.1.1c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "08062011";
+    private static final String BUILD = "12062011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -121,15 +120,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
     /** Shutdown delay in msec. when license violation detected. */
     private static final int SHUTDOWN_DELAY = 60 * 1000;
-
-    /** */
-    private GridManagerRegistry mgrReg;
-
-    /** */
-    private GridProcessorRegistry procReg;
-
-    /** */
-    private GridControllerRegistry ctrlReg;
 
     /** */
     private GridConfiguration cfg;
@@ -651,11 +641,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
         // Spin out SPIs & managers.
         try {
-            mgrReg = new GridManagerRegistry();
-            procReg = new GridProcessorRegistry();
-            ctrlReg = new GridControllerRegistry();
-
-            GridKernalContext ctx = new GridKernalContextImpl(mgrReg, procReg, ctrlReg, this, cfg, gw);
+            GridKernalContextImpl ctx = new GridKernalContextImpl(this, cfg, gw);
 
             nodeLocal = new GridNodeLocalImpl(ctx);
 
@@ -668,7 +654,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
             rsrcProc.setSpringContext(springCtx);
 
-            startProcessor(rsrcProc);
+            startProcessor(ctx, rsrcProc);
 
             // Inject resources into lifecycle beans.
             if (cfg.getLifecycleBeans() != null)
@@ -678,11 +664,15 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             // Lifecycle notification.
             notifyLifecycleBeans(GridLifecycleEventType.BEFORE_GRID_START);
 
+            // Closure processor should be started before all others
+            // (except for resource processor), as many components can depend on it.
+            startProcessor(ctx, new GridClosureProcessor(ctx));
+
             // Start some other processors (order & place is important).
-            startProcessor(new GridEmailProcessor(ctx));
-            startProcessor(new GridPortProcessor(ctx));
-            startProcessor(new GridRichProcessor(ctx));
-            startProcessor(new GridJobMetricsProcessor(ctx));
+            startProcessor(ctx, new GridEmailProcessor(ctx));
+            startProcessor(ctx, new GridPortProcessor(ctx));
+            startProcessor(ctx, new GridRichProcessor(ctx));
+            startProcessor(ctx, new GridJobMetricsProcessor(ctx));
 
             // Start tracing manager first if there is SPI.
             // By default no tracing SPI provided.
@@ -692,41 +682,40 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                 // Configure proxy factory for tracing.
                 traceMgr.setProxyFactory(proxyFact);
 
-                startManager(traceMgr, attrs);
+                startManager(ctx, traceMgr, attrs);
             }
 
             // Timeout processor needs to be started before managers,
             // as managers may depend on it.
-            startProcessor(new GridTimeoutProcessor(ctx));
+            startProcessor(ctx, new GridTimeoutProcessor(ctx));
 
             // Start SPI managers.
             // NOTE: that order matters as there are dependencies between managers.
-            startManager(new GridLocalMetricsManager(ctx), attrs);
-            startManager(new GridIoManager(ctx), attrs);
-            startManager(new GridCheckpointManager(ctx), attrs);
+            startManager(ctx, new GridLocalMetricsManager(ctx), attrs);
+            startManager(ctx, new GridIoManager(ctx), attrs);
+            startManager(ctx, new GridCheckpointManager(ctx), attrs);
 
-            startManager(new GridEventStorageManager(ctx), attrs);
-            startManager(new GridDeploymentManager(ctx), attrs);
-            startManager(new GridLoadBalancerManager(ctx), attrs);
-            startManager(new GridFailoverManager(ctx), attrs);
-            startManager(new GridCollisionManager(ctx), attrs);
-            startManager(new GridTopologyManager(ctx), attrs);
-            startManager(new GridSwapSpaceManager(ctx), attrs);
-            startManager(new GridCloudManager(ctx), attrs);
+            startManager(ctx, new GridEventStorageManager(ctx), attrs);
+            startManager(ctx, new GridDeploymentManager(ctx), attrs);
+            startManager(ctx, new GridLoadBalancerManager(ctx), attrs);
+            startManager(ctx, new GridFailoverManager(ctx), attrs);
+            startManager(ctx, new GridCollisionManager(ctx), attrs);
+            startManager(ctx, new GridTopologyManager(ctx), attrs);
+            startManager(ctx, new GridSwapSpaceManager(ctx), attrs);
+            startManager(ctx, new GridCloudManager(ctx), attrs);
 
             // Create the controllers. Order is important.
-            createController(GridLicenseController.class);
-            createController(GridAffinityController.class);
-            createController(GridRestController.class);
+            startController(ctx, GridLicenseController.class);
+            startController(ctx, GridAffinityController.class);
+            startController(ctx, GridRestController.class);
 
             // Start processors before discovery manager, so they will
             // be able to start receiving messages once discovery completes.
-            startProcessor(new GridTaskSessionProcessor(ctx));
-            startProcessor(new GridTaskProcessor(ctx));
-            startProcessor(new GridJobProcessor(ctx));
-            startProcessor(new GridCacheProcessor(ctx));
-            startProcessor(new GridClosureProcessor(ctx));
-            startProcessor(new GridScheduleProcessor(ctx));
+            startProcessor(ctx, new GridTaskSessionProcessor(ctx));
+            startProcessor(ctx, new GridTaskProcessor(ctx));
+            startProcessor(ctx, new GridJobProcessor(ctx));
+            startProcessor(ctx, new GridCacheProcessor(ctx));
+            startProcessor(ctx, new GridScheduleProcessor(ctx));
 
             gw.writeLock();
 
@@ -734,26 +723,18 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                 gw.setState(STARTED);
 
                 // Start discovery manager last to make sure that grid is fully initialized.
-                startManager(new GridDiscoveryManager(ctx), attrs);
+                startManager(ctx, new GridDiscoveryManager(ctx), attrs);
             }
             finally {
                 gw.writeUnlock();
             }
 
             // Callbacks.
-            for (GridManager mgr : mgrReg)
-                mgr.onKernalStart();
-
-            // Callbacks - start the controllers.
-            for (GridController ctrl : ctrlReg)
-                ctrl.afterKernalStart(ctx);
+            for (GridComponent comp : ctx)
+                comp.onKernalStart();
 
             // Ack the license.
             ctx.license().ackLicense();
-
-            // Callbacks.
-            for (GridProcessor proc : procReg)
-                proc.onKernalStart();
 
             // Register MBeans.
             registerKernalMBean();
@@ -802,42 +783,42 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
         // Setup periodic license check.
         licTimer.scheduleAtFixedRate(new GridTimerTask() {
-            @Override public void safeRun() throws InterruptedException {
-                try {
-                    ctx.license().checkLicense();
-                }
-                // This exception only happens when license controller was unable
-                // to resolve license violation on its own and this grid instance
-                // now needs to be shutdown.
-                //
-                // Note that in most production configurations the license will
-                // have certain grace period and license controller will attempt
-                // to reload the license during the grace period.
-                //
-                // This exception thrown here means that grace period, if any,
-                // has expired and license violation is still unresolved.
-                catch (GridLicenseException ignored) {
-                    U.error(log, "License violation is unresolved. GridGain node will shutdown in " +
-                        (SHUTDOWN_DELAY / 1000) + " sec.");
-                    U.error(log, "  ^-- Contact your support for immediate assistance (!)");
+                @Override public void safeRun() throws InterruptedException {
+                    try {
+                        ctx.license().checkLicense();
+                    }
+                    // This exception only happens when license controller was unable
+                    // to resolve license violation on its own and this grid instance
+                    // now needs to be shutdown.
+                    //
+                    // Note that in most production configurations the license will
+                    // have certain grace period and license controller will attempt
+                    // to reload the license during the grace period.
+                    //
+                    // This exception thrown here means that grace period, if any,
+                    // has expired and license violation is still unresolved.
+                    catch (GridLicenseException ignored) {
+                        U.error(log, "License violation is unresolved. GridGain node will shutdown in " +
+                            (SHUTDOWN_DELAY / 1000) + " sec.");
+                        U.error(log, "  ^-- Contact your support for immediate assistance (!)");
 
-                    // Allow interruption to break from here since
-                    // node is stopping anyways.
-                    Thread.sleep(SHUTDOWN_DELAY);
+                        // Allow interruption to break from here since
+                        // node is stopping anyways.
+                        Thread.sleep(SHUTDOWN_DELAY);
 
-                    G.stop(gridName, true);
-                }
-                // Safety net.
-                catch (Throwable e) {
-                    U.error(log, "Unable to check the license due to system error.", e);
-                    U.error(log, "Grid instance will be stopped...");
+                        G.stop(gridName, true);
+                    }
+                    // Safety net.
+                    catch (Throwable e) {
+                        U.error(log, "Unable to check the license due to system error.", e);
+                        U.error(log, "Grid instance will be stopped...");
 
-                    // Stop the grid if we get unknown license-related error.
-                    // Should never happen. Practically an assertion...
-                    G.stop(gridName, true);
+                        // Stop the grid if we get unknown license-related error.
+                        // Should never happen. Practically an assertion...
+                        G.stop(gridName, true);
+                    }
                 }
-            }
-        }, PERIODIC_LIC_CHECK_DELAY, PERIODIC_LIC_CHECK_DELAY);
+            }, PERIODIC_LIC_CHECK_DELAY, PERIODIC_LIC_CHECK_DELAY);
 
         if (log.isQuiet()) {
             U.quiet("System info:");
@@ -1229,7 +1210,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
     /** @throws GridException If registration failed. */
     private void registerLocalNodeMBean() throws GridException {
-        GridNodeMetricsMBean mbean = new GridLocalNodeMetrics(mgrReg.discovery().localNode());
+        GridNodeMetricsMBean mbean = new GridLocalNodeMetrics(ctx.discovery().localNode());
 
         try {
             locNodeMBean = U.registerMBean(
@@ -1310,13 +1291,13 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     }
 
     /**
-     * @param mgr   Manager to start.
+     * @param ctx Kernal context.
+     * @param mgr Manager to start.
      * @param attrs SPI attributes to set.
      * @throws GridException Throw in case of any errors.
      */
-    private void startManager(GridManager mgr, Map<String, Object> attrs) throws GridException {
-        assert mgrReg != null;
-
+    private void startManager(GridKernalContextImpl ctx, GridManager mgr, Map<String, Object> attrs)
+        throws GridException {
         mgr.addSpiAttributes(attrs);
 
         // Set all node attributes into discovery manager,
@@ -1327,7 +1308,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         // Add manager to registry before it starts to avoid
         // cases when manager is started but registry does not
         // have it yet.
-        mgrReg.add(mgr);
+        ctx.add(mgr);
 
         try {
             mgr.start();
@@ -1338,11 +1319,12 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     }
 
     /**
+     * @param ctx Kernal context.
      * @param proc Processor to start.
      * @throws GridException Thrown in case of any error.
      */
-    private void startProcessor(GridProcessor proc) throws GridException {
-        procReg.add(proc);
+    private void startProcessor(GridKernalContextImpl ctx, GridComponent proc) throws GridException {
+        ctx.add(proc);
 
         try {
             proc.start();
@@ -1356,6 +1338,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
      * Creates controller for given interface. Implementation should be in "impl" sub-package
      * and class name should have "Impl" postfix.
      *
+     * @param ctx Context.
      * @param itf Controller interface.
      * @param <T> Type of the controller interface.
      * @return Controller instance or no-op dynamic proxy for this interface.
@@ -1364,7 +1347,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
      *      interface.
      */
     @SuppressWarnings("unchecked")
-    private <T extends GridController> T createController(Class<T> itf) throws GridException {
+    private <T extends GridController> T startController(GridKernalContextImpl ctx, Class<T> itf) throws GridException {
         assert itf != null;
 
         Package pkg = itf.getPackage();
@@ -1395,14 +1378,20 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                 throw new IllegalArgumentException("Type does not represent valid controller: " + itf);
 
             try {
-                ctrl = (GridController)cls.newInstance();
+                ctrl = (GridController)cls.getConstructor(new Class[] { GridKernalContext.class }).newInstance(ctx);
 
-                ctrl.init();
+                ctrl.start();
             }
             catch (IllegalAccessException e) {
                 throw new IllegalArgumentException("Failed to instantiate controller for: " + itf, e);
             }
             catch (InstantiationException e) {
+                throw new IllegalArgumentException("Failed to instantiate controller for: " + itf, e);
+            }
+            catch (NoSuchMethodException e) {
+                throw new IllegalArgumentException("Failed to instantiate controller for: " + itf, e);
+            }
+            catch (InvocationTargetException e) {
                 throw new IllegalArgumentException("Failed to instantiate controller for: " + itf, e);
             }
         }
@@ -1412,7 +1401,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         if (log.isDebugEnabled())
             log.debug("Controller started [itf=" + itf.getSimpleName() + ", proxy=" + !ctrl.implemented() + ']');
 
-        ctrlReg.add(ctrl);
+        ctx.add(ctrl);
 
         return (T)ctrl;
     }
@@ -1579,7 +1568,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
      * @param cancel Cancellation flag.
      * @param wait Wait flag.
      */
-    private void stopProcessor(@Nullable GridProcessor proc, boolean cancel, boolean wait) {
+    private void stopProcessor(@Nullable GridComponent proc, boolean cancel, boolean wait) {
         if (proc != null)
             try {
                 proc.stop(cancel, wait);
@@ -1660,44 +1649,22 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             notifyLifecycleBeans(GridLifecycleEventType.BEFORE_GRID_STOP);
         }
 
-        // Callback processor while kernal is still functional
+        List<GridComponent> comps = ctx.components();
+
+        // Callback component in reverse order while kernal is still functional
         // if called in the same thread, at least.
-        for (GridProcessor proc : procReg.processors())
+        for (ListIterator<GridComponent> it = comps.listIterator(comps.size()); it.hasPrevious();) {
+            GridComponent comp = it.previous();
+
             try {
-                proc.onKernalStop(cancel, wait);
+                comp.onKernalStop(cancel, wait);
             }
             catch (Throwable e) {
                 errOnStop = true;
 
-                U.error(log, "Failed to pre-stop processor: " + proc, e);
+                U.error(log, "Failed to pre-stop processor: " + comp, e);
             }
-
-        // Callback controller while kernal is still functional
-        // if called in the same thread, at least.
-        for (GridController ctrl : ctrlReg)
-            try {
-                ctrl.beforeKernalStop(cancel);
-
-                if (log.isDebugEnabled())
-                    log.debug("Controller stopped: " + ctrl.getClass().getSimpleName());
-            }
-            catch (Throwable e) {
-                errOnStop = true;
-
-                U.error(log, "Failed to stop controller: " + ctrl, e);
-            }
-
-        // Callback managers while kernal is still functional
-        // if called in the same thread, at least.
-        for (GridManager mgr : mgrReg.getManagers())
-            try {
-                mgr.onKernalStop();
-            }
-            catch (Throwable e) {
-                errOnStop = true;
-
-                U.error(log, "Failed to pre-stop manager: " + mgr, e);
-            }
+        }
 
         gw.writeLock();
 
@@ -1734,49 +1701,25 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                 unregisterMBean(locNodeMBean)))
             errOnStop = false;
 
-        // Stop most processors *before* managers.
-        stopProcessor(procReg.job(), cancel, wait);
-        stopProcessor(procReg.task(), cancel, wait);
-        stopProcessor(procReg.cache(), cancel, wait);
-        stopProcessor(procReg.closure(), cancel, wait);
-        stopProcessor(procReg.rich(), cancel, wait);
-        stopProcessor(procReg.ports(), cancel, wait);
-        stopProcessor(procReg.metric(), cancel, wait);
-        stopProcessor(procReg.schedule(), cancel, wait);
-        stopProcessor(procReg.email(), cancel, wait);
-        stopProcessor(procReg.session(), cancel, wait);
+        // Stop components in reverse order.
+        for (ListIterator<GridComponent> it = comps.listIterator(comps.size()); it.hasPrevious();) {
+            GridComponent comp = it.previous();
 
-        // Check for null. Registry can be null if grid was not started successfully
-        // and none of the managers were started.
-        if (mgrReg != null) {
-            List<GridManager> mgrs = mgrReg.getManagers();
+            try {
+                comp.stop(cancel, wait);
 
-            // Stop managers in reverse order.
-            for (int i = mgrs.size() - 1; i >= 0; i--) {
-                GridManager mgr = mgrs.get(i);
+                if (log.isDebugEnabled())
+                    log.debug("Component stopped: " + comp);
+            }
+            catch (Throwable e) {
+                errOnStop = true;
 
-                try {
-                    mgr.stop();
-
-                    if (log.isDebugEnabled())
-                        log.debug("Manager stopped: " + mgr);
-                }
-                catch (Throwable e) {
-                    errOnStop = true;
-
-                    U.error(log, "Failed to stop manager (ignoring): " + mgr, e);
-                }
+                U.error(log, "Failed to stop component (ignoring): " + comp, e);
             }
         }
 
-        // Stop resource and timeout processor *after* managers.
-        stopProcessor(procReg.resource(), cancel, wait);
-        stopProcessor(procReg.timeout(), cancel, wait);
-
         // Lifecycle notification.
         notifyLifecycleBeans(GridLifecycleEventType.AFTER_GRID_STOP);
-
-        mgrReg = null;
 
         for (GridWorker w : GridWorkerGroup.instance(gridName).activeWorkers()) {
             String n1 = w.gridName() == null ? "" : w.gridName();
@@ -1957,7 +1900,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
      */
     /*@java.test.only*/
     public <K, V> GridCacheAdapter<K, V> internalCache(@Nullable String name) {
-        return procReg.cache().internalCache(name);
+        return ctx.cache().internalCache(name);
     }
 
     /**
@@ -2162,26 +2105,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             log.debug("Class path: " + rtBean.getClassPath());
             log.debug("Library path: " + rtBean.getLibraryPath());
         }
-    }
-
-    /**
-     * Returns processor registry. For tests only.
-     *
-     * @return processor registry.
-     */
-    @Deprecated
-    public GridProcessorRegistry getProcessorRegistry() {
-        return procReg;
-    }
-
-    /**
-     * This method is for internal testing only.
-     *
-     * @return Manager registry.
-     */
-    @Deprecated
-    public GridManagerRegistry getManagerRegistry() {
-        return mgrReg;
     }
 
     /** {@inheritDoc} */

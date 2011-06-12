@@ -28,7 +28,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
@@ -543,18 +543,19 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
      * @return {@code true} if candidate was found.
      * @throws GridCacheEntryRemovedException If entry is removed.
      */
-    public boolean dhtNodeId(GridCacheVersion ver, UUID dhtNodeId) throws GridCacheEntryRemovedException {
+    @Nullable public GridCacheMvccCandidate<K> dhtNodeId(GridCacheVersion ver, UUID dhtNodeId)
+        throws GridCacheEntryRemovedException {
         synchronized (mux) {
             checkObsolete();
 
             GridCacheMvccCandidate<K> cand = mvcc.candidate(ver);
 
             if (cand == null)
-                return false;
+                return null;
 
             cand.otherNodeId(dhtNodeId);
 
-            return true;
+            return cand;
         }
     }
 

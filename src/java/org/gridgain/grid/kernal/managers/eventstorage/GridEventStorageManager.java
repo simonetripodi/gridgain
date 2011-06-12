@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid event storage SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridEventStorageManager extends GridManagerAdapter<GridEventStorageSpi> {
     /** Internally-used events. */
@@ -216,7 +216,7 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
 
     /** {@inheritDoc} */
     @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
-    @Override public void onKernalStop() {
+    @Override public void onKernalStop0(boolean cancel, boolean wait) {
         // Acquire write lock so that any new thread could not be started.
         busyLock.writeLock().lock();
 
@@ -233,7 +233,7 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cacnel, boolean wait) throws GridException {
         stopSpi();
 
         if (log.isDebugEnabled())

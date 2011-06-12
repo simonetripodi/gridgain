@@ -8,10 +8,10 @@ import java.util.*;
 
 /**
  * This class is an extension of {@link ObjectOutputStream}. It's able to serialize non-serializable objects.
- * It performs optimization. It considers {@link GridMarshallerController}.
+ * It performs optimization. It considers {@link GridMarshallerExclusions}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 class GridOptimizedObjectOutput extends ObjectOutputStream {
     /** Whether or not to require an object to be serializable in order to be serialized. */
@@ -44,7 +44,7 @@ class GridOptimizedObjectOutput extends ObjectOutputStream {
 
     /** {@inheritDoc} */
     @Nullable @Override protected Object replaceObject(Object obj) throws IOException {
-        if (obj == null || GridMarshallerController.isExcluded(obj.getClass()))
+        if (obj == null || GridMarshallerExclusions.isExcluded(obj.getClass()))
             return null;
 
         if (requireSer || obj instanceof Serializable)

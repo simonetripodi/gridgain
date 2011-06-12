@@ -26,7 +26,7 @@ import java.util.*;
  * Adapter for reduce cache queries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBaseAdapter<K, V>
     implements GridCacheReduceQuery<K, V, R1, R2> {
@@ -35,9 +35,6 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
 
     /** Local reducer. */
     private volatile GridClosure<Object[], GridReducer<R1, R2>> locRdc;
-
-    /** */
-    private volatile boolean rmtOnly;
 
     /**
      * @param ctx Cache registry.
@@ -61,7 +58,6 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
 
         rmtRdc = query.rmtRdc;
         locRdc = query.locRdc;
-        rmtOnly = query.rmtOnly;
     }
 
     /** {@inheritDoc} */
@@ -119,17 +115,8 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
         return copy;
     }
 
-    /**
-     * @return Execute local reducer or not.
-     */
-    public boolean isRemoteOnly() {
-        return rmtOnly;
-    }
-
     /** {@inheritDoc} */
     @Override public GridFuture<R2> reduce(GridProjection[] grid) {
-        rmtOnly = false;
-
         Collection<GridRichNode> nodes = F.retain(CU.allNodes(cacheCtx), true, nodes(grid));
 
         if (qryLog.isDebugEnabled())
@@ -159,14 +146,14 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
             return err;
         }
 
-        final ReduceFuture<R2> rdcFut = new ReduceFuture<R2>();
+        GridCacheQueryFuture<R2> fut = execute(nodes, false, false, null);
 
-        GridCacheQueryFuture<R2> fut = execute(nodes, false, null);
+        final ReduceFuture<R2> rdcFut = new ReduceFuture<R2>(fut);
 
         fut.listenAsync(new GridInClosure<GridFuture<Collection<R2>>>() {
-            @Override public void apply(GridFuture<Collection<R2>> f) {
+            @Override public void apply(GridFuture<Collection<R2>> fut) {
                 try {
-                    Collection<R2> coll = f.get();
+                    Collection<R2> coll = fut.get();
 
                     rdcFut.onDone(coll.iterator().next());
                 }
@@ -175,8 +162,6 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
                 }
             }
         });
-
-        rdcFut.future(fut);
 
         return rdcFut;
     }
@@ -191,14 +176,12 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
             return err;
         }
 
-        rmtOnly = true;
-
         Collection<GridRichNode> nodes = F.retain(CU.allNodes(cacheCtx), true, nodes(grid));
 
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing reduce remote query " + toShortString(nodes)));
 
-        return execute(nodes, false, null);
+        return execute(nodes, false, true, null);
     }
 
     /** {@inheritDoc} */
@@ -214,17 +197,26 @@ public class GridCacheReduceQueryAdapter<K, V, R1, R2> extends GridCacheQueryBas
         private GridCacheQueryFuture<R2> fut;
 
         /**
-         *
+         * Required by {@link Externalizable}.
          */
         public ReduceFuture() {
-            super(cacheCtx.kernalContext());
+            // No-op.
         }
 
         /**
-         * @param fut Future.
+         * @param fut General query future.
          */
-        public void future(GridCacheQueryFuture<R2> fut) {
+        private ReduceFuture(GridCacheQueryFuture<R2> fut) {
+            super(cacheCtx.kernalContext());
+
             this.fut = fut;
+        }
+
+        /**
+         * @return General query future.
+         */
+        public GridCacheQueryFuture<R2> future() {
+            return fut;
         }
 
         /** {@inheritDoc} */

@@ -25,7 +25,7 @@ import java.util.*;
  * Deployment manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi> {
     /** Local deployment storage. */
@@ -73,7 +73,7 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         GridProtocolHandler.deregisterDeploymentManager();
 
         if (verStore != null)
@@ -97,14 +97,14 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStart() throws GridException {
+    @Override public void onKernalStart0() throws GridException {
         locStore.onKernalStart();
         ldrStore.onKernalStart();
         verStore.onKernalStart();
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStop() {
+    @Override public void onKernalStop0(boolean cancel, boolean wait) {
         if (verStore != null)
             verStore.onKernalStop();
 
@@ -187,16 +187,16 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
             // Check for nested execution. In that case, if task
             // is available locally by name, then we should ignore
             // class loader ID.
-            GridDeployment d = locStore.getDeployment(meta);
+            GridDeployment dep = locStore.getDeployment(meta);
 
-            if (d == null) {
-                d = ldrStore.getDeployment(ldr.classLoaderId());
+            if (dep == null) {
+                dep = ldrStore.getDeployment(ldr.classLoaderId());
 
-                if (d == null)
-                    d = verStore.getDeployment(ldr.classLoaderId());
+                if (dep == null)
+                    dep = verStore.getDeployment(ldr.classLoaderId());
             }
 
-            return d;
+            return dep;
         }
         else {
             return locStore.explicitDeploy(cls, clsLdr);
@@ -220,16 +220,16 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
      * @return Deployment for given ID.
      */
     @Nullable public GridDeployment getDeployment(UUID ldrId) {
-        GridDeployment d = locStore.getDeployment(ldrId);
+        GridDeployment dep = locStore.getDeployment(ldrId);
 
-        if (d == null) {
-            d = ldrStore.getDeployment(ldrId);
+        if (dep == null) {
+            dep = ldrStore.getDeployment(ldrId);
 
-            if (d == null)
-                d = verStore.getDeployment(ldrId);
+            if (dep == null)
+                dep = verStore.getDeployment(ldrId);
         }
 
-        return d;
+        return dep;
     }
 
     /**
@@ -237,22 +237,22 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
      * @return Found deployment or {@code null} if one was not found.
      */
     @Nullable public GridDeployment getDeployment(String rsrcName) {
-        GridDeployment d = getLocalDeployment(rsrcName);
+        GridDeployment dep = getLocalDeployment(rsrcName);
 
-        if (d == null) {
+        if (dep == null) {
             ClassLoader ldr = Thread.currentThread().getContextClassLoader();
 
             if (ldr instanceof GridDeploymentClassLoader) {
                 GridDeploymentInfo depLdr = (GridDeploymentInfo)ldr;
 
-                d = ldrStore.getDeployment(depLdr.classLoaderId());
+                dep = ldrStore.getDeployment(depLdr.classLoaderId());
 
-                if (d == null)
-                    d = verStore.getDeployment(depLdr.classLoaderId());
+                if (dep == null)
+                    dep = verStore.getDeployment(depLdr.classLoaderId());
             }
         }
 
-        return d;
+        return dep;
     }
 
     /**

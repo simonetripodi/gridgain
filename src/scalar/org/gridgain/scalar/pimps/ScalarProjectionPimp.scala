@@ -22,7 +22,7 @@ import scalaz._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 object ScalarProjectionPimp {
     /**
@@ -62,7 +62,7 @@ object ScalarProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
     with Iterable[GridRichNode]
@@ -194,6 +194,32 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
         toScalaSeq(callAsync$(mode, s, p: _*).get)
 
     /**
+     * Synchronous closures call on this projection with return value.
+     * This call will block until all results are received and ready. If this projection
+     * is empty than `dflt` closure will be executed and its result returned.
+     *
+     * @param mode Closure call mode.
+     * @param s Optional sequence of closures to call. If empty or `null` - this
+     *      method is no-op and returns `null`.
+     * @param dflt Closure to execute if projection is empty.
+     * @param p Optional node filter predicate. If none provided or `null` - all
+     *      nodes in projection will be used.
+     * @return Sequence of result values from all nodes where given closures were executed
+     *      or `null` (see above).
+     */
+    def callSafe[R](mode: GridClosureCallMode, @Nullable s: Seq[Call[R]], dflt: () => Seq[R],
+        @Nullable p: NodeFilter*): Seq[R] = {
+        assert(dflt != null)
+
+        try {
+            call$(mode, s, p: _*)
+        }
+        catch {
+            case _: GridEmptyProjectionException => dflt()
+        }
+    }
+
+    /**
      * <b>Alias</b> for the same function `call$`.
      *
      * @param mode Closure call mode.
@@ -222,6 +248,32 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
      */
     def call$[R](mode: GridClosureCallMode, @Nullable s: Call[R], @Nullable p: NodeFilter*): Seq[R] =
         call$(mode, Seq(s), p: _*)
+
+    /**
+     * Synchronous closure call on this projection with return value.
+     * This call will block until all results are received and ready. If this projection
+     * is empty than `dflt` closure will be executed and its result returned.
+     *
+     * @param mode Closure call mode.
+     * @param s Optional closure to call. If `null` - this method is no-op and returns `null`.
+     * @param dflt Closure to execute if projection is empty.
+     * @param p Optional node filter predicate. If none provided or `null` - all
+     *      nodes in projection will be used.
+     * @return Sequence of result values from all nodes where given closures were executed
+     *      or `null` (see above).
+     * @see `org.gridgain.grid.GridProjection.call(...)`
+     */
+    def callSafe[R](mode: GridClosureCallMode, @Nullable s: Call[R], dflt: () => Seq[R],
+        @Nullable p: NodeFilter*): Seq[R] = {
+        assert(dflt != null)
+
+        try {
+            call$(mode, Seq(s), p: _*)
+        }
+        catch {
+            case _: GridEmptyProjectionException => dflt()
+        }
+    }
 
     /**
      * <b>Alias</b> for the same function `call$`.
@@ -253,6 +305,29 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
     }
 
     /**
+     * Synchronous closures call on this projection without return value.
+     * This call will block until all executions are complete. If this projection
+     * is empty than `dflt` closure will be executed.
+     *
+     * @param mode Closure call mode.
+     * @param s Optional sequence of closures to call. If empty or `null` - this
+     *      method is no-op.
+     * @param p Optional node filter predicate. If none provided or `null` - all
+     *      nodes in projection will be used.
+     * @param dflt Closure to execute if projection is empty.
+     * @see `org.gridgain.grid.GridProjection.run(...)`
+     */
+    def runSafe(mode: GridClosureCallMode, @Nullable s: Seq[Call[Unit]], @Nullable dflt: () => Unit,
+        @Nullable p: NodeFilter*) {
+        try {
+            run$(mode, s, p: _*)
+        }
+        catch {
+            case _: GridEmptyProjectionException => if (dflt != null) dflt() else ()
+        }
+    }
+
+    /**
      * <b>Alias</b> alias for the same function `run$`.
      *
      * @param mode Closure call mode.
@@ -278,6 +353,28 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
      */
     def run$(mode: GridClosureCallMode, @Nullable s: Call[Unit], @Nullable p: NodeFilter*) {
         run$(mode, Seq(s), p: _*)
+    }
+
+    /**
+     * Synchronous closure call on this projection without return value.
+     * This call will block until all executions are complete. If this projection
+     * is empty than `dflt` closure will be executed.
+     *
+     * @param mode Closure call mode.
+     * @param s Optional closure to call. If empty or `null` - this method is no-op.
+     * @param dflt Closure to execute if projection is empty.
+     * @param p Optional node filter predicate. If none provided or `null` - all
+     *      nodes in projection will be used.
+     * @see `org.gridgain.grid.GridProjection.run(...)`
+     */
+    def runSafe(mode: GridClosureCallMode, @Nullable s: Call[Unit], @Nullable dflt: () => Unit,
+        @Nullable p: NodeFilter*) {
+        try {
+            run$(mode, s, p: _*)
+        }
+        catch {
+            case _: GridEmptyProjectionException => if (dflt != null) dflt() else ()
+        }
     }
 
     /**
@@ -487,6 +584,34 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
         reduceAsync$(mode, s, r, p: _*).get
 
     /**
+     * Synchronous closures execution on this projection with reduction.
+     * This call will block until all results are reduced. If this projection
+     * is empty than `dflt` closure will be executed and its result returned.
+     *
+     * @param mode Closure call mode.
+     * @param s Optional sequence of closures to call. If empty or `null` - this method
+     *      is no-op and will return `null`.
+     * @param r Optional reduction function. If `null` - this method
+     *      is no-op and will return `null`.
+     * @param dflt Closure to execute if projection is empty.
+     * @param p Optional node filter predicate. If none provided or `null` - all
+     *      nodes in projection will be used.
+     * @return Reduced result or `null` (see above).
+     * @see `org.gridgain.grid.GridProjection.reduce(...)`
+     */
+    def reduceSafe[R1, R2](mode: GridClosureCallMode, @Nullable s: Seq[Call[R1]], @Nullable r: Seq[R1] => R2,
+        dflt: () => R2, @Nullable p: NodeFilter*): R2 = {
+        assert(dflt != null)
+
+        try {
+            reduceAsync$(mode, s, r, p: _*).get
+        }
+        catch {
+            case _: GridEmptyProjectionException => dflt()
+        }
+    }
+
+    /**
      * <b>Alias</b> for the same function `reduce$`.
      *
      * @param mode Closure call mode.
@@ -543,6 +668,34 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
     def mapreduce$[R1, R2](m: Seq[GridRichNode] => (java.util.concurrent.Callable[R1] => GridRichNode),
         @Nullable s: Seq[Call[R1]], @Nullable r: Seq[R1] => R2, @Nullable p: NodeFilter*): R2 =
         mapreduceAsync$(m, s, r, p: _*).get
+
+    /**
+     * Synchronous closures execution on this projection with mapping and reduction.
+     * This call will block until all results are reduced. If this projection
+     * is empty than `dflt` closure will be executed and its result returned.
+     *
+     * @param m Mapping function.
+     * @param s Optional sequence of closures to call. If empty or `null` - this method
+     *      is no-op and will return `null`.
+     * @param r Optional reduction function. If `null` - this method
+     *      is no-op and will return `null`.
+     * @param dflt Closure to execute if projection is empty.
+     * @param p Optional node filter predicate. If none provided or `null` - all
+     *      nodes in projection will be used.
+     * @return Reduced result or `null` (see above).
+     * @see `org.gridgain.grid.GridProjection.mapreduce(...)`
+     */
+    def mapreduceSafe[R1, R2](m: Seq[GridRichNode] => (java.util.concurrent.Callable[R1] => GridRichNode),
+        @Nullable s: Seq[Call[R1]], @Nullable r: Seq[R1] => R2, dflt: () => R2, @Nullable p: NodeFilter*): R2 = {
+        assert(dflt != null)
+
+        try {
+            mapreduce$(m, s, r, p: _*)
+        }
+        catch {
+            case _: GridEmptyProjectionException => dflt()
+        }
+    }
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is

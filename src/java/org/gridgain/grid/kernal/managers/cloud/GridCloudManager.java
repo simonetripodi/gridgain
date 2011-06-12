@@ -38,7 +38,7 @@ import static org.gridgain.grid.spi.cloud.GridCloudSpiResourceAction.*;
  * This class defines a cloud manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCloudManager extends GridManagerAdapter<GridCloudSpi> {
     /** Default number of resend attempts */
@@ -267,9 +267,7 @@ public class GridCloudManager extends GridManagerAdapter<GridCloudSpi> {
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStart() throws GridException {
-        super.onKernalStart();
-
+    @Override public void onKernalStart0() throws GridException {
         if (!disableCloudCrd) {
             checkCoordinatorship(descrsMap.keySet());
 
@@ -278,7 +276,7 @@ public class GridCloudManager extends GridManagerAdapter<GridCloudSpi> {
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         stopSpi();
 
         descrsMap = null;
@@ -294,7 +292,7 @@ public class GridCloudManager extends GridManagerAdapter<GridCloudSpi> {
 
     /** {@inheritDoc} */
     @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter"})
-    @Override public void onKernalStop() {
+    @Override public void onKernalStop0(boolean cancel, boolean wait) {
         if (!disableCloudCrd) {
             if (ctx.discovery() != null)
                 ctx.event().removeLocalEventListener(discoLsnr);
@@ -376,8 +374,6 @@ public class GridCloudManager extends GridManagerAdapter<GridCloudSpi> {
                         U.error(log, "Failed to unregister cloud MBean: " + mb, e);
                     }
         }
-
-        super.onKernalStop();
     }
 
     /**

@@ -26,7 +26,7 @@ import java.util.*;
  * Adapter for cache queries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V> implements GridCacheQuery<K, V> {
     /**
@@ -105,7 +105,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing query: " + toShortString(nodes)));
 
-        return execute(nodes, false, null);
+        return execute(nodes, false, false, null);
     }
 
     /** {@inheritDoc} */
@@ -154,7 +154,7 @@ public class GridCacheQueryAdapter<K, V> extends GridCacheQueryBaseAdapter<K, V>
         VisitorFuture(final GridPredicate<Map.Entry<K, V>> vis, Collection<GridRichNode> nodes) {
             super(cacheCtx.kernalContext());
 
-            fut = execute(nodes, false, null);
+            fut = execute(nodes, false, false, null);
 
             context().closures().runLocalSafe(new GPR() {
                 @Override public void run() {

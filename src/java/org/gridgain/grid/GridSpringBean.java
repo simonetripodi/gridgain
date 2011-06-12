@@ -60,7 +60,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -186,6 +186,34 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
         assert g != null;
 
         return g.build();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode random() {
+        assert g != null;
+
+        return g.random();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode youngestx() throws GridEmptyProjectionException {
+        assert g != null;
+
+        return g.youngestx();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode oldestx() throws GridEmptyProjectionException {
+        assert g != null;
+
+        return g.oldestx();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridRichNode randomx() throws GridEmptyProjectionException {
+        assert g != null;
+
+        return g.randomx();
     }
 
     /** {@inheritDoc} */

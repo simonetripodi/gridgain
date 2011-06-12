@@ -127,7 +127,7 @@ import static org.gridgain.grid.GridConfiguration.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridFactory {
     /**
@@ -1085,7 +1085,7 @@ public class GridFactory {
                 if (grids.containsKey(name))
                     throw new GridException("Grid instance with this name has already been started: " + name);
 
-                grids.put(name, grid = new GridNamedInstance(name));
+                grid = new GridNamedInstance(name);
             }
 
             single = (grids.size() == 1 && dfltGrid == null) || (grids.isEmpty() && dfltGrid != null);
@@ -1093,6 +1093,21 @@ public class GridFactory {
 
         try {
             grid.start(cfg, single, ctx);
+
+            if (name != null)
+                synchronized (mux) {
+                    if (grids.containsKey(name)) {
+                        // Attempt to stop this instance if another one
+                        // was already started with the same name before.
+                        grid.stop(true, false);
+
+                        throw new GridException("Grid instance with this name has already been started: " + name);
+                    }
+
+                    assert(grid.getState() == GridFactoryState.STARTED);
+
+                    grids.put(name, grid);
+                }
         }
         finally {
             if (grid.getState() != GridFactoryState.STARTED)
@@ -1353,7 +1368,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1597,6 +1612,9 @@ public class GridFactory {
             GridCloudSpi[] cloudSpis = cfg.getCloudSpi();
             GridSwapSpaceSpi[] swapspaceSpi = cfg.getSwapSpaceSpi();
 
+            if (nodeId == null)
+                nodeId = UUID.randomUUID();
+
             GridLogger cfgLog = cfg.getGridLogger();
 
             if (cfgLog == null) {
@@ -1608,7 +1626,7 @@ public class GridFactory {
 
             assert cfgLog != null;
 
-            cfgLog = new GridLoggerProxy(cfgLog, null, name);
+            cfgLog = new GridLoggerProxy(cfgLog, null, name, U.id8(nodeId));
 
             // Initialize factory's log.
             log = cfgLog.getLogger(G.class);
@@ -1676,7 +1694,7 @@ public class GridFactory {
             myCfg.setExecutorServiceShutdown(execSvcShutdown);
             myCfg.setSystemExecutorServiceShutdown(sysSvcShutdown);
             myCfg.setPeerClassLoadingExecutorServiceShutdown(p2pSvcShutdown);
-            myCfg.setNodeId(nodeId == null ? UUID.randomUUID() : nodeId);
+            myCfg.setNodeId(nodeId);
 
             if (p2pExclude == null)
                 p2pExclude = EMPTY_STR_ARR;
@@ -2001,12 +2019,12 @@ public class GridFactory {
         /**
          * Stops grid.
          *
-         * @param interrupt Flag indicating whether all currently running jobs
-         *      should be interrupted.
+         * @param cancel Flag indicating whether all currently running jobs
+         *      should be cancelled.
          * @param wait If {@code true} then method will wait for all task being
          *      executed until they finish their execution.
          */
-        synchronized void stop(boolean interrupt, boolean wait) {
+        synchronized void stop(boolean cancel, boolean wait) {
             if (grid == null) {
                 if (log != null)
                     U.warn(log, "Attempting to stop an already stopped grid instance (ignore): " + name);
@@ -2033,7 +2051,7 @@ public class GridFactory {
             unregisterFactoryMBean();
 
             try {
-                grid.stop(interrupt, wait);
+                grid.stop(cancel, wait);
 
                 if (log.isDebugEnabled())
                     log.debug("Grid instance stopped ok: " + name);
@@ -2213,7 +2231,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.08062011
+         * @version 3.1.1c.12062011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

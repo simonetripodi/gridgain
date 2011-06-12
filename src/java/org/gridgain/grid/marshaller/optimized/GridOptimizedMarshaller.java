@@ -19,7 +19,7 @@ import java.util.*;
  * default JDK implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridOptimizedMarshaller implements GridMarshaller {
     /** Whether or not to require an object to be serializable in order to be marshalled. */
@@ -156,8 +156,9 @@ public class GridOptimizedMarshaller implements GridMarshaller {
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings( {"ThrowFromFinallyBlock"})
-    @Override public void marshal(Object obj, OutputStream out) throws GridException {
+    @Override public void marshal(@Nullable Object obj, OutputStream out) throws GridException {
+        assert out != null;
+
         try {
             GridOptimizedObjectOutput objOut = new GridOptimizedObjectOutput(out, requireSer, name2id);
 

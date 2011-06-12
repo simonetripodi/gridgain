@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -1669,8 +1669,8 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                                 e.innerGet(/*tx*/null, true/*swap*/, true/*read-through*/, /*fail-fast.*/false,
                                     /*update-metrics*/false, /*event notification*/req.returnValue(i), CU.<K, V>empty());
 
-                            assert e.candidate(mappedVer).owner() :
-                                "Entry does not own lock for tx [entry=" + e + ", tx=" + tx + ", req=" + req + ']';
+                            assert e.candidate(mappedVer).owner() : "Entry does not own lock for tx [entry=" + e +
+                                ", tx=" + tx + ", req=" + req + ", err=" + err + ']';
 
                             // We include values into response since they are required for local
                             // calls and won't be serialized. We are also including DHT version.

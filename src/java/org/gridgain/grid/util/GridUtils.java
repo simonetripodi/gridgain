@@ -67,11 +67,10 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
-public abstract class
-    GridUtils {
+public abstract class GridUtils {
     /** Sun-specific JDK constructor factory for objects that don't have empty constructor. */
     private static final Method CTOR_FACTORY;
 
@@ -891,22 +890,9 @@ public abstract class
      * @throws IOException If deserialization failed.
      * @throws ClassNotFoundException If deserialized class could not be found.
      */
-    @SuppressWarnings({"unchecked"})
     @Nullable public static <E> Collection<E> readCollection(ObjectInput in)
         throws IOException, ClassNotFoundException {
-        List<E> col = null;
-
-        // Check null flag.
-        if (!in.readBoolean()) {
-            int size = in.readInt();
-
-            col = new ArrayList<E>(size);
-
-            for (int i = 0; i < size; i++)
-                col.add((E)in.readObject());
-        }
-
-        return col;
+        return readList(in);
     }
 
     /**
@@ -1451,7 +1437,7 @@ public abstract class
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -2817,7 +2803,7 @@ public abstract class
 
         String s = msg.toString();
 
-        warn(log, s, shorten(s));
+        warn(log, s, s);
     }
 
     /**
@@ -2833,7 +2819,7 @@ public abstract class
 
         String s = msg.toString();
 
-        error(log, s, shorten(s), null);
+        error(log, s, s, null);
     }
 
     /**
@@ -2902,7 +2888,7 @@ public abstract class
 
         String s = msg.toString();
 
-        log(log, s, shorten(s));
+        log(log, s, s);
     }
 
     /**
@@ -2949,19 +2935,7 @@ public abstract class
 
         String s = shortMsg.toString();
 
-        error(log, s, shorten(s), e);
-    }
-
-    /**
-     * Shortens the given string.
-     *
-     * @param s String to shorten.
-     * @return Shorten string.
-     */
-    /*private*/public static String shorten(String s) { // Public scope for testing only.
-        assert s != null;
-
-        return s.length() < 100 ? s : s.substring(0, 96) + "|...";
+        error(log, s, s, e);
     }
 
     /**
@@ -2986,7 +2960,7 @@ public abstract class
      *
      * @param rsrc JDBC connection to rollback. If connection is {@code null}, it's no-op.
      */
-    public static void rollbackConnectionQuiet(@WillClose @Nullable Connection rsrc) {
+    public static void rollbackConnectionQuiet(@Nullable Connection rsrc) {
         if (rsrc != null)
             try {
                 rsrc.rollback();

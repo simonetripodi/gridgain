@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
@@ -77,6 +77,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *
      * @return Youngest node in this topology. This method returns {@code null} if projection is
      *      empty.
+     * @see #youngestx()
      */
     @Nullable public GridRichNode youngest();
 
@@ -86,8 +87,47 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *
      * @return Oldest node in this topology. This method returns {@code null} if
      *      projection is empty.
+     * @see #oldestx()
      */
     @Nullable public GridRichNode oldest();
+
+    /**
+     * Gets the randomly selected node from this projection.
+     *
+     * @return Randomly selected node in this topology. This method returns {@code null} if
+     *      projection is empty.
+     * @see #randomx()
+     */
+    @Nullable public GridRichNode random();
+
+    /**
+     * Gets the youngest node in this topology. The youngest node is a node from this topology
+     * that joined last.
+     *
+     * @return Youngest node in this topology.
+     * @throws GridEmptyProjectionException Thrown in case when projection is empty.
+     * @see #youngest()
+     */
+    public GridRichNode youngestx() throws GridEmptyProjectionException;
+
+    /**
+     * Gets the oldest node in this topology. The oldest node is a node from this projection
+     * that joined topology first.
+     *
+     * @return Oldest node in this topology.
+     * @throws GridEmptyProjectionException Thrown in case when projection is empty.
+     * @see #oldest()
+     */
+    public GridRichNode oldestx() throws GridEmptyProjectionException;
+
+    /**
+     * Gets the randomly selected node from this projection.
+     *
+     * @return Randomly selected node in this topology.
+     * @throws GridEmptyProjectionException Thrown in case when projection is empty.
+     * @see #random()
+     */
+    public GridRichNode randomx() throws GridEmptyProjectionException;
 
     /**
      * Gets number of unique hosts for nodes in this projection.

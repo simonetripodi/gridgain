@@ -30,7 +30,7 @@ import static java.util.concurrent.TimeUnit.*;
  * Future adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements GridFuture<R>, Externalizable {
     /** Synchronous notification flag. */
@@ -301,9 +301,8 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
 
             if (done) {
                 try {
-                    if (syncNotify) {
+                    if (syncNotify)
                         notifyListener(lsnr);
-                    }
                     else
                         ctx.closure().runLocalSafe(new GPR() {
                             @Override public void run() {
@@ -364,15 +363,8 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
                 }, true);
             }
             else {
-                ctx.gateway().readLock();
-
-                try {
-                    for (GridInClosure<? super GridFuture<R>> lsnr : tmp)
-                        notifyListener(lsnr);
-                }
-                finally {
-                    ctx.gateway().readUnlock();
-                }
+                for (GridInClosure<? super GridFuture<R>> lsnr : tmp)
+                    notifyListener(lsnr);
             }
         }
     }

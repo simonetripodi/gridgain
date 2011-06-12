@@ -26,7 +26,7 @@ import java.util.*;
  * Adapter for transforming cache queries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseAdapter<K, V>
     implements GridCacheTransformQuery<K, V, T> {
@@ -103,7 +103,7 @@ public class GridCacheTransformQueryAdapter<K, V, T> extends GridCacheQueryBaseA
         if (qryLog.isDebugEnabled())
             qryLog.debug(U.compact("Executing transform query " + toShortString(nodes)));
 
-        return execute(nodes, false, null);
+        return execute(nodes, false, false, null);
     }
 
     /** {@inheritDoc} */

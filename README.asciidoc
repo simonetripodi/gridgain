@@ -18,9 +18,9 @@ GridGain - Community Edition
 GridGain allows anyone easily develop, scale and manage compute and data intensive 
 JVM based applications. GridGain provides three major areas of functionality: 
 
-- Compute Grids 
-- Data Grids
-- Auto-Scaling
+- *Compute Grids*
+- *In-Memory Data Grids*
+- *Cloud Auto-Scaling*
 
 On top of that it provides the multitude of surrounding technologies many of 
 which are frequently used by our clients on their own. 

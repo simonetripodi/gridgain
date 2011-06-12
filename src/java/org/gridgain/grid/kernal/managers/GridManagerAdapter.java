@@ -32,7 +32,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  *
  * @param <T> SPI wrapped by this manager.
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public abstract class GridManagerAdapter<T extends GridSpi> implements GridManager {
     /** Kernal context. */
@@ -301,7 +301,7 @@ public abstract class GridManagerAdapter<T extends GridSpi> implements GridManag
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStart() throws GridException {
+    @Override public final void onKernalStart() throws GridException {
         for (final GridSpi spi : spis) {
             spiRwLock.writeLock().lock();
 
@@ -486,10 +486,12 @@ public abstract class GridManagerAdapter<T extends GridSpi> implements GridManag
                 spiRwLock.writeLock().unlock();
             }
         }
+
+        onKernalStart0();
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStop() {
+    @Override public final void onKernalStop(boolean cancel, boolean wait) {
         for (GridSpi spi : spis) {
             spiRwLock.writeLock().lock();
 
@@ -500,6 +502,23 @@ public abstract class GridManagerAdapter<T extends GridSpi> implements GridManag
                 spiRwLock.writeLock().unlock();
             }
         }
+
+        onKernalStop0(cancel, wait);
+    }
+
+    /**
+     * @throws GridException If failed.
+     */
+    protected void onKernalStart0() throws GridException {
+        // No-op.
+    }
+
+    /**
+     * @param cancel Cancel flag.
+     * @param wait Wait flag.
+     */
+    protected void onKernalStop0(boolean cancel, boolean wait) {
+        // No-op.
     }
 
     /**

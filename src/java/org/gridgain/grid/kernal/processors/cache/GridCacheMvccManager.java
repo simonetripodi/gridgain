@@ -32,7 +32,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Manages lock order within a thread.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /** Maxim number of removed locks. */
@@ -67,6 +67,10 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
     /** Finish futures. */
     private final Queue<FinishLockFuture> finishFuts = new ConcurrentLinkedQueue<FinishLockFuture>();
+
+    /** Logger. */
+    @SuppressWarnings( {"FieldAccessedSynchronizedAndUnsynchronized"})
+    private GridLogger exchLog;
 
     /** Lock callback. */
     @GridToStringExclude
@@ -168,6 +172,8 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
     /** {@inheritDoc} */
     @Override protected void start0() throws GridException {
+        exchLog = cctx.logger(getClass().getName() + ".exchange");
+
         pending = cctx.isDht() ?
             new GridThreadLocal<Queue<GridCacheMvccCandidate<K>>>() {
                 @Override protected Queue<GridCacheMvccCandidate<K>> initialValue() {
@@ -698,8 +704,8 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
      *
      */
     public void recheckPendingLocks() {
-        if (log.isDebugEnabled())
-            log.debug("Rechecking pending locks for completion.");
+        if (exchLog.isDebugEnabled())
+            exchLog.debug("Rechecking pending locks for completion.");
 
         for (FinishLockFuture fut : finishFuts)
             fut.recheck();
@@ -714,9 +720,6 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
         /** Exclude IDs. */
         private final UUID[] exclIds;
-
-        /** Logger. */
-        private final GridLogger log = GridCacheMvccManager.this.log;
 
         /**
          * Empty constructor required for {@link Externalizable}.
@@ -767,13 +770,13 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                     }
                 }
                 catch (GridCacheEntryRemovedException ignored) {
-                    if (log.isDebugEnabled())
-                        log.debug("Got removed entry when adding it to finish lock future (will ignore): " + entry);
+                    if (exchLog.isDebugEnabled())
+                        exchLog.debug("Got removed entry when adding it to finish lock future (will ignore): " + entry);
                 }
             }
 
-            if (log.isDebugEnabled())
-                log.debug("Pending lock set [excludes=" + Arrays.toString(exclIds) + ", locks=" + pending + ']');
+            if (exchLog.isDebugEnabled())
+                exchLog.debug("Pending lock set [excludes=" + Arrays.toString(exclIds) + ", locks=" + pending + ']');
         }
 
         /**
@@ -825,8 +828,8 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
             }
 
             if (pending.isEmpty()) {
-                if (log.isDebugEnabled())
-                    log.debug("Finish lock future is done: " + this);
+                if (exchLog.isDebugEnabled())
+                    exchLog.debug("Finish lock future is done: " + this);
 
                 onDone();
             }
@@ -840,8 +843,8 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
             if (entry == null)
                 return;
 
-            if (log.isDebugEnabled())
-                log.debug("Rechecking entry for completion: " + entry);
+            if (exchLog.isDebugEnabled())
+                exchLog.debug("Rechecking entry for completion: " + entry);
 
             Collection<GridCacheMvccCandidate<K>> cands = pending.get(entry.key());
 
@@ -858,8 +861,8 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
                             if (U.containsObjectArray(exclIds, cand.nodeId(), cand.otherNodeId()) ||
                                 U.containsObjectArray(exclIds, cand.mappedNodeIds())) {
-                                if (log.isDebugEnabled())
-                                    log.debug("Removing candidate from mapping list [exclIds=" +
+                                if (exchLog.isDebugEnabled())
+                                    exchLog.debug("Removing candidate from mapping list [exclIds=" +
                                         Arrays.toString(exclIds) + ", cand=" + cand + ", pending=" + pending + ']');
 
                                 it.remove();
@@ -867,8 +870,8 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                             else {
                                 if ((rmts == null || !rmts.contains(cand)) &&
                                     (!dht || locs == null || !locs.contains(cand))) {
-                                    if (log.isDebugEnabled())
-                                        log.debug("Removing candidate from mapping list [exclIds=" +
+                                    if (exchLog.isDebugEnabled())
+                                        exchLog.debug("Removing candidate from mapping list [exclIds=" +
                                             Arrays.toString(exclIds) + ", cand=" + cand + ", pending=" + pending + ']');
 
                                     it.remove();
@@ -881,16 +884,16 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                     }
                 }
                 catch (GridCacheEntryRemovedException ignored) {
-                    if (log.isDebugEnabled())
-                        log.debug("Got removed entry when adding it to finish lock future " +
+                    if (exchLog.isDebugEnabled())
+                        exchLog.debug("Got removed entry when adding it to finish lock future " +
                             "(will remove pending lock): " + entry);
 
                     pending.remove(entry.key());
                 }
                 finally {
                     if (pending.isEmpty()) {
-                        if (log.isDebugEnabled())
-                            log.debug("Finish lock future is done: " + this);
+                        if (exchLog.isDebugEnabled())
+                            exchLog.debug("Finish lock future is done: " + this);
 
                         onDone();
                     }

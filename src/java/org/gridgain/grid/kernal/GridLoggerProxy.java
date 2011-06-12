@@ -22,7 +22,7 @@ import static org.gridgain.grid.GridSystemProperties.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridLoggerProxy extends GridMetadataAwareAdapter implements GridLogger, Externalizable {
     /** */
@@ -37,6 +37,9 @@ public class GridLoggerProxy extends GridMetadataAwareAdapter implements GridLog
 
     /** */
     private String gridName;
+
+    /** */
+    private String id8;
 
     /** */
     private boolean gg;
@@ -64,13 +67,15 @@ public class GridLoggerProxy extends GridMetadataAwareAdapter implements GridLog
      * @param impl Logger implementation to proxy to.
      * @param ctgr Optional logger category.
      * @param gridName Grid name (can be {@code null} for default grid).
+     * @param id8 Node ID.
      */
-    public GridLoggerProxy(GridLogger impl, @Nullable Object ctgr, @Nullable String gridName) {
+    public GridLoggerProxy(GridLogger impl, @Nullable Object ctgr, @Nullable String gridName, String id8) {
         assert impl != null;
 
         this.impl = impl;
         this.ctgr = ctgr;
         this.gridName = gridName;
+        this.id8 = id8;
 
         // Make sure we don't hide user's log.
         // We should only hide GridGain's log in QUIET mode.
@@ -116,7 +121,7 @@ public class GridLoggerProxy extends GridMetadataAwareAdapter implements GridLog
     @Override public GridLogger getLogger(Object ctgr) {
         assert ctgr != null;
         
-        return new GridLoggerProxy(impl.getLogger(ctgr), ctgr, gridName);
+        return new GridLoggerProxy(impl.getLogger(ctgr), ctgr, gridName, id8);
     }
 
     /** {@inheritDoc} */
@@ -172,7 +177,7 @@ public class GridLoggerProxy extends GridMetadataAwareAdapter implements GridLog
      * @return Enriched message or the original one.
      */
     private String enrich(@Nullable String m) {
-        return logGridName && m != null ? "<" + gridName + "> " + m : m;
+        return logGridName && m != null ? "<" + gridName + '-' + id8 + "> " + m : m;
     }
 
     /** {@inheritDoc} */

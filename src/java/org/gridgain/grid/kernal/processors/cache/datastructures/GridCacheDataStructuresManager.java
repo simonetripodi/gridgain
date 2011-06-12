@@ -18,16 +18,16 @@ import org.jetbrains.annotations.*;
  * Manager of data structures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheManager<K, V> {
     /**
-     * Will get a sequence from cache and create one if it's not cached.
+     * Gets a sequence from cache or creates one if it's not cached.
      *
      * @param name Sequence name.
      * @param initVal Initial value for sequence. If sequence already cached, {@code initVal} will be ignored.
      * @param persistent Persistent flag.
-     * @param create  If {@code true} sequence will be created in case it doesn't in cache.
+     * @param create  If {@code true} sequence will be created in case it is not in cache.
      * @return Sequence.
      * @throws GridException If loading failed.
      */
@@ -35,7 +35,7 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
         throws GridException;
 
     /**
-     * Remove sequence from cache.
+     * Removes sequence from cache.
      *
      * @param name Sequence name.
      * @return Method returns {@code true} if sequence has been removed and {@code false} if it's not cached.
@@ -44,13 +44,13 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
     public abstract boolean removeSequence(String name) throws GridException;
 
     /**
-     * Will get an atomic long from cache and create one if it's not cached.
+     * Gets an atomic long from cache or creates one if it's not cached.
      *
      * @param name Name of atomic long.
      * @param initVal Initial value for atomic long. If atomic long already cached, {@code initVal}
      *        will be ignored.
      * @param persistent Persistent flag.
-     * @param create If {@code true} atomic long will be created in case it doesn't in cache.
+     * @param create If {@code true} atomic long will be created in case it is not in cache.
      * @return Atomic long.
      * @throws GridException If loading failed.
      */
@@ -58,7 +58,7 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
         throws GridException;
 
     /**
-     * Remove atomic long from cache.
+     * Removes atomic long from cache.
      *
      * @param name Atomic long name.
      * @return Method returns {@code true} if atomic long has been removed and {@code false} if it's not cached.
@@ -67,13 +67,13 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
     public abstract boolean removeAtomicLong(String name) throws GridException;
 
     /**
-     * Will get a atomic reference from cache and create one if it's not cached.
+     * Gets an atomic reference from cache or creates one if it's not cached.
      *
      * @param name Name of atomic reference.
      * @param initVal Initial value for atomic reference. If atomic reference already cached, {@code initVal}
      *        will be ignored.
      * @param persistent Persistent flag.
-     * @param create If {@code true} atomic reference will be created in case it doesn't in cache.
+     * @param create If {@code true} atomic reference will be created in case it is not in cache.
      * @return Atomic reference.
      * @throws GridException If loading failed.
      */
@@ -81,7 +81,7 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
         boolean persistent, boolean create) throws GridException;
 
     /**
-     * Remove atomic reference from cache.
+     * Removes atomic reference from cache.
      *
      * @param name Atomic reference name.
      * @return Method returns {@code true} if atomic reference has been removed and {@code false} if it's not cached.
@@ -90,14 +90,14 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
     public abstract boolean removeAtomicReference(String name) throws GridException;
 
     /**
-     * Will get a atomic stamped from cache and create one if it's not cached.
+     * Gets an atomic stamped from cache or creates one if it's not cached.
      *
      * @param name Name of atomic stamped.
      * @param initVal Initial value for atomic stamped. If atomic stamped already cached, {@code initVal}
      *        will be ignored.
      * @param initStamp Initial stamp for atomic stamped. If atomic stamped already cached, {@code initStamp}
      *        will be ignored.
-     * @param create If {@code true} atomic stamped will be created in case it doesn't in cache.
+     * @param create If {@code true} atomic stamped will be created in case it is not in cache.
      * @return Atomic stamped.
      * @throws GridException If loading failed.
      */
@@ -105,7 +105,7 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
         @Nullable S initStamp, boolean create) throws GridException;
 
     /**
-     * Remove atomic stamped from cache.
+     * Removes atomic stamped from cache.
      *
      * @param name Atomic stamped name.
      * @return Method returns {@code true} if atomic stamped has been removed and {@code false} if it's not cached.
@@ -114,13 +114,13 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
     public abstract boolean removeAtomicStamped(String name) throws GridException;
 
     /**
-     * Will get a queue from cache and create one if it's not cached.
+     * Gets a queue from cache or creates one if it's not cached.
      *
      * @param name Name of queue.
      * @param type Type of queue.
      * @param capacity Max size of queue.
      * @param collocated Collocation flag.
-     * @param create If {@code true} queue will be created in case it doesn't in cache.
+     * @param create If {@code true} queue will be created in case it is not in cache.
      * @return Instance of queue.
      * @throws GridException If failed.
      */
@@ -128,7 +128,7 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
         boolean collocated, boolean create) throws GridException;
 
     /**
-     * Remove queue from cache.
+     * Removes queue from cache.
      *
      * @param name Queue name.
      * @param batchSize Batch size.
@@ -138,6 +138,36 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
     public abstract boolean removeQueue(String name, int batchSize) throws GridException;
 
     /**
+     * Gets or creates count down latch. If count down latch is not found in cache,
+     * it is created using provided name and count parameter.
+     * <p>
+     * Note that count down latch is only available in Enterprise Edition.
+     *
+     * @param name Name of the latch.
+     * @param cnt Initial count.
+     * @param autoDel {@code True} to automatically delete latch from cache when
+     *      its count reaches zero.
+     * @param create If {@code true} latch will be created in case it is not in cache,
+     *      if it is {@code false} all parameters except {@code name} are ignored.
+     * @return Count down latch for the given name or {@code null} if it is not found and
+     *      {@code create} is false.
+     * @throws GridException If operation failed.
+     */
+    @Nullable public abstract GridCacheCountDownLatch countDownLatch(String name, int cnt, boolean autoDel,
+        boolean create) throws GridException;
+
+    /**
+     * Removes count down latch from cache.
+     * <p>
+     * Note that count down latch is only available in Enterprise Edition.
+     *
+     * @param name Name of the latch.
+     * @return Count down latch for the given name.
+     * @throws GridException If operation failed.
+     */
+    public abstract boolean removeCountDownLatch(String name) throws GridException;
+
+    /**
      * Transaction committed callback for transaction manager.
      *
      * @param tx Committed transaction.
@@ -145,8 +175,9 @@ public abstract class GridCacheDataStructuresManager<K, V> extends GridCacheMana
     public abstract void onTxCommitted(GridCacheTxEx<K, V> tx);
 
     /**
+     * Gets cache of methods and fields annotated by {@link GridCacheQueuePriority}.
      *
-     * @return Cache of annotated by {@link GridCacheQueuePriority} methods and fields.
+     * @return Cache of methods and fields annotated by {@link GridCacheQueuePriority}.
      */
     public abstract GridCacheAnnotationHelper<GridCacheQueuePriority> priorityAnnotations();
 }

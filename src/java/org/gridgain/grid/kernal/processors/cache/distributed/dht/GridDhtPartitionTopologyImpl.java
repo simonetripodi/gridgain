@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -102,8 +102,14 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
             GridDhtLocalPartition<K, V> p = it.next();
 
             if (!p.valid()) {
+                if (log.isDebugEnabled())
+                    log.debug("Waiting for renting partition: " + p);
+
                 // Wait for partition to empty out.
                 p.rent().get();
+
+                if (log.isDebugEnabled())
+                    log.debug("Finished waiting for renting partition: " + p);
 
                 // Remove evicted partition.
                 it.remove();

@@ -23,15 +23,13 @@ import org.gridgain.grid.util.future.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 /**
  * Query future adapter.
  *
  * @param <R> Result type.
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAdapter<Collection<R>>
     implements GridCacheQueryFuture<R>, GridTimeoutObject {
@@ -47,32 +45,32 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
     /** */
     protected final GridCacheQueryBaseAdapter<K, V> qry;
 
-    /** */
-    protected final Collection<UUID> subgrid = new ConcurrentLinkedQueue<UUID>();
+    /** Set of received keys used to deduplicate query result set. */
+    private final Collection<K> keys = new HashSet<K>();
 
     /** */
     private final Queue<Collection<Object>> queue = new LinkedList<Collection<Object>>();
 
     /** */
-    protected final Collection<Object> allColl = new ConcurrentLinkedQueue<Object>();
+    protected final Collection<Object> allColl = new LinkedList<Object>();
 
     /** */
-    private AtomicInteger cnt = new AtomicInteger(0);
+    private volatile int cnt;
 
     /** */
     private Iterator<R> iter;
 
     /** */
-    private final Object mux = new Object();
+    protected final Object mux = new Object();
 
     /** */
-    private long startTime;
-
-    /** */
-    protected GridReducer<Object, Object> locRdc;
+    protected volatile GridReducer<Object, Object> locRdc;
 
     /** */
     private UUID timeoutId = UUID.randomUUID();
+
+    /** */
+    private long startTime;
 
     /** */
     private long endTime;
@@ -101,11 +99,13 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
      * @param qry Query.
      * @param loc Local query or not.
      * @param single Single result or not.
+     * @param rmtRdcOnly {@code true} for reduce query when using remote reducer only,
+     *      otherwise it is always {@code false}.
      * @param pageLsnr Page listener which is executed each time on page arrival.
      */
     @SuppressWarnings("unchecked")
     protected GridCacheQueryFutureAdapter(GridCacheContext<K, V> ctx, GridCacheQueryBaseAdapter<K, V> qry,
-        boolean loc, boolean single, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
+        boolean loc, boolean single, boolean rmtRdcOnly, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
         super(ctx.kernalContext());
 
         this.ctx = ctx;
@@ -123,11 +123,14 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
         ctx.time().addTimeoutObject(this);
 
         if (qry instanceof GridCacheReduceQueryAdapter) {
-            GridCacheReduceQueryAdapter tmp = (GridCacheReduceQueryAdapter)qry;
+            GridCacheReduceQueryAdapter rdcQry = (GridCacheReduceQueryAdapter)qry;
 
-            locRdc = tmp.isRemoteOnly() ? null : tmp.localReducer() == null ?
-                null : (GridReducer<Object, Object>)tmp.localReducer().apply(qry.getClosureArguments());
+            locRdc = rmtRdcOnly ?
+                null :
+                rdcQry.localReducer() == null ?
+                    null : (GridReducer<Object, Object>)rdcQry.localReducer().apply(qry.getClosureArguments());
         }
+
     }
 
     /**
@@ -148,7 +151,7 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
 
     /** {@inheritDoc} */
     @Override public int size() {
-        return cnt.get();
+        return cnt;
     }
 
     /** {@inheritDoc} */
@@ -257,13 +260,34 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
     /**
      * @param col Collection.
      */
-    @SuppressWarnings( {"unchecked"})
+    @SuppressWarnings({"unchecked"})
     protected void enqueue(Collection<?> col) {
         assert Thread.holdsLock(mux);
 
-        cnt.addAndGet(col.size());
-
         queue.add((Collection<Object>)col);
+
+        cnt += col.size();
+    }
+
+    /**
+     * @param col Query data collection.
+     * @return If dedup flag is {@code true} deduplicated collection (considering keys),
+     *      otherwise passed in collection without any modifications.
+     */
+    @SuppressWarnings({"unchecked"})
+    private Collection<?> dedupIfRequired(Collection<?> col) {
+        if (!qry.enableDedup())
+            return col;
+
+        Collection<Object> dedupCol = new LinkedList<Object>();
+
+        synchronized (mux) {
+            for (Object o : col)
+                if (!(o instanceof Map.Entry) || keys.add(((Map.Entry<K, V>)o).getKey()))
+                    dedupCol.add(o);
+        }
+
+        return dedupCol;
     }
 
     /**
@@ -272,7 +296,7 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
      * @param err Error (if was).
      * @param finished Finished or not.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NonPrivateFieldAccessedInSynchronizedContext"})
     public void onPage(@Nullable UUID nodeId, @Nullable Collection<?> data, @Nullable Throwable err, boolean finished) {
         if (log.isDebugEnabled())
             log.debug("Received query result page [nodeId=" + nodeId + ", qryId=" + qry.id + ", data=" + data +
@@ -291,22 +315,19 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
             if (data == null)
                 data = Collections.emptyList();
 
+            data = dedupIfRequired((Collection<Object>)data);
+
             if (pageLsnr != null)
                 pageLsnr.apply(nodeId, (Collection<R>)data);
 
-            boolean futFinish = false;
-
-            if (finished)
-                futFinish = onLastPage(nodeId);
-
             if (locRdc == null) {
-                if (qry.keepAll())
-                    allColl.addAll(maskNulls((Collection<Object>)data));
-
                 synchronized (mux) {
                     enqueue(data);
 
-                    if (futFinish) {
+                    if (qry.keepAll())
+                        allColl.addAll(maskNulls((Collection<Object>)data));
+
+                    if (finished && onLastPage(nodeId)) {
                         clear();
 
                         onDone((Collection<R>)(qry.keepAll() ? unmaskNulls(allColl) : data));
@@ -319,12 +340,12 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
                 for (Object obj : data)
                     locRdc.collect(obj);
 
-                if (futFinish) {
-                    clear();
+                synchronized (mux) {
+                    if (finished && onLastPage(nodeId)) {
+                        clear();
 
-                    List<R> resCol = Collections.singletonList((R)locRdc.apply());
+                        List<R> resCol = Collections.singletonList((R)locRdc.apply());
 
-                    synchronized (mux) {
                         enqueue(resCol);
 
                         onDone(resCol);
@@ -431,6 +452,17 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
     /**
      *
      */
+    public void printMemoryStats() {
+        X.println(">>> Query future memory statistics.");
+        X.println(">>>  queueSize: " + queue.size());
+        X.println(">>>  allCollSize: " + allColl.size());
+        X.println(">>>  keysSize: " + keys.size());
+        X.println(">>>  cnt: " + cnt);
+    }
+
+    /**
+     *
+     */
     protected static class LocalQueryRunnable<K, V, R> implements GridPlainRunnable {
         /** */
         private GridCacheQueryFutureAdapter<K, V, R> fut;
@@ -470,7 +502,7 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
          * @param single Single result or not.
          * @return Query info.
          */
-        @SuppressWarnings( {"unchecked"})
+        @SuppressWarnings({"unchecked"})
         private GridCacheQueryInfo<K, V> localQueryInfo(GridCacheQueryFutureAdapter<K, V, R> fut, boolean single) {
             this.fut = fut;
 

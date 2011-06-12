@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -1577,25 +1577,20 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"IfMayBeConditional"})
     @Override public long expireTime() throws GridCacheEntryRemovedException {
-        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
+        GridCacheTxLocalAdapter<K, V> tx;
+
+        if (cctx.isDht())
+            tx = cctx.dht().near().context().tm().localTx();
+        else
+            tx = cctx.tm().localTx();
 
         if (tx != null) {
             long time = tx.entryExpireTime(key);
 
             if (time > 0)
                 return time;
-        }
-
-        if (cctx.isDht()) {
-            tx = cctx.dht().near().context().tm().localTx();
-
-            if (tx != null) {
-                long time = tx.entryExpireTime(key);
-
-                if (time > 0)
-                    return time;
-            }
         }
 
         synchronized (mux) {
@@ -1606,25 +1601,20 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"IfMayBeConditional"})
     @Override public long ttl() throws GridCacheEntryRemovedException {
-        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
+        GridCacheTxLocalAdapter<K, V> tx;
+
+        if (cctx.isDht())
+            tx = cctx.dht().near().context().tm().localTx();
+        else
+            tx = cctx.tm().localTx();
 
         if (tx != null) {
             long entryTtl = tx.entryTtl(key);
 
             if (entryTtl > 0)
                 return entryTtl;
-        }
-
-        if (cctx.isDht()) {
-            tx = cctx.dht().near().context().tm().localTx();
-
-            if (tx != null) {
-                long entryTtl = tx.entryTtl(key);
-
-                if (entryTtl > 0)
-                    return entryTtl;
-            }
         }
 
         synchronized (mux) {
@@ -1869,25 +1859,19 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"IfMayBeConditional"})
     @Override public void ttl(long ttl) throws GridCacheEntryRemovedException {
         assert ttl >= 0;
 
-        boolean txUpdated = false;
-
-        GridCacheTxLocalAdapter<K, V> tx = cctx.tm().localTx();
+        GridCacheTxLocalAdapter<K, V> tx;
 
         // Make sure to update only user transaction.
-        if (tx != null)
-            txUpdated = tx.entryTtl(key, ttl);
-
-        else if (cctx.isDht()) {
+        if (cctx.isDht())
             tx = cctx.dht().near().context().tm().localTx();
+        else
+            tx = cctx.tm().localTx();
 
-            if (tx != null)
-                txUpdated |= tx.entryTtl(key, ttl);
-        }
-
-        if (txUpdated)
+        if (tx != null && tx.entryTtl(key, ttl))
             return;
 
         synchronized (mux) {

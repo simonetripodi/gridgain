@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Query and index manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V> {
@@ -216,11 +216,13 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      *
      * @param qry Query.
      * @param single {@code true} if single result requested, {@code false} if multiple.
+     * @param rmtRdcOnly {@code true} for reduce query when using remote reducer only,
+     *      otherwise it is always {@code false}.
      * @param pageLsnr Page listener.
      * @return Iterator over query results. Note that results become available as they come.
      */
     public abstract <R> GridCacheQueryFuture<R> queryLocal(GridCacheQueryBaseAdapter<K, V> qry, boolean single,
-        @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr);
+        boolean rmtRdcOnly, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr);
 
     /**
      * Executes distributed query.
@@ -228,11 +230,14 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      * @param qry Query.
      * @param nodes Nodes.
      * @param single {@code true} if single result requested, {@code false} if multiple.
+     * @param rmtOnly {@code true} for reduce query when using remote reducer only,
+     *      otherwise it is always {@code false}.
      * @param pageLsnr Page listener.
      * @return Iterator over query results. Note that results become available as they come.
      */
     public abstract <R> GridCacheQueryFuture<R> queryDistributed(GridCacheQueryBaseAdapter<K, V> qry,
-        Collection<GridRichNode> nodes, boolean single, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr);
+        Collection<GridRichNode> nodes, boolean single, boolean rmtOnly,
+        @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr);
 
     /**
      * Performs query.

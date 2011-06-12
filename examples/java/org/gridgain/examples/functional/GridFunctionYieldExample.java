@@ -19,7 +19,7 @@ import java.util.*;
  * Demonstrates various functional APIs from {@link org.gridgain.grid.lang.GridFunc} class.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridFunctionYieldExample {
     /**
@@ -78,7 +78,7 @@ public class GridFunctionYieldExample {
      * This class represents a temperature indicator with various formats.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     private static class Temperature {
         /** Temperature value in Fahrenheit. */
@@ -106,7 +106,7 @@ public class GridFunctionYieldExample {
      * This class is intended for building {@link Temperature} instances from {@code String} values.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     private static class TemperatureFactory {
         /**

@@ -27,7 +27,7 @@ import static org.gridgain.grid.GridEventType.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
     /** */
@@ -59,7 +59,7 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         stopSpi();
 
         if (log.isDebugEnabled()) {

@@ -22,7 +22,7 @@ import static org.gridgain.grid.cache.GridCacheMode.*;
  * Local query manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheLocalQueryManager<K, V> extends GridCacheQueryManager<K, V> {
     /** {@inheritDoc} */
@@ -52,18 +52,19 @@ public class GridCacheLocalQueryManager<K, V> extends GridCacheQueryManager<K, V
 
     /** {@inheritDoc} */
     @Override public <R> GridCacheQueryFuture<R> queryLocal(GridCacheQueryBaseAdapter<K, V> qry, boolean single,
-        @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
+        boolean rmtRdcOnly, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
         if (log.isDebugEnabled())
             log.debug("Executing query on local node: " + qry);
 
         assert cctx.config().getCacheMode() == LOCAL;
 
-        return new GridCacheLocalQueryFuture<K, V, R>(cctx, qry, true, single, pageLsnr);
+        return new GridCacheLocalQueryFuture<K, V, R>(cctx, qry, true, single, rmtRdcOnly, pageLsnr);
     }
 
     /** {@inheritDoc} */
     @Override public <R> GridCacheQueryFuture<R> queryDistributed(GridCacheQueryBaseAdapter<K, V> qry,
-        Collection<GridRichNode> nodes, boolean single, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
+        Collection<GridRichNode> nodes, boolean single, boolean rmtOnly,
+        @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
         assert cctx.config().getCacheMode() == LOCAL;
 
         throw new GridRuntimeException("Distributed queries are not available for local cache " +

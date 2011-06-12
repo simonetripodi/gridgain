@@ -18,7 +18,7 @@ import org.gridgain.grid.cache.*;
  * Note that distributed atomic sequence is only available in <b>Enterprise Edition</b>.
  * <p>
  * <h1 class="header">Functionality</h1>
- * Distrubuted atomic sequence includes the following main functionality:
+ * Distributed atomic sequence includes the following main functionality:
  * <ul>
  * <li>
  * Method {@link #get()} synchronously gets current value from atomic sequence.
@@ -52,7 +52,7 @@ import org.gridgain.grid.cache.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  * @see GridCache#atomicSequence(String)
  * @see GridCache#atomicSequence(String, long, boolean)
  */

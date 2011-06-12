@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheMvccFuture<K, V, GridCacheTx> {
@@ -453,7 +453,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
 
             GridDistributedTxMapping<K, V> nearMapping = nearMap.get(n.id());
 
-            MiniFuture fut = new MiniFuture(dhtMapping, nearMapping);
+            MiniFuture fut = new MiniFuture(n.id(), dhtMapping, nearMapping);
 
             add(fut); // Append new future.
 
@@ -480,7 +480,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
 
                 ret = true;
 
-                MiniFuture fut = new MiniFuture(null, nearMapping);
+                MiniFuture fut = new MiniFuture(nearMapping.node().id(), null, nearMapping);
 
                 add(fut); // Append new future.
 
@@ -580,6 +580,9 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
         /** */
         private final GridUuid futId = GridUuid.randomUuid();
 
+        /** Node ID. */
+        private UUID nodeId;
+
         /** DHT mapping. */
         @GridToStringInclude
         private GridDistributedTxMapping<K, V> dhtMapping;
@@ -596,14 +599,16 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
         }
 
         /**
+         * @param nodeId Node ID.
          * @param dhtMapping Mapping.
          * @param nearMapping nearMapping.
          */
-        MiniFuture(GridDistributedTxMapping<K, V> dhtMapping, GridDistributedTxMapping<K, V> nearMapping) {
+        MiniFuture(UUID nodeId, GridDistributedTxMapping<K, V> dhtMapping, GridDistributedTxMapping<K, V> nearMapping) {
             super(cctx.kernalContext());
 
             assert dhtMapping == null || nearMapping == null || dhtMapping.node() == nearMapping.node();
 
+            this.nodeId = nodeId;
             this.dhtMapping = dhtMapping;
             this.nearMapping = nearMapping;
         }
@@ -639,6 +644,9 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
         void onResult(GridTopologyException e) {
             if (log.isDebugEnabled())
                 log.debug("Remote node left grid while sending or waiting for reply (will ignore): " + this);
+
+            if (tx != null)
+                tx.removeMapping(nodeId);
 
             onDone(tx);
         }

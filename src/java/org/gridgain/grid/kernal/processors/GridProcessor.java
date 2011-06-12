@@ -9,47 +9,16 @@
 
 package org.gridgain.grid.kernal.processors;
 
-import org.gridgain.grid.*;
+import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.util.tostring.*;
 
 /**
- * TODO: add file description.
+ * Interface for all processors.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @GridToStringExclude
-public interface GridProcessor {
-    /**
-     * Starts grid processor.
-     *
-     * @throws GridException Throws in case of any errors.
-     */
-    public void start() throws GridException;
-
-    /**
-     * Stops grid processor.
-     *
-     * @param cancel If {@code true}, then all ongoing tasks or jobs for relevant
-     *      processors need to be cancelled.
-     * @param wait Flag indicating whether to wait for task completion.
-     * @throws GridException Thrown in case of any errors.
-     */
-    public void stop(boolean cancel, boolean wait) throws GridException;
-
-    /**
-     * Callback that notifies that kernal has successfully started,
-     * including all managers and processors.
-     *
-     * @throws GridException Thrown in case of any errors.
-     */
-    public void onKernalStart() throws GridException;
-
-    /**
-     * Callback to notify that kernal is about to stop.
-     *
-     * @param cancel Flag indicating whether jobs should be canceled.
-     * @param wait Flag indicating whether to wait for task completion.
-     */
-    public void onKernalStop(boolean cancel, boolean wait);
+public interface GridProcessor extends GridComponent{
+    // No-op.
 }

@@ -21,7 +21,7 @@ import java.util.*;
  * Local query future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridCacheLocalQueryFuture<K, V, R> extends GridCacheQueryFutureAdapter<K, V, R> {
     /**
@@ -36,11 +36,13 @@ public class GridCacheLocalQueryFuture<K, V, R> extends GridCacheQueryFutureAdap
      * @param qry Query.
      * @param loc Local query or not.
      * @param single Single result or not.
+     * @param rmtRdcOnly {@code true} for reduce query when using remote reducer only,
+     *      otherwise it is always {@code false}.
      * @param pageLsnr Page listener.
      */
     protected GridCacheLocalQueryFuture(GridCacheContext<K, V> ctx, GridCacheQueryBaseAdapter<K, V> qry,
-        boolean loc, boolean single, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
-        super(ctx, qry, loc, single, pageLsnr);
+        boolean loc, boolean single, boolean rmtRdcOnly, @Nullable GridInClosure2<UUID, Collection<R>> pageLsnr) {
+        super(ctx, qry, loc, single, rmtRdcOnly, pageLsnr);
 
         locFut = ctx.closures().runLocalSafe(new LocalQueryRunnable<K, V, R>(ctx.queries(), this, single), true);
     }

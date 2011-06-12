@@ -46,10 +46,17 @@ import java.util.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 @GridToStringExclude
-public interface GridKernalContext extends GridMetadataAware {
+public interface GridKernalContext extends GridMetadataAware, Iterable<GridComponent> {
+    /**
+     * Gets list of all grid components in the order they were added.
+     *
+     * @return List of all grid components in the order they were added.
+     */
+    public List<GridComponent> components();
+
     /**
      * Gets local node ID.
      *

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implements GridCacheMappedVersion {
     /** */
@@ -388,6 +388,14 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
 
     /**
      * @param nodeId Node ID.
+     * @return {@code True} if mapping was removed.
+     */
+    boolean removeMapping(UUID nodeId) {
+        return removeMapping(nodeId, null, dhtMap) | removeMapping(nodeId, null, nearMap);
+    }
+
+    /**
+     * @param nodeId Node ID.
      * @param entry Entry to remove.
      * @return {@code True} if was removed.
      */
@@ -410,16 +418,20 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      * @param map Map to remove from.
      * @return {@code True} if was removed.
      */
-    private boolean removeMapping(UUID nodeId, GridCacheEntryEx<K, V> entry,
+    private boolean removeMapping(UUID nodeId, @Nullable GridCacheEntryEx<K, V> entry,
         Map<UUID, GridDistributedTxMapping<K, V>> map) {
-        GridCacheTxEntry<K, V> txEntry = txMap.get(entry.key());
+        if (entry != null) {
+            GridCacheTxEntry<K, V> txEntry = txMap.get(entry.key());
 
-        if (txEntry == null)
-            return false;
+            if (txEntry == null)
+                return false;
 
-        GridDistributedTxMapping<K, V> m = map.get(nodeId);
+            GridDistributedTxMapping<K, V> m = map.get(nodeId);
 
-        return m != null && m.removeEntry(txEntry);
+            return m != null && m.removeEntry(txEntry);
+        }
+        else
+            return map.remove(nodeId) != null;
     }
 
     /**
@@ -497,6 +509,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
         if (entry != null) {
             entry.op(e.op()); // Absolutely must set operation, as default is DELETE.
             entry.value(e.value());
+            entry.ttl(e.ttl());
+            entry.expireTime(e.expireTime());
             entry.filters(e.filters());
         }
         else {

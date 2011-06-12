@@ -9,6 +9,7 @@
 
 package org.gridgain.grid.util;
 
+import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -25,7 +26,7 @@ import java.util.concurrent.*;
  * classes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridLogThrottle {
     /** Default throttle timeout in milliseconds (value is <tt>5 * 60 * 1000</tt>). */
@@ -35,8 +36,8 @@ public class GridLogThrottle {
     private static int throttleTimeout = DFLT_THROTTLE_TIMEOUT;
 
     /** Errors. */
-    private static final ConcurrentMap<T2<Class<? extends Throwable>, String>, Long> errors =
-        new ConcurrentHashMap<T2<Class<? extends Throwable>, String>, Long>();
+    private static final ConcurrentMap<GridTuple2<Class<? extends Throwable>, String>, Long> errors =
+        new ConcurrentHashMap<GridTuple2<Class<? extends Throwable>, String>, Long>();
 
     /**
      * Sets system-wide log throttle timeout.
@@ -60,12 +61,11 @@ public class GridLogThrottle {
      * Logs error if needed.
      *
      * @param log Logger.
-     * @param e Error.
+     * @param e Error (optional).
      * @param msg Message.
      */
-    public static void error(GridLogger log, Throwable e, String msg) {
+    public static void error(GridLogger log, @Nullable Throwable e, String msg) {
         assert log != null;
-        assert e != null;
         assert !F.isEmpty(msg);
 
         log(log, e, msg, null, true);
@@ -75,12 +75,11 @@ public class GridLogThrottle {
      * Logs warning if needed.
      *
      * @param log Logger.
-     * @param e Error.
+     * @param e Error (optional).
      * @param msg Message.
      */
-    public static void warn(GridLogger log, Throwable e, String msg) {
+    public static void warn(GridLogger log, @Nullable Throwable e, String msg) {
         assert log != null;
-        assert e != null;
         assert !F.isEmpty(msg);
 
         log(log, e, msg, null, false);
@@ -90,11 +89,11 @@ public class GridLogThrottle {
      * Logs warning if needed.
      *
      * @param log Logger.
-     * @param e Error.
+     * @param e Error (optional).
      * @param longMsg Long message (or just message).
      * @param shortMsg Short message for quite logging.
      */
-    public static void warn(GridLogger log, Throwable e, String longMsg, @Nullable String shortMsg) {
+    public static void warn(GridLogger log, @Nullable Throwable e, String longMsg, @Nullable String shortMsg) {
         assert log != null;
         assert e != null;
         assert !F.isEmpty(longMsg);
@@ -106,17 +105,20 @@ public class GridLogThrottle {
      * Logs message if needed using desired level.
      *
      * @param log Logger.
-     * @param e Error.
+     * @param e Error (optional).
      * @param longMsg Long message (or just message).
      * @param shortMsg Short message for quite logging.
      * @param error If {@code true} ERROR level is used.
      */
-    private static void log(GridLogger log, Throwable e, String longMsg, @Nullable String shortMsg, boolean error) {
+    @SuppressWarnings({"RedundantTypeArguments"})
+    private static void log(GridLogger log, @Nullable Throwable e, String longMsg, @Nullable String shortMsg,
+        boolean error) {
         assert log != null;
-        assert e != null;
         assert !F.isEmpty(longMsg);
 
-        T2<Class<? extends Throwable>, String> tup = new T2<Class<? extends Throwable>, String>(e.getClass(), e.getMessage());
+        GridTuple2<Class<? extends Throwable>, String> tup =
+            e != null ? F.<Class<? extends Throwable>, String>t(e.getClass(), e.getMessage()) :
+                F.<Class<? extends Throwable>, String>t(null, longMsg);
 
         while (true) {
             Long loggedTs = errors.get(tup);
@@ -125,8 +127,12 @@ public class GridLogThrottle {
 
             if (loggedTs == null || loggedTs < curTs - throttleTimeout) {
                 if (replace(tup, loggedTs, curTs)) {
-                    if (error)
-                        U.error(log, longMsg, e);
+                    if (error) {
+                        if (e != null)
+                            U.error(log, longMsg, e);
+                        else
+                            U.error(log, longMsg);
+                    }
                     else
                         U.warn(log, longMsg, F.isEmpty(shortMsg) ? longMsg : shortMsg);
 
@@ -145,7 +151,8 @@ public class GridLogThrottle {
      * @param newStamp New timestamp.
      * @return {@code True} if throttle value was replaced.
      */
-    private static boolean replace(T2<Class<? extends Throwable>, String> t, @Nullable Long oldStamp, Long newStamp) {
+    private static boolean replace(GridTuple2<Class<? extends Throwable>, String> t, @Nullable Long oldStamp,
+        Long newStamp) {
         assert newStamp != null;
 
         if (oldStamp == null) {

@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -3680,18 +3680,24 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
+    @Nullable @Override public GridCacheCountDownLatch countDownLatch(String name, int count, boolean autoDelete)
+        throws GridException {
+        return ctx.dataStructures().countDownLatch(name, count, autoDelete, true);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable @Override public GridCacheCountDownLatch countDownLatch(String name) throws GridException {
+        return ctx.dataStructures().countDownLatch(name, 0, false, false);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean removeCountDownLatch(String name) throws GridException {
+        return ctx.dataStructures().removeCountDownLatch(name);
+    }
+
+    /** {@inheritDoc} */
     @Override public void dgc() {
         ctx.dgc().dgc();
-    }
-
-    /** {@inheritDoc} */
-    @Override public void dgc(int suspectLockTimeout) {
-        ctx.dgc().dgc(suspectLockTimeout);
-    }
-
-    /** {@inheritDoc} */
-    @Override public void dgc(boolean global) {
-        ctx.dgc().dgc(global);
     }
 
     /** {@inheritDoc} */

@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
@@ -352,6 +352,26 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
             checkReaders();
 
             return !readers.isEmpty();
+        }
+    }
+
+    /**
+     * @param ver Version.
+     * @param mappings Mappings to set.
+     * @return Candidate, if one existed for the version, or {@code null} if candidate was not found.
+     * @throws GridCacheEntryRemovedException If removed.
+     */
+    public GridCacheMvccCandidate<K> mappings(GridCacheVersion ver, Collection<UUID> mappings)
+        throws GridCacheEntryRemovedException {
+        synchronized (mux) {
+            checkObsolete();
+
+            GridCacheMvccCandidate<K> cand = mvcc.candidate(ver);
+
+            if (cand != null)
+                cand.mappedNodeIds(mappings);
+
+            return cand;
         }
     }
 

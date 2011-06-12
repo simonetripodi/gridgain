@@ -40,7 +40,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.08062011
+ * @version 3.1.1c.12062011
  */
 public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
     /** */
@@ -274,9 +274,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStart() throws GridException {
-        super.onKernalStart();
-
+    @Override public void onKernalStart0() throws GridException {
         discoLsnr = new GridLocalEventListener() {
             /**
              * This listener will remove all message sets that came from failed or left node.
@@ -449,7 +447,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
     }
 
     /** {@inheritDoc} */
-    @Override public void onKernalStop() {
+    @Override public void onKernalStop0(boolean cancel, boolean wait) {
         // No more communication messages.
         getSpi().setListener(null);
 
@@ -486,12 +484,10 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
 
         if (evtMgr != null && discoLsnr != null)
             evtMgr.removeLocalEventListener(discoLsnr);
-
-        super.onKernalStop();
     }
 
     /** {@inheritDoc} */
-    @Override public void stop() throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         stopSpi();
 
         // Stop should be done in proper order.
@@ -1437,7 +1433,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * @return Communication future.
      */
     public GridIoFuture sendSync(GridNode node, String topic, Object msg, long timeout,
-        GridIoPolicy policy, GridIoResultListener lsnr) {
+        GridIoPolicy policy, @Nullable GridIoResultListener lsnr) {
         return sendSyncByNodeId(node.id(), topic, msg, timeout, policy, lsnr);
     }
 
@@ -1451,7 +1447,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * @return Communication future.
      */
     public GridIoFuture sendSyncByNodeId(UUID nodeId, String topic, Object msg, long timeout,
-        GridIoPolicy policy, GridIoResultListener lsnr) {
+        GridIoPolicy policy, @Nullable GridIoResultListener lsnr) {
         return sendSyncByNodeId(Collections.singletonList(nodeId), topic, -1, msg, timeout, policy, lsnr);
     }
 
@@ -1465,7 +1461,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * @return Communication future.
      */
     public GridIoFuture sendSync(Collection<GridNode> nodes, String topic, Object msg,
-        long timeout, GridIoPolicy policy, GridIoResultListener lsnr) {
+        long timeout, GridIoPolicy policy, @Nullable GridIoResultListener lsnr) {
         return sendSync(nodes, topic, -1, msg, policy, -1, timeout, lsnr);
     }
 
@@ -1708,7 +1704,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a pair of listener and its corresponding message p.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     @SuppressWarnings("deprecation")
     private class GridFilteredMessageListener implements GridMessageListener {
@@ -1760,7 +1756,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a message listener wrapper that knows about peer deployment.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     @SuppressWarnings("deprecation")
     private class GridUserMessageListener implements GridMessageListener {
@@ -1856,7 +1852,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * Ordered communication message set.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.08062011
+     * @version 3.1.1c.12062011
      */
     private class GridCommunicationMessageSet implements GridTimeoutObject {
         /** */
