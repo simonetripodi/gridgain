@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */

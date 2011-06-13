@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.*;
  * {@link Collection#remove(Object)} was called which can lead to memory leaks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> implements Queue<E> {
     /** Dummy stamp holder. */

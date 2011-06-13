@@ -216,14 +216,14 @@ import static org.gridgain.grid.spi.cloud.GridCloudSpiResourceAction.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  * @see GridCloudSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.12062011")
+    version = "3.1.1c.13062011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridJvmCloudSpi extends GridSpiAdapter implements GridCloudSpi, GridJvmCloudSpiMBean {
     /** Start nodes action */

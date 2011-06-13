@@ -16,7 +16,7 @@ import java.io.*;
  * Simple extension over {@link GridTuple2} for pair of objects of the same type.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 public class GridPair<T> extends GridTuple2<T, T> {
     /**

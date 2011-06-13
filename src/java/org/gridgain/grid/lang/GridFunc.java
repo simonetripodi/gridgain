@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 public class GridFunc {
     /** */
@@ -4519,9 +4519,8 @@ public class GridFunc {
      */
     @SuppressWarnings("unchecked")
     public static <T> GridPredicate<T> and(@Nullable final GridPredicate<? super T>... ps) {
-        if (isEmpty(ps)) {
+        if (isEmpty(ps))
             return F.alwaysTrue();
-        }
 
         if (isAlwaysFalse(ps)) {
             return F.alwaysFalse();
@@ -4538,12 +4537,10 @@ public class GridFunc {
                 for (GridPredicate<? super T> p : ps) {
                     Collection<UUID> list = Arrays.asList(((GridNodePredicate)p).nodeIds());
 
-                    if (ids.isEmpty()) {
+                    if (ids.isEmpty())
                         ids.addAll(list);
-                    }
-                    else {
+                    else
                         ids.retainAll(list);
-                    }
                 }
 
                 // T must be <T extends GridNode>.
@@ -4558,11 +4555,9 @@ public class GridFunc {
                     @Override public boolean apply(T t) {
                         assert ps != null;
 
-                        for (GridPredicate<? super T> p : ps) {
-                            if (!p.apply(t)) {
+                        for (GridPredicate<? super T> p : ps)
+                            if (!p.apply(t))
                                 return false;
-                            }
-                        }
 
                         return true;
                     }

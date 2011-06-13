@@ -16,7 +16,7 @@ import org.gridgain.grid.typedef.*;
  * Regular JUnit3 test case used for JUnit3 example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 @SuppressWarnings({"ProhibitedExceptionThrown"})
 public class TestC extends TestCase {

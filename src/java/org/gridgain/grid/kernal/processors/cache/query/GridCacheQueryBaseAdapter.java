@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Query adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareAdapter implements
     GridCacheQueryBase<K, V> {
@@ -375,7 +375,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
      */
     public Class<?> queryClass(ClassLoader ldr) throws ClassNotFoundException {
         if (cls == null)
-            cls = Class.forName(clsName, true, ldr);
+            cls = clsName != null ? Class.forName(clsName, true, ldr) : null;
 
         return cls;
     }

@@ -22,7 +22,7 @@ import java.util.*;
  * transport to notify remote communication SPI's.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 class GridCoherenceCommunicationInfoAgent extends AbstractInvocable {
     /** Sender UID. */

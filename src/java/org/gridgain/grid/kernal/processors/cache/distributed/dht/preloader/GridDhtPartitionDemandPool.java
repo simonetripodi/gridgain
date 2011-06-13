@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 public class GridDhtPartitionDemandPool<K, V> {
     /** Dummy message to wake up a blocking queue if a node leaves. */

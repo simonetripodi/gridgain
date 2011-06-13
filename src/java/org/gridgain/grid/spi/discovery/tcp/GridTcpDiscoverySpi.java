@@ -159,14 +159,14 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.12062011")
+    version = "3.1.1c.13062011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
 public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscoverySpi, GridTcpDiscoverySpiMBean {
@@ -234,6 +234,9 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     /** Default address reachability checker. */
     private static final GridTcpDiscoverySegmentationChecker DFLT_ADDR_REACH_CHKR =
         new DefaultSegmentationChecker();
+
+    /** Stop/restart guard. */
+    private static final AtomicBoolean stopGuard = new AtomicBoolean();
 
     /** Local port which node uses. */
     private int locPort = DFLT_PORT;
@@ -3649,40 +3652,49 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
          * Restarts local node using the same grid configuration with new node ID.
          */
         private void restartNode() {
-            new Thread(new Runnable() {
-                @Override public void run() {
-                    Grid g = G.grid(gridName);
+            if (stopGuard.compareAndSet(false, true)) {
+                new Thread(new Runnable() {
+                    @Override public void run() {
+                        Grid g = G.grid(gridName);
 
-                    GridConfigurationAdapter cfg = new GridConfigurationAdapter(g.configuration());
+                        assert g != null;
 
-                    cfg.setNodeId(UUID.randomUUID());
+                        GridConfigurationAdapter cfg = new GridConfigurationAdapter(g.configuration());
 
-                    U.warn(log, "Restarting local node with new node ID (according to configured " +
-                        "segmentation policy): " + cfg.getNodeId());
+                        cfg.setNodeId(UUID.randomUUID());
 
-                    G.stop(gridName, true, false);
+                        U.warn(log, "Restarting local node with new node ID (according to configured " +
+                            "segmentation policy): " + cfg.getNodeId());
 
-                    try {
-                        G.start(cfg);
+                        G.stop(gridName, true, false);
+
+                        try {
+                            G.start(cfg);
+                        }
+                        catch (GridException e) {
+                            throw new GridRuntimeException("Failed to restart local node.", e);
+                        }
+                        finally {
+                            stopGuard.set(false);
+                        }
                     }
-                    catch (GridException e) {
-                        throw new GridRuntimeException("Failed to restart local node.", e);
-                    }
-                }
-            }).start();
+                }).start();
+            }
         }
 
         /**
          * Stops local node.
          */
         private void stopNode() {
-            new Thread(new Runnable() {
-                @Override public void run() {
-                    U.warn(log, "Stopping local node according to configured segmentation policy.");
+            if (stopGuard.compareAndSet(false, true)) {
+                new Thread(new Runnable() {
+                    @Override public void run() {
+                        U.warn(log, "Stopping local node according to configured segmentation policy.");
 
-                    G.stop(gridName, true, false);
-                }
-            }).start();
+                        G.stop(gridName, true, false);
+                    }
+                }).start();
+            }
         }
     }
 

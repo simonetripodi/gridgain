@@ -38,7 +38,7 @@ import java.lang.annotation.*;
  * See also {@link GridUserResourceOnDeployed} for deployment callbacks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Query and index manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12062011
+ * @version 3.1.1c.13062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V> {
@@ -249,18 +249,41 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      */
     private Iterator<GridCacheQueryIndexRow<K, V>> executeQuery(GridCacheQueryBaseAdapter qry, boolean loc) throws
         GridException {
-        return qry.type() == SQL ? idx.querySql(qry, loc) : qry.type() == SCAN ? scanIterator(qry) :
+        return qry.type() == SQL ? idx.querySql(qry, loc) : qry.type() == SCAN ? scanIterator(qry, loc) :
             idx.queryText(qry, loc);
     }
 
     /**
+     *
      * @param qry query
+     * @param loc {@code true} if local query.
      * @return Full-scan row iterator.
      * @throws GridException If failed to get iterator.
      */
     @SuppressWarnings({"unchecked"})
-    private Iterator<GridCacheQueryIndexRow<K, V>> scanIterator(GridCacheQueryBaseAdapter qry) throws GridException {
-        GridPredicate<GridCacheEntry<K, V>>[] filter = cctx.vararg(qry.projectionFilter());
+    private Iterator<GridCacheQueryIndexRow<K, V>> scanIterator(GridCacheQueryBaseAdapter qry, boolean loc)
+        throws GridException {
+        ClassLoader ldr = loc ? cctx.deploy().localLoader() : cctx.deploy().globalLoader();
+
+        final Class qryCls;
+
+        try {
+            qryCls = qry.queryClass(ldr);
+        }
+        catch (ClassNotFoundException e) {
+            throw new GridException("Failed to create scan query iterator on node: " + cctx.nodeId(), e);
+        }
+
+        P1<GridCacheEntry<K, V>> clsPred = new P1<GridCacheEntry<K, V>>() {
+            @Override public boolean apply(GridCacheEntry<K, V> e) {
+                V val = e.peek();
+
+                return val != null && (qryCls == null || qryCls.isAssignableFrom(val.getClass()));
+            }
+        };
+
+        GridPredicate<GridCacheEntry<K, V>>[] filter =
+            cctx.vararg(qry.projectionFilter() != null ? F.and(qry.projectionFilter(), clsPred) : clsPred);
 
         Set<Map.Entry<K, V>> entries =
             qry.readThrough() ?
