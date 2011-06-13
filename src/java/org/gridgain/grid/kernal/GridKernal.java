@@ -712,8 +712,8 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             // Start processors before discovery manager, so they will
             // be able to start receiving messages once discovery completes.
             startProcessor(ctx, new GridTaskSessionProcessor(ctx));
-            startProcessor(ctx, new GridTaskProcessor(ctx));
             startProcessor(ctx, new GridJobProcessor(ctx));
+            startProcessor(ctx, new GridTaskProcessor(ctx));
             startProcessor(ctx, new GridCacheProcessor(ctx));
             startProcessor(ctx, new GridScheduleProcessor(ctx));
 

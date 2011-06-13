@@ -232,8 +232,8 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     };
 
     /** Default address reachability checker. */
-    private static final GridTcpDiscoveryAddressReachabilityChecker DFLT_ADDR_REACH_CHKR =
-        new DefaultAddressReachabilityChecker();
+    private static final GridTcpDiscoverySegmentationChecker DFLT_ADDR_REACH_CHKR =
+        new DefaultSegmentationChecker();
 
     /** Local port which node uses. */
     private int locPort = DFLT_PORT;
@@ -283,7 +283,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     private boolean waitForSegOnStart = DFLT_WAIT_FOR_SEGMENT_ON_START;
 
     /** Address reachability checker. */
-    private GridTcpDiscoveryAddressReachabilityChecker addrReachChkr = DFLT_ADDR_REACH_CHKR;
+    private GridTcpDiscoverySegmentationChecker addrReachChkr = DFLT_ADDR_REACH_CHKR;
 
     /** Segmentation policy. */
     private GridTcpDiscoverySegmentationPolicy segPlc = DFLT_SEGMENTATION_POLICY;
@@ -628,7 +628,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
      *
      * @param addrReachChkr Address reachability checker.
      */
-    public void setAddressReachabilityChecker(GridTcpDiscoveryAddressReachabilityChecker addrReachChkr) {
+    public void setAddressReachabilityChecker(GridTcpDiscoverySegmentationChecker addrReachChkr) {
         this.addrReachChkr = addrReachChkr;
     }
 
@@ -4124,7 +4124,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     /**
      *
      */
-    private static class DefaultAddressReachabilityChecker implements GridTcpDiscoveryAddressReachabilityChecker {
+    private static class DefaultSegmentationChecker implements GridTcpDiscoverySegmentationChecker {
         /** {@inheritDoc} */
         @Override public boolean isReachable(InetAddress addr, NetworkInterface itf, int ttl, int timeout)
             throws GridSpiException {
@@ -4138,7 +4138,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(DefaultAddressReachabilityChecker.class, this);
+            return S.toString(DefaultSegmentationChecker.class, this);
         }
     }
 }

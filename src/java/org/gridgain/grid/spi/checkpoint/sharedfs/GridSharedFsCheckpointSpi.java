@@ -397,8 +397,8 @@ public class GridSharedFsCheckpointSpi extends GridSpiAdapter implements GridChe
     }
 
     /** {@inheritDoc} */
-    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout,
-        boolean override) throws GridSpiException {
+    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean overwrite)
+        throws GridSpiException {
         assert key != null;
 
         long expireTime = 0;
@@ -416,7 +416,7 @@ public class GridSharedFsCheckpointSpi extends GridSpiAdapter implements GridChe
             File file = new File(folder, getUniqueFileName(key));
 
             if (file.exists()) {
-                if (!override)
+                if (!overwrite)
                     return false;
 
                 if (log.isDebugEnabled())

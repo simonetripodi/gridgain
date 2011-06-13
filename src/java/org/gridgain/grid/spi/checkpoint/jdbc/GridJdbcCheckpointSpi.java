@@ -609,7 +609,7 @@ public class GridJdbcCheckpointSpi extends GridSpiAdapter implements GridCheckpo
     }
 
     /** {@inheritDoc} */
-    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean override)
+    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean overwrite)
         throws GridSpiException {
         Time expTime = null;
 
@@ -642,7 +642,7 @@ public class GridJdbcCheckpointSpi extends GridSpiAdapter implements GridCheckpo
                         }
                     }
                     else {
-                        if (!override) {
+                        if (!overwrite) {
                             return false;
                         }
                         if (updateCheckpoint(conn, key, state, expTime) == 0) {

@@ -558,7 +558,7 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
 
     /** {@inheritDoc} */
     @Override public void saveCheckpoint(String key, Object state, GridTaskSessionScope scope,
-        long timeout, boolean override) throws GridException {
+        long timeout, boolean overwrite) throws GridException {
         A.notNull(key, "key");
         A.ensure(timeout >= 0, "timeout >= 0");
 
@@ -567,7 +567,7 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
                 throw new GridException("Failed to save checkpoint (session closed): " + this);
         }
 
-        ctx.checkpoint().storeCheckpoint(this, key, state, scope, timeout, override);
+        ctx.checkpoint().storeCheckpoint(this, key, state, scope, timeout, overwrite);
     }
 
     /** {@inheritDoc} */

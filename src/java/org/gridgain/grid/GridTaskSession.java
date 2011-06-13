@@ -424,14 +424,14 @@ public interface GridTaskSession extends GridMetadataAware {
      *      timeout expires.
      * @param timeout Maximum time this state should be kept by the underlying storage. Value <tt>0</tt> means that
      *      timeout will never expire.
-     * @param override Whether or not override checkpoint if it already exists.
+     * @param overwrite Whether or not overwrite checkpoint if it already exists.
      * @throws GridException If failed to save intermediate job state.
      * @see #loadCheckpoint(String)
      * @see #removeCheckpoint(String)
      * @see GridCheckpointSpi
      */
     public void saveCheckpoint(String key, Object state, GridTaskSessionScope scope, long timeout,
-        boolean override) throws GridException;
+        boolean overwrite) throws GridException;
 
     /**
      * Loads job's state previously saved via {@link #saveCheckpoint(String, Object, GridTaskSessionScope , long)}

@@ -76,12 +76,12 @@ public interface GridCheckpointSpi extends GridSpi {
      *      needed anymore. Generally, the user should choose the minimum
      *      possible timeout to avoid long-term resource acquisition by checkpoint
      *      provider. Value {@code 0} means that timeout will never expire.
-     * @param override Whether or not override checkpoint if it already exists.
+     * @param overwrite Whether or not overwrite checkpoint if it already exists.
      * @return {@code true} if checkpoint has been actually saved, {@code false} otherwise.
      * @throws GridSpiException Thrown in case of any error while saving
      *    checkpoint data.
      */
-    public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean override) throws GridSpiException;
+    public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean overwrite) throws GridSpiException;
 
     /**
      * This method instructs the checkpoint provider to clean saved data for a

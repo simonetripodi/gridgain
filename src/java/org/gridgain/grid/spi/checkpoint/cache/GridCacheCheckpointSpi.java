@@ -190,13 +190,13 @@ public class GridCacheCheckpointSpi extends GridSpiAdapter implements GridCheckp
     }
 
     /** {@inheritDoc} */
-    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean override)
+    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean overwrite)
         throws GridSpiException {
         assert key != null;
         assert timeout >= 0;
 
         try {
-            if (override) {
+            if (overwrite) {
                 getSpiContext().put(cacheName, key, state, timeout);
 
                 return true;

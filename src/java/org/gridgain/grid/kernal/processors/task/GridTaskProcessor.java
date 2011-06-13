@@ -162,7 +162,8 @@ public class GridTaskProcessor extends GridProcessorAdapter {
                 U.warn(log, "Canceling unfinished tasks due to stopping of the grid [cnt=" + execTasks.size() + "]");
 
             if (wait)
-                U.warn(log, "Will wait for all job responses from tasks (this may take some time)...");
+                U.warn(log, "Will wait for all job responses from tasks before stopping grid" +
+                    " (this may take some time)...");
         }
 
         // Interrupt jobs outside of synchronization.

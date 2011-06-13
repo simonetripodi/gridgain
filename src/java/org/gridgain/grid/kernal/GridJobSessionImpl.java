@@ -234,14 +234,14 @@ public class GridJobSessionImpl extends GridMetadataAwareAdapter implements Grid
 
     /** {@inheritDoc} */
     @Override public void saveCheckpoint(String key, Object state, GridTaskSessionScope scope,
-        long timeout, boolean override) throws GridException {
+        long timeout, boolean overwrite) throws GridException {
         A.notNull(key, "key");
         A.ensure(timeout >= 0, "timeout >= 0");
 
         if (ses.isClosed())
             throw new GridException("Failed to save checkpoint (session closed): " + this);
 
-        ctx.checkpoint().storeCheckpoint(this, key, state, scope, timeout, override);
+        ctx.checkpoint().storeCheckpoint(this, key, state, scope, timeout, overwrite);
     }
 
     /** {@inheritDoc} */

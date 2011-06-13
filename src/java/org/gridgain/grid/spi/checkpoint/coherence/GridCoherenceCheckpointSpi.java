@@ -296,7 +296,7 @@ public class GridCoherenceCheckpointSpi extends GridSpiAdapter implements GridCh
     }
 
     /** {@inheritDoc} */
-    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean override)
+    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean overwrite)
         throws GridSpiException {
         assert key != null;
 
@@ -311,7 +311,7 @@ public class GridCoherenceCheckpointSpi extends GridSpiAdapter implements GridCh
         }
 
         synchronized (mux) {
-            if (!override && cache.containsKey(key)) {
+            if (!overwrite && cache.containsKey(key)) {
                 return false;
             }
 

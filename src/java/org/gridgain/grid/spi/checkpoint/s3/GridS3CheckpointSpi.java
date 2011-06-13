@@ -377,7 +377,7 @@ public class GridS3CheckpointSpi extends GridSpiAdapter implements GridCheckpoin
     }
 
     /** {@inheritDoc} */
-    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean override)
+    @Override public boolean saveCheckpoint(String key, byte[] state, long timeout, boolean overwrite)
         throws GridSpiException {
         assert !F.isEmpty(key);
 
@@ -392,7 +392,7 @@ public class GridS3CheckpointSpi extends GridSpiAdapter implements GridCheckpoin
 
         try {
             if (hasKey(key)) {
-                if (!override)
+                if (!overwrite)
                     return false;
 
                 if (log.isDebugEnabled())

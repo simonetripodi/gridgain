@@ -279,7 +279,7 @@ public interface GridTcpDiscoverySpiMBean extends GridSpiManagementMBean {
     public boolean isWaitForSegmentOnStart();
 
     /**
-     * Gets {@link GridTcpDiscoveryAddressReachabilityChecker} (string representation).
+     * Gets {@link GridTcpDiscoverySegmentationChecker} (string representation).
      *
      * @return Address reachability checker string representation.
      */

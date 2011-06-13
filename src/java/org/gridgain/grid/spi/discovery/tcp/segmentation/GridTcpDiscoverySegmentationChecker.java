@@ -15,12 +15,14 @@ import org.gridgain.grid.spi.discovery.tcp.*;
 import java.net.*;
 
 /**
- * Address reachability checker interface for {@link GridTcpDiscoverySpi}.
+ * Segmentation checker interface for {@link GridTcpDiscoverySpi}. The implementation
+ * should return {@code true) if address is within the right segment and {@code false}
+ * otherwise. 
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
  * @version 3.1.1c.12062011
  */
-public interface GridTcpDiscoveryAddressReachabilityChecker {
+public interface GridTcpDiscoverySegmentationChecker {
     /**
      * Checks whether provided address is reachable from the specified interface
      * within the specified timeout.
