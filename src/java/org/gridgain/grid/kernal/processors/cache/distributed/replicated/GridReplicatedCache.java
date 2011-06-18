@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Fully replicated cache implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Preloader. */
@@ -101,8 +101,8 @@ public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V>
             }
         });
 
-        io.addHandler(GridDistributedTxFinishResponse.class, new CI2<UUID, GridDistributedTxFinishResponse>() {
-            @Override public void apply(UUID nodeId, GridDistributedTxFinishResponse res) {
+        io.addHandler(GridDistributedTxFinishResponse.class, new CI2<UUID, GridDistributedTxFinishResponse<K, V>>() {
+            @Override public void apply(UUID nodeId, GridDistributedTxFinishResponse<K, V> res) {
                 processFinishResponse(nodeId, res);
             }
         });
@@ -704,7 +704,7 @@ public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V>
      * @param nodeId Sender node ID.
      * @param msg Finish transaction response.
      */
-    private void processFinishResponse(UUID nodeId, GridDistributedTxFinishResponse msg) {
+    private void processFinishResponse(UUID nodeId, GridDistributedTxFinishResponse<K, V> msg) {
         GridReplicatedTxCommitFuture<K, V> fut =
             (GridReplicatedTxCommitFuture<K, V>)ctx.mvcc().<GridCacheTx>future(msg.xid().id(), msg.futureId());
 

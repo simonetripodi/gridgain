@@ -1,0 +1,43 @@
+// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+
+/*  _________        _____ __________________        _____
+ *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
+ *  _  / __  __  ___/__  / _  __  / _  / __  _  __ `/__  / __  __ \
+ *  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
+ *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
+ */
+
+package org.gridgain.grid.kernal.processors.cache.distributed.dht;
+
+/**
+ * Exception thrown whenever entry is created for invalid partition.
+ *
+ * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+ * @version 3.1.1c.17062011
+ */
+public class GridDhtInvalidPartitionException extends RuntimeException {
+    /** Partition. */
+    private final int part;
+
+    /**
+     * @param part Partition.
+     * @param message Message.
+     */
+    public GridDhtInvalidPartitionException(int part, String message) {
+        super(message);
+
+        this.part = part;
+    }
+
+    /**
+     * @return Partition.
+     */
+    public int partition() {
+        return part;
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return getClass() + " [part=" + part + ", msg=" + getMessage() + ']';
+    }
+}

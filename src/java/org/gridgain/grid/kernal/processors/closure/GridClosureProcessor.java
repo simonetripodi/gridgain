@@ -24,9 +24,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
+import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.*;
+
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class GridClosureProcessor extends GridProcessorAdapter {
@@ -132,9 +134,18 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (F.isEmpty(jobs) || F.isEmpty(nodes))
                 return new GridFinishedFuture(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
-            return ctx.task().execute(new T1(mode, jobs, nodes), null, 0, null, sys);
+            return ctx.task().execute(
+                new T1(
+                    mode,
+                    jobs,
+                    nodes,
+                    (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)
+                        ctx.task().getThreadContext(TC_RESULT)
+                ),
+                null, 0, null, sys
+            );
         }
         finally {
             leaveBusy();
@@ -151,21 +162,38 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         private GridLoadBalancer lb;
 
         /** */
-        private GridTuple3<GridClosureCallMode, Collection<? extends Runnable>,
-            Collection<? extends GridNode>> t;
+        private GridTuple4<
+            GridClosureCallMode,
+            Collection<? extends Runnable>,
+            Collection<? extends GridNode>,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+        > t;
 
         /**
          *
          * @param mode Call mode.
          * @param jobs Collection of jobs.
          * @param nodes Collection of nodes.
+         * @param res Ad-hoc {@link GridTask#result(GridJobResult, List)} method implementation.
          */
-        private T1(GridClosureCallMode mode, Collection<? extends Runnable> jobs,
-            Collection<? extends GridNode> nodes) {
+        private T1(
+            GridClosureCallMode mode,
+            Collection<? extends Runnable> jobs,
+            Collection<? extends GridNode> nodes,
+            @Nullable GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> res) {
             super(U.peerDeployAware0(jobs));
 
-            t = F.<GridClosureCallMode, Collection<? extends Runnable>,
-                Collection<? extends GridNode>>t(mode, jobs, nodes);
+            t = F.<
+                GridClosureCallMode,
+                Collection<? extends Runnable>,
+                Collection<? extends GridNode>,
+                GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+                >t(mode, jobs, nodes, res);
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get4() == null ? super.result(res, rcvd) : t.get4().apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -207,9 +235,18 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (job == null || F.isEmpty(nodes))
                 return new GridFinishedFuture(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
-            return ctx.task().execute(new T2(mode, job, nodes), null, 0, null, sys);
+            return ctx.task().execute(
+                new T2(
+                    mode,
+                    job,
+                    nodes,
+                    (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)
+                        ctx.task().getThreadContext(TC_RESULT)
+                ),
+                null, 0, null, sys
+            );
         }
         finally {
             leaveBusy();
@@ -226,18 +263,38 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         private GridLoadBalancer lb;
 
         /** */
-        private GridTuple3<GridClosureCallMode, Runnable, Collection<? extends GridNode>> t;
+        private GridTuple4<
+            GridClosureCallMode,
+            Runnable,
+            Collection<? extends GridNode>,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+        > t;
 
         /**
          *
          * @param mode Call mode.
          * @param job Job.
          * @param nodes Collection of nodes.
+         * @param res Ad-hoc {@link GridTask#result(GridJobResult, List)} method implementation.
          */
-        private T2(GridClosureCallMode mode, Runnable job, Collection<? extends GridNode> nodes) {
+        private T2(
+            GridClosureCallMode mode,
+            Runnable job,
+            Collection<? extends GridNode> nodes,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> res) {
             super(U.peerDeployAware(job));
 
-            t = F.<GridClosureCallMode, Runnable, Collection<? extends GridNode>>t(mode, job, nodes);
+            t = F.<
+                GridClosureCallMode,
+                Runnable,
+                Collection<? extends GridNode>,
+                GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+                >t(mode, job, nodes, res);
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get4() == null ? super.result(res, rcvd) : t.get4().apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -407,9 +464,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
                 return new GridFinishedFuture<R2>(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
-            return ctx.task().execute(new T3<R1, R2>(mode, jobs, rdc, nodes), null, 0, null);
+            return ctx.task().execute(
+                new T3<R1, R2>(
+                    mode,
+                    jobs,
+                    rdc,
+                    nodes,
+                    (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)ctx.task().
+                        getThreadContext(TC_RESULT)
+                ),
+                null, 0, null
+            );
         }
         finally {
             leaveBusy();
@@ -426,8 +493,13 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         private GridLoadBalancer lb;
 
         /** */
-        private GridTuple4<GridClosureCallMode, Collection<? extends Callable<R1>>, GridReducer<R1, R2>,
-            Collection<? extends GridNode>> t;
+        private GridTuple5<
+            GridClosureCallMode,
+            Collection<? extends Callable<R1>>,
+            GridReducer<R1, R2>,
+            Collection<? extends GridNode>,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+        > t;
 
         /**
          *
@@ -435,19 +507,34 @@ public class GridClosureProcessor extends GridProcessorAdapter {
          * @param jobs Collection of jobs.
          * @param rdc Reducer.
          * @param nodes Collection of nodes.
+         * @param res Ad-hoc {@link GridTask#result(GridJobResult, List)} method implementation.
          */
-        private T3(GridClosureCallMode mode, Collection<? extends Callable<R1>> jobs, GridReducer<R1, R2> rdc,
-            Collection<? extends GridNode> nodes) {
+        private T3(
+            GridClosureCallMode mode,
+            Collection<? extends Callable<R1>> jobs,
+            GridReducer<R1, R2> rdc,
+            Collection<? extends GridNode> nodes,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> res) {
             super(U.peerDeployAware0(jobs));
 
-            t = F.<GridClosureCallMode, Collection<? extends Callable<R1>>, GridReducer<R1, R2>,
-                Collection<? extends GridNode>>t(mode, jobs, rdc, nodes);
+            t = F.<
+                GridClosureCallMode,
+                Collection<? extends Callable<R1>>,
+                GridReducer<R1, R2>,
+                Collection<? extends GridNode>,
+                GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+            >t(mode, jobs, rdc, nodes, res);
         }
 
         /** {@inheritDoc} */
         @Override public Map<? extends GridJob, GridNode> map(List<GridNode> subgrid, @Nullable Void arg)
             throws GridException {
             return outMap(t.get1(), t.get2(), F.retain(t.get4(), true, subgrid), lb);
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get5() == null ? super.result(res, rcvd) : t.get5().apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -486,9 +573,16 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
                 return new GridFinishedFuture(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
-            return ctx.task().execute(new T4(mapper, jobs, nodes, ctx), null, 0, null, sys);
+            return ctx.task().execute(
+                new T4(
+                    mapper,
+                    jobs,
+                    nodes,
+                    ctx
+                ),
+                null, 0, null, sys);
         }
         finally {
             leaveBusy();
@@ -501,8 +595,13 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     private static class T4 extends GridTaskNoReduceAdapter<Void> {
         /** */
-        private GridTuple4<GridMapper<Runnable, GridRichNode>, Collection<? extends Runnable>,
-            Collection<? extends GridNode>, GridKernalContext> t;
+        private GridTuple5<
+            GridMapper<Runnable, GridRichNode>,
+            Collection<? extends Runnable>,
+            Collection<? extends GridNode>,
+            GridKernalContext,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+            > t;
 
         /**
          *
@@ -511,12 +610,27 @@ public class GridClosureProcessor extends GridProcessorAdapter {
          * @param nodes Collection of nodes.
          * @param ctx Kernal context.
          */
-        private T4(GridMapper<Runnable, GridRichNode> mapper,
-            Collection<? extends Runnable> jobs, Collection<? extends GridNode> nodes, GridKernalContext ctx) {
+        private T4(
+            GridMapper<Runnable, GridRichNode> mapper,
+            Collection<? extends Runnable> jobs,
+            Collection<? extends GridNode> nodes,
+            GridKernalContext ctx) {
             super(U.peerDeployAware0(jobs));
 
-            t = F.<GridMapper<Runnable, GridRichNode>, Collection<? extends Runnable>,
-                Collection<? extends GridNode>, GridKernalContext>t(mapper, jobs, nodes, ctx);
+            t = F.<
+                GridMapper<Runnable, GridRichNode>,
+                Collection<? extends Runnable>,
+                Collection<? extends GridNode>,
+                GridKernalContext,
+                GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+                >t(mapper, jobs, nodes, ctx,
+                    (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)ctx.task().
+                        getThreadContext(TC_RESULT));
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get5() == null ? super.result(res, rcvd) : t.get5().apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -562,7 +676,7 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
                 return new GridFinishedFuture<Collection<R>>(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
             return ctx.task().execute(new T5<R>(mapper, jobs, nodes, ctx), null, 0, null, sys);
         }
@@ -577,8 +691,13 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     private static class T5<R> extends GridTaskAdapter<Void, Collection<R>> {
         /** */
-        private GridTuple4<GridMapper<Callable<R>, GridRichNode>, Collection<? extends Callable<R>>,
-            Collection<? extends GridNode>, GridKernalContext> t;
+        private GridTuple5<
+            GridMapper<Callable<R>, GridRichNode>,
+            Collection<? extends Callable<R>>,
+            Collection<? extends GridNode>,
+            GridKernalContext,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+            > t;
 
         /**
          *
@@ -587,12 +706,27 @@ public class GridClosureProcessor extends GridProcessorAdapter {
          * @param nodes Collection of nodes.
          * @param ctx Kernal context.
          */
-        private T5(GridMapper<Callable<R>, GridRichNode> mapper,
-            Collection<? extends Callable<R>> jobs, Collection<? extends GridNode> nodes, GridKernalContext ctx) {
+        private T5(
+            GridMapper<Callable<R>, GridRichNode> mapper,
+            Collection<? extends Callable<R>> jobs,
+            Collection<? extends GridNode> nodes,
+            GridKernalContext ctx) {
             super(U.peerDeployAware0(jobs));
 
-            t = F.<GridMapper<Callable<R>, GridRichNode>, Collection<? extends Callable<R>>,
-                Collection<? extends GridNode>, GridKernalContext>t(mapper, jobs, nodes, ctx);
+            t = F.<
+                    GridMapper<Callable<R>, GridRichNode>,
+                    Collection<? extends Callable<R>>,
+                    Collection<? extends GridNode>,
+                    GridKernalContext,
+                    GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+                >t(
+                    mapper,
+                    jobs,
+                    nodes,
+                    ctx,
+                    (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)ctx.task().
+                        getThreadContext(TC_RESULT)
+                );
         }
 
         /** {@inheritDoc} */
@@ -605,6 +739,11 @@ public class GridClosureProcessor extends GridProcessorAdapter {
                 map.put(F.job(c), t.get1().apply(c));
 
             return map;
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get5() == null ? super.result(res, rcvd) : t.get5().apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -634,7 +773,7 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (mapper == null || F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
                 return new GridFinishedFuture<R2>(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
             return ctx.task().execute(new T6<R1, R2, C>(mapper, jobs, rdc, nodes, ctx), null, 0, null);
         }
@@ -649,8 +788,16 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     private static class T6<R1, R2, C extends Callable<R1>> extends GridTaskAdapter<Void, R2> {
         /** */
-        private GridTuple5<GridMapper<C, GridRichNode>, Collection<C>,
-            GridReducer<R1, R2>, Collection<? extends GridNode>, GridKernalContext> t;
+        private GridTuple5<
+            GridMapper<C, GridRichNode>,
+            Collection<C>,
+            GridReducer<R1, R2>,
+            Collection<? extends GridNode>,
+            GridKernalContext
+            > t;
+
+        /** */
+        private GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> f;
 
         /**
          *
@@ -660,12 +807,29 @@ public class GridClosureProcessor extends GridProcessorAdapter {
          * @param nodes Collection of nodes.
          * @param ctx Kernal context.
          */
-        private T6(GridMapper<C, GridRichNode> mapper, Collection<C> jobs, GridReducer<R1, R2> rdc,
-            Collection<? extends GridNode> nodes, GridKernalContext ctx) {
+        private T6(
+            GridMapper<C, GridRichNode> mapper,
+            Collection<C> jobs,
+            GridReducer<R1, R2> rdc,
+            Collection<? extends GridNode> nodes,
+            GridKernalContext ctx) {
             super(U.peerDeployAware0(jobs));
 
-            t = F.<GridMapper<C, GridRichNode>, Collection<C>,
-                GridReducer<R1, R2>, Collection<? extends GridNode>, GridKernalContext>t(mapper, jobs, rdc, nodes, ctx);
+            t = F.<
+                    GridMapper<C, GridRichNode>,
+                    Collection<C>,
+                    GridReducer<R1, R2>,
+                    Collection<? extends GridNode>,
+                    GridKernalContext
+                >t(
+                    mapper,
+                    jobs,
+                    rdc,
+                    nodes,
+                    ctx
+                );
+
+            f = ctx.task().getThreadContext(TC_RESULT);
         }
 
         /** {@inheritDoc} */
@@ -678,6 +842,11 @@ public class GridClosureProcessor extends GridProcessorAdapter {
                 map.put(F.job(c), t.get1().apply(c));
 
             return map;
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return f == null ? super.result(res, rcvd) : f.apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -722,9 +891,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (F.isEmpty(jobs) || F.isEmpty(nodes))
                 return new GridFinishedFuture<Collection<R>>(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
-            return ctx.task().execute(new T7<R>(mode, jobs, nodes), null, 0, null, sys);
+            return ctx.task().execute(new T7<R>(mode, jobs, nodes, ctx), null, 0, null, sys);
         }
         finally {
             leaveBusy();
@@ -737,21 +906,39 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     private static class T7<R> extends GridTaskAdapter<Void, Collection<R>> {
         /** */
-        private GridTuple3<GridClosureCallMode, Collection<? extends Callable<R>>,
-            Collection<? extends GridNode>> t;
+        private GridTuple4<
+            GridClosureCallMode,
+            Collection<? extends Callable<R>>,
+            Collection<? extends GridNode>,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+        > t;
 
         /**
          *
          * @param mode Call mode.
          * @param jobs Collection of jobs.
          * @param nodes Collection of nodes.
+         * @param ctx Kernal context.
          */
-        private T7(GridClosureCallMode mode, Collection<? extends Callable<R>> jobs,
-            Collection<? extends GridNode> nodes) {
+        private T7(
+            GridClosureCallMode mode,
+            Collection<? extends Callable<R>> jobs,
+            Collection<? extends GridNode> nodes,
+            GridKernalContext ctx) {
             super(U.peerDeployAware0(jobs));
 
-            t = F.<GridClosureCallMode, Collection<? extends Callable<R>>,
-                Collection<? extends GridNode>>t(mode, jobs, nodes);
+            t = F.<
+                GridClosureCallMode,
+                Collection<? extends Callable<R>>,
+                Collection<? extends GridNode>,
+                GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+            >t(
+                mode,
+                jobs,
+                nodes,
+                (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)ctx.task().
+                    getThreadContext(TC_RESULT)
+            );
         }
 
         /** */
@@ -762,6 +949,11 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         @Override public Map<? extends GridJob, GridNode> map(List<GridNode> subgrid, @Nullable Void arg)
             throws GridException {
             return outMap(t.get1(), t.get2(), F.retain(t.get3(), true, subgrid), lb);
+        }
+
+        /** {@inheritDoc} */
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get4() == null ? super.result(res, rcvd) : t.get4().apply(res, rcvd);
         }
 
         /** {@inheritDoc} */
@@ -804,9 +996,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
             if (job == null || F.isEmpty(nodes))
                 return new GridFinishedFuture<R>(ctx);
 
-            ctx.task().setProjectionContext(nodes);
+            ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
-            return ctx.task().execute(new T8<R>(mode, job, nodes), null, 0, null, sys);
+            return ctx.task().execute(new T8<R>(mode, job, nodes, ctx), null, 0, null, sys);
         }
         finally {
             leaveBusy();
@@ -819,18 +1011,38 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      */
     private static class T8<R> extends GridTaskAdapter<Void, R> {
         /** */
-        private GridTuple3<GridClosureCallMode, Callable<R>, Collection<? extends GridNode>> t;
+        private GridTuple4<
+            GridClosureCallMode,
+            Callable<R>,
+            Collection<? extends GridNode>,
+            GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+        > t;
 
         /**
          *
          * @param mode Call mode.
          * @param job Job.
          * @param nodes Collection of nodes.
+         * @param ctx Kernal context.
          */
-        private T8(GridClosureCallMode mode, Callable<R> job, Collection<? extends GridNode> nodes) {
+        private T8(
+            GridClosureCallMode mode,
+            Callable<R> job,
+            Collection<? extends GridNode> nodes,
+            GridKernalContext ctx) {
             super(U.peerDeployAware(job));
 
-            t = F.<GridClosureCallMode, Callable<R>, Collection<? extends GridNode>>t(mode, job, nodes);
+            t = F.<
+                GridClosureCallMode,
+                Callable<R>,
+                Collection<? extends GridNode>,
+                GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+            >t(
+                mode,
+                job,
+                nodes,
+                (GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>)ctx.task().
+                    getThreadContext(TC_RESULT));
         }
 
         /** */
@@ -844,7 +1056,12 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         }
 
         /** {@inheritDoc} */
-        @SuppressWarnings({"RedundantTypeArguments", "ConstantConditions"})
+        @Override public GridJobResultPolicy result(GridJobResult res, List<GridJobResult> rcvd) throws GridException {
+            return t.get4() == null ? super.result(res, rcvd) : t.get4().apply(res, rcvd);
+        }
+
+        /** {@inheritDoc} */
+        @SuppressWarnings("RedundantTypeArguments")
         @Override public R reduce(List<GridJobResult> res) {
             return F.first(res).<R>getData();
         }

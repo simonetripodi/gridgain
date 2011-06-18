@@ -11,7 +11,6 @@ package org.gridgain.grid.spi.discovery.tcp.ipfinder;
 
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.discovery.tcp.*;
-import org.jetbrains.annotations.*;
 
 import java.net.*;
 import java.util.*;
@@ -20,7 +19,7 @@ import java.util.*;
  * IP finder interface for {@link GridTcpDiscoverySpi}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridTcpDiscoveryIpFinder {
     /**
@@ -30,16 +29,6 @@ public interface GridTcpDiscoveryIpFinder {
      * @throws GridSpiException In case of error.
      */
     public Collection<InetSocketAddress> getRegisteredAddresses() throws GridSpiException;
-
-    /**
-     * Gets special addresses that should be accessible from all nodes withing a good segment to
-     * avoid incorrect segmentation of the network.
-     * <p>
-     * May return {@code null}, but in this case segment check should be disabled in SPI.
-     *
-     * @return Segment check addresses.
-     */
-    @Nullable public Collection<InetAddress> getSegmentCheckAddresses();
 
     /**
      * Checks whether IP finder is shared or not.

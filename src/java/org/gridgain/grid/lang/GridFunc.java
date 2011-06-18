@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridFunc {
     /** */
@@ -1715,17 +1715,14 @@ public class GridFunc {
     public static <T> Collection<T> concat(boolean copy, @Nullable final Collection<T> c1,
         @Nullable final Collection<T> c2) {
         if (copy) {
-            if (isEmpty(c1) && isEmpty(c2)) {
+            if (isEmpty(c1) && isEmpty(c2))
                 return new ArrayList<T>(0);
-            }
 
-            if (isEmpty(c1)) {
+            if (isEmpty(c1))
                 return new ArrayList<T>(c2);
-            }
 
-            if (isEmpty(c2)) {
+            if (isEmpty(c2))
                 return new ArrayList<T>(c1);
-            }
 
             assert c1 != null && c2 != null;
 
@@ -1737,9 +1734,8 @@ public class GridFunc {
             return c;
         }
         else {
-            if (isEmpty(c1) && isEmpty(c2)) {
+            if (isEmpty(c1) && isEmpty(c2))
                 return Collections.emptyList();
-            }
 
             if (isEmpty(c1) || isEmpty(c2)) {
                 Collection<T> c = isEmpty(c1) ? c2 : c1;
@@ -1758,14 +1754,11 @@ public class GridFunc {
                         private Iterator<T> it2 = c2.iterator();
 
                         @Override public boolean hasNext() {
-                            if (it1 != null) {
-                                if (!it1.hasNext()) {
+                            if (it1 != null)
+                                if (!it1.hasNext())
                                     it1 = null;
-                                }
-                                else {
+                                else
                                     return true;
-                                }
-                            }
 
                             return it2.hasNext();
                         }
@@ -3967,7 +3960,7 @@ public class GridFunc {
      * @param <T> Type of the free variable, i.e. the element the predicate is called on.
      * @return Predicate that always returns {@code true}.
      */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     public static <T> GridPredicate<T> alwaysTrue() {
         return (GridPredicate<T>)ALWAYS_TRUE;
     }
@@ -3979,7 +3972,7 @@ public class GridFunc {
      * @param <T> Type of the free variable, i.e. the element the predicate is called on.
      * @return Predicate that always returns {@code false}.
      */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     public static <T> GridPredicate<T> alwaysFalse() {
         return (GridPredicate<T>)ALWAYS_FALSE;
     }
@@ -5851,9 +5844,8 @@ public class GridFunc {
 
         Collection<Y> d = new ArrayList<Y>(c.size());
 
-        for (X x : c) {
+        for (X x : c)
             d.add(f.apply(x));
-        }
 
         return d;
     }

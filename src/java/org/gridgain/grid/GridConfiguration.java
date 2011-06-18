@@ -14,6 +14,7 @@ import org.gridgain.grid.editions.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.marshaller.*;
+import org.gridgain.grid.segmentation.*;
 import org.gridgain.grid.spi.checkpoint.*;
 import org.gridgain.grid.spi.cloud.*;
 import org.gridgain.grid.spi.collision.*;
@@ -34,6 +35,8 @@ import java.lang.management.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
+
 /**
  * This interface defines grid runtime configuration. This configuration is passed to
  * {@link GridFactory#start(GridConfiguration)} method. It defines all configuration
@@ -52,7 +55,7 @@ import java.util.concurrent.*;
  * property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridConfiguration {
     /**
@@ -102,6 +105,18 @@ public interface GridConfiguration {
 
     /** Default size of peer class loading thread pool. */
     public static final int DFLT_P2P_THREAD_CNT = 20;
+
+    /** Default segmentation policy. */
+    public static final GridSegmentationPolicy DFLT_SEG_PLC = STOP;
+
+    /** Default value for wait for segment on startup flag. */
+    public static final boolean DFLT_WAIT_FOR_SEG_ON_START = true;
+
+    /** Default value for all segmentation resolvers pass required. */
+    public static final boolean DFLT_ALL_SEG_RESOLVERS_PASS_REQ = true;
+
+    /** Default segment check frequency in discovery manager. */
+    public static final int DFLT_SEG_CHK_FREQ = 10000;
 
     /**
      * Whether or not send email notifications on node start and stop. Note if enabled
@@ -442,6 +457,61 @@ public interface GridConfiguration {
      * @return Grid discovery SPI implementation or {@code null} to use default implementation.
      */
     public GridDiscoverySpi getDiscoverySpi();
+
+    /**
+     * Returns a collection of segmentation resolvers.
+     * If array is {@code null} or empty, segmentation check is disabled.
+     *
+     * @return Segmentation resolvers.
+     */
+    public GridSegmentationResolver[] getSegmentationResolvers();
+
+    /**
+     * Gets wait for segment on startup flag. Default is {@link #DFLT_WAIT_FOR_SEG_ON_START}.
+     * <p>
+     * Returns {@code true} if node should wait for correct segment on start.
+     * If node detects that segment is incorrect on startup and this method
+     * returns {@code true}, node waits until segment becomes correct.
+     * If segment is incorrect on startup and this method returns {@code false},
+     * exception is thrown.
+     *
+     * @return {@code True} to wait for segment on startup, {@code false} otherwise.
+     */
+    public boolean isWaitForSegmentOnStart();
+
+    /**
+     * Returns segmentation policy. Default is {@link #DFLT_SEG_PLC}.
+     *
+     * @return Segmentation policy.
+     */
+    public GridSegmentationPolicy getSegmentationPolicy();
+
+    /**
+     * Gets all segmentation resolvers pass required flag.
+     * <p>
+     * Returns {@code true} if all segmentation resolvers should succeed
+     * for node to be in correct segment.
+     * Returns {@code false} if at least one segmentation resolver should succeed
+     * for node to be in correct segment.
+     * <p>
+     * Default is {@link #DFLT_ALL_SEG_RESOLVERS_PASS_REQ}.
+     *
+     * @return {@code True} if all segmentation resolvers should succeed,
+     *      {@code false} if only one is enough.
+     */
+    public boolean isAllSegmentationResolversPassRequired();
+
+    /**
+     * Returns frequency of network segment check by discovery manager.
+     * <p>
+     * if 0, periodic segment check is disabled and segment is checked only
+     * on topology changes (if segmentation resolvers are configured).
+     * <p>
+     * Default is {@link #DFLT_SEG_CHK_FREQ}.
+     *
+     * @return Segment check frequency.
+     */
+    public int getSegmentCheckFrequency();
 
     /**
      * Should return fully configured SPI communication  implementation. If not provided, default

@@ -21,7 +21,7 @@ import java.lang.annotation.*;
  * only if CPU on the local node has been above 80% of utilization for the last 5 minutes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridifyInterceptor {
     /**

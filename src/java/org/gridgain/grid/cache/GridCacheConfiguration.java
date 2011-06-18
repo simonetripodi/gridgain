@@ -18,6 +18,7 @@ import org.gridgain.grid.cache.eviction.lirs.*;
 import org.gridgain.grid.cache.jta.*;
 import org.gridgain.grid.cache.query.*;
 import org.gridgain.grid.cache.store.*;
+import org.gridgain.grid.lang.*;
 
 import java.util.*;
 
@@ -33,7 +34,7 @@ import java.util.*;
  * default configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridCacheConfiguration {
     /** Default query log name. */
@@ -105,6 +106,9 @@ public interface GridCacheConfiguration {
     /** Default index parent folder name. */
     public static final String DFLT_IDX_PARENT_FOLDER_NAME = "work/cache/indexes";
 
+    /** Default maximum eviction queue ratio. */
+    public static final float DFLT_MAX_EVICTION_OVERFLOW_RATIO = 10;
+
     /**
      * Cache name. If not provided or {@code null}, then this will be considered a default
      * cache which can be accessed via {@link Grid#cache()} method. Otherwise, if name
@@ -149,6 +153,38 @@ public interface GridCacheConfiguration {
      */
     public <K, V> GridCacheEvictionPolicy<K, V> getNearEvictionPolicy();
 
+    /**
+     * Gets flag indicating whether eviction for replicated and partitioned cache
+     * is synchronized between nodes. If this parameter is {@code true} and swap
+     * is disabled then {@link GridCacheProjection#evict(Object, GridPredicate[])}
+     * and all its variations will involve all nodes where an entry is kept. For
+     * replicated cache this is a group of nodes responsible for a partition to
+     * which a corresponding key belongs. For partitioned cache all near caches
+     * that keep the entry will be involved as well as backup nodes. Default value
+     * is {@code true}.
+     *
+     * @return {@code true} If eviction is synchronized for replicated
+     *      and partitioned cache, {@code false} if not.
+     */
+    public boolean isEvictSynchronized();
+
+    /**
+     * This value denotes the maximum size of eviction queue in percents of cache
+     * size in case of distributed cache (replicated and partitioned) and using
+     * synchronized eviction (that is if {@link #isEvictSynchronized()} returns
+     * {@code true}).
+     * <p>
+     * That queue is used internally as a buffer to decrease network costs for
+     * synchronized eviction. Once queue size reaches specified value all required
+     * requests for all entries in the queue are sent to remote nodes and the queue
+     * is cleared.
+     * <p>
+     * Default value is defined by {@link #DFLT_MAX_EVICTION_OVERFLOW_RATIO} and
+     * equals to {@code 10%}.
+     *
+     * @return Maximum size of eviction queue in percents of cache size.
+     */
+    public float getMaxEvictionOverflowRatio();
 
     /**
      * Default cache transaction isolation to use when one is not explicitly

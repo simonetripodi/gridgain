@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
@@ -161,6 +161,24 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
 
             return false;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridCacheMvccCandidate<K> removeLock() {
+        GridCacheMvccCandidate<K> ret = super.removeLock();
+        
+        locPart.onUnlock();
+
+        return ret;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean removeLock(GridCacheVersion ver) throws GridCacheEntryRemovedException {
+        boolean ret = super.removeLock(ver);
+
+        locPart.onUnlock();
+
+        return ret;
     }
 
     /**
@@ -306,7 +324,7 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /**
      * Clears all readers (usually when partition becomes invalid and ready for eviction).
      */
-    public void clearReaders() {
+    @Override public void clearReaders() {
         synchronized (mux) {
             readers = Collections.emptyList();
         }

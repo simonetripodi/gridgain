@@ -9,6 +9,7 @@
 
 package org.gridgain.grid.kernal.processors.cache;
 
+import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.*;
  * Cache gateway.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @GridToStringExclude
 public class GridCacheGateway<K, V> {
@@ -60,6 +61,14 @@ public class GridCacheGateway<K, V> {
      * @return Previous projection set on this thread.
      */
     @Nullable public GridCacheProjectionImpl<K, V> enter(GridCacheProjectionImpl<K, V> prj) {
+        try {
+            ctx.preloader().startFuture().get();
+        }
+        catch (GridException e) {
+            throw new GridRuntimeException("Failed to wait for cache preloader start [cacheName=" +
+                ctx.name() + "]", e);
+        }
+
         ctx.deploy().onEnter();
 
         ctx.kernalContext().gateway().readLock();

@@ -27,7 +27,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> {
     /** Near node ID. */
@@ -89,26 +89,6 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
         addWrites(writes, ldr);
     }
 
-    /** {@inheritDoc} */
-    @Override public boolean dht() {
-        return true;
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<UUID> masterNodeIds() {
-        return Arrays.asList(nearNodeId, nodeId);
-    }
-
-    /** {@inheritDoc} */
-    @Override public UUID otherNodeId() {
-        return nearNodeId;
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<UUID> nodeIds() {
-        return nodeId.equals(nearNodeId) ? Collections.singleton(nodeId) : F.asList(nodeId, nearNodeId);
-    }
-
     /**
      * This constructor is meant for pessimistic transactions.
      *
@@ -159,6 +139,26 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
     }
 
     /** {@inheritDoc} */
+    @Override public boolean dht() {
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> masterNodeIds() {
+        return Arrays.asList(nearNodeId, nodeId);
+    }
+
+    /** {@inheritDoc} */
+    @Override public UUID otherNodeId() {
+        return nearNodeId;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> nodeIds() {
+        return nodeId.equals(nearNodeId) ? Collections.singleton(nodeId) : F.asList(nodeId, nearNodeId);
+    }
+
+    /** {@inheritDoc} */
     @Override public boolean enforceSerializable() {
         return false; // Serializable will be enforced on primary mode.
     }
@@ -177,27 +177,51 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
         return rmtFutId;
     }
 
+    /** {@inheritDoc} */
+    @Override public void addInvalidPartition(int part) {
+        super.addInvalidPartition(part);
+
+        for (Iterator<GridCacheTxEntry<K, V>> it = writeMap.values().iterator(); it.hasNext();) {
+            GridCacheTxEntry<K, V> e = it.next();
+
+            GridCacheEntryEx<K, V> cached = e.cached();
+
+            if (cached != null) {
+                if (cached.partition() == part)
+                    it.remove();
+            }
+            else if (cctx.partition(e.key()) == part)
+                it.remove();
+        }
+    }
+
     /**
      * @param writes Write entries.
      * @param ldr Class loader.
      * @throws GridException If failed.
      */
     private void addWrites(Iterable<GridCacheTxEntry<K, V>> writes, ClassLoader ldr) throws GridException {
-        if (!F.isEmpty(writes))
+        if (!F.isEmpty(writes)) {
             for (GridCacheTxEntry<K, V> entry : writes) {
-                entry.unmarshal(ctx, ldr);
+                entry.unmarshal(cctx, ldr);
 
-                checkInternal(entry.key());
+                try {
+                    GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(entry.key());
 
-                GridDhtCacheEntry<K, V> cached = ctx.dht().entryExx(entry.key());
+                    checkInternal(entry.key());
 
-                // Initialize cache entry.
-                entry.cached(cached, entry.keyBytes());
+                    // Initialize cache entry.
+                    entry.cached(cached, entry.keyBytes());
 
-                writeMap.put(entry.key(), entry);
+                    writeMap.put(entry.key(), entry);
 
-                addExplicit(entry);
+                    addExplicit(entry);
+                }
+                catch (GridDhtInvalidPartitionException e) {
+                    addInvalidPartition(e.partition());
+                }
             }
+        }
     }
 
     /**
@@ -209,9 +233,9 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
     void addWrite(K key, byte[] keyBytes, @Nullable V val, @Nullable byte[] valBytes) {
         checkInternal(key);
 
-        GridDhtCacheEntry<K, V> cached = ctx.dht().entryExx(key);
+        GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(key);
 
-        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(ctx, this, NOOP, val, 0, cached);
+        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(cctx, this, NOOP, val, 0, cached);
 
         txEntry.keyBytes(keyBytes);
         txEntry.valueBytes(valBytes);
@@ -221,7 +245,7 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
 
     /** {@inheritDoc} */
     @Override protected boolean isNotifyEvent() {
-        return !ctx.nodeId().equals(nearNodeId);
+        return !cctx.nodeId().equals(nearNodeId);
     }
 
     /** {@inheritDoc} */

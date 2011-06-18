@@ -18,7 +18,7 @@ import java.io.*;
  * Acknowledgement message for {@link GridReplicatedPreloadBatchRequest}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Partition. */
@@ -35,6 +35,11 @@ public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K
      */
     public GridReplicatedPreloadBatchResponse() {
         /* No-op. */
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean allowForStartup() {
+        return true;
     }
 
     /**

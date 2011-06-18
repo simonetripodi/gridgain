@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -156,6 +156,13 @@ public abstract class GridCacheUtils {
 
         @Override public String toString() {
             return "Transaction to XID version converter.";
+        }
+    };
+
+    /** Converts tx entry to entry. */
+    private static final GridClosure tx2entry = new C1<GridCacheTxEntry, GridCacheEntryEx>() {
+        @Override public GridCacheEntryEx apply(GridCacheTxEntry e) {
+            return e.cached();
         }
     };
 
@@ -878,6 +885,14 @@ public abstract class GridCacheUtils {
     @SuppressWarnings({"unchecked"})
     public static <K, V> GridClosure<GridCacheTxEntry<K, V>, byte[]> tx2keyBytes() {
         return (GridClosure<GridCacheTxEntry<K, V>, byte[]>)tx2keyBytes;
+    }
+
+    /**
+     * @return Converts transaction entry to cache entry.
+     */
+    @SuppressWarnings( {"unchecked"})
+    public static <K, V> GridClosure<GridCacheTxEntry<K, V>, GridCacheEntryEx<K, V>> tx2entry() {
+        return (GridClosure<GridCacheTxEntry<K,V>, GridCacheEntryEx<K,V>>)tx2entry;
     }
 
     /**

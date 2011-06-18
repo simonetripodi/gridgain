@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -1272,7 +1272,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 obsoleteVer = ctx.versions().next();
 
             try {
-                if (e.clear(obsoleteVer, swap, filter))
+                if (e.clear(obsoleteVer, swap, false, filter))
                     removeIfObsolete(e.key());
                 else if (log.isDebugEnabled())
                     log.debug("Failed to remove entry: " + e);
@@ -1320,7 +1320,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         GridCacheEntryEx<K, V> e = peekEx(key);
 
         try {
-            if (e != null && e.clear(obsoleteVer, ctx.isSwapEnabled(), filter)) {
+            if (e != null && e.clear(obsoleteVer, ctx.isSwapEnabled(), false, filter)) {
                 removeIfObsolete(key);
 
                 return true;
@@ -3312,7 +3312,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
      * @return Operation result.
      * @throws GridException If operation failed.
      */
-    @SuppressWarnings({"TypeMayBeWeakened"})
+    @SuppressWarnings( {"TypeMayBeWeakened", "ErrorNotRethrown"})
     @Nullable private <T> T syncOp(SyncOp<T> op) throws GridException {
         checkJta();
 
@@ -3342,6 +3342,18 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 }
                 catch (GridException e1) {
                     U.error(log, "Failed to rollback transaction (cache may contain stale locks): " + tx, e1);
+
+                    U.addLastCause(e, e1);
+                }
+                catch (RuntimeException e1) {
+                    U.error(log, "Failed to rollback transaction (cache may contain stale locks): " + tx, e1);
+
+                    U.addLastCause(e, e1);
+                }
+                catch (AssertionError e1) {
+                    U.error(log, "Failed to rollback transaction (cache may contain stale locks): " + tx, e1);
+
+                    U.addLastCause(e, e1);
                 }
 
                 throw e;

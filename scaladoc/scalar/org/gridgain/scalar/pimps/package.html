@@ -40,7 +40,7 @@
       </h4>
       
           <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Contains Scala &quot;Pimp&quot; implementations for main GridGain entities.
-</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.1 build#13062011
+</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.1 build#17062011
 </p></dd></dl></div>
         
 
@@ -89,21 +89,10 @@
       <span class="symbol"> 
         <a href="ScalarGridPimp.html"><span class="name">ScalarGridPimp</span></a>
         
-        <span class="result"> extends ScalarProjectionPimp[Grid] with ScalarNamed[Grid]</span>
+        <span class="result"> extends ScalarProjectionPimp[Grid] with ScalarTaskThreadContext[Grid]</span>
       </span>
       </h4>
       <p class="comment cmt">Defines Scalar &quot;pimp&quot; for <code>Grid</code> on Java side.</p>
-    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarNamed" data-isabs="true">
-      <a id="ScalarNamed:ScalarNamed[T]"></a>
-      <h4 class="signature">
-      <span class="kind">trait</span>
-      <span class="symbol"> 
-        <a href="ScalarNamed.html"><span class="name">ScalarNamed</span></a>
-        <span class="tparams">[<span name="T">T <span class='angle_bracket'>&lt;</span>: GridProjection</span>]</span>
-        <span class="result"> extends AnyRef</span>
-      </span>
-      </h4>
-      <p class="comment cmt">This trait provide mixin for properly typed version of <code>GridProjection#named(...)</code> method.</p>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarProjectionPimp" data-isabs="false">
       <a id="ScalarProjectionPimp:ScalarProjectionPimp[A]"></a>
       <h4 class="signature">
@@ -111,7 +100,7 @@
       <span class="symbol"> 
         <a href="ScalarProjectionPimp.html"><span class="name">ScalarProjectionPimp</span></a>
         <span class="tparams">[<span name="A">A <span class='angle_bracket'>&lt;</span>: GridProjection</span>]</span>
-        <span class="result"> extends PimpedType[A] with Iterable[GridRichNode] with ScalarNamed[A]</span>
+        <span class="result"> extends PimpedType[A] with Iterable[GridRichNode] with ScalarTaskThreadContext[A]</span>
       </span>
       </h4>
       <p class="comment cmt">Defines Scalar &quot;pimp&quot; for <code>GridProjection</code> on Java side.</p>
@@ -122,7 +111,7 @@
       <span class="symbol"> 
         <a href="ScalarRichCloudPimp.html"><span class="name">ScalarRichCloudPimp</span></a>
         
-        <span class="result"> extends ScalarProjectionPimp[GridRichCloud] with Ordered[GridRichCloud] with ScalarNamed[GridRichCloud]</span>
+        <span class="result"> extends ScalarProjectionPimp[GridRichCloud] with Ordered[GridRichCloud] with ScalarTaskThreadContext[GridRichCloud]</span>
       </span>
       </h4>
       <p class="comment cmt">Defines Scalar &quot;pimp&quot; for <code>GridRichCloud</code> on Java side.</p>
@@ -133,10 +122,21 @@
       <span class="symbol"> 
         <a href="ScalarRichNodePimp.html"><span class="name">ScalarRichNodePimp</span></a>
         
-        <span class="result"> extends ScalarProjectionPimp[GridRichNode] with Ordered[GridRichNode] with ScalarNamed[GridRichNode]</span>
+        <span class="result"> extends ScalarProjectionPimp[GridRichNode] with Ordered[GridRichNode] with ScalarTaskThreadContext[GridRichNode]</span>
       </span>
       </h4>
       <p class="comment cmt">Defines Scalar &quot;pimp&quot; for <code>GridRichNode</code> on Java side.</p>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext" data-isabs="true">
+      <a id="ScalarTaskThreadContext:ScalarTaskThreadContext[T]"></a>
+      <h4 class="signature">
+      <span class="kind">trait</span>
+      <span class="symbol"> 
+        <a href="ScalarTaskThreadContext.html"><span class="name">ScalarTaskThreadContext</span></a>
+        <span class="tparams">[<span name="T">T <span class='angle_bracket'>&lt;</span>: GridProjection</span>]</span>
+        <span class="result"> extends ScalarMixin</span>
+      </span>
+      </h4>
+      <p class="comment cmt">This trait provide mixin for properly typed version of <code>GridProjection#withName(...)</code> method.</p>
     </li></ol>
             </div>
         
@@ -226,7 +226,7 @@
                         <td align="left" valign="center">
                             <nobr>GridGain = High Performance Cloud Computing</nobr>
                             <br>
-                            <b>Version:</b> 3.1 build#13062011
+                            <b>Version:</b> 3.1 build#17062011
                             <br>
                             <a target=_blank href="http://www.gridgain.com"><nobr>2005-2011 Copyright &#169; GridGain Systems, Inc.</nobr></a>
                         </td>

@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Future. */
@@ -104,7 +104,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     @Override public Collection<UUID> nodeIds() {
         Collection<UUID> ids = new GridLeanSet<UUID>();
 
-        ids.add(ctx.nodeId());
+        ids.add(cctx.nodeId());
         ids.addAll(mappings.keySet());
 
         return ids;
@@ -133,7 +133,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
      */
     void addDhtVersion(UUID nodeId, GridCacheVersion dhtVer) {
         // This step is very important as near and DHT versions grow separately.
-        ctx.versions().onReceived(nodeId, dhtVer);
+        cctx.versions().onReceived(nodeId, dhtVer);
 
         GridDistributedTxMapping<K, V> m = mappings.get(nodeId);
 
@@ -151,6 +151,24 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
         }
         else if (log.isDebugEnabled())
             log.debug("Mapping for node was not found [nodeId=" + nodeId + ", tx=" + this + ']');
+    }
+
+    /**
+     * @param nodeId Node ID.
+     * @param key Key.
+     */
+    public void removeMapping(UUID nodeId, K key) {
+        GridDistributedTxMapping<K, V> m = mappings.get(nodeId);
+
+        if (m != null) {
+            GridCacheTxEntry<K, V> txEntry = txMap.get(key);
+
+            if (txEntry != null)
+                m.removeEntry(txEntry);
+
+            if (m.empty())
+                mappings.remove(nodeId);
+        }
     }
 
     /**
@@ -177,10 +195,10 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
         }
 
         if (log.isDebugEnabled())
-            log.debug("Added mappings to transaction [locId=" + ctx.nodeId() + ", mappings=" + keyMap +
+            log.debug("Added mappings to transaction [locId=" + cctx.nodeId() + ", mappings=" + keyMap +
                 ", tx=" + this + ']');
 
-        ctx.tm().recheckFinishTransactions();
+        cctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -191,10 +209,10 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             this.mappings.putAll(mappings);
 
             if (log.isDebugEnabled())
-                log.debug("Added mappings to transaction [locId=" + ctx.nodeId() + ", mappings=" + mappings +
+                log.debug("Added mappings to transaction [locId=" + cctx.nodeId() + ", mappings=" + mappings +
                     ", tx=" + this + ']');
 
-            ctx.tm().recheckFinishTransactions();
+            cctx.tm().recheckFinishTransactions();
         }
     }
 
@@ -234,7 +252,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /**
      * @return Commit fut.
      */
-    @Override public GridFuture<GridCacheTx> future() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> future() {
         return prepFut.get();
     }
 
@@ -246,10 +264,10 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** {@inheritDoc} */
     @Override public GridFuture<Boolean> loadMissing(boolean async, final Collection<? extends K> keys,
         final GridInClosure2<K, V> closure) {
-        GridFuture<Map<K, V>> f = ctx.near().txLoadAsync(this, keys, CU.<K, V>empty());
+        GridFuture<Map<K, V>> f = cctx.near().txLoadAsync(this, keys, CU.<K, V>empty());
 
         return new GridEmbeddedFuture<Boolean, Map<K, V>>(
-            ctx.kernalContext(),
+            cctx.kernalContext(),
             f,
             new C2<Map<K, V>, Exception, Boolean>() {
                 @Override public Boolean apply(Map<K, V> map, Exception e) {
@@ -300,7 +318,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                             ", tx=" + this + ']');
 
                     // Replace the entry.
-                    txEntry.cached(ctx.cache().entryEx(txEntry.key()), entry.keyBytes());
+                    txEntry.cached(cctx.cache().entryEx(txEntry.key()), entry.keyBytes());
                 }
             }
         }
@@ -418,12 +436,12 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> prepareAsync() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> prepareAsync() {
         GridNearTxPrepareFuture<K, V> fut = prepFut.get();
 
         if (fut == null) {
             // Future must be created before any exception can be thrown.
-            if (!prepFut.compareAndSet(null, fut = new GridNearTxPrepareFuture<K, V>(ctx, this)))
+            if (!prepFut.compareAndSet(null, fut = new GridNearTxPrepareFuture<K, V>(cctx, this)))
                 return prepFut.get();
         }
         else
@@ -475,7 +493,7 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             fut.onPreparedEC();
 
             // Make sure to add future before calling prepare.
-            ctx.mvcc().addFuture(fut);
+            cctx.mvcc().addFuture(fut);
 
             fut.prepare();
         }
@@ -515,13 +533,13 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
         GridNearTxFinishFuture<K, V> fut = commitFut.get();
 
-        if (fut == null && !commitFut.compareAndSet(null, fut = new GridNearTxFinishFuture<K, V>(ctx, this, true)))
+        if (fut == null && !commitFut.compareAndSet(null, fut = new GridNearTxFinishFuture<K, V>(cctx, this, true)))
             return commitFut.get();
 
-        ctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut);
 
-        prepFut.get().listenAsync(new CI1<GridFuture<GridCacheTx>>() {
-            @Override public void apply(GridFuture<GridCacheTx> f) {
+        prepFut.get().listenAsync(new CI1<GridFuture<GridCacheTxEx<K, V>>>() {
+            @Override public void apply(GridFuture<GridCacheTxEx<K, V>> f) {
                 try {
                     // Make sure that here are no exceptions.
                     f.get();
@@ -557,14 +575,14 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
         GridNearTxFinishFuture<K, V> fut = rollbackFut.get();
 
-        if (fut == null && !rollbackFut.compareAndSet(null, fut = new GridNearTxFinishFuture<K, V>(ctx, this, false))) {
+        if (fut == null && !rollbackFut.compareAndSet(null, fut = new GridNearTxFinishFuture<K, V>(cctx, this, false))) {
             rollbackFut.get();
 
             return;
         }
 
         try {
-            ctx.mvcc().addFuture(fut);
+            cctx.mvcc().addFuture(fut);
 
             if (prepFut == null) {
                 finish(false);
@@ -572,8 +590,8 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                 fut.finish();
             }
             else {
-                prepFut.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
-                    @Override public void apply(GridFuture<GridCacheTx> f) {
+                prepFut.listenAsync(new CI1<GridFuture<GridCacheTxEx<K, V>>>() {
+                    @Override public void apply(GridFuture<GridCacheTxEx<K, V>> f) {
                         try {
                             // Check for errors in prepare future.
                             f.get();
@@ -616,8 +634,8 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             throw e;
         }
         finally {
-            ctx.tm().txContextReset();
-            ctx.near().dht().context().tm().txContextReset();
+            cctx.tm().txContextReset();
+            cctx.near().dht().context().tm().txContextReset();
         }
     }
 

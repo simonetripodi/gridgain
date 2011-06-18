@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
     implements GridCacheFuture<GridCacheTx> {
@@ -259,7 +259,7 @@ public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Grid
 
             GridDistributedTxMapping<K, V> nearMapping = nearMap.get(n.id());
 
-            if (dhtMapping.isEmpty() && nearMapping != null && nearMapping.isEmpty())
+            if (dhtMapping.empty() && nearMapping != null && nearMapping.empty())
                 // Nothing to send.
                 continue;
 
@@ -277,6 +277,7 @@ public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Grid
                 tx.isolation(),
                 commit,
                 tx.isInvalidate(),
+                tx.isSystemInvalidate(),
                 tx.completedBase(),
                 tx.committedVersions(),
                 tx.rolledbackVersions(),
@@ -298,7 +299,7 @@ public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Grid
 
         for (GridDistributedTxMapping<K, V> nearMapping : nearMap.values()) {
             if (!dhtMap.containsKey(nearMapping.node().id())) {
-                if (nearMapping.isEmpty())
+                if (nearMapping.empty())
                     // Nothing to send.
                     continue;
 
@@ -316,6 +317,7 @@ public class GridDhtTxFinishFuture<K, V> extends GridCompoundIdentityFuture<Grid
                     tx.isolation(),
                     commit,
                     tx.isInvalidate(),
+                    tx.isSystemInvalidate(),
                     tx.completedBase(),
                     tx.committedVersions(),
                     tx.rolledbackVersions(),

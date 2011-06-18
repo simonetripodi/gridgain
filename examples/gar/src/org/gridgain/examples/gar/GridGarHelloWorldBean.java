@@ -20,7 +20,7 @@ import java.util.*;
  * Loads message resource file via class loader. See {@code GridGarHelloWorldExample} for more details.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridGarHelloWorldBean {
     /** */

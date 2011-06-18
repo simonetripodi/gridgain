@@ -33,10 +33,10 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
-public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
-    implements GridCacheMvccFuture<K, V, GridCacheTx> {
+public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTxEx<K, V>>
+    implements GridCacheMvccFuture<K, V, GridCacheTxEx<K, V>> {
     /** Context. */
     private GridCacheContext<K, V> cacheCtx;
 
@@ -66,12 +66,12 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
      * @param tx Transaction.
      */
     public GridNearTxPrepareFuture(GridCacheContext<K, V> cacheCtx, final GridNearTxLocal<K, V> tx) {
-        super(cacheCtx.kernalContext(), new GridReducer<GridCacheTx, GridCacheTx>() {
-            @Override public boolean collect(GridCacheTx e) {
+        super(cacheCtx.kernalContext(), new GridReducer<GridCacheTxEx<K, V>, GridCacheTxEx<K, V>>() {
+            @Override public boolean collect(GridCacheTxEx<K, V> e) {
                 return true;
             }
 
-            @Override public GridCacheTx apply() {
+            @Override public GridCacheTxEx<K, V> apply() {
                 // Nothing to aggregate.
                 return tx;
             }
@@ -200,7 +200,7 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
         if (err.compareAndSet(null, e)) {
             boolean marked = tx.setRollbackOnly();
 
-            if (e instanceof GridCacheTxRollbackException)
+            if (e instanceof GridCacheTxRollbackException) {
                 if (marked) {
                     try {
                         tx.rollback();
@@ -209,6 +209,7 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
                         U.error(log, "Failed to automatically rollback transaction: " + tx, ex);
                     }
                 }
+            }
 
             onComplete();
         }
@@ -220,7 +221,7 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
      */
     void onResult(UUID nodeId, GridNearTxPrepareResponse<K, V> res) {
         if (!isDone())
-            for (GridFuture<GridCacheTx> fut : pending())
+            for (GridFuture<GridCacheTxEx<K, V>> fut : pending())
                 if (isMini(fut)) {
                     MiniFuture f = (MiniFuture)fut;
 
@@ -233,7 +234,7 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
     }
 
     /** {@inheritDoc} */
-    @Override public boolean onDone(GridCacheTx t, Throwable err) {
+    @Override public boolean onDone(GridCacheTxEx<K, V> t, Throwable err) {
         // If locks were not acquired yet, delay completion.
         if (isDone() || (err == null && !tx.ec() && !checkLocks()))
             return false;
@@ -301,12 +302,20 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
         ConcurrentMap<UUID, GridDistributedTxMapping<K, V>> mappings =
             new ConcurrentHashMap<UUID, GridDistributedTxMapping<K, V>>(nodes.size());
 
-        // Assign keys to primary nodes.
-        for (GridCacheTxEntry<K, V> read : reads)
-            map(read, mappings, nodes, mapped);
+        // Read lock partition topology.
+        cacheCtx.topology().readLock();
 
-        for (GridCacheTxEntry<K, V> write : writes)
-            map(write, mappings, nodes, mapped);
+        try {
+            // Assign keys to primary nodes.
+            for (GridCacheTxEntry<K, V> read : reads)
+                map(read, mappings, nodes, mapped);
+
+            for (GridCacheTxEntry<K, V> write : writes)
+                map(write, mappings, nodes, mapped);
+        }
+        finally {
+            cacheCtx.topology().readUnlock();
+        }
 
         if (isDone()) {
             if (log.isDebugEnabled())
@@ -319,14 +328,12 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
 
         cacheCtx.mvcc().recheckPendingLocks();
 
-        Collection<K> retries = new LinkedList<K>();
-
         // Create mini futures.
         for (final GridDistributedTxMapping<K, V> m : mappings.values()) {
             if (isDone())
                 return;
 
-            assert !m.isEmpty();
+            assert !m.empty();
 
             GridRichNode n = m.node();
 
@@ -344,14 +351,14 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
                 // At this point, if any new node joined, then it is
                 // waiting for this transaction to complete, so
                 // partition reassignments are not possible here.
-                GridFuture<GridCacheTx> fut = cacheCtx.near().dht().prepareTx(n, req);
+                GridFuture<GridCacheTxEx<K, V>> fut = cacheCtx.near().dht().prepareTx(n, req);
 
                 // Add new future.
-                add(new GridEmbeddedFuture<GridCacheTx, GridCacheTx>(
+                add(new GridEmbeddedFuture<GridCacheTxEx<K, V>, GridCacheTxEx<K, V>>(
                     cacheCtx.kernalContext(),
                     fut,
-                    new C2<GridCacheTx, Exception, GridCacheTx>() {
-                        @Override public GridCacheTx apply(GridCacheTx t, Exception ex) {
+                    new C2<GridCacheTxEx<K, V>, Exception, GridCacheTxEx<K, V>>() {
+                        @Override public GridCacheTxEx<K, V> apply(GridCacheTxEx<K, V> t, Exception ex) {
                             if (ex != null) {
                                 onError(ex);
 
@@ -360,13 +367,31 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
 
                             GridCacheTxLocalEx<K, V> dhtTx = (GridCacheTxLocalEx<K, V>)t;
 
-                            tx.addDhtVersion(m.node().id(), dhtTx.xidVersion());
+                            Collection<Integer> invalidParts = dhtTx.invalidPartitions();
 
-                            GridCacheVersion min = dhtTx.minVersion();
+                            if (!F.isEmpty(invalidParts)) {
+                                Collection<GridCacheTxEntry<K, V>> readRemaps =
+                                    new LinkedList<GridCacheTxEntry<K, V>>();
+                                Collection<GridCacheTxEntry<K, V>> writeRemaps =
+                                    new LinkedList<GridCacheTxEntry<K, V>>();
 
-                            GridCacheTxManager<K, V> tm = cacheCtx.near().dht().context().tm();
+                                addRemaps(m.node().id(), invalidParts, m.reads(), readRemaps);
+                                addRemaps(m.node().id(), invalidParts, m.writes(), writeRemaps);
 
-                            tx.orderCompleted(m, tm.committedVersions(min), tm.rolledbackVersions(min));
+                                // Remap.
+                                prepare(readRemaps, writeRemaps,
+                                    Collections.<UUID, GridDistributedTxMapping<K,V>>emptyMap());
+                            }
+
+                            if (!m.empty()) {
+                                tx.addDhtVersion(m.node().id(), dhtTx.xidVersion());
+
+                                GridCacheVersion min = dhtTx.minVersion();
+
+                                GridCacheTxManager<K, V> tm = cacheCtx.near().dht().context().tm();
+
+                                tx.orderCompleted(m, tm.committedVersions(min), tm.rolledbackVersions(min));
+                            }
 
                             return tx;
                         }
@@ -392,10 +417,6 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
                 }
             }
         }
-
-        // Remap. TODO
-        prepareRetries(tx.readEntries(), tx.writeEntries(), retries,
-            Collections.<UUID, GridDistributedTxMapping<K, V>>emptyMap());
     }
 
     /**
@@ -443,25 +464,27 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
     }
 
     /**
-     * @param reads Reads.
-     * @param writes Writes.
-     * @param retries Retries.
-     * @param mapped Mapped entries.
+     * @param nodeId Node ID.
+     * @param invalidParts Invalid partitions.
+     * @param entries Entries.
+     * @param remaps Remaps.
      */
-    private void prepareRetries(Collection<GridCacheTxEntry<K, V>> reads, Collection<GridCacheTxEntry<K, V>> writes,
-        final Collection<K> retries, Map<UUID, GridDistributedTxMapping<K, V>> mapped) {
-        if (!F.isEmpty(retries)) {
-            if (log.isDebugEnabled())
-                log.debug("Remapping mini get future [leftOvers=" + retries + ", fut=" + this + ']');
+    private void addRemaps(UUID nodeId, Collection<Integer> invalidParts, Collection<GridCacheTxEntry<K, V>> entries,
+        Collection<GridCacheTxEntry<K, V>> remaps) {
+        for (Iterator<GridCacheTxEntry<K, V>> it = entries.iterator(); it.hasNext();) {
+            GridCacheTxEntry<K, V> e = it.next();
 
-            P1<GridCacheTxEntry<K, V>> p = new P1<GridCacheTxEntry<K, V>>() {
-                @Override public boolean apply(GridCacheTxEntry<K, V> e) {
-                    return retries.contains(e.key());
-                }
-            };
+            GridCacheEntryEx<K, V> cached = e.cached();
 
-            // This will append new futures to compound list.
-            prepare(F.view(reads, p), F.view(writes, p), mapped);
+            int part = cached == null ? cacheCtx.partition(e.key()) : cached.partition();
+
+            if (invalidParts.contains(part)) {
+                it.remove();
+
+                tx.removeMapping(nodeId, e.key());
+
+                remaps.add(e);
+            }
         }
     }
 
@@ -474,13 +497,16 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
      * Mini-future for get operations. Mini-futures are only waiting on a single
      * node as opposed to multiple nodes.
      */
-    private class MiniFuture extends GridFutureAdapter<GridCacheTx> {
+    private class MiniFuture extends GridFutureAdapter<GridCacheTxEx<K, V>> {
         /** */
         private final GridUuid futId = GridUuid.randomUuid();
 
         /** Keys. */
         @GridToStringInclude
         private GridDistributedTxMapping<K, V> m;
+
+        /** Flag to signal some result being processed. */
+        private AtomicBoolean rcvRes = new AtomicBoolean(false);
 
         /**
          * Empty constructor required for {@link Externalizable}.
@@ -523,48 +549,75 @@ public class GridNearTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gr
          * @param e Error.
          */
         void onResult(Throwable e) {
-            if (log.isDebugEnabled())
-                log.debug("Failed to get future result [fut=" + this + ", err=" + e + ']');
+            if (rcvRes.compareAndSet(false, true)) {
+                if (log.isDebugEnabled())
+                    log.debug("Failed to get future result [fut=" + this + ", err=" + e + ']');
 
-            // Fail.
-            onDone(e);
+                // Fail.
+                onDone(e);
+            }
+            else
+                U.warn(log, "Received error after another result has been processed [fut=" +
+                    GridNearTxPrepareFuture.this + ", mini=" + this + ']', e);
         }
 
         /**
          * @param e Node failure.
          */
         void onResult(GridTopologyException e) {
-            if (log.isDebugEnabled())
-                log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
+            if (isDone())
+                return;
 
-            // Remove previous mapping.
-            tx.removeMapping(m.node().id());
+            if (rcvRes.compareAndSet(false, true)) {
+                if (log.isDebugEnabled())
+                    log.debug("Remote node left grid while sending or waiting for reply (will retry): " + this);
 
-            // Remap.
-            prepare(m.reads(), m.writes(), new T2<UUID, GridDistributedTxMapping<K, V>>(m.node().id(), m));
+                // Remove previous mapping.
+                tx.removeMapping(m.node().id());
 
-            onDone();
+                // Remap.
+                prepare(m.reads(), m.writes(), new T2<UUID, GridDistributedTxMapping<K, V>>(m.node().id(), m));
+
+                onDone(tx);
+            }
         }
 
         /**
          * @param res Result callback.
          */
         void onResult(GridNearTxPrepareResponse<K, V> res) {
-            if (res.error() != null) {
-                // Fail the whole compound future.
-                onError(res.error());
-            }
-            else {
-                prepareRetries(m.reads(), m.writes(), res.retries(),
-                    new T2<UUID, GridDistributedTxMapping<K, V>>(m.node().id(), m));
+            if (isDone())
+                return;
 
-                // Register DHT version.
-                tx.addDhtVersion(m.node().id(), res.dhtVersion());
+            if (rcvRes.compareAndSet(false, true)) {
+                if (res.error() != null) {
+                    // Fail the whole compound future.
+                    onError(res.error());
+                }
+                else {
+                    Collection<Integer> invalidParts = res.invalidPartitions();
 
-                tx.orderCompleted(m, res.committedVersions(), res.rolledbackVersions());
+                    if (!F.isEmpty(invalidParts)) {
+                        Collection<GridCacheTxEntry<K, V>> readRemaps = new LinkedList<GridCacheTxEntry<K, V>>();
+                        Collection<GridCacheTxEntry<K, V>> writeRemaps = new LinkedList<GridCacheTxEntry<K, V>>();
 
-                // Finish this mini future.
-                onDone();
+                        addRemaps(m.node().id(), invalidParts, m.reads(), readRemaps);
+                        addRemaps(m.node().id(), invalidParts, m.writes(), writeRemaps);
+
+                        // Remap.
+                        prepare(readRemaps, writeRemaps, Collections.<UUID, GridDistributedTxMapping<K,V>>emptyMap());
+                    }
+
+                    if (!m.empty()) {
+                        // Register DHT version.
+                        tx.addDhtVersion(m.node().id(), res.dhtVersion());
+
+                        tx.orderCompleted(m, res.committedVersions(), res.rolledbackVersions());
+                    }
+
+                    // Finish this mini future.
+                    onDone(tx);
+                }
             }
         }
 

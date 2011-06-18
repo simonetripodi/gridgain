@@ -54,17 +54,21 @@ import java.util.*;
  * by using either  {@link GridConfiguration#getExcludeEventTypes()} or
  * {@link GridConfiguration#getIncludeEventTypes()} methods in GridGain configuration. Note that certain
  * events are required for GridGain's internal operations and such events will still be generated but not stored by
- * event storage SPI if they are disabled in GridGain configuration. 
+ * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  * @see GridEventType#EVT_CACHE_ENTRY_CREATED
  * @see GridEventType#EVT_CACHE_ENTRY_DESTROYED
- * @see GridEventType#EVT_CACHE_OBJECT_LOCKED
+ * @see GridEventType#EVT_CACHE_ENTRY_EVICTED
  * @see GridEventType#EVT_CACHE_OBJECT_PUT
  * @see GridEventType#EVT_CACHE_OBJECT_READ
  * @see GridEventType#EVT_CACHE_OBJECT_REMOVED
+ * @see GridEventType#EVT_CACHE_OBJECT_LOCKED
  * @see GridEventType#EVT_CACHE_OBJECT_UNLOCKED
+ * @see GridEventType#EVT_CACHE_OBJECT_SWAPPED
+ * @see GridEventType#EVT_CACHE_OBJECT_UNSWAPPED
+ * @see GridEventType#EVT_CACHE_OBJECT_EXPIRED
  */
 public class GridCacheEvent extends GridEventAdapter {
     /** Cache name. */
@@ -95,7 +99,7 @@ public class GridCacheEvent extends GridEventAdapter {
 
     /**
      * Constructs cache event.
-     * 
+     *
      * @param cacheName Cache name.
      * @param nodeId Event node ID.
      * @param msg Event message.
@@ -121,7 +125,7 @@ public class GridCacheEvent extends GridEventAdapter {
 
     /**
      * Gets cache name.
-     * 
+     *
      * @return Cache name.
      */
     public String cacheName() {
@@ -130,7 +134,7 @@ public class GridCacheEvent extends GridEventAdapter {
 
     /**
      * Gets partition for the event which is the partition the key belongs to.
-     * 
+     *
      * @return Partition for the event.
      */
     public int partition() {

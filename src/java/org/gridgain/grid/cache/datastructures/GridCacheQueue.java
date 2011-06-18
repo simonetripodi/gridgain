@@ -98,7 +98,7 @@ import java.util.concurrent.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  * @see GridCache#queue(String)
  * @see GridCache#queue(String, GridCacheQueueType)
  * @see GridCache#queue(String, GridCacheQueueType, int)
@@ -151,9 +151,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *
      * @param item Item to add.
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> addAsync(T item) throws GridException;
+    public GridFuture<Boolean> addAsync(T item);
 
     /**
      * Bulk operation for adding more than one item to queue at once without blocking. Only one internal
@@ -197,9 +196,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *
      * @param items Items to add.
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> addAllAsync(Collection<? extends T> items) throws GridException;
+    public GridFuture<Boolean> addAllAsync(Collection<? extends T> items);
 
     /**
      * Returns {@code true} if this queue contains the specified element.
@@ -308,9 +306,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *
      * @param item Item to delete.
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> removeAsync(T item) throws GridException;
+    public GridFuture<Boolean> removeAsync(T item);
 
     /**
      * Bulk operation that removes all of this queue's elements that are also
@@ -347,9 +344,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *
      * @param items collection containing elements to be removed from this queue.
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> removeAllAsync(Collection<?> items) throws GridException;
+    public GridFuture<Boolean> removeAllAsync(Collection<?> items);
 
     /**
      * Returns {@code true} if this queue contains no elements.
@@ -432,9 +428,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *
      * @param items Collection containing elements to be retained in this collection.
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> retainAllAsync(Collection<?> items) throws GridException;
+    public GridFuture<Boolean> retainAllAsync(Collection<?> items);
 
     /**
      * Returns the number of elements in this queue. If this queue
@@ -459,9 +454,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Future returns {@code null} if this queue is empty.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> pollAsync() throws GridException;
+    public GridFuture<T> pollAsync();
 
     /**
      * Retrieves and removes the tail item of the queue, or returns {@code null} if this queue is empty.
@@ -476,9 +470,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Future returns {@code null} if this queue is empty.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> pollLastAsync() throws GridException;
+    public GridFuture<T> pollLastAsync();
 
     /**
      * Retrieves, but does not remove, the head of this queue, or returns {@code null} if this queue is empty.
@@ -493,9 +486,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Future returns {@code null} if this queue is empty.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> peekAsync() throws GridException;
+    public GridFuture<T> peekAsync();
 
     /**
      * Retrieves, but does not remove, the tail of this queue, or returns {@code null} if this queue is empty.
@@ -510,9 +502,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Future returns {@code null} if this queue is empty.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> peekLastAsync() throws GridException;
+    public GridFuture<T> peekLastAsync();
 
     /**
      * Gets position of the specified item in the queue. First element (head of the queue) is at position {@code 0}.
@@ -561,9 +552,8 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      *
      * @param item Queue item to put.
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> putAsync(T item) throws GridException;
+    public GridFuture<Boolean> putAsync(T item);
 
     /**
      * Retrieves and removes the head item of the queue. Waits if no elements are present in this queue.
@@ -607,17 +597,15 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Retrieves and removes the head item of the queue asynchronously.
      *
      * @return Future for the take operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> takeAsync() throws GridException;
+    public GridFuture<T> takeAsync();
 
     /**
      * Try to retrieve and remove the tail item of the queue asynchronously.
      *
-     * @throws GridException If operation failed.
      * @return Future for the operation.
      */
-    public GridFuture<T> takeLastAsync() throws GridException;
+    public GridFuture<T> takeLastAsync();
 
     /**
      * Retrieves, but does not remove, the head of this queue. Waits if no elements are present in this queue.
@@ -663,25 +651,22 @@ public interface GridCacheQueue<T> extends GridMetadataAware, Collection<T> {
      * Try to retrieve but does not remove the tail of this queue asynchronously.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> getAsync() throws GridException;
+    public GridFuture<T> getAsync();
 
     /**
      * Try to retrieve but does not remove the tail of this queue asynchronously.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<T> getLastAsync() throws GridException;
+    public GridFuture<T> getLastAsync();
 
     /**
      * Clears the queue asynchronously asynchronously.
      *
      * @return Future for the operation.
-     * @throws GridException If operation failed.
      */
-    public GridFuture<Boolean> clearAsync() throws GridException;
+    public GridFuture<Boolean> clearAsync();
 
     /**
      * Gets size of the queue.

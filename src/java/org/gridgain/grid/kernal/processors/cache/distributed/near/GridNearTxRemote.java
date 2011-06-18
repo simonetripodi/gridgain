@@ -28,7 +28,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> {
     /** Evicted keys. */
@@ -199,7 +199,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
     private boolean addEntry(GridCacheTxEntry<K, V> entry) throws GridException {
         checkInternal(entry.key());
 
-        GridNearCacheEntry<K, V> cached = ctx.near().peekExx(entry.key());
+        GridNearCacheEntry<K, V> cached = cctx.near().peekExx(entry.key());
 
         if (cached == null) {
             evicted.add(entry.key());
@@ -255,9 +255,9 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
     void addWrite(K key, byte[] keyBytes, @Nullable V val, @Nullable byte[] valBytes) {
         checkInternal(key);
 
-        GridNearCacheEntry<K, V> cached = ctx.near().entryExx(key);
+        GridNearCacheEntry<K, V> cached = cctx.near().entryExx(key);
 
-        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(ctx, this, NOOP, val, 0, cached);
+        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(cctx, this, NOOP, val, 0, cached);
 
         txEntry.keyBytes(keyBytes);
         txEntry.valueBytes(valBytes);
@@ -276,7 +276,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
     private boolean addEntry(K key, byte[] keyBytes, V val, byte[] valBytes) throws GridException {
         checkInternal(key);
 
-        GridNearCacheEntry<K, V> cached = ctx.near().peekExx(key);
+        GridNearCacheEntry<K, V> cached = cctx.near().peekExx(key);
 
         try {
             if (cached == null) {
@@ -299,7 +299,7 @@ public class GridNearTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V>
                     return false;
                 }
                 else {
-                    GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(ctx, this, NOOP, val, 0, cached);
+                    GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(cctx, this, NOOP, val, 0, cached);
 
                     txEntry.keyBytes(keyBytes);
                     txEntry.valueBytes(valBytes);

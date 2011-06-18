@@ -23,7 +23,7 @@ import java.util.*;
  * Near transaction finish request.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest<K, V> {
     /** Near node ID. */
@@ -37,6 +37,9 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
 
     /** Mini future ID. */
     private GridUuid miniId;
+
+    /** System invalidation flag. */
+    private boolean sysInvalidate;
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -55,6 +58,7 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
      * @param isolation Transaction isolation.
      * @param commit Commit flag.
      * @param invalidate Invalidate flag.
+     * @param sysInvalidate System invalidation flag.
      * @param baseVer Base version.
      * @param committedVers Committed versions.
      * @param rolledbackVers Rolled back versions.
@@ -72,6 +76,7 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
         GridCacheTxIsolation isolation,
         boolean commit,
         boolean invalidate,
+        boolean sysInvalidate,
         GridCacheVersion baseVer, Collection<GridCacheVersion> committedVers,
         Collection<GridCacheVersion> rolledbackVers,
         Collection<GridCacheTxEntry<K, V>> writes,
@@ -88,6 +93,7 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
         this.isolation = isolation;
         this.nearWrites = nearWrites;
         this.miniId = miniId;
+        this.sysInvalidate = sysInvalidate;
     }
 
     /** {@inheritDoc} */
@@ -123,6 +129,13 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
         return nearNodeId;
     }
 
+    /**
+     * @return System invalidate flag.
+     */
+    public boolean isSystemInvalidate() {
+        return sysInvalidate;
+    }
+
     /** {@inheritDoc} */
     @Override public void p2pMarshal(GridCacheContext<K, V> ctx) throws GridException {
         super.p2pMarshal(ctx);
@@ -148,6 +161,8 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
         U.writeCollection(out, nearWrites);
 
         out.writeByte(isolation.ordinal());
+
+        out.writeBoolean(sysInvalidate);
     }
 
     /** {@inheritDoc} */
@@ -159,6 +174,8 @@ public class GridDhtTxFinishRequest<K, V> extends GridDistributedTxFinishRequest
         nearWrites = U.readCollection(in);
 
         isolation = GridCacheTxIsolation.fromOrdinal(in.readByte());
+
+        sysInvalidate = in.readBoolean();
 
         assert miniId != null;
     }

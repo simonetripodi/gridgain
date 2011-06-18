@@ -23,13 +23,9 @@ import java.util.*;
  * DHT transaction prepare response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtTxPrepareResponse<K, V> extends GridDistributedTxPrepareResponse<K, V> {
-    /** Evicted partitions. */
-    @GridToStringInclude
-    private int[] dhtEvicted;
-
     /** Evicted readers. */
     @GridToStringInclude
     private Collection<K> nearEvicted;
@@ -42,6 +38,10 @@ public class GridDhtTxPrepareResponse<K, V> extends GridDistributedTxPrepareResp
 
     /** Mini future ID. */
     private GridUuid miniId;
+
+    /** Invalid partitions. */
+    @GridToStringInclude
+    private Collection<Integer> invalidParts;
 
     /**
      * Empty constructor required by {@link Externalizable}.
@@ -82,20 +82,6 @@ public class GridDhtTxPrepareResponse<K, V> extends GridDistributedTxPrepareResp
     }
 
     /**
-     * @return Retries.
-     */
-    public int[] dhtEvicted() {
-        return dhtEvicted;
-    }
-
-    /**
-     * @param dhtEvicted Evicted partitions.
-     */
-    public void dhtEvicted(int[] dhtEvicted) {
-        this.dhtEvicted = dhtEvicted;
-    }
-
-    /**
      * @return Evicted readers.
      */
     public Collection<K> nearEvicted() {
@@ -130,6 +116,20 @@ public class GridDhtTxPrepareResponse<K, V> extends GridDistributedTxPrepareResp
         return miniId;
     }
 
+    /**
+     * @return Invalid partitions.
+     */
+    public Collection<Integer> invalidPartitions() {
+        return invalidParts;
+    }
+
+    /**
+     * @param invalidParts Invalid partitions.
+     */
+    public void invalidPartitions(Collection<Integer> invalidParts) {
+        this.invalidParts = invalidParts;
+    }
+
     /** {@inheritDoc} */
     @Override public void p2pMarshal(GridCacheContext<K, V> ctx) throws GridException {
         super.p2pMarshal(ctx);
@@ -150,9 +150,8 @@ public class GridDhtTxPrepareResponse<K, V> extends GridDistributedTxPrepareResp
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
 
-        out.writeObject(dhtEvicted);
-
         U.writeCollection(out, nearEvictedBytes);
+        U.writeIntCollection(out, invalidParts);
 
         assert futId != null;
         assert miniId != null;
@@ -166,9 +165,8 @@ public class GridDhtTxPrepareResponse<K, V> extends GridDistributedTxPrepareResp
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
-        dhtEvicted = (int[])in.readObject();
-
         nearEvictedBytes = U.readCollection(in);
+        invalidParts = U.readIntCollection(in);
 
         futId = U.readGridUuid(in);
         miniId = U.readGridUuid(in);

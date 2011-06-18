@@ -21,7 +21,7 @@ import java.io.*;
  * provided closure with embedded future result.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridEmbeddedFuture<A, B> extends GridFutureAdapter<A> {
     /** Embedded future to wait for. */
@@ -259,6 +259,9 @@ public class GridEmbeddedFuture<A, B> extends GridFutureAdapter<A> {
             try {
                 applyx(f);
             }
+            catch (IllegalStateException ignore) {
+                U.warn(log, "Will not execute future listener (grid is stopping): " + ctx.gridName());
+            }
             catch (Exception e) {
                 onDone(e);
             }
@@ -274,6 +277,9 @@ public class GridEmbeddedFuture<A, B> extends GridFutureAdapter<A> {
         @Override public final void apply(GridFuture<A> f) {
             try {
                 applyx(f);
+            }
+            catch (IllegalStateException ignore) {
+                U.warn(log, "Will not execute future listener (grid is stopping): " + ctx.gridName());
             }
             catch (Exception e) {
                 onDone(e);

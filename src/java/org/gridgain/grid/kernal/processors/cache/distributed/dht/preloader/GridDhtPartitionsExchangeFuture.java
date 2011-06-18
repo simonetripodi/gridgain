@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Future for exchanging partition maps.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
@@ -274,6 +274,9 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                 assert discoEvt != null;
 
+                // Only wait in case of join event. If a node leaves,
+                // then transactions handled by it will be either remapped
+                // or invalidated.
                 if (exchId.isJoined()) {
                     GridNode node = cctx.node(exchId.nodeId());
 
@@ -289,11 +292,6 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                     Set<Integer> parts = cctx.primaryPartitions(node, null);
 
                     cctx.partitionReleaseFuture(parts, exchId.nodeId()).get();
-                }
-                else {
-                    assert exchId.isLeft();
-
-                    cctx.nodeReleaseFuture(exchId.nodeId()).get();
                 }
 
                 top.beforeExchange(exchId);

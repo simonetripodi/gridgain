@@ -12,6 +12,7 @@ package org.gridgain.grid.kernal.processors.cache;
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -29,7 +30,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Managed transaction adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     implements GridCacheTxEx<K, V>, Externalizable {
@@ -63,7 +64,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
     /** Cache registry. */
     @GridToStringExclude
-    protected GridCacheContext<K, V> ctx;
+    protected GridCacheContext<K, V> cctx;
 
     /** Logger. */
     @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
@@ -91,6 +92,9 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     /** Invalidate flag. */
     protected volatile boolean invalidate;
 
+    /** Invalidation flag for system invalidations (not user-based ones). */
+    private boolean sysInvalidate;
+
     /** */
     protected volatile boolean swapEnabled;
 
@@ -105,6 +109,9 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
     /** Done marker. */
     protected final AtomicBoolean isDone = new AtomicBoolean(false);
+
+    /** */
+    private Set<Integer> invalidParts = new GridLeanSet<Integer>();
 
     /**
      * Transaction state. Note that state is not protected, as we want to
@@ -131,7 +138,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     }
 
     /**
-     * @param ctx Cache registry.
+     * @param cctx Cache registry.
      * @param xidVer Transaction ID.
      * @param implicit Implicit flag.
      * @param local Local flag.
@@ -143,7 +150,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
      * @param storeEnabled Whether to use read/write through.
      */
     protected GridCacheTxAdapter(
-        GridCacheContext<K, V> ctx,
+        GridCacheContext<K, V> cctx,
         GridCacheVersion xidVer,
         boolean implicit,
         boolean local,
@@ -154,9 +161,9 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         boolean swapEnabled,
         boolean storeEnabled) {
         assert xidVer != null;
-        assert ctx != null;
+        assert cctx != null;
 
-        this.ctx = ctx;
+        this.cctx = cctx;
         this.xidVer = xidVer;
         this.implicit = implicit;
         this.local = local;
@@ -167,17 +174,17 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         this.swapEnabled = swapEnabled;
         this.storeEnabled = storeEnabled;
 
-        startVer = ctx.versions().last();
+        startVer = cctx.versions().last();
 
-        nodeId = ctx.discovery().localNode().id();
+        nodeId = cctx.discovery().localNode().id();
 
         threadId = Thread.currentThread().getId();
 
-        log = ctx.logger(getClass());
+        log = cctx.logger(getClass());
     }
 
     /**
-     * @param ctx Cache registry.
+     * @param cctx Cache registry.
      * @param nodeId Node ID.
      * @param xidVer Transaction ID.
      * @param startVer Start version mark.
@@ -190,7 +197,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
      * @param storeEnabled Store enabled (read/write through) flag.
      */
     protected GridCacheTxAdapter(
-        GridCacheContext<K, V> ctx,
+        GridCacheContext<K, V> cctx,
         UUID nodeId,
         GridCacheVersion xidVer,
         GridCacheVersion startVer,
@@ -202,7 +209,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         boolean swapEnabled,
         boolean storeEnabled
     ) {
-        this.ctx = ctx;
+        this.cctx = cctx;
         this.nodeId = nodeId;
         this.threadId = threadId;
         this.xidVer = xidVer;
@@ -217,7 +224,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         implicit = false;
         local = false;
 
-        log = ctx.logger(getClass());
+        log = cctx.logger(getClass());
     }
 
     /** {@inheritDoc} */
@@ -287,6 +294,19 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     /** {@inheritDoc} */
     @Override public UUID xid() {
         return xidVer.id();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<Integer> invalidPartitions() {
+        return invalidParts;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void addInvalidPartition(int part) {
+        invalidParts.add(part);
+
+        if (log.isDebugEnabled())
+            log.debug("Added invalid partition for transaction [part=" + part + ", tx=" + this + ']');
     }
 
     /** {@inheritDoc} */
@@ -368,7 +388,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
         GridCacheVersion explicit = txEntry == null ? null : txEntry.explicitVersion();
 
-        return local() && !ctx.isDht() ?
+        return local() && !cctx.isDht() ?
             entry.lockedByThread(threadId()) || (explicit != null && entry.lockedBy(explicit)) :
             // If candidate is not there, then lock was explicit.
             // Otherwise, check if entry is owned by version.
@@ -381,7 +401,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
         GridCacheVersion explicit = txEntry == null ? null : txEntry.explicitVersion();
 
-        return local() && !ctx.isDht() ?
+        return local() && !cctx.isDht() ?
             entry.lockedByThreadUnsafe(threadId()) || (explicit != null && entry.lockedByUnsafe(explicit)) :
             // If candidate is not there, then lock was explicit.
             // Otherwise, check if entry is owned by version.
@@ -437,7 +457,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     public void initCommitVersion() {
         if (ec()) {
             if (commitVer.get() == null)
-                commitVer.compareAndSet(null, ctx.versions().next());
+                commitVer.compareAndSet(null, cctx.versions().next());
         }
         else {
             commitVer.compareAndSet(null, xidVer);
@@ -664,7 +684,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
             if (state != ACTIVE)
                 seal();
 
-            ctx.tm().onTxStateChange(prev, state, this);
+            cctx.tm().onTxStateChange(prev, state, this);
         }
 
         return valid;
@@ -720,6 +740,16 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         return invalidate;
     }
 
+    /** {@inheritDoc} */
+    @Override public boolean isSystemInvalidate() {
+        return sysInvalidate;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void systemInvalidate(boolean sysInvalidate) {
+        this.sysInvalidate = sysInvalidate;
+    }
+
     /**
      * @param e Transaction entry.
      * @param primaryOnly Flag to include backups into check or not.
@@ -733,14 +763,14 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         // or transaction node ID from near-local transactions.
         UUID nodeId = e.nodeId() == null ? local() ? this.nodeId :  null : e.nodeId();
 
-        if (nodeId != null && nodeId.equals(ctx.nodeId()))
+        if (nodeId != null && nodeId.equals(cctx.nodeId()))
             return true;
 
         GridCacheEntryEx<K, V> cached = e.cached();
 
-        int part = cached != null ? cached.partition() : ctx.partition(e.key());
+        int part = cached != null ? cached.partition() : cctx.partition(e.key());
 
-        Collection<GridRichNode> affNodes = ctx.affinity(part, CU.allNodes(ctx));
+        Collection<GridRichNode> affNodes = cctx.affinity(part, CU.allNodes(cctx));
 
         if (primaryOnly) {
             GridRichNode primary = F.first(affNodes);
@@ -750,7 +780,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
             return primary.isLocal();
         }
         else
-            return F.contains(affNodes, ctx.localNode());
+            return F.contains(affNodes, cctx.localNode());
     }
 
     /**

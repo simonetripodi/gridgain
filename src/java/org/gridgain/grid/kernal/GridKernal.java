@@ -18,6 +18,7 @@ import org.gridgain.grid.kernal.controllers.*;
 import org.gridgain.grid.kernal.controllers.affinity.*;
 import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
+import org.gridgain.grid.kernal.controllers.segmentation.*;
 import org.gridgain.grid.kernal.executor.*;
 import org.gridgain.grid.kernal.managers.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
@@ -85,14 +86,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
     private static final String VER = "3.1.1c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "13062011";
+    private static final String BUILD = "17062011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -609,9 +610,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
         GridUpdateNotifier verChecker = null;
 
-        String isNotify = System.getProperty(GG_UPDATE_NOTIFIER);
-
-        boolean notifyEnabled = !isDaemon() && (isNotify == null || !"false".equals(isNotify));
+        boolean notifyEnabled = !isDaemon() && !"false".equalsIgnoreCase(X.getSystemOrEnv(GG_UPDATE_NOTIFIER));
 
         if (notifyEnabled) {
             verChecker = new GridUpdateNotifier(gridName, false, 0);
@@ -708,13 +707,14 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             startController(ctx, GridLicenseController.class);
             startController(ctx, GridAffinityController.class);
             startController(ctx, GridRestController.class);
+            startController(ctx, GridSegmentationController.class);
 
             // Start processors before discovery manager, so they will
             // be able to start receiving messages once discovery completes.
+            startProcessor(ctx, new GridCacheProcessor(ctx));
             startProcessor(ctx, new GridTaskSessionProcessor(ctx));
             startProcessor(ctx, new GridJobProcessor(ctx));
             startProcessor(ctx, new GridTaskProcessor(ctx));
-            startProcessor(ctx, new GridCacheProcessor(ctx));
             startProcessor(ctx, new GridScheduleProcessor(ctx));
 
             gw.writeLock();
@@ -1686,7 +1686,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             nodeLocal.clear();
 
             if (log.isDebugEnabled())
-                log.debug("Grid " + (gridName == null ? "" : '\'' + gridName + "' ") + "is stopping[]");
+                log.debug("Grid " + (gridName == null ? "" : '\'' + gridName + "' ") + "is stopping.");
         }
         finally {
             gw.writeUnlock();

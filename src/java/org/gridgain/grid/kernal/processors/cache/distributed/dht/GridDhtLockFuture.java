@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<K, Boolean>, GridCacheMappedVersion {
@@ -105,6 +105,9 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     @GridToStringExclude
     private CountDownLatch replyLatch = new CountDownLatch(1);
 
+    /** */
+    private Collection<Integer> invalidParts = new GridLeanSet<Integer>();
+
     /** Mutex. */
     private final Object mux = new Object();
 
@@ -171,8 +174,22 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<K> retries() {
-        return Collections.emptyList(); // TODO: implement.
+    @Override public Collection<Integer> invalidPartitions() {
+        return invalidParts;
+    }
+
+    /**
+     * @param invalidPart Partition to retry.
+     */
+    void addInvalidPartition(int invalidPart) {
+        invalidParts.add(invalidPart);
+
+        // Register invalid partitions with transaction.
+        if (tx != null)
+            tx.addInvalidPartition(invalidPart);
+
+        if (log.isDebugEnabled())
+            log.debug("Added invalid partition to future [invalidPart=" + invalidPart + ", fut=" + this + ']');
     }
 
     /** {@inheritDoc} */
@@ -732,26 +749,31 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     private boolean map(Iterable<GridDhtCacheEntry<K, V>> entries) {
         // Assign keys to primary nodes.
         for (GridDhtCacheEntry<K, V> entry : entries) {
-            while (true) {
-                try {
-                    if (log.isDebugEnabled())
-                        log.debug("Mapping entries for DHT lock future: " + this);
+            try {
+                while (true) {
+                    try {
+                        if (log.isDebugEnabled())
+                            log.debug("Mapping entries for DHT lock future: " + this);
 
-                    cctx.dhtMap(nearNodeId, entry, log, dhtMap, nearMap);
+                        cctx.dhtMap(nearNodeId, entry, log, dhtMap, nearMap);
 
-                    GridCacheMvccCandidate<K> cand = entry.mappings(lockVer,
-                        F.nodeIds(F.concat(false, dhtMap.keySet(), nearMap.keySet())));
+                        GridCacheMvccCandidate<K> cand = entry.mappings(lockVer,
+                            F.nodeIds(F.concat(false, dhtMap.keySet(), nearMap.keySet())));
 
-                    assert cand != null;
+                        assert cand != null;
 
-                    break;
+                        break;
+                    }
+                    catch (GridCacheEntryRemovedException ignore) {
+                        if (log.isDebugEnabled())
+                            log.debug("Got removed entry when mapping DHT lock future (will retry): " + entry);
+
+                        entry = cctx.dht().entryExx(entry.key());
+                    }
                 }
-                catch (GridCacheEntryRemovedException ignore) {
-                    if (log.isDebugEnabled())
-                        log.debug("Got removed entry when mapping DHT lock future (will retry): " + entry);
-
-                    entry = cctx.dht().entryExx(entry.key());
-                }
+            }
+            catch (GridDhtInvalidPartitionException e) {
+                addInvalidPartition(e.partition());
             }
         }
 
@@ -770,8 +792,8 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
         }
 
         if (log.isDebugEnabled())
-            log.debug("Mapped DHT lock future [dhtMap=" + dhtMap.keySet() + ", nearMap=" + nearMap.keySet() +
-                ", dhtLockFut=" + this + ']');
+            log.debug("Mapped DHT lock future [dhtMap=" + F.nodeIds(dhtMap.keySet()) + ", nearMap=" +
+                F.nodeIds(nearMap.keySet()) + ", dhtLockFut=" + this + ']');
 
         boolean ret = false;
 
@@ -1063,18 +1085,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                 // Fail the whole compound future.
                 onError(res.error());
             else {
-                int[] dhtEvicted = res.dhtEvicted();
-
-                if (dhtEvicted != null && dhtMapping != null) {
-                    if (tx != null) {
-                        GridDistributedTxMapping<K, V> m = tx.dhtMapping(node.id());
-
-                        if (m != null)
-                            m.evictPartitions(dhtEvicted);
-                    }
-                }
-
-                if (nearMapping != null) {
+                if (nearMapping != null && !F.isEmpty(res.nearEvicted())) {
                     if (tx != null) {
                         GridDistributedTxMapping<K, V> m = tx.nearMapping(node.id());
 
@@ -1083,6 +1094,29 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                     }
 
                     evictReaders(cctx, res.nearEvicted(), node.id(), res.messageId(), nearMapping);
+                }
+
+                Set<Integer> invalidParts = res.invalidPartitions();
+
+                // Removing mappings for invalid partitions.
+                if (!F.isEmpty(invalidParts)) {
+                    for (Iterator<GridDhtCacheEntry<K, V>> it = dhtMapping.iterator(); it.hasNext();) {
+                        GridDhtCacheEntry<K, V> entry = it.next();
+
+                        if (invalidParts.contains(entry.partition())) {
+                            it.remove();
+
+                            if (log.isDebugEnabled())
+                                log.debug("Removed mapping for entry [nodeId=" + node.id() + ", entry=" + entry +
+                                    ", fut=" + GridDhtLockFuture.this + ']');
+
+                            if (tx != null)
+                                tx.removeDhtMapping(node.id(), entry);
+                        }
+                    }
+
+                    if (dhtMapping.isEmpty())
+                        dhtMap.remove(node);
                 }
 
                 // Finish mini future.
@@ -1110,6 +1144,9 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                     while (true) {
                         try {
                             cached.removeReader(nodeId, msgId);
+
+                            if (tx != null)
+                                tx.removeNearMapping(nodeId, cached);
 
                             break;
                         }

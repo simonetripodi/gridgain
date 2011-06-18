@@ -18,7 +18,7 @@ import org.gridgain.grid.util.{GridUtils => U}
  * Peer deploy aware adapter for Java's `GridClosure`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 class ScalarClosure[E, R](private val f: E => R) extends GridClosure[E, R] {
     assert(f != null)
@@ -28,5 +28,7 @@ class ScalarClosure[E, R](private val f: E => R) extends GridClosure[E, R] {
     /**
      * Delegates to passed in function.
      */
-    def apply(e: E) = f(e)
+    def apply(e: E): R = {
+        f(e)
+    }
 }

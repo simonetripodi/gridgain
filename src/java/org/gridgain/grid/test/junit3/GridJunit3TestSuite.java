@@ -170,7 +170,7 @@ import static org.gridgain.grid.test.GridTestVmParameters.*;
  * </table>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridJunit3TestSuite extends TestSuite {
     /** Default GridGain configuration file for JUnits (value is {@code config/junit/junit-spring.xml}). */

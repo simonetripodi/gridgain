@@ -15,6 +15,7 @@ import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
@@ -23,17 +24,9 @@ import java.util.*;
  * Near cache lock response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V> {
-    /** Retries. */
-    @GridToStringInclude
-    private Collection<K> retries;
-
-    /** Retry bytes. */
-    @GridToStringExclude
-    private Collection<byte[]> retryBytes;
-
     /** Collection of versions that are pending and less than lock version. */
     @GridToStringInclude
     private Collection<GridCacheVersion> pending;
@@ -44,6 +37,9 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     /** DHT versions. */
     @GridToStringInclude
     private GridCacheVersion[] dhtVers;
+
+    /** Invalid partitions. */
+    private Collection<Integer> invalidParts;
 
     /**
      * Empty constructor (required by {@link Externalizable}).
@@ -57,9 +53,11 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
      * @param futId Future ID.
      * @param miniId Mini future ID.
      * @param cnt Count.
+     * @param invalidParts Invalid partitions.
      * @param err Error.
      */
-    public GridNearLockResponse(GridCacheVersion lockVer, GridUuid futId, GridUuid miniId, int cnt, Throwable err) {
+    public GridNearLockResponse(GridCacheVersion lockVer, GridUuid futId, GridUuid miniId, int cnt,
+        Collection<Integer> invalidParts, Throwable err) {
         super(lockVer, futId, cnt, err);
 
         assert miniId != null;
@@ -67,6 +65,8 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
         this.miniId = miniId;
 
         dhtVers = new GridCacheVersion[cnt];
+
+        this.invalidParts = invalidParts;
     }
 
     /**
@@ -88,20 +88,6 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     }
 
     /**
-     * @return Failed filter set.
-     */
-    public Collection<K> retries() {
-        return retries == null ? Collections.<K>emptyList() : retries;
-    }
-
-    /**
-     * @param retries Keys to retry due to ownership shift.
-     */
-    public void retries(Collection<K> retries) {
-        this.retries = retries;
-    }
-
-    /**
      * @return Mini future ID.
      */
     public GridUuid miniId() {
@@ -117,34 +103,26 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     }
 
     /**
+     * @return Invalid partitions.
+     */
+    public Collection<Integer> invalidPartitions() {
+        return invalidParts;
+    }
+
+    /**
      * @param val Value.
      * @param valBytes Value bytes (possibly {@code null}).
      * @param dhtVer DHT version.
      * @param ctx Context.
      * @throws GridException If failed.
      */
-    public void addValueBytes(V val, byte[] valBytes, GridCacheVersion dhtVer, GridCacheContext<K, V> ctx)
+    public void addValueBytes(@Nullable V val, @Nullable byte[] valBytes, @Nullable GridCacheVersion dhtVer,
+        GridCacheContext<K, V> ctx)
         throws GridException {
         dhtVers[values().size()] = dhtVer;
 
         // Delegate to super.
         addValueBytes(val, valBytes, ctx);
-    }
-
-    /** {@inheritDoc} */
-    @Override public void p2pMarshal(GridCacheContext<K, V> ctx) throws GridException {
-        super.p2pMarshal(ctx);
-
-        if (retryBytes == null)
-            retryBytes = marshalCollection(retries, ctx);
-    }
-
-    /** {@inheritDoc} */
-    @Override public void p2pUnmarshal(GridCacheContext<K, V> ctx, ClassLoader ldr) throws GridException {
-        super.p2pUnmarshal(ctx, ldr);
-
-        if (retries == null)
-            retries = unmarshalCollection(retryBytes, ctx, ldr);
     }
 
     /**
@@ -153,9 +131,9 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
 
-        U.writeCollection(out, retryBytes);
         U.writeCollection(out, pending);
         U.writeArray(out, dhtVers);
+        U.writeIntCollection(out, invalidParts);
 
         assert miniId != null;
 
@@ -168,9 +146,9 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
-        retryBytes = U.readList(in);
         pending = U.readSet(in);
         dhtVers = U.readArray(in, CU.versionArrayFactory());
+        invalidParts = U.readIntSet(in);
         miniId = U.readGridUuid(in);
 
         assert miniId != null;

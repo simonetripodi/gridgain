@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -705,6 +705,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
                 newVer = tx == null ? cctx.versions().next() : tx.commitVersion();
 
+                // Set current value to null.
                 update(null, null, toExpireTime(ttl), ttl, newVer, metrics);
 
                 metrics.onWrite();
@@ -752,34 +753,6 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         }
     }
 
-    /** {@inheritDoc} */
-    @Override public boolean clearIfNew(GridCacheVersion ver) throws GridException {
-        // Don't check flags here as this method is for internal use only.
-        // ==============================================================
-
-        synchronized (mux) {
-            if (ver != startVer)
-                return false;
-
-            if (!markObsolete(ver)) {
-                if (log.isDebugEnabled())
-                    log.debug("Entry could not be marked obsolete (it is still used): " + this);
-
-                return false;
-            }
-
-            if (log.isDebugEnabled())
-                log.debug("Entry has been marked obsolete: " + this);
-
-            // Give to GC.
-            update(null, null, toExpireTime(ttl), ttl, ver, metrics);
-
-            clearIndex();
-
-            return true;
-        }
-    }
-
     /**
      * @return {@code true} if entry has readers. It makes sense only for dht entry.
      * @throws GridCacheEntryRemovedException If removed.
@@ -788,8 +761,15 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         return false;
     }
 
+    /**
+     *
+     */
+    protected void clearReaders() {
+        // No-op.
+    }
+
     /** {@inheritDoc} */
-    @Override public boolean clear(GridCacheVersion ver, boolean swap,
+    @Override public boolean clear(GridCacheVersion ver, boolean swap, boolean readers,
         @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException {
         cctx.denyOnFlag(READ);
 
@@ -806,9 +786,12 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         synchronized (mux) {
             if (!startVer.equals(ver))
                 // Version has changed since filter checking.
-                return clear(ver, swap, filter);
+                return clear(ver, swap, readers, filter);
 
             try {
+                if (readers)
+                    clearReaders();
+
                 if (hasReaders() || !markObsolete(ver)) {
                     if (log.isDebugEnabled())
                         log.debug("Entry could not be marked obsolete (it is still used or has readers): " + this);
@@ -981,7 +964,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                     return false;
                 }
                 else
-                    return clear(cctx.versions().next(), cctx.isSwapEnabled(), filter);
+                    return clear(cctx.versions().next(), cctx.isSwapEnabled(), false, filter);
         }
 
         // If version has changed do it again.

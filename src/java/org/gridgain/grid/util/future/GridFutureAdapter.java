@@ -30,7 +30,7 @@ import static java.util.concurrent.TimeUnit.*;
  * Future adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements GridFuture<R>, Externalizable {
     /** Synchronous notification flag. */
@@ -452,7 +452,7 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
      * @param res Result.
      * @return {@code True} if result was set by this call.
      */
-    public final boolean onDone(R res) {
+    public final boolean onDone(@Nullable R res) {
         return onDone(res, null);
     }
 
@@ -463,7 +463,7 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
      * @param err Error.
      * @return {@code True} if result was set by this call.
      */
-    public final boolean onDone(Throwable err) {
+    public final boolean onDone(@Nullable Throwable err) {
         return onDone(null, err);
     }
 

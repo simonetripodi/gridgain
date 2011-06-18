@@ -27,7 +27,7 @@ import java.util.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collection<GridCacheEntryInfo<K, V>>>
     implements GridDhtFuture<K, Collection<GridCacheEntryInfo<K, V>>> {
@@ -64,7 +64,7 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
     private GridLogger log;
 
     /** Retries because ownership changed. */
-    private List<K> retries;
+    private Collection<Integer> retries = new GridLeanSet<Integer>();
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -110,6 +110,8 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
         ver = tx == null ? ctx.versions().next() : tx.xidVersion();
 
         log = ctx.logger(getClass());
+
+        syncNotify(true);
     }
 
     /**
@@ -129,8 +131,8 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<K> retries() {
-        return retries == null ? Collections.<K>emptyList() : retries;
+    @Override public Collection<Integer> invalidPartitions() {
+        return retries;
     }
 
     /**
@@ -151,9 +153,8 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
     @Override public boolean onDone(Collection<GridCacheEntryInfo<K, V>> res, Throwable err) {
         if (super.onDone(res, err)) {
             // Release all partitions reserved by this future.
-            for (GridDhtLocalPartition part : parts) {
+            for (GridDhtLocalPartition part : parts)
                 part.release();
-            }
 
             return true;
         }
@@ -165,7 +166,10 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
      * @param keys Keys.
      */
     private void map(final Collection<? extends K> keys) {
-        GridFuture<Object> fut = ctx.preloader().request(keys);
+        GridDhtFuture<K, Object> fut = ctx.dht().dhtPreloader().request(keys);
+
+        if (fut.invalidPartitions() != null)
+            retries.addAll(fut.invalidPartitions());
 
         add(new GridEmbeddedFuture<Collection<GridCacheEntryInfo<K, V>>, Object>(ctx.kernalContext(), fut,
             new GridClosure2<Object, Exception, Collection<GridCacheEntryInfo<K, V>>>() {
@@ -181,12 +185,8 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
 
                     // Assign keys to primary nodes.
                     for (K key : keys)
-                        if (!map(key, parts, mappedKeys)) {
-                            if (retries == null)
-                                retries = new LinkedList<K>();
-
-                            retries.add(key);
-                        }
+                        if (!map(key, parts, mappedKeys))
+                            retries.add(ctx.partition(key));
 
                     // Add new future.
                     add(getAsync(mappedKeys));
@@ -210,7 +210,7 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
         if (part == null)
             return false;
 
-        if (!parts.contains(part))
+        if (!parts.contains(part)) {
             // By reserving, we make sure that partition won't be unloaded while processed.
             if (part.reserve()) {
                 parts.add(part);
@@ -219,6 +219,7 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
 
                 return true;
             }
+        }
 
         return false;
     }

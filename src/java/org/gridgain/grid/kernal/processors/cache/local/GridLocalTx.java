@@ -25,7 +25,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Local cache transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Transaction future. */
@@ -63,13 +63,14 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> future() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> future() {
         return fut.get();
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     @Override public GridFuture<GridCacheTx> finishFuture() {
-        return fut.get();
+        return (GridFuture)fut.get();
     }
 
     /** {@inheritDoc} */
@@ -106,14 +107,14 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> prepareAsync() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> prepareAsync() {
         try {
             prepare();
 
-            return new GridFinishedFuture<GridCacheTx>(ctx.kernalContext(), this);
+            return new GridFinishedFuture<GridCacheTxEx<K, V>>(cctx.kernalContext(), this);
         }
         catch (GridException e) {
-            return new GridFinishedFuture<GridCacheTx>(ctx.kernalContext(), e);
+            return new GridFinishedFuture<GridCacheTxEx<K, V>>(cctx.kernalContext(), e);
         }
     }
 
@@ -176,6 +177,7 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
     @Override public GridFuture<GridCacheTx> commitAsync() {
         try {
             prepare();
@@ -183,22 +185,22 @@ class GridLocalTx<K, V> extends GridCacheTxLocalAdapter<K, V> {
         catch (GridException e) {
             state(UNKNOWN);
 
-            return new GridFinishedFuture<GridCacheTx>(ctx.kernalContext(), e);
+            return new GridFinishedFuture<GridCacheTx>(cctx.kernalContext(), e);
         }
 
         GridLocalTxFuture<K, V> fut = this.fut.get();
 
         if (fut == null) {
-            if (this.fut.compareAndSet(null, fut = new GridLocalTxFuture<K, V>(ctx, this))) {
-                ctx.mvcc().addFuture(fut);
+            if (this.fut.compareAndSet(null, fut = new GridLocalTxFuture<K, V>(cctx, this))) {
+                cctx.mvcc().addFuture(fut);
 
                 fut.checkLocks();
 
-                return fut;
+                return (GridFuture)fut;
             }
         }
 
-        return this.fut.get();
+        return (GridFuture)this.fut.get();
     }
 
     /** {@inheritDoc} */

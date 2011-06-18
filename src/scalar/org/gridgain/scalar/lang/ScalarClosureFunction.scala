@@ -17,7 +17,7 @@ import org.gridgain.grid.lang.GridClosure
  * Wrapping Scala function for `GridClosure`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 class ScalarClosureFunction[T, R](val inner: GridClosure[T, R]) extends (T => R) {
     assert(inner != null)
@@ -25,5 +25,7 @@ class ScalarClosureFunction[T, R](val inner: GridClosure[T, R]) extends (T => R)
     /**
      * Delegates to passed in grid closure.
      */
-    def apply(t: T) = inner.apply(t)
+    def apply(t: T): R = {
+        inner.apply(t)
+    }
 }

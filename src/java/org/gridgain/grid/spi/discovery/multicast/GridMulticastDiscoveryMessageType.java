@@ -16,7 +16,7 @@ import java.util.*;
  * This enumeration defines types for multicast discovery messages.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 enum GridMulticastDiscoveryMessageType {
     /** Ping request is sent when {@link GridDiscoverySpi#pingNode(UUID)} is called. */

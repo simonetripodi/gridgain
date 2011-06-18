@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -645,7 +645,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
      * @param res Response.
      */
     private void processPrepareResponse(UUID nodeId, GridNearTxPrepareResponse<K, V> res) {
-        GridNearTxPrepareFuture<K, V> fut = (GridNearTxPrepareFuture<K, V>)ctx.mvcc().<GridCacheTx>future(
+        GridNearTxPrepareFuture<K, V> fut = (GridNearTxPrepareFuture<K, V>)ctx.mvcc().<GridCacheTxEx<K, V>>future(
             res.version().id(), res.futureId());
 
         if (fut == null) {
@@ -938,8 +938,6 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
         return CU.mapKeysToNodes(ctx, keys);
     }
-
-
 
     /** {@inheritDoc} */
     @Override public Set<GridCacheEntry<K, V>> entrySet(

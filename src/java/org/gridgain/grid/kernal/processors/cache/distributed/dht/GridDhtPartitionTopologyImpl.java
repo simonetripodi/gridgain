@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -118,6 +118,17 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings( {"LockAcquiredButNotSafelyReleased"})
+    @Override public void readLock() {
+        lock.readLock().lock();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void readUnlock() {
+        lock.readLock().unlock();
+    }
+
+    /** {@inheritDoc} */
     @Override public void beforeExchange(GridDhtPartitionExchangeId exchId) throws GridException {
         waitForRent();
 
@@ -167,29 +178,43 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                     if (oldest.id().equals(loc.id()) && oldest.id().equals(exchId.nodeId())) {
                         assert exchId.isJoined();
 
-                        GridDhtLocalPartition<K, V> locPart = localPartition(p, true);
+                        try {
+                            GridDhtLocalPartition<K, V> locPart = localPartition(p, true);
 
-                        assert locPart != null;
+                            assert locPart != null;
 
-                        boolean owned = locPart.own();
+                            boolean owned = locPart.own();
 
-                        assert owned : "Failed to own partition for oldest node [cacheName" + cctx.name() + ", part=" +
-                            locPart + ']';
+                            assert owned : "Failed to own partition for oldest node [cacheName" + cctx.name() +
+                                ", part=" + locPart + ']';
 
-                        if (log.isDebugEnabled())
-                            log.debug("Owned partition for oldest node: " + locPart);
+                            if (log.isDebugEnabled())
+                                log.debug("Owned partition for oldest node: " + locPart);
 
-                        updateLocal(p, loc.id(), locPart.state(), updateSeq);
+                            updateLocal(p, loc.id(), locPart.state(), updateSeq);
+                        }
+                        catch (GridDhtInvalidPartitionException e) {
+                            if (log.isDebugEnabled())
+                                log.debug("Ignoring invalid partition on oldest node (no need to create a partition " +
+                                    "if it no longer belongs to local node: " + e.partition());
+                        }
                     }
                     // If this is not the first node in grid.
                     else {
                         if (node2part != null && node2part.valid()) {
                             if (cctx.belongs(p, loc, allNodes)) {
-                                // This will make sure that all non-existing partitions
-                                // will be created in MOVING state.
-                                GridDhtLocalPartition<K, V> locPart = localPartition(p, true);
+                                try {
+                                    // This will make sure that all non-existing partitions
+                                    // will be created in MOVING state.
+                                    GridDhtLocalPartition<K, V> locPart = localPartition(p, true);
 
-                                updateLocal(p, loc.id(), locPart.state(), updateSeq);
+                                    updateLocal(p, loc.id(), locPart.state(), updateSeq);
+                                }
+                                catch (GridDhtInvalidPartitionException e) {
+                                    if (log.isDebugEnabled())
+                                        log.debug("Ignoring invalid partition (no need to create a partition if it " +
+                                            "no longer belongs to local node: " + e.partition());
+                                }
                             }
                             else {
                                 GridDhtLocalPartition<K, V> locPart = localPartition(p, false);
@@ -211,8 +236,16 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                         }
                         // If this node's map is empty, we pre-create local partitions,
                         // so local map will be sent correctly during exchange.
-                        else if (cctx.belongs(p, loc, allNodes))
-                            localPartition(p, true);
+                        else if (cctx.belongs(p, loc, allNodes)) {
+                            try {
+                                localPartition(p, true);
+                            }
+                            catch (GridDhtInvalidPartitionException e) {
+                                if (log.isDebugEnabled())
+                                    log.debug("Ignoring invalid partition (no need to pre-create a partition if it " +
+                                        "no longer belongs to local node: " + e.partition());
+                            }
+                        }
                     }
                 }
             }
@@ -235,9 +268,17 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                             }
                         }
                     }
-                    else if (cctx.belongs(p, loc, allNodes))
-                        // Pre-create partitions.
-                        localPartition(p, true);
+                    else if (cctx.belongs(p, loc, allNodes)) {
+                        try {
+                            // Pre-create partitions.
+                            localPartition(p, true);
+                        }
+                        catch (GridDhtInvalidPartitionException e) {
+                            if (log.isDebugEnabled())
+                                log.debug("Ignoring invalid partition with disabled preloader (no need to " +
+                                    "pre-create a partition if it no longer belongs to local node: " + e.partition());
+                        }
+                    }
                 }
             }
 
@@ -281,7 +322,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                     GridDhtLocalPartition<K, V> locPart = localPartition(p, false);
 
                     // This partition will be created during next topology event,
-                    // which obviously has happened at this point.
+                    // which obviously has not happened at this point.
                     if (locPart == null) {
                         if (log.isDebugEnabled())
                             log.debug("Skipping local partition afterExchange (will not create): " + p);
@@ -322,17 +363,29 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
-    @Override public GridDhtLocalPartition<K, V> localPartition(int p, boolean create) {
+    @Override @Nullable public GridDhtLocalPartition<K, V> localPartition(int p, boolean create)
+        throws GridDhtInvalidPartitionException {
         while (true) {
+            boolean belongs = cctx.belongs(p, cctx.localNode());
+
             GridDhtLocalPartition<K, V> loc = locParts.get(p);
 
             if (loc != null && loc.state() == EVICTED) {
                 locParts.remove(p, loc);
 
+                if (!create)
+                    return null;
+
+                if (!belongs)
+                    throw new GridDhtInvalidPartitionException(p, "Adding entry to evicted partition: " + p);
+
                 continue;
             }
 
             if (loc == null && create) {
+                if (!belongs)
+                    throw new GridDhtInvalidPartitionException(p, "Creating partition which does not belong: " + p);
+
                 GridDhtLocalPartition<K, V> old = locParts.putIfAbsent(p,
                     loc = new GridDhtLocalPartition<K, V>(cctx, p));
 
@@ -457,6 +510,21 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
             assert node2part != null && node2part.valid();
 
             return new ArrayList<GridNode>(cctx.discovery().nodes(F.view(part2node.get(p), withState(p, MOVING))));
+        }
+        finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public List<GridNode> ownersAndMoving(int p) {
+        lock.readLock().lock();
+
+        try {
+            assert node2part != null && node2part.valid();
+
+            return new ArrayList<GridNode>(cctx.discovery().nodes(F.view(part2node.get(p),
+                withState(p, OWNING, MOVING))));
         }
         finally {
             lock.readLock().unlock();
@@ -821,9 +889,11 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     /**
      * @param p Partition.
      * @param match State to match.
+     * @param matches Additional states.
      * @return Filter for owners of this partition.
      */
-    private GridPredicate<UUID> withState(final int p, final GridDhtPartitionState match) {
+    private GridPredicate<UUID> withState(final int p, final GridDhtPartitionState match,
+        final GridDhtPartitionState... matches) {
         return new P1<UUID>() {
             @Override public boolean apply(UUID nodeId) {
                 GridDhtPartitionMap parts = node2part.get(nodeId);
@@ -832,7 +902,12 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                 if (parts != null) {
                     GridDhtPartitionState state = parts.get(p);
 
-                    return state == match;
+                    if (state == match)
+                        return true;
+
+                    for (GridDhtPartitionState s : matches)
+                        if (state == s)
+                            return true;
                 }
 
                 return false;

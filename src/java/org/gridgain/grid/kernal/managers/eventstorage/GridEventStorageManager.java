@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid event storage SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridEventStorageManager extends GridManagerAdapter<GridEventStorageSpi> {
     /** Internally-used events. */
@@ -64,7 +64,7 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
         INT_EVTS[1] = EVT_NODE_LEFT;
         INT_EVTS[2] = EVT_NODE_JOINED;
         INT_EVTS[3] = EVT_NODE_METRICS_UPDATED;
-        INT_EVTS[4] = EVT_NODE_DISCONNECTED;
+        INT_EVTS[4] = EVT_NODE_SEGMENTED;
         INT_EVTS[5] = EVT_NODE_RECONNECTED;
 
         Arrays.sort(INT_EVTS);
@@ -233,7 +233,7 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
     }
 
     /** {@inheritDoc} */
-    @Override public void stop(boolean cacnel, boolean wait) throws GridException {
+    @Override public void stop(boolean cancel, boolean wait) throws GridException {
         stopSpi();
 
         if (log.isDebugEnabled())

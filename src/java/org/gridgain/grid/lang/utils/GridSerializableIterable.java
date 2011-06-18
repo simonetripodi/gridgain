@@ -16,7 +16,7 @@ import java.io.*;
  * useful for making anonymous serializable iterators.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridSerializableIterable<E> extends Iterable<E>, Serializable {
     // No-op.

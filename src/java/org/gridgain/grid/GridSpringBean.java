@@ -60,7 +60,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -1017,9 +1017,52 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridProjection named(@Nullable String taskName) {
-        g.named(taskName);
+        assert g != null;
 
-        return this;
+        return g.withName(taskName);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withName(@Nullable String taskName) {
+        assert g != null;
+
+        return g.withName(taskName);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withResult(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
+        GridJobResultPolicy> res) {
+        assert g != null;
+
+        return g.withResult(res);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withFailoverSpi(@Nullable String spiName) {
+        assert g != null;
+
+        return g.withFailoverSpi(spiName);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withCheckpointSpi(@Nullable String spiName) {
+        assert g != null;
+
+        return g.withCheckpointSpi(spiName);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withLoadBalancingSpi(@Nullable String spiName) {
+        assert g != null;
+
+        return g.withLoadBalancingSpi(spiName);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withTopologySpi(@Nullable String spiName) {
+        assert g != null;
+
+        return g.withTopologySpi(spiName);
     }
 
     /** {@inheritDoc} */

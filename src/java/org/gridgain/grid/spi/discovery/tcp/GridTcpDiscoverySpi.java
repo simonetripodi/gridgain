@@ -24,7 +24,6 @@ import org.gridgain.grid.spi.discovery.tcp.ipfinder.vm.*;
 import org.gridgain.grid.spi.discovery.tcp.messages.*;
 import org.gridgain.grid.spi.discovery.tcp.metricsstore.*;
 import org.gridgain.grid.spi.discovery.tcp.metricsstore.vm.*;
-import org.gridgain.grid.spi.discovery.tcp.segmentation.*;
 import org.gridgain.grid.spi.discovery.tcp.topologystore.*;
 import org.gridgain.grid.spi.discovery.tcp.topologystore.vm.*;
 import org.gridgain.grid.typedef.*;
@@ -41,7 +40,6 @@ import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.kernal.processors.port.GridPortProtocol.*;
 import static org.gridgain.grid.spi.discovery.tcp.internal.GridTcpDiscoverySpiState.*;
 import static org.gridgain.grid.spi.discovery.tcp.messages.GridTcpDiscoveryStatusCheckMessage.*;
-import static org.gridgain.grid.spi.discovery.tcp.segmentation.GridTcpDiscoverySegmentationPolicy.*;
 import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscoveryTopologyStoreNodeState.*;
 
 /**
@@ -53,9 +51,7 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * At startup SPI tries to send messages to random IP taken from
  * {@link GridTcpDiscoveryIpFinder} about self start (stops when send succeeds)
  * and then this info goes to coordinator. When coordinator processes join request
- * it locks the topology and issues node added messages and all other nodes then
- * receive info about new node.
- * <p>
+ * and issues node added messages and all other nodes then receive info about new node.
  * <h1 class="header">Configuration</h1>
  * <h2 class="header">Mandatory</h2>
  * <ul>
@@ -110,16 +106,6 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * <li>Thread priority for threads started by SPI (see {@link #setThreadPriority(int)})</li>
  * <li>IP finder and Metrics Store clean frequency (see {@link #setStoresCleanFrequency(int)})</li>
  * <li>Status print frequency (see {@link #setStatisticsPrintFrequency(int)}</li>
- * <li>Enable or disable network segment check on start, other node leave or failure
- *      (see {@link #setCheckSegmentEnabled(boolean)})</li>
- * <li>Require all address reachability when checking segment
- *      (see {@link #setAllAddressesReachabilityRequired(boolean)})</li>
- * <li>Wait for segment on start (see {@link #setWaitForSegmentOnStart(boolean)})</li>
- * <li>Timeout for each of the check segment addresses reachability test
- *      (see {@link #setCheckSegmentAddressTimeout(int)}</li>
- * <li>TTL for segment check addresses reachability test
- *      (see {@link #setCheckSegmentAddressTtl(int)})</li>
- * <li>Segmentation policy (see {@link #setSegmentationPolicy(GridTcpDiscoverySegmentationPolicy)})</li>
  * </ul>
  * <h2 class="header">Java Example</h2>
  * <pre name="code" class="java">
@@ -159,16 +145,17 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.13062011")
+    version = "3.1.1c.17062011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
+@GridDiscoverySpiReconnectSupport(true)
 public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscoverySpi, GridTcpDiscoverySpiMBean {
     /** Default port to listen (value is <tt>47500</tt>). */
     public static final int DFLT_PORT = 47500;
@@ -197,24 +184,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     /** Default statistics print frequency in milliseconds (value is <tt>0</tt>). */
     public static final int DFLT_STATS_PRINT_FREQ = 0;
 
-    /** Default value for segment check (value is <tt>false</tt>). */
-    public static final boolean DFLT_CHECK_SEGMENT_ENABLED = false;
-
-    /** Default value for all addresses reachability required (value is <tt>true</tt>). */
-    public static final boolean DFLT_ALL_ADDRS_REACHABILITY_REQUIRED = true;
-
-    /** Default timeout value for each of the segment check addresses reachability test (value is <tt>1000</tt>). */
-    public static final int DFLT_CHECK_SEGMENT_ADDR_TIMEOUT = 1000;
-
-    /** Default TTL value for each of the segment check addresses reachability test (value is <tt>0</tt>). */
-    public static final int DFLT_CHECK_SEGMENT_ADDR_TTL = 0;
-
-    /** Default value for wait for segment on start (value is <tt>true</tt>). */
-    public static final boolean DFLT_WAIT_FOR_SEGMENT_ON_START = true;
-
-    /** Default value for segmentation policy (value is {@link GridTcpDiscoverySegmentationPolicy#RESTART}). */
-    public static final GridTcpDiscoverySegmentationPolicy DFLT_SEGMENTATION_POLICY = RESTART;
-
     /** Response OK. */
     private static final int RES_OK = 1;
 
@@ -230,13 +199,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             return node.visible();
         }
     };
-
-    /** Default address reachability checker. */
-    private static final GridTcpDiscoverySegmentationChecker DFLT_ADDR_REACH_CHKR =
-        new DefaultSegmentationChecker();
-
-    /** Stop/restart guard. */
-    private static final AtomicBoolean stopGuard = new AtomicBoolean();
 
     /** Local port which node uses. */
     private int locPort = DFLT_PORT;
@@ -269,27 +231,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     /** Reconnect attempts count. */
     @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
     private int reconCnt = DFLT_RECONNECT_CNT;
-
-    /** All addresses reachability (during segment check) required flag. */
-    private boolean allAddrsReachReq = DFLT_ALL_ADDRS_REACHABILITY_REQUIRED;
-
-    /** Check segment flag. If {@code false} segment check will be omitted. */
-    private boolean checkSegEnabled = DFLT_CHECK_SEGMENT_ENABLED;
-
-    /** Timeout for each of the segment check addresses reachability test. */
-    private int checkSegAddrTimeout = DFLT_CHECK_SEGMENT_ADDR_TIMEOUT;
-
-    /** TTL for segment check addresses reachability test. */
-    private int checkSegAddrTtl = DFLT_CHECK_SEGMENT_ADDR_TTL;
-
-    /** Wait for segment on start flag. */
-    private boolean waitForSegOnStart = DFLT_WAIT_FOR_SEGMENT_ON_START;
-
-    /** Address reachability checker. */
-    private GridTcpDiscoverySegmentationChecker addrReachChkr = DFLT_ADDR_REACH_CHKR;
-
-    /** Segmentation policy. */
-    private GridTcpDiscoverySegmentationPolicy segPlc = DFLT_SEGMENTATION_POLICY;
 
     /** Name of the grid. */
     @GridNameResource
@@ -367,9 +308,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     /** Stores cleaner. */
     private StoresCleaner storesCleaner;
 
-    /** SPI reconnect thread. */
-    private volatile SpiReconnectThread spiReconnectThread;
-
     /** Topology store worker. */
     private TopologyStoreWorker topStoreWorker;
 
@@ -389,11 +327,14 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     private boolean ipFinderHasLocAddr;
 
     /** Join requests results (for handling concurrent starts). */
-    private final Map<InetSocketAddress, Integer> joinRequestResults =
+    private final Map<InetSocketAddress, Integer> joinReqRess =
         new ConcurrentHashMap<InetSocketAddress, Integer>();
 
     /** Topology version (if topology store is used). */
     private final AtomicLong topVer = new AtomicLong();
+
+    /** SPI reconnect flag to filter initial node connected event. */
+    private volatile boolean recon;
 
     /** Mutex. */
     private final Object mux = new Object();
@@ -558,143 +499,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     @GridSpiConfiguration(optional = true)
     public void setTopologyStore(GridTcpDiscoveryTopologyStore topStore) {
         this.topStore = topStore;
-    }
-
-    /** {@inheritDoc} */
-    @Override public int getCheckSegmentAddressTimeout() {
-        return checkSegAddrTimeout;
-    }
-
-    /**
-     * Sets timeout for each of the segment check addresses reachability test.
-     * <p>
-     * Each address reachability will be tested using this timeout.
-     * <p>
-     * If not provided, default value is {@link #DFLT_CHECK_SEGMENT_ADDR_TIMEOUT}.
-     *
-     * @param checkSegAddrTimeout Segment check addresses reachability test timeout.
-     */
-    @GridSpiConfiguration(optional = true)
-    public void setCheckSegmentAddressTimeout(int checkSegAddrTimeout) {
-        this.checkSegAddrTimeout = checkSegAddrTimeout;
-    }
-
-    /** {@inheritDoc} */
-    @Override public boolean isWaitForSegmentOnStart() {
-        return waitForSegOnStart;
-    }
-
-    /**
-     * Sets wait for segment on start flag.
-     * <p>
-     * If {@code true} node will wait until it is in the correct segment when starting,
-     * performing checks once a 'netTimeout' ({@link #setNetworkTimeout(int)}).
-     * If {@code false} and node is in the incorrect segment on start, exception is thrown and
-     * node start fails.
-     * <p>
-     * If not provided, default value is {@link #DFLT_WAIT_FOR_SEGMENT_ON_START}.
-     *
-     * @param waitForSegOnStart Wait for segment on start flag.
-     */
-    @GridSpiConfiguration(optional = true)
-    public void setWaitForSegmentOnStart(boolean waitForSegOnStart) {
-        this.waitForSegOnStart = waitForSegOnStart;
-    }
-
-    /** {@inheritDoc} */
-    @Override public int getCheckSegmentAddressTtl() {
-        return checkSegAddrTtl;
-    }
-
-    /**
-     * Sets TTL for segment check addresses reachability test.
-     * <p>
-     * If not provided, default value is {@link #DFLT_CHECK_SEGMENT_ADDR_TTL}.
-     *
-     * @param checkSegAddrTtl TTL for segment check addresses reachability test.
-     */
-    @GridSpiConfiguration(optional = true)
-    public void setCheckSegmentAddressTtl(int checkSegAddrTtl) {
-        this.checkSegAddrTtl = checkSegAddrTtl;
-    }
-
-    /** {@inheritDoc} */
-    @Override public String getAddressReachabilityCheckerName() {
-        return addrReachChkr.toString();
-    }
-
-    /**
-     * Sets address reachability checker to customize segment check process.
-     * <p>
-     * If not provided, default implementation is used which is based on
-     * {@code java.net.InetAddress.isReachable(NetworkInterface, int, int)}.
-     *
-     * @param addrReachChkr Address reachability checker.
-     */
-    public void setAddressReachabilityChecker(GridTcpDiscoverySegmentationChecker addrReachChkr) {
-        this.addrReachChkr = addrReachChkr;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridTcpDiscoverySegmentationPolicy getSegmentationPolicy() {
-        return segPlc;
-    }
-
-    /**
-     * Sets segmentation policy.
-     * <p>
-     * This property makes sense when node is started and is functioning in the topology
-     * and defines how discovery SPI will react on topology segmentation.
-     * <p>
-     * If not provided, default value is {@link #DFLT_SEGMENTATION_POLICY}.
-     *
-     * @param segPlc Segmentation policy.
-     * @see GridTcpDiscoverySegmentationPolicy
-     */
-    @GridSpiConfiguration(optional = true)
-    public void setSegmentationPolicy(GridTcpDiscoverySegmentationPolicy segPlc) {
-        this.segPlc = segPlc;
-    }
-
-
-
-    /** {@inheritDoc} */
-    @Override public boolean isAllAddressesReachabilityRequired() {
-        return allAddrsReachReq;
-    }
-
-    /**
-     * Sets all addresses reachability required flag.
-     * <p>
-     * If {@code true} then all segment check addresses will be checked on SPI start
-     * and all of them should be reachable for node to be in a good segment.
-     * Otherwise, at least one of the check addresses should be reachable for node to
-     * be in a good segment.
-     * <p>
-     * If not provided, default value is {@link #DFLT_ALL_ADDRS_REACHABILITY_REQUIRED}.
-     *
-     * @param allAddrsReachReq {@code true} if SPI should check each address reachability.
-     */
-    @GridSpiConfiguration(optional = true)
-    public void setAllAddressesReachabilityRequired(boolean allAddrsReachReq) {
-        this.allAddrsReachReq = allAddrsReachReq;
-    }
-
-    /** {@inheritDoc} */
-    @Override public boolean isCheckSegmentEnabled() {
-        return checkSegEnabled;
-    }
-
-    /**
-     * Sets check segment flag. If {@code false} segment check will be omitted.
-     * <p>
-     * If not provided, default value is {@link #DFLT_CHECK_SEGMENT_ENABLED}
-     *
-     * @param checkSegEnabled {@code false} if segment check should be omitted
-     */
-    @GridSpiConfiguration(optional = true)
-    public void setCheckSegmentEnabled(boolean checkSegEnabled) {
-        this.checkSegEnabled = checkSegEnabled;
     }
 
     /** {@inheritDoc} */
@@ -883,9 +687,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
         if (topStore != null)
             res.add(topStore);
 
-        if (addrReachChkr != null)
-            res.add(addrReachChkr);
-
         res.add(ipFinder);
 
         return res;
@@ -893,75 +694,25 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
     /** {@inheritDoc} */
     @Override public void spiStart(String gridName) throws GridSpiException {
-        startStopwatch();
+        spiStart(false);
+    }
 
-        assertParameter(ipFinder != null, "ipFinder != null");
-        assertParameter(storesCleanFreq > 0, "ipFinderCleanFreq > 0");
-        assertParameter(locPort > 1023, "localPort > 1023");
-        assertParameter(locPortRange >= 0, "localPortRange >= 0");
-        assertParameter(locPort + locPortRange <= 0xffff, "locPort + locPortRange <= 0xffff");
-        assertParameter(netTimeout > 0, "networkTimeout > 0");
-        assertParameter(reconCnt > 0, "reconnectCnt > 0");
-        assertParameter(hbFreq > 0, "heartbeatFreq > 0");
-        assertParameter(maxMissedHbs > 0, "maxMissedHeartbeats > 0");
-        assertParameter(threadPri > 0, "threadPri > 0");
-        assertParameter(statsPrintFreq >= 0, "statsPrintFreq >= 0");
+    /**
+     * Starts or restarts SPI after stop (to reconnect).
+     *
+     * @param restart {@code True} if SPI is restarted after stop.
+     * @throws GridSpiException If failed.
+     */
+    private void spiStart(boolean restart) throws GridSpiException {
+        if (!restart)
+            // It is initial start.
+            onSpiStart();
 
-        if (checkSegEnabled) {
-            assertParameter(checkSegAddrTimeout >= 0, "checkSegAddrTimeout >= 0");
-            assertParameter(addrReachChkr != null, "addrReachChkr != null");
-            assertParameter(segPlc != null, "segPlc != null");
-        }
-
-        // Initialize SPI state.
         synchronized (mux) {
             spiState = DISCONNECTED;
         }
 
-        try {
-            locHost = F.isEmpty(locAddr) ? U.getLocalHost() : InetAddress.getByName(locAddr);
-        }
-        catch (IOException e) {
-            throw new GridSpiException("Unknown local address: " + locAddr, e);
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug(configInfo("localHost", locHost.getHostAddress()));
-            log.debug(configInfo("localPort", locPort));
-            log.debug(configInfo("localPortRange", locPortRange));
-            log.debug(configInfo("checkSegmentEnabled", checkSegEnabled));
-            log.debug(configInfo("allAddrsReachabilityRequired", allAddrsReachReq));
-            log.debug(configInfo("checkSegAddrTimeout", checkSegAddrTimeout));
-            log.debug(configInfo("waitForSegOnStart", waitForSegOnStart));
-            log.debug(configInfo("segPlc", segPlc));
-            log.debug(configInfo("threadPri", threadPri));
-            log.debug(configInfo("networkTimeout", netTimeout));
-            log.debug(configInfo("reconnectCount", reconCnt));
-            log.debug(configInfo("ipFinder", ipFinder));
-            log.debug(configInfo("ipFinderCleanFreq", storesCleanFreq));
-            log.debug(configInfo("heartbeatFreq", hbFreq));
-            log.debug(configInfo("maxMissedHeartbeats", maxMissedHbs));
-            log.debug(configInfo("metricsStore", metricsStore));
-            log.debug(configInfo("topStore", topStore));
-            log.debug(configInfo("statsPrintFreq", statsPrintFreq));
-        }
-
-        // Warn on odd network timeout.
-        if (netTimeout < 3000)
-            U.warn(log, "Network timeout is too low (at least 3000 ms): " + netTimeout);
-
-        // Warn on odd heartbeat frequency.
-        if (hbFreq < 3000)
-            U.warn(log, "Heartbeat frequency is too low (at least 3000 ms): " + hbFreq);
-
-        // Warn on odd max missed heartbeats.
-        if (maxMissedHbs < 3)
-            U.warn(log, "Maximum missed heartbeats value is too low (at least 3): " + maxMissedHbs);
-
-        if (checkSegEnabled)
-            checkSegment(waitForSegOnStart);
-        else if (log.isDebugEnabled())
-            log.debug("Safely omitting segment check (segment check is disabled in configuration).");
+        joinReqRess.clear();
 
         msgWorker = new MessageWorker();
 
@@ -1020,10 +771,67 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             topStoreWorker.start();
         }
 
-        registerMBean(gridName, this, GridTcpDiscoverySpiMBean.class);
-
-        if (log.isDebugEnabled())
+        if (log.isDebugEnabled() && !restart)
             log.debug(startInfo());
+
+        if (restart)
+            getSpiContext().registerPort(tcpSrvr.port, TCP);
+    }
+
+    /**
+     * @throws GridSpiException If failed.
+     */
+    private void onSpiStart() throws GridSpiException {
+        startStopwatch();
+
+        assertParameter(ipFinder != null, "ipFinder != null");
+        assertParameter(storesCleanFreq > 0, "ipFinderCleanFreq > 0");
+        assertParameter(locPort > 1023, "localPort > 1023");
+        assertParameter(locPortRange >= 0, "localPortRange >= 0");
+        assertParameter(locPort + locPortRange <= 0xffff, "locPort + locPortRange <= 0xffff");
+        assertParameter(netTimeout > 0, "networkTimeout > 0");
+        assertParameter(reconCnt > 0, "reconnectCnt > 0");
+        assertParameter(hbFreq > 0, "heartbeatFreq > 0");
+        assertParameter(maxMissedHbs > 0, "maxMissedHeartbeats > 0");
+        assertParameter(threadPri > 0, "threadPri > 0");
+        assertParameter(statsPrintFreq >= 0, "statsPrintFreq >= 0");
+
+        try {
+            locHost = F.isEmpty(locAddr) ? U.getLocalHost() : InetAddress.getByName(locAddr);
+        }
+        catch (IOException e) {
+            throw new GridSpiException("Unknown local address: " + locAddr, e);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(configInfo("localHost", locHost.getHostAddress()));
+            log.debug(configInfo("localPort", locPort));
+            log.debug(configInfo("localPortRange", locPortRange));
+            log.debug(configInfo("threadPri", threadPri));
+            log.debug(configInfo("networkTimeout", netTimeout));
+            log.debug(configInfo("reconnectCount", reconCnt));
+            log.debug(configInfo("ipFinder", ipFinder));
+            log.debug(configInfo("ipFinderCleanFreq", storesCleanFreq));
+            log.debug(configInfo("heartbeatFreq", hbFreq));
+            log.debug(configInfo("maxMissedHeartbeats", maxMissedHbs));
+            log.debug(configInfo("metricsStore", metricsStore));
+            log.debug(configInfo("topStore", topStore));
+            log.debug(configInfo("statsPrintFreq", statsPrintFreq));
+        }
+
+        // Warn on odd network timeout.
+        if (netTimeout < 3000)
+            U.warn(log, "Network timeout is too low (at least 3000 ms): " + netTimeout);
+
+        // Warn on odd heartbeat frequency.
+        if (hbFreq < 3000)
+            U.warn(log, "Heartbeat frequency is too low (at least 3000 ms): " + hbFreq);
+
+        // Warn on odd max missed heartbeats.
+        if (maxMissedHbs < 3)
+            U.warn(log, "Maximum missed heartbeats value is too low (at least 3): " + maxMissedHbs);
+
+        registerMBean(gridName, this, GridTcpDiscoverySpiMBean.class);
     }
 
     /** {@inheritDoc} }*/
@@ -1035,13 +843,31 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
     /** {@inheritDoc} */
     @Override public void spiStop() throws GridSpiException {
-        if (log.isDebugEnabled())
-            log.debug("Preparing to start local node stop procedure.");
+        spiStop(false);
+    }
 
-        U.interrupt(spiReconnectThread);
-        U.join(spiReconnectThread, log);
+    /**
+     * Stops SPI finally or stops SPI for restart.
+     *
+     * @param restart {@code True} if SPI is about to be restarted.
+     * @throws GridSpiException If failed.
+     */
+    private void spiStop(boolean restart) throws GridSpiException {
+        if (log.isDebugEnabled()) {
+            if (restart)
+                log.debug("Restarting SPI.");
+            else
+                log.debug("Preparing to start local node stop procedure.");
+        }
 
-        if (msgWorker != null) {
+        if (restart) {
+            synchronized (mux) {
+                spiState = DISCONNECTING;
+            }
+        }
+
+        if (msgWorker != null && msgWorker.isAlive() && !restart) {
+            // Send node left message only if it is final stop.
             msgWorker.addMessage(new GridTcpDiscoveryNodeLeftMessage(locNodeId));
 
             synchronized (mux) {
@@ -1064,9 +890,10 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                         log.debug("Verification for local node leave has been received from coordinator" +
                             " (continuing stop procedure).");
                 }
-                else
-                    U.warn(log, "No verification for local node leave has been received from coordinator" +
+                else if (log.isInfoEnabled()) {
+                    log.info("No verification for local node leave has been received from coordinator" +
                         " (will stop node anyway).");
+                }
             }
         }
 
@@ -1103,12 +930,24 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
         U.interrupt(statsPrinter);
         U.join(statsPrinter, log);
 
-        unregisterMBean();
+        if (!restart) {
+            // Do these stuff only on final stop.
+            unregisterMBean();
 
-        if (log.isDebugEnabled())
-            log.debug(stopInfo());
+            printStatistics();
 
-        printStatistics();
+            if (log.isDebugEnabled())
+                log.debug(stopInfo());
+        }
+        else {
+            getSpiContext().deregisterPorts();
+
+            ring.clear();
+
+            synchronized (mux) {
+                spiState = DISCONNECTING;
+            }
+        }
     }
 
     /** {@inheritDoc} */
@@ -1231,104 +1070,15 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
         throw new GridSpiException("Failed to ping node by address: " + addr, err);
     }
 
-    /**
-     * Checks whether node runs in the correct segment.
-     *
-     * @param wait Wait for correct segment.
-     * @throws GridSpiException If node is not in the correct segment or any other error occurs.
-     */
-    @SuppressWarnings({"BusyWait"})
-    private void checkSegment(boolean wait) throws GridSpiException {
-        assert checkSegEnabled;
+    /** {@inheritDoc} */
+    @Override public void disconnect() throws GridSpiException {
+        spiStop(true);
 
-        if (log.isDebugEnabled())
-            log.debug("Starting network segment check.");
+    }
 
-        Collection<InetAddress> addrs = ipFinder.getSegmentCheckAddresses();
-
-        if (addrs == null || addrs.isEmpty())
-            throw new GridSpiException("Failed to check segment because IP finder returned empty collection of " +
-                "segment check addresses (either disable segment checking or specify at least one segment " +
-                "check address).");
-
-        while (true) {
-            long start = System.currentTimeMillis();
-
-            // Init variable in this way, since further logic depends on 'allAddrsReachReq'.
-            boolean segCorrect = allAddrsReachReq;
-
-            Exception err = null;
-
-            InetAddress lastAddr = null;
-
-            for (InetAddress addr : addrs) {
-                lastAddr = addr;
-
-                boolean reachable = false;
-
-                try {
-                    reachable = addrReachChkr.isReachable(addr, NetworkInterface.getByInetAddress(locHost),
-                        checkSegAddrTtl, checkSegAddrTimeout);
-
-                    if (log.isDebugEnabled())
-                        log.debug("Checked address reachability [addr=" + addr + ", reachable=" + reachable + ']');
-                }
-                catch (SocketException e) {
-                    throw new GridSpiException("Failed to get network interface by address: " + locHost, e);
-                }
-                catch (GridSpiException e) {
-                    err = e;
-
-                    if (log.isDebugEnabled()) {
-                        log.debug("Failed to reach segment check address [addr=" + addr +
-                            ", err=" + e.getMessage() + ']');
-                    }
-                }
-
-                if (reachable && !allAddrsReachReq) {
-                    // Segment is correct.
-                    segCorrect = true;
-
-                    break;
-                }
-
-                if (!reachable && allAddrsReachReq) {
-                    // Segment is incorrect.
-                    segCorrect = false;
-
-                    break;
-                }
-            }
-
-            stats.onCheckSegmentFinished(System.currentTimeMillis() - start);
-
-            if (segCorrect)
-                break;
-
-            assert lastAddr != null;
-
-            String errMsg = allAddrsReachReq ? "Failed to reach segment check address: " + lastAddr :
-                "Failed to reach any of segment check addresses: " + addrs;
-
-            if (wait) {
-                LT.error(log, err, errMsg);
-
-                LT.warn(log, null, "Network segment check failed (retrying every 2000 ms).");
-
-                // Wait and check again.
-                try {
-                    Thread.sleep(2000);
-                }
-                catch (InterruptedException ignored) {
-                    throw new GridSpiException("Thread has been interrupted.");
-                }
-            }
-            else
-                throw new GridSpiException(errMsg, err);
-        }
-
-        if (log.isInfoEnabled())
-            log.info("Successfully finished network segment check.");
+    /** {@inheritDoc} */
+    @Override public void reconnect() throws GridSpiException {
+        spiStart(true);
     }
 
     /**
@@ -1356,6 +1106,14 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 locNode.visible(true);
 
                 locNode.order(1);
+
+                // Alter flag here and fire event here, since it has not been done in msgWorker.
+                if (recon)
+                    // Node has reconnected and it is the first.
+                    notifyDiscovery(EVT_NODE_RECONNECTED, locNode);
+                else
+                    // This is initial start, node is the first.
+                    recon = true;
 
                 if (topStore != null) {
                     topVer.compareAndSet(0, 1);
@@ -1405,7 +1163,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 if (spiState == CONNECTED)
                     break;
                 else
-                    LT.warn(log, null, "Node has not been connected to topology, will repeat join process. " +
+                    LT.warn(log, null, "Node has not been connected to topology and will repeat join process. " +
                         "Note that large topology may require significant time to start. " +
                         "Enlarge 'netTimeout' configuration property if getting this message on starting nodes.");
             }
@@ -1448,7 +1206,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                     assert res != null;
 
-                    joinRequestResults.remove(addr);
+                    joinReqRess.remove(addr);
 
                     switch (res) {
                         case RES_WAIT:
@@ -1474,7 +1232,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                     if (log.isDebugEnabled())
                         log.debug("Failed to send join request message: " + e.getMessage());
 
-                    joinRequestResults.put(addr, 0);
+                    joinReqRess.put(addr, 0);
                 }
 
             if (retry) {
@@ -1966,15 +1724,22 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             assert ipFinder.isShared();
 
             try {
-                Collection<InetSocketAddress> currAddrs = F.viewReadOnly(ring.allNodes(),
+                // Addresses that belongs to nodes in topology.
+                Collection<InetSocketAddress> currAddrs = F.viewReadOnly(
+                    ring.allNodes(),
                     new C1<GridTcpDiscoveryNode, InetSocketAddress>() {
                         @Override public InetSocketAddress apply(GridTcpDiscoveryNode node) {
                             return node.address();
                         }
-                    });
+                    }
+                );
 
-                // Remove all addresses that belong to alive nodes.
-                Collection<InetSocketAddress> addrs = F.view(registeredAddresses(),
+                // Addresses registered in IP finder.
+                Collection<InetSocketAddress> regAddrs = registeredAddresses();
+
+                // Remove all addresses that belong to alive nodes, leave dead-node addresses.
+                Collection<InetSocketAddress> rmvAddrs = F.view(
+                    regAddrs,
                     F.notContains(currAddrs),
                     new P1<InetSocketAddress>() {
                         private final Map<InetSocketAddress, Boolean> pingResMap =
@@ -2000,17 +1765,33 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                             return !res;
                         }
-                    });
+                    }
+                );
 
-                if (!addrs.isEmpty()) {
-                    ipFinder.unregisterAddresses(addrs);
+                // Unregister dead-nodes addresses.
+                if (!rmvAddrs.isEmpty()) {
+                    ipFinder.unregisterAddresses(rmvAddrs);
 
                     if (log.isDebugEnabled())
-                       log.debug("Unregistered addresses from IpFinder: " + addrs);
+                       log.debug("Unregistered addresses from IP finder: " + rmvAddrs);
+                }
+
+                // Addresses that were removed by mistake (e.g. on segmentation).
+                Collection<InetSocketAddress> missingAddrs = F.view(
+                    currAddrs,
+                    F.notContains(regAddrs)
+                );
+
+                // Re-register missing addresses.
+                if (!missingAddrs.isEmpty()) {
+                    ipFinder.registerAddresses(missingAddrs);
+
+                    if (log.isDebugEnabled())
+                       log.debug("Registered missing addresses in IP finder: " + missingAddrs);
                 }
             }
             catch (GridSpiException e) {
-                U.error(log, "Failed to clean IpFinder up.", e);
+                U.error(log, "Failed to clean IP finder up.", e);
             }
         }
 
@@ -2030,79 +1811,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             catch (GridSpiException e) {
                 U.error(log, "Failed to clean metrics store up.", e);
             }
-        }
-    }
-
-    /**
-     * Thread that disconnects SPI then tries to reconnect back following join process.
-     */
-    private class SpiReconnectThread extends GridSpiThread {
-        /**
-         * Constructor.
-         */
-        private SpiReconnectThread() {
-            super(gridName, "tcp-disco-spi-recon-thread", log);
-
-            setPriority(threadPri);
-        }
-
-        /** {@inheritDoc} */
-        @SuppressWarnings({"BusyWait"})
-        @Override protected void body() throws InterruptedException {
-            if (log.isDebugEnabled())
-                log.debug("Discovery SPI reconnect thread has been started.");
-
-            // Check whether network segment is correct and reconnect SPI if correct.
-            while (!isInterrupted()) {
-                try {
-                    if (checkSegEnabled)
-                        checkSegment(true);
-
-                    reconnectSpi();
-
-                    break;
-                }
-                catch (GridSpiException e) {
-                    LT.error(log, e, "Failed to reconnect discovery SPI to topology.");
-                }
-
-                Thread.sleep(netTimeout);
-            }
-        }
-
-        /**
-         * Reconnects SPI to topology.
-         *
-         * @throws GridSpiException If join process fails.
-         */
-        private void reconnectSpi() throws GridSpiException {
-            if (log.isDebugEnabled())
-                log.debug("Trying to reconnect discovery SPI to topology.");
-
-            joinTopology();
-
-            hbsSnd = new HeartbeatsSender();
-            hbsSnd.start();
-
-            chkStatusSnd = new CheckStatusSender();
-            chkStatusSnd.start();
-
-            if (metricsStore != null) {
-                metricsUpdateNtf = new MetricsUpdateNotifier();
-                metricsUpdateNtf.start();
-            }
-
-            if (ipFinder.isShared() || metricsStore != null) {
-                storesCleaner = new StoresCleaner();
-                storesCleaner.start();
-            }
-
-            if (topStore != null) {
-                topStoreWorker = new TopologyStoreWorker();
-                topStoreWorker.start();
-            }
-
-            notifyDiscovery(EVT_NODE_RECONNECTED, locNode);
         }
     }
 
@@ -2724,6 +2432,11 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                     mux.notifyAll();
                 }
+
+                if (recon)
+                    notifyDiscovery(EVT_NODE_RECONNECTED, locNode);
+                else
+                    recon = true;
             }
 
             if (ring.hasRemoteNodes())
@@ -2753,9 +2466,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                     }
                 }
 
-                if (msg.verified() || !ring.hasRemoteNodes() || msg.senderNodeId() != null) {
-                    // Message is either verified by coordinator or node is the only one or each node
-                    // is stopping and therefore there is no coordinator.
+                if (msg.verified() || !ring.hasRemoteNodes()) {
                     if (!ipFinder.isShared() || !ring.hasRemoteNodes())
                         try {
                             ipFinder.unregisterAddresses(Arrays.asList(locNode.address()));
@@ -3039,7 +2750,9 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 else if (msg.status() == STATUS_RECONNECT) {
                     U.warn(log, "Received reconnect request from coordinator (will reconnect to grid): " + msg);
 
-                    startSpiReconnectThread();
+                    notifyDiscovery(EVT_NODE_SEGMENTED, locNode);
+
+                    return;
                 }
                 else
                     if (log.isDebugEnabled())
@@ -3451,40 +3164,22 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 leavingNodes.remove(node);
             }
 
-            boolean segCorrect = true;
+            try {
+                if (!ipFinder.isShared() || isLocalNodeCoordinator())
+                    ipFinder.unregisterAddresses(Arrays.asList(node.address()));
+            }
+            catch (GridSpiException e) {
+                U.error(log, "Failed to unregister left node address: " + node, e);
+            }
 
-            if (checkSegEnabled) {
+            if (metricsStore != null && isLocalNodeCoordinator()) {
                 try {
-                    checkSegment(false);
+                    metricsStore.removeMetrics(Arrays.asList(node.id()));
                 }
                 catch (GridSpiException e) {
-                    U.error(log, "Node is in the incorrect segment.", e);
-
-                    segCorrect = false;
+                    U.error(log, "Failed to remove left node metrics from store: " + node.id(), e);
                 }
             }
-            else if (log.isDebugEnabled())
-                log.debug("Segment check is omitted.");
-
-            if (segCorrect) {
-                try {
-                    if (!ipFinder.isShared() || isLocalNodeCoordinator())
-                        ipFinder.unregisterAddresses(Arrays.asList(node.address()));
-                }
-                catch (GridSpiException e) {
-                    U.error(log, "Failed to unregister left node address: " + node, e);
-                }
-
-                if (metricsStore != null && isLocalNodeCoordinator())
-                    try {
-                        metricsStore.removeMetrics(Arrays.asList(node.id()));
-                    }
-                    catch (GridSpiException e) {
-                        U.error(log, "Failed to remove left node metrics from store: " + node.id(), e);
-                    }
-            }
-            else
-                onSegmentation();
         }
 
         /**
@@ -3509,191 +3204,33 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 leavingNodes.removeAll(nodes);
             }
 
-            boolean segCorrect = true;
+            if (!ipFinder.isShared() || isLocalNodeCoordinator()) {
+                Collection<InetSocketAddress> addrs = F.viewReadOnly(
+                    nodes,
+                    new C1<GridTcpDiscoveryNode, InetSocketAddress>() {
+                        @Override public InetSocketAddress apply(GridTcpDiscoveryNode node) {
+                            return node.address();
+                        }
+                    }
+                );
 
-            if (checkSegEnabled) {
                 try {
-                    checkSegment(false);
+                    ipFinder.unregisterAddresses(addrs);
                 }
                 catch (GridSpiException e) {
-                    U.error(log, "Node is in the incorrect segment.", e);
-
-                    segCorrect = false;
+                    U.error(log, "Failed to unregister failed node addresses: " + addrs, e);
                 }
             }
-            else if (log.isDebugEnabled())
-                log.debug("Segment check is omitted.");
 
-            if (segCorrect) {
-                if (!ipFinder.isShared() || isLocalNodeCoordinator()) {
-                    Collection<InetSocketAddress> addrs = F.viewReadOnly(
-                        nodes,
-                        new C1<GridTcpDiscoveryNode, InetSocketAddress>() {
-                            @Override public InetSocketAddress apply(GridTcpDiscoveryNode node) {
-                                return node.address();
-                            }
-                        }
-                    );
+            if (metricsStore != null && isLocalNodeCoordinator()) {
+                Collection<UUID> ids = F.viewReadOnly(nodes, F.node2id());
 
-                    try {
-                        ipFinder.unregisterAddresses(addrs);
-                    }
-                    catch (GridSpiException e) {
-                        U.error(log, "Failed to unregister failed node addresses: " + addrs, e);
-                    }
+                try {
+                    metricsStore.removeMetrics(ids);
                 }
-
-                if (metricsStore != null && isLocalNodeCoordinator()) {
-                    Collection<UUID> ids = F.viewReadOnly(nodes, F.node2id());
-
-                    try {
-                        metricsStore.removeMetrics(ids);
-                    }
-                    catch (GridSpiException e) {
-                        U.error(log, "Failed to remove failed nodes metrics from store: " + ids, e);
-                    }
+                catch (GridSpiException e) {
+                    U.error(log, "Failed to remove failed nodes metrics from store: " + ids, e);
                 }
-            }
-            else
-                onSegmentation();
-        }
-
-        /**
-         * Called when node determines that it is in the incorrect segment.
-         */
-        private void onSegmentation() {
-            switch (segPlc) {
-                case RECONNECT:
-                    startSpiReconnectThread();
-
-                    break;
-
-                case RESTART:
-                    restartNode();
-
-                    break;
-
-                default:
-                    assert segPlc == STOP : "Unsupported segmentation policy value: " + segPlc;
-
-                    stopNode();
-            }
-        }
-
-        /**
-         * Creates and starts Spi reconnect thread.
-         */
-        private void startSpiReconnectThread() {
-            if (spiReconnectThread == null || !spiReconnectThread.isAlive()) {
-                disconnectSpi();
-
-                spiReconnectThread = new SpiReconnectThread();
-
-                spiReconnectThread.start();
-            }
-            else
-                if (log.isDebugEnabled())
-                    log.debug("Discovery SPI reconnect thread has not been created (it is alive).");
-        }
-
-        /**
-         * Disconnects SPI from topology.
-         */
-        private void disconnectSpi() {
-            if (log.isDebugEnabled())
-                log.debug("Disconnecting discovery SPI from topology.");
-
-            synchronized (mux) {
-                spiState = DISCONNECTING;
-            }
-
-            Collection<SocketReader> tmp;
-
-            synchronized (mux) {
-                tmp = new ArrayList<SocketReader>(readers);
-            }
-
-            U.interrupt(tmp);
-            U.joinThreads(tmp, log);
-
-            U.interrupt(hbsSnd);
-            U.join(hbsSnd, log);
-
-            if (chkStatusSnd != null) {
-                U.interrupt(chkStatusSnd);
-                U.join(chkStatusSnd, log);
-            }
-
-            if (storesCleaner != null) {
-                U.interrupt(storesCleaner);
-                U.join(storesCleaner, log);
-            }
-
-            if (metricsUpdateNtf != null) {
-                U.interrupt(metricsUpdateNtf);
-                U.join(metricsUpdateNtf, log);
-            }
-
-            if (topStoreWorker != null) {
-                U.interrupt(topStoreWorker);
-                U.join(topStoreWorker, log);
-            }
-
-            ring.clear();
-
-            synchronized (mux) {
-                spiState = DISCONNECTED;
-            }
-
-            notifyDiscovery(EVT_NODE_DISCONNECTED, locNode);
-        }
-
-        /**
-         * Restarts local node using the same grid configuration with new node ID.
-         */
-        private void restartNode() {
-            if (stopGuard.compareAndSet(false, true)) {
-                new Thread(new Runnable() {
-                    @Override public void run() {
-                        Grid g = G.grid(gridName);
-
-                        assert g != null;
-
-                        GridConfigurationAdapter cfg = new GridConfigurationAdapter(g.configuration());
-
-                        cfg.setNodeId(UUID.randomUUID());
-
-                        U.warn(log, "Restarting local node with new node ID (according to configured " +
-                            "segmentation policy): " + cfg.getNodeId());
-
-                        G.stop(gridName, true, false);
-
-                        try {
-                            G.start(cfg);
-                        }
-                        catch (GridException e) {
-                            throw new GridRuntimeException("Failed to restart local node.", e);
-                        }
-                        finally {
-                            stopGuard.set(false);
-                        }
-                    }
-                }).start();
-            }
-        }
-
-        /**
-         * Stops local node.
-         */
-        private void stopNode() {
-            if (stopGuard.compareAndSet(false, true)) {
-                new Thread(new Runnable() {
-                    @Override public void run() {
-                        U.warn(log, "Stopping local node according to configured segmentation policy.");
-
-                        G.stop(gridName, true, false);
-                    }
-                }).start();
             }
         }
     }
@@ -3948,7 +3485,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 try {
                     stats.onMessageProcessingStarted(msg);
 
-                    res = state == CONNECTING && joinRequestResults.containsKey(msg.node().address()) ? RES_WAIT :
+                    res = state == CONNECTING && joinReqRess.containsKey(msg.node().address()) ? RES_WAIT :
                         (state == CONNECTING && locNodeId.compareTo(msg.creatorNodeId()) > 0) ?
                             RES_CONTINUE_JOIN : RES_WAIT;
 
@@ -4130,27 +3667,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                 printStatistics();
             }
-        }
-    }
-
-    /**
-     *
-     */
-    private static class DefaultSegmentationChecker implements GridTcpDiscoverySegmentationChecker {
-        /** {@inheritDoc} */
-        @Override public boolean isReachable(InetAddress addr, NetworkInterface itf, int ttl, int timeout)
-            throws GridSpiException {
-            try {
-                return addr.isReachable(itf, ttl, timeout);
-            }
-            catch (IOException e) {
-                throw new GridSpiException("Failed to reach address: " + addr, e);
-            }
-        }
-
-        /** {@inheritDoc} */
-        @Override public String toString() {
-            return S.toString(DefaultSegmentationChecker.class, this);
         }
     }
 }

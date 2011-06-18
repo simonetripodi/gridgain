@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * DHT cache preloader.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** Exchange history size. */
@@ -303,7 +303,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                     GridCacheEntryInfo<K, V> info = entry.info();
 
                     if (info != null)
-                        res.addInfo(entry.info());
+                        res.addInfo(info);
                 }
                 else if (log.isDebugEnabled())
                     log.debug("Key is not present in DHT cache: " + k);
@@ -537,7 +537,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
      * @return Future for request.
      */
     @SuppressWarnings( {"RedundantCast", "unchecked"})
-    @Override public GridFuture<Object> request(Collection<? extends K> keys) {
+    @Override public GridDhtFuture<K, Object> request(Collection<? extends K> keys) {
         final GridDhtForceKeysFuture<K, V> fut = new GridDhtForceKeysFuture<K, V>(cctx, keys);
 
         forceKeyFuts.put(fut.futureId(), fut);
@@ -548,16 +548,16 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
             }
         });
 
-        if (demandPool.syncFuture().isDone())
+        if (startFut.isDone())
             fut.init();
         else
-            demandPool.syncFuture().listenAsync(new CI1<GridFuture<?>>() {
+            startFut.listenAsync(new CI1<GridFuture<?>>() {
                 @Override public void apply(GridFuture<?> syncFut) {
                     fut.init();
                 }
             });
 
-        return (GridFuture<Object>)(GridDhtForceKeysFuture)fut;
+        return (GridDhtFuture<K, Object>)(GridDhtFuture<K, V>)fut;
     }
 
     /**

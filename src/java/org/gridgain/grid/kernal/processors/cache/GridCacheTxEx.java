@@ -21,9 +21,24 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
+    /**
+     * @return {@code True} if transaction is empty.
+     */
+    public boolean empty();
+
+    /**
+     * @param part Invalid partition.
+     */
+    public void addInvalidPartition(int part);
+
+    /**
+     * @return Invalid partitions.
+     */
+    public Set<Integer> invalidPartitions();
+
     /**
      * Gets ID of additional node involved. For example, in DHT case, other node is
      * near node ID.
@@ -196,7 +211,7 @@ public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
      *
      * @return Future for prepare step.
      */
-    public GridFuture<GridCacheTx> prepareAsync();
+    public GridFuture<GridCacheTxEx<K, V>> prepareAsync();
 
     /**
      * @param endVer End version (a.k.a. <tt>'tnc'</tt> or <tt>'transaction number counter'</tt>)
@@ -219,6 +234,16 @@ public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
      * @param invalidate Invalidate flag.
      */
     public void invalidate(boolean invalidate);
+
+    /**
+     * @param sysInvalidate System invalidate flag.
+     */
+    public void systemInvalidate(boolean sysInvalidate);
+
+    /**
+     * @return System invalidate flag.
+     */
+    public boolean isSystemInvalidate();
 
     /**
      * @param key Cache key.

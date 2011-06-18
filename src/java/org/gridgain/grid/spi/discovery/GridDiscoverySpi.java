@@ -39,7 +39,7 @@ import java.util.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridDiscoverySpi extends GridSpi, GridSpiJsonConfigurable {
     /**
@@ -102,4 +102,29 @@ public interface GridDiscoverySpi extends GridSpi, GridSpiJsonConfigurable {
      * @param metricsProvider Provider of metrics data.
      */
     public void setMetricsProvider(GridDiscoveryMetricsProvider metricsProvider);
+
+    /**
+     * Tells discovery SPI to disconnect from topology. This is very close to calling
+     * {@link #spiStop()} with accounting that it is not a full stop,
+     * but disconnect before reconnect (i.e. some internal threads and
+     * resources may be preserved on disconnect and reused on reconnect again).
+     *
+     * @throws GridSpiException If any error occurs.
+     * @see #reconnect()
+     */
+    public void disconnect() throws GridSpiException;
+
+    /**
+     * Tells discovery SPI to reconnect to topology. This is very close to calling
+     * {@link #spiStart(String)} with accounting that it is not a full start,
+     * but reconnect (i.e. some internal threads and resources may be preserved
+     * on disconnect and reused on reconnect again).
+     * <p>
+     * Prior to calling this method manager will ensure, that it is in the correct
+     * network segment.
+     *
+     * @throws GridSpiException If any error occurs.
+     * @see #disconnect()
+     */
+    public void reconnect() throws GridSpiException;
 }

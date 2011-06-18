@@ -50,7 +50,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridEventType {
     /**
@@ -139,16 +139,16 @@ public interface GridEventType {
     public static final int EVT_NODE_METRICS_UPDATED = 13;
 
     /**
-     * Built-in event type: local node disconnected.
+     * Built-in event type: local node segmented.
      * <br>
-     * Generated when node is disconnected from the grid topology due to some reason.
+     * Generated when node determines that it runs in invalid network segment.
      * <p>
      * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
      * internal GridGain events and should not be used by user-defined events.
      *
      * @see GridDiscoveryEvent
      */
-    public static final int EVT_NODE_DISCONNECTED = 14;
+    public static final int EVT_NODE_SEGMENTED = 14;
 
     /**
      * Built-in event type: local node reconnected.
@@ -173,7 +173,7 @@ public interface GridEventType {
     public static final int EVT_TASK_STARTED = 20;
 
     /**
-     * Built-in event type: task started.
+     * Built-in event type: task finished.
      * <br>
      * Task got finished. This event is triggered every time
      * a task finished without exception.
@@ -289,7 +289,7 @@ public interface GridEventType {
 
     /**
      * Built-in event type: grid job was mapped in
-     * {@link GridTask#map(List , Object)} method.
+     * {@link GridTask#map(List, Object)} method.
      * <p>
      * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
      * internal GridGain events and should not be used by user-defined events.
@@ -300,7 +300,7 @@ public interface GridEventType {
 
     /**
      * Built-in event type: grid job result was received by
-     * {@link GridTask#result(GridJobResult , List)} method.
+     * {@link GridTask#result(GridJobResult, List)} method.
      * <p>
      * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
      * internal GridGain events and should not be used by user-defined events.
@@ -414,13 +414,21 @@ public interface GridEventType {
       */
      public static final int EVT_CACHE_ENTRY_DESTROYED = 61;
 
+    /**
+     * Built-in event type: entry evicted.
+     * <p>
+     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
+     * internal GridGain events and should not be used by user-defined events.
+     */
+     public static final int EVT_CACHE_ENTRY_EVICTED = 62;
+
      /**
       * Built-in event type: object put.
       * <p>
       * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
       * internal GridGain events and should not be used by user-defined events.
       */
-     public static final int EVT_CACHE_OBJECT_PUT = 62;
+     public static final int EVT_CACHE_OBJECT_PUT = 63;
 
      /**
       * Built-in event type: object read.
@@ -428,15 +436,15 @@ public interface GridEventType {
       * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
       * internal GridGain events and should not be used by user-defined events.
       */
-     public static final int EVT_CACHE_OBJECT_READ = 63;
+     public static final int EVT_CACHE_OBJECT_READ = 64;
 
      /**
-      * Built-in event type: task removed.
+      * Built-in event type: object removed.
       * <p>
       * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
       * internal GridGain events and should not be used by user-defined events.
       */
-     public static final int EVT_CACHE_OBJECT_REMOVED = 64;
+     public static final int EVT_CACHE_OBJECT_REMOVED = 65;
 
      /**
       * Built-in event type: object locked.
@@ -444,7 +452,7 @@ public interface GridEventType {
       * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
       * internal GridGain events and should not be used by user-defined events.
       */
-     public static final int EVT_CACHE_OBJECT_LOCKED = 65;
+     public static final int EVT_CACHE_OBJECT_LOCKED = 66;
 
      /**
       * Built-in event type: object unlocked.
@@ -452,7 +460,7 @@ public interface GridEventType {
       * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
       * internal GridGain events and should not be used by user-defined events.
       */
-     public static final int EVT_CACHE_OBJECT_UNLOCKED = 66;
+     public static final int EVT_CACHE_OBJECT_UNLOCKED = 67;
 
     /**
      * Built-in event type: cache object swapped from swap storage.
@@ -460,7 +468,7 @@ public interface GridEventType {
      * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
      * internal GridGain events and should not be used by user-defined events.
      */
-    public static final int EVT_CACHE_OBJECT_SWAPPED = 67;
+    public static final int EVT_CACHE_OBJECT_SWAPPED = 68;
 
     /**
      * Built-in event type: cache object unswapped from swap storage.
@@ -468,7 +476,7 @@ public interface GridEventType {
      * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
      * internal GridGain events and should not be used by user-defined events.
      */
-    public static final int EVT_CACHE_OBJECT_UNSWAPPED = 68;
+    public static final int EVT_CACHE_OBJECT_UNSWAPPED = 69;
 
     /**
      * Built-in event type: cache object was expired when reading it.
@@ -476,7 +484,7 @@ public interface GridEventType {
      * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
      * internal GridGain events and should not be used by user-defined events.
      */
-    public static final int EVT_CACHE_OBJECT_EXPIRED = 69;
+    public static final int EVT_CACHE_OBJECT_EXPIRED = 70;
 
     /**
      * Built-in event type: swap space data read.
@@ -486,7 +494,7 @@ public interface GridEventType {
      *
      * @see GridSwapSpaceEvent
      */
-    public static final int EVT_SWAP_SPACE_DATA_READ = 70;
+    public static final int EVT_SWAP_SPACE_DATA_READ = 71;
 
     /**
      * Built-in event type: swap space data stored.
@@ -496,7 +504,7 @@ public interface GridEventType {
      *
      * @see GridSwapSpaceEvent
      */
-    public static final int EVT_SWAP_SPACE_DATA_STORED = 71;
+    public static final int EVT_SWAP_SPACE_DATA_STORED = 72;
 
     /**
      * Built-in event type: swap space data removed.
@@ -506,7 +514,7 @@ public interface GridEventType {
      *
      * @see GridSwapSpaceEvent
      */
-    public static final int EVT_SWAP_SPACE_DATA_REMOVED = 72;
+    public static final int EVT_SWAP_SPACE_DATA_REMOVED = 73;
 
     /**
      * Built-in event type: swap space cleared.
@@ -516,7 +524,7 @@ public interface GridEventType {
      *
      * @see GridSwapSpaceEvent
      */
-    public static final int EVT_SWAP_SPACE_CLEARED = 73;
+    public static final int EVT_SWAP_SPACE_CLEARED = 74;
 
     /**
      * Built-in event type: cache preload started.
@@ -719,7 +727,7 @@ public interface GridEventType {
         EVT_NODE_JOINED,
         EVT_NODE_LEFT,
         EVT_NODE_FAILED,
-        EVT_NODE_DISCONNECTED,
+        EVT_NODE_SEGMENTED,
         EVT_NODE_RECONNECTED
     };
 
@@ -735,7 +743,7 @@ public interface GridEventType {
         EVT_NODE_LEFT,
         EVT_NODE_FAILED,
         EVT_NODE_METRICS_UPDATED,
-        EVT_NODE_DISCONNECTED,
+        EVT_NODE_SEGMENTED,
         EVT_NODE_RECONNECTED
     };
 

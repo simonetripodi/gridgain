@@ -32,7 +32,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Manages lock order within a thread.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /** Maxim number of removed locks. */
@@ -152,10 +152,10 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                 }
             }
 
-            for (Iterator<Collection<GridCacheFuture<?>>> i1 = futs.values().iterator(); i1.hasNext();) {
+            for (Iterator<Collection<GridCacheFuture<?>>> i1 = futs.values().iterator(); i1.hasNext(); ) {
                 Collection<? extends GridCacheFuture> futs = i1.next();
 
-                for (Iterator<? extends GridCacheFuture> i2 = futs.iterator(); i2.hasNext();) {
+                for (Iterator<? extends GridCacheFuture> i2 = futs.iterator(); i2.hasNext(); ) {
                     GridCacheFuture fut = i2.next();
 
                     fut.onNodeLeft(discoEvt.eventNodeId());
@@ -184,7 +184,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                 @Override protected Queue<GridCacheMvccCandidate<K>> initialValue() {
                     return new LinkedList<GridCacheMvccCandidate<K>>();
                 }
-        };
+            };
     }
 
     /** {@inheritDoc} */
@@ -567,7 +567,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
         GridCacheMvccCandidate<K> prev = null;
 
-        for (Iterator<GridCacheMvccCandidate<K>> it = queue.iterator(); it.hasNext();) {
+        for (Iterator<GridCacheMvccCandidate<K>> it = queue.iterator(); it.hasNext(); ) {
             GridCacheMvccCandidate<K> c = it.next();
 
             if (c.equals(cand))
@@ -618,70 +618,54 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * @param nodeId Node ID to wait for.
-     * @return Future for waiting.
+     * @param parts Partition numbers.
+     * @param exclIds Exclude IDs.
+     * @return Future that signals when all locks for given partitions are released.
      */
-    public GridFuture<?> finishNode(UUID nodeId) {
-        return finishLocks(nodeId, null, null);
+    @SuppressWarnings({"unchecked"})
+    public GridFuture<?> finishPartitions(final Collection<Integer> parts, UUID... exclIds) {
+        return finishLocks(new GridPredicate[]{new P1<K>() {
+            @Override public boolean apply(K key) {
+                return parts != null && parts.contains(cctx.partition(key));
+            }
+        }}, exclIds);
     }
 
     /**
-     * @param parts Partition numbers.
-     * @param exclIds Exclude IDs.
-     * @return Future that signals when all locks for given partitions will be released.
+     * @param keyFilter Key filter.
+     * @return Future that signals when all locks for keys corresponding to given filter are released.
      */
-    public GridFuture<?> finishPartitions(Collection<Integer> parts, UUID... exclIds) {
-        return finishLocks(null, parts, exclIds);
+    public GridFuture<?> finishKeys(GridPredicate<K>[] keyFilter) {
+        return finishLocks(keyFilter, null);
     }
 
     /**
-     * @param nodeId Node ID to wait for.
-     * @param parts Partition numbers.
+     * @param keyFilter Key filter.
      * @param exclIds Exclude IDs.
      * @return Future that signals when all locks for given partitions will be released.
      */
-    @SuppressWarnings( {"unchecked"})
-    public GridFuture<?> finishLocks(@Nullable final UUID nodeId, @Nullable final Collection<Integer> parts,
-        @Nullable UUID[] exclIds) {
-        assert nodeId != null || parts != null;
+    @SuppressWarnings({"unchecked"})
+    public GridFuture<?> finishLocks(@Nullable final GridPredicate<K>[] keyFilter, @Nullable UUID[] exclIds) {
         final FinishLockFuture finishFut = new FinishLockFuture(
-            nodeId,
             F.view(locked.values(),
                 new P1<GridDistributedCacheEntry<K, V>>() {
                     @Override public boolean apply(GridDistributedCacheEntry<K, V> e) {
-                        if (nodeId != null) {
-                            try {
-                                Collection<GridCacheMvccCandidate<K>> rmts = e.remoteMvccSnapshot();
-
-                                Collection<GridCacheMvccCandidate<K>> locs = null;
-
-                                if (cctx.isDht())
-                                    locs = e.localCandidates();
-
-                                if (!F.isEmpty(rmts) || !F.isEmpty(locs)) {
-                                    if (rmts != null)
-                                        if (!F.view(rmts, nodeIdFilter(nodeId)).isEmpty())
-                                            return true;
-
-                                    if (locs != null)
-                                        if (!F.view(locs, nodeIdFilter(nodeId)).isEmpty())
-                                            return true;
-                                }
-
-                                return false;
-                            }
-                            catch (GridCacheEntryRemovedException ignore) {
-                                return false;
-                            }
-                        }
-                        else {
-                            assert parts != null;
-
-                            return parts.contains(cctx.partition(e.key()));
-                        }
+                            return F.isAll(e.key(), keyFilter);
                     }
                 }
-        ), exclIds);
+            ), exclIds);
+
+        finishFuts.add(finishFut);
+
+        finishFut.listenAsync(new CI1<GridFuture<?>>() {
+            @Override public void apply(GridFuture<?> e) {
+                finishFuts.remove(finishFut);
+
+                // This call is required to make sure that the concurrent queue
+                // clears memory occupied by internal nodes.
+                finishFuts.peek();
+            }
+        });
 
         finishFuts.add(finishFut);
 
@@ -715,21 +699,9 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
      *
      */
     private class FinishLockFuture extends GridFutureAdapter<Object> {
-        /** Node ID to wait for, possibly null for partition-based future. */
-        private final UUID nodeId;
-
         /** Exclude IDs. */
+        @GridToStringInclude
         private final UUID[] exclIds;
-
-        /**
-         * Empty constructor required for {@link Externalizable}.
-         */
-        public FinishLockFuture() {
-            assert false;
-
-            nodeId = null;
-            exclIds = null;
-        }
 
         /** */
         @GridToStringInclude
@@ -737,14 +709,21 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
             new ConcurrentHashMap<K, Collection<GridCacheMvccCandidate<K>>>();
 
         /**
-         * @param nodeId Node ID.
+         * Empty constructor required for {@link Externalizable}.
+         */
+        public FinishLockFuture() {
+            assert false;
+
+            exclIds = null;
+        }
+
+        /**
          * @param exclIds Exclude IDs.
          * @param entries Entries.
          */
-        FinishLockFuture(@Nullable UUID nodeId, Iterable<GridDistributedCacheEntry<K, V>> entries, UUID[] exclIds) {
+        FinishLockFuture(Iterable<GridDistributedCacheEntry<K, V>> entries, UUID[] exclIds) {
             super(cctx.kernalContext());
 
-            this.nodeId = nodeId;
             this.exclIds = exclIds;
 
             for (GridCacheEntryEx<K, V> entry : entries) {
@@ -760,10 +739,10 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                         Collection<GridCacheMvccCandidate<K>> cands = new LinkedList<GridCacheMvccCandidate<K>>();
 
                         if (rmts != null)
-                            cands.addAll(F.view(rmts, nodeIdFilter(), excludeFilter()));
+                            cands.addAll(F.view(rmts, excludeFilter()));
 
                         if (locs != null)
-                            cands.addAll(F.view(locs, nodeIdFilter(), excludeFilter()));
+                            cands.addAll(F.view(locs, excludeFilter()));
 
                         if (!F.isEmpty(cands))
                             pending.put(entry.key(), cands);
@@ -782,22 +761,6 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
         /**
          * @return Filter.
          */
-        private GridPredicate<GridCacheMvccCandidate<K>> nodeIdFilter() {
-            if (nodeId == null)
-                return F.alwaysTrue();
-
-            return new P1<GridCacheMvccCandidate<K>>() {
-                @Override public boolean apply(GridCacheMvccCandidate<K> c) {
-                    UUID otherId = c.otherNodeId();
-
-                    return c.nodeId().equals(nodeId) || (otherId != null && otherId.equals(nodeId));
-                }
-            };
-        }
-
-        /**
-         * @return Filter.
-         */
         private GridPredicate<GridCacheMvccCandidate<K>> excludeFilter() {
             if (F.isEmpty(exclIds))
                 return F.alwaysTrue();
@@ -806,8 +769,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                 @Override public boolean apply(GridCacheMvccCandidate<K> c) {
                     UUID otherId = c.otherNodeId();
 
-                    return !U.containsObjectArray(exclIds, nodeId, otherId) &&
-                        !F.containsAny(c.mappedNodeIds(), exclIds);
+                    return !U.containsObjectArray(exclIds, otherId) && !F.containsAny(c.mappedNodeIds(), exclIds);
                 }
             };
         }
@@ -816,7 +778,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
          *
          */
         void recheck() {
-            for (Iterator<K> it = pending.keySet().iterator(); it.hasNext();) {
+            for (Iterator<K> it = pending.keySet().iterator(); it.hasNext(); ) {
                 K key = it.next();
 
                 GridCacheEntryEx<K, V> entry = cctx.cache().peekEx(key);
@@ -826,6 +788,9 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                 else
                     recheck(entry);
             }
+
+            if (log.isDebugEnabled())
+                log.debug("After rechecking finished future: " + this);
 
             if (pending.isEmpty()) {
                 if (exchLog.isDebugEnabled())
@@ -844,7 +809,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                 return;
 
             if (exchLog.isDebugEnabled())
-                exchLog.debug("Rechecking entry for completion: " + entry);
+                exchLog.debug("Rechecking entry for completion [entry=" + entry + ", finFut=" + this + ']');
 
             Collection<GridCacheMvccCandidate<K>> cands = pending.get(entry.key());
 
@@ -856,7 +821,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                     boolean dht = cctx.isDht();
 
                     synchronized (cands) {
-                        for (Iterator<GridCacheMvccCandidate<K>> it = cands.iterator(); it.hasNext();) {
+                        for (Iterator<GridCacheMvccCandidate<K>> it = cands.iterator(); it.hasNext(); ) {
                             GridCacheMvccCandidate<K> cand = it.next();
 
                             if (U.containsObjectArray(exclIds, cand.nodeId(), cand.otherNodeId()) ||
@@ -892,13 +857,18 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                 }
                 finally {
                     if (pending.isEmpty()) {
+                        onDone();
+
                         if (exchLog.isDebugEnabled())
                             exchLog.debug("Finish lock future is done: " + this);
-
-                        onDone();
                     }
                 }
             }
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(FinishLockFuture.class, this, super.toString());
         }
     }
 }

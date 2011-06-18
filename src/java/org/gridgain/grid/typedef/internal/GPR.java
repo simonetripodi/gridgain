@@ -17,6 +17,6 @@ import org.gridgain.grid.kernal.*;
  * use only and meant to provide for more terse code when readability of code is not compromised.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GPR extends GridPlainRunnable { /* No-op. */ }

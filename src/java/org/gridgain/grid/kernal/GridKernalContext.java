@@ -14,6 +14,7 @@ import org.gridgain.grid.editions.*;
 import org.gridgain.grid.kernal.controllers.affinity.*;
 import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
+import org.gridgain.grid.kernal.controllers.segmentation.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
 import org.gridgain.grid.kernal.managers.cloud.*;
 import org.gridgain.grid.kernal.managers.collision.*;
@@ -46,7 +47,7 @@ import java.util.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @GridToStringExclude
 public interface GridKernalContext extends GridMetadataAware, Iterable<GridComponent> {
@@ -254,6 +255,13 @@ public interface GridKernalContext extends GridMetadataAware, Iterable<GridCompo
     public GridRestController rest();
 
     /**
+     * Gets segmentation controller.
+     *
+     * @return Segmentation controller.
+     */
+    public GridSegmentationController segmentation();
+
+    /**
      * Gets deployment manager.
      *
      * @return Deployment manager.
@@ -336,4 +344,16 @@ public interface GridKernalContext extends GridMetadataAware, Iterable<GridCompo
      * @return Swap space manager.
      */
     public GridSwapSpaceManager swap();
+
+    /**
+     * Sets segmented flag to {@code true} when node is stopped due to segmentation issues.
+     */
+    public void markSegmented();
+
+    /**
+     * Gets segmented flag.
+     *
+     * @return {@code True} if network is currently segmented, {@code false} otherwise.
+     */
+    public boolean segmented();
 }

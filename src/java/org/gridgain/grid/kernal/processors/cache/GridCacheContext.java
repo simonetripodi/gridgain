@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -424,6 +424,15 @@ public class GridCacheContext<K, V> implements Externalizable {
      */
     public GridPredicate<GridNode> remotes() {
         return F.remoteNodes(nodeId());
+    }
+
+    /**
+     * @return Partition topology.
+     */
+    public GridDhtPartitionTopology<K, V> topology() {
+        assert isNear() || isDht();
+
+        return isNear() ? near().dht().topology() : dht().topology();
     }
 
     /**
@@ -1399,31 +1408,6 @@ public class GridCacheContext<K, V> implements Externalizable {
         long timeout = gridConfig().getNetworkTimeout() * 4;
 
         return timeout < 0 ? Long.MAX_VALUE : timeout;
-    }
-
-    /**
-     * Waits for partition locks and transactions release.
-     *
-     * @param nodeId Node ID.
-     * @return {@code true} if waiting was successful.
-     */
-    @SuppressWarnings({"unchecked"})
-    public GridFuture<?> nodeReleaseFuture(UUID nodeId) {
-        assert nodeId != null;
-
-        GridCompoundIdentityFuture fut = new GridCompoundIdentityFuture(kernalContext());
-
-        fut.add(tm().finishNode(nodeId));
-        fut.add(mvcc().finishNode(nodeId));
-
-        if (isDht()) {
-            fut.add(dht().near().context().tm().finishNode(nodeId));
-            fut.add(dht().near().context().mvcc().finishNode(nodeId));
-        }
-
-        fut.markInitialized();
-
-        return fut;
     }
 
     /**

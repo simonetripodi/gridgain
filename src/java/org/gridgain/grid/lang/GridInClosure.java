@@ -19,7 +19,7 @@ import org.gridgain.grid.typedef.*;
  * if any.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  * @param <E1> Type of the free variable, i.e. the element the closure is called or closed on.
  * @see GridFunc
  */

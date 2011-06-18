@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -52,6 +52,12 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
 
     /** Near cache eviction policy. */
     private GridCacheEvictionPolicy nearEvictPolicy;
+
+    /** Flag indicating whether eviction is synchronized between nodes. */
+    private boolean evictSynchronized = true;
+
+    /** Maximum eviction overflow ratio. */
+    private float maxEvictionOverflowRatio = DFLT_MAX_EVICTION_OVERFLOW_RATIO;
 
     /** Transaction isolation. */
     private GridCacheTxIsolation dfltIsolation = DFLT_TX_ISOLATION;
@@ -205,6 +211,8 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         nearStartSize = cacheCfg.getNearStartSize();
         nearEnabled = cacheCfg.isNearEnabled();
         nearEvictPolicy = cacheCfg.getNearEvictionPolicy();
+        evictSynchronized = cacheCfg.isEvictSynchronized();
+        maxEvictionOverflowRatio = cacheCfg.getMaxEvictionOverflowRatio();
         preloadMode = cacheCfg.getPreloadMode();
         preloadBatchSize = cacheCfg.getPreloadBatchSize();
         preloadPoolSize = cacheCfg.getPreloadThreadPoolSize();
@@ -278,6 +286,35 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
      */
     public void setNearEvictionPolicy(GridCacheEvictionPolicy nearEvictPolicy) {
         this.nearEvictPolicy = nearEvictPolicy;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isEvictSynchronized() {
+        return evictSynchronized;
+    }
+
+    /**
+     * Sets flag indicating whether eviction is synchronized between nodes for
+     * replicated and partitioned cache.
+     *
+     * @param evictSynchronized {@code true} if synchronized, {@code false} if not.
+     */
+    public void setEvictSynchronized(boolean evictSynchronized) {
+        this.evictSynchronized = evictSynchronized;
+    }
+
+    /** {@inheritDoc} */
+    @Override public float getMaxEvictionOverflowRatio() {
+        return maxEvictionOverflowRatio;
+    }
+
+    /**
+     * Sets maximum eviction overflow ratio.
+     *
+     * @param maxEvictionOverflowRatio Ration.
+     */
+    public void setMaxEvictionOverflowRatio(float maxEvictionOverflowRatio) {
+        this.maxEvictionOverflowRatio = maxEvictionOverflowRatio;
     }
 
     /** {@inheritDoc} */

@@ -23,7 +23,7 @@ import java.util.concurrent.*;
  * Statistics for {@link GridTcpDiscoverySpi}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridTcpDiscoveryStatistics {
     /** Join started timestamp. */
@@ -162,15 +162,6 @@ public class GridTcpDiscoveryStatistics {
 
     /** Topology store get node state count. */
     private int topStoreGetNodeStateCnt;
-
-    /** Average segment check time. */
-    private long avgChkSegTime;
-
-    /** Max segment check time. */
-    private long maxChkSegTime;
-
-    /** Segment checks count. */
-    private int chkSegCnt;
 
     /**
      * Increments joined nodes count.
@@ -507,20 +498,6 @@ public class GridTcpDiscoveryStatistics {
 
         avgTopStoreGetNodeStateTime = (avgTopStoreGetNodeStateTime * (topStoreGetNodeStateCnt - 1) + time) /
             topStoreGetNodeStateCnt;
-    }
-
-    /**
-     * @param time Time taken to check segment.
-     */
-    public synchronized void onCheckSegmentFinished(long time) {
-        assert time >= 0;
-
-        chkSegCnt++;
-
-        if (time > maxChkSegTime)
-            maxChkSegTime = time;
-
-        avgChkSegTime = (avgChkSegTime * (chkSegCnt - 1) + time) / chkSegCnt;
     }
 
     /**

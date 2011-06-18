@@ -18,7 +18,7 @@ import java.util.*;
  * when node leaves the topology. 
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridNodeShadow extends GridMetadataAware {
     /**
@@ -99,7 +99,7 @@ public interface GridNodeShadow extends GridMetadataAware {
     public Collection<String> internalAddresses();
 
     /**
-     * Gets collection of IP addresses known externally outside of ths LAN.
+     * Gets collection of IP addresses known externally outside of this LAN.
      * <p>
      * In many managed environments like Amazon EC2 a virtual instance and therefore a GridGain node
      * can have multiple internal and external IP addresses. Internal addresses are used to address the node

@@ -20,7 +20,7 @@ import java.util.*;
  * Local transaction API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridCacheTxLocalEx<K, V> extends GridCacheTxEx<K, V> {
     /**
@@ -31,7 +31,7 @@ public interface GridCacheTxLocalEx<K, V> extends GridCacheTxEx<K, V> {
     /**
      * @return Future for this transaction.
      */
-    public GridFuture<GridCacheTx> future();
+    public GridFuture<GridCacheTxEx<K, V>> future();
 
     /**
      * @return Commit error.

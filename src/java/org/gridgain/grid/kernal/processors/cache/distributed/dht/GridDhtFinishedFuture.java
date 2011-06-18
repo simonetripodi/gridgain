@@ -20,7 +20,7 @@ import java.util.*;
  * Finished DHT future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtFinishedFuture<K, T> extends GridFinishedFuture<T> implements GridDhtFuture<K, T> {
     /**
@@ -47,7 +47,7 @@ public class GridDhtFinishedFuture<K, T> extends GridFinishedFuture<T> implement
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<K> retries() {
+    @Override public Collection<Integer> invalidPartitions() {
         return Collections.emptyList();
     }
 

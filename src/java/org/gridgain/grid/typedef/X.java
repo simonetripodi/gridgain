@@ -10,6 +10,7 @@
 package org.gridgain.grid.typedef;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
@@ -18,16 +19,30 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * Defines global scope. Contains often used utility functions allowing to cut down on code bloat. This
+ * Defines global scope.
+ * <p>
+ * Contains often used utility functions allowing to cut down on code bloat. This
  * is somewhat analogous to <code>Predef</code> in Scala. Note that this should only be used
  * when this typedef <b>does not sacrifice</b> the code readability.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public final class X {
     /** Time span dividers. */
     private static final long[] SPAN_DIVS = new long[] {1000L, 60L, 60L, 60L};
+
+    /**
+     * Closure for no-failover policy.
+     */
+    public static final GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> NO_FAILOVER =
+        new GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>() {
+            @Override
+            public GridJobResultPolicy applyx(GridJobResult gridJobResult, List<GridJobResult> gridJobResults)
+                throws GridException {
+                return GridJobResultPolicy.WAIT;
+            }
+        };
 
     /**
      * Ensures singleton.

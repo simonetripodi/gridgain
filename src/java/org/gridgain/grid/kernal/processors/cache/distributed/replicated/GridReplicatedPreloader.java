@@ -39,7 +39,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Class that takes care about entries preloading in replicated cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** */
@@ -160,8 +160,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 }
             }, EVTS_DISCOVERY);
 
-        cctx.io().addHandler(GridReplicatedStartSignalMessage.class, new CI2<UUID, GridReplicatedStartSignalMessage>() {
-            @Override public void apply(UUID nodeId, GridReplicatedStartSignalMessage msg) {
+        cctx.io().addHandler(GridReplicatedStartSignalMessage.class, new CI2<UUID, GridReplicatedStartSignalMessage<K, V>>() {
+            @Override public void apply(UUID nodeId, GridReplicatedStartSignalMessage<K, V> msg) {
                 if (log.isDebugEnabled())
                     log.debug("Processing start signal message from node [nodeId=" + nodeId + ",msg=" + msg + "]");
 
@@ -260,7 +260,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
         final Set<Integer> parts = partitions(node);
 
-        cctx.partitionReleaseFuture(parts).listenAsync(
+        cctx.partitionReleaseFuture(parts, nodeId).listenAsync(
             new CI1<GridFuture<?>>() {
                 @Override public void apply(GridFuture<?> fut) {
                     try {
@@ -707,6 +707,11 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
         if (msg.failed())
             resendPreloadRequest(nodeId);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> startFuture() {
+        return startFut;
     }
 
     /**

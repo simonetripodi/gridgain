@@ -14,6 +14,7 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
@@ -28,7 +29,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** All keys participating in transaction. */
@@ -111,7 +112,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /**
      * @return Prepare fut.
      */
-    @Override public GridFuture<GridCacheTx> future() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> future() {
         return prepareFut.get();
     }
 
@@ -149,7 +150,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
         // Do not include local node for transaction processing, as
         // it is included by doing local transaction commit/rollback
         // operations already.
-        return ctx.remoteNodes(allKeys);
+        return cctx.remoteNodes(allKeys);
     }
 
     /** {@inheritDoc} */
@@ -252,7 +253,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
         try {
             if (!ec()) {
                 if (!allKeys.isEmpty() && !nodes.isEmpty()) {
-                    assert ctx.mvcc().hasFuture(fin);
+                    assert cctx.mvcc().hasFuture(fin);
 
                     // We write during commit only for pessimistic transactions.
                     Collection<GridCacheTxEntry<K, V>> writeEntries = pessimistic() ? writeEntries() : null;
@@ -273,7 +274,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                         reply);
 
                     try {
-                        ctx.io().safeSend(nodes, req, null);
+                        cctx.io().safeSend(nodes, req, null);
                     }
                     catch (Throwable e) {
                         String msg = "Failed to send finish request to nodes [node=" + U.toShortString(nodes) +
@@ -354,7 +355,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                             log.debug("Got removed entry while setting local candidates for entry (will retry) [entry=" +
                                 txEntry.cached() + ", tx=" + this + ']');
 
-                        txEntry.cached(ctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
+                        txEntry.cached(cctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
                     }
                 }
             }
@@ -362,14 +363,14 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> prepareAsync() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> prepareAsync() {
         GridReplicatedTxPrepareFuture<K, V> fut = prepareFut.get();
 
         if (fut == null) {
             Collection<GridRichNode> nodeGrp = resolveNodes();
 
             // Future must be created before any exception can be thrown.
-            if (!prepareFut.compareAndSet(null, fut = new GridReplicatedTxPrepareFuture<K, V>(ctx, this, nodeGrp)))
+            if (!prepareFut.compareAndSet(null, fut = new GridReplicatedTxPrepareFuture<K, V>(cctx, this, nodeGrp)))
                 return prepareFut.get();
         }
 
@@ -417,7 +418,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                 fut.complete();
             else if (state(ROLLING_BACK)) {
                 if (doneFlag.compareAndSet(false, true)) {
-                    ctx.tm().rollbackTx(this);
+                    cctx.tm().rollbackTx(this);
 
                     state(ROLLED_BACK);
 
@@ -452,12 +453,12 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                 candidatesByKey(req, writeMap());
 
                 // Completed versions.
-                req.completedVersions(ctx.tm().committedVersions(minVer), ctx.tm().rolledbackVersions(minVer));
+                req.completedVersions(cctx.tm().committedVersions(minVer), cctx.tm().rolledbackVersions(minVer));
 
                 try {
-                    ctx.mvcc().addFuture(fut);
+                    cctx.mvcc().addFuture(fut);
 
-                    ctx.io().safeSend(fut.nodes(), req, new GridPredicate<GridNode>() {
+                    cctx.io().safeSend(fut.nodes(), req, new GridPredicate<GridNode>() {
                         @Override public boolean apply(GridNode n) {
                             GridReplicatedTxPrepareFuture<K, V> fut = prepareFut.get();
 
@@ -518,7 +519,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
         if (fin == null)
             // Future must be created before any exception can be thrown.
-            if (!commitFut.compareAndSet(null, fin = new GridReplicatedTxCommitFuture<K, V>(ctx, this, prep.nodes())))
+            if (!commitFut.compareAndSet(null, fin = new GridReplicatedTxCommitFuture<K, V>(cctx, this, prep.nodes())))
                 return commitFut.get();
 
         assert allKeys != null;
@@ -528,7 +529,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             // Move transition to committed state.
             if (state(COMMITTING)) {
                 if (doneFlag.compareAndSet(false, true)) {
-                    ctx.tm().commitTx(this);
+                    cctx.tm().commitTx(this);
 
                     state(COMMITTED);
 
@@ -538,7 +539,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             }
             else if (state(ROLLING_BACK)) {
                 if (doneFlag.compareAndSet(false, true)) {
-                    ctx.tm().rollbackTx(this);
+                    cctx.tm().rollbackTx(this);
 
                     state(ROLLED_BACK);
 
@@ -554,8 +555,8 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
         final GridReplicatedTxCommitFuture<K, V> fut = fin;
 
-        prep.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
-            @Override public void apply(GridFuture<GridCacheTx> f) {
+        prep.listenAsync(new CI1<GridFuture<GridCacheTxEx<K, V>>>() {
+            @Override public void apply(GridFuture<GridCacheTxEx<K, V>> f) {
                 try {
                     f.get();
                 }
@@ -585,7 +586,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
                     }
                 }
 
-                ctx.mvcc().addFuture(fut);
+                cctx.mvcc().addFuture(fut);
 
                 fut.init();
             }
@@ -609,7 +610,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
 
         if (fin == null && !ec()) {
             // Future must be created before any exception can be thrown.
-            if (!rollbackFut.compareAndSet(null, fin = new GridReplicatedTxCommitFuture<K, V>(ctx, this, nodes)))
+            if (!rollbackFut.compareAndSet(null, fin = new GridReplicatedTxCommitFuture<K, V>(cctx, this, nodes)))
                 return;
         }
 
@@ -624,7 +625,7 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             if (!ec()) {
                 assert fin != null;
 
-                ctx.mvcc().addFuture(fin);
+                cctx.mvcc().addFuture(fin);
 
                 fin.init();
 
@@ -665,6 +666,21 @@ class GridReplicatedTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** {@inheritDoc} */
     @Override public Map<K, Collection<GridCacheMvccCandidate<K>>> localCandidates() {
         return Collections.emptyMap();
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<UUID> nodeIds() {
+        Collection<UUID> ids = new GridLeanSet<UUID>();
+
+        ids.add(cctx.nodeId());
+
+        // TODO: not sure it's correct
+        GridReplicatedTxPrepareFuture<K, V> fut = prepareFut.get();
+
+        if (fut != null)
+            ids.addAll(F.viewReadOnly(fut.nodes(), F.node2id()));
+
+        return ids;
     }
 
     /** {@inheritDoc} */

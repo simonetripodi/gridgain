@@ -17,7 +17,7 @@ import java.util.*;
  * Keys to retry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridDhtFuture<K, T> extends GridFuture<T> {
     /**
@@ -27,5 +27,5 @@ public interface GridDhtFuture<K, T> extends GridFuture<T> {
      * 
      * @return Keys to retry because this node is no longer a primary or backup.
      */
-    public Collection<K> retries();
+    public Collection<Integer> invalidPartitions();
 }

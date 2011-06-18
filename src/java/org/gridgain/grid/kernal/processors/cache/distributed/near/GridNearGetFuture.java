@@ -30,12 +30,12 @@ import java.util.concurrent.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V>>
     implements GridCacheFuture<Map<K, V>> {
     /** Context. */
-    private GridCacheContext<K, V> cacheCtx;
+    private GridCacheContext<K, V> cctx;
 
     /** Keys. */
     private Collection<? extends K> keys;
@@ -66,20 +66,20 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
     }
 
     /**
-     * @param cacheCtx Context.
+     * @param cctx Context.
      * @param keys Keys.
      * @param reload Reload flag.
      * @param tx Transaction.
      * @param filters Filters.
      */
-    public GridNearGetFuture(GridCacheContext<K, V> cacheCtx, Collection<? extends K> keys, boolean reload,
+    public GridNearGetFuture(GridCacheContext<K, V> cctx, Collection<? extends K> keys, boolean reload,
         @Nullable GridCacheTxLocalEx<K, V> tx, @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filters) {
-        super(cacheCtx.kernalContext(), CU.<K, V>mapsReducer(keys.size()));
+        super(cctx.kernalContext(), CU.<K, V>mapsReducer(keys.size()));
 
-        assert cacheCtx != null;
+        assert cctx != null;
         assert !F.isEmpty(keys);
 
-        this.cacheCtx = cacheCtx;
+        this.cctx = cctx;
         this.keys = keys;
         this.reload = reload;
         this.filters = filters;
@@ -87,9 +87,9 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
 
         futId = GridUuid.randomUuid();
 
-        ver = tx == null ? cacheCtx.versions().next() : tx.xidVersion();
+        ver = tx == null ? cctx.versions().next() : tx.xidVersion();
 
-        log = cacheCtx.logger(getClass());
+        log = cctx.logger(getClass());
     }
 
     /**
@@ -126,7 +126,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
                     if (isMini(f))
                         return ((MiniFuture)f).node();
 
-                    return cacheCtx.rich().rich(cacheCtx.discovery().localNode());
+                    return cctx.rich().rich(cctx.discovery().localNode());
                 }
             });
     }
@@ -168,7 +168,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
     @Override public boolean onDone(Map<K, V> res, Throwable err) {
         if (super.onDone(res, err)) {
             // Don't forget to clean up.
-            cacheCtx.mvcc().removeFuture(this);
+            cctx.mvcc().removeFuture(this);
 
             return true;
         }
@@ -188,8 +188,8 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
      * @param keys Keys.
      * @param mapped Mappings to check for duplicates.
      */
-    private void map(Iterable<? extends K> keys, Map<GridRichNode, Collection<K>> mapped) {
-        Collection<GridRichNode> nodes = CU.allNodes(cacheCtx);
+    private void map(Collection<? extends K> keys, Map<GridRichNode, Collection<K>> mapped) {
+        Collection<GridRichNode> nodes = CU.allNodes(cctx);
 
         ConcurrentMap<GridRichNode, Collection<K>> mappings =
             new ConcurrentHashMap<GridRichNode, Collection<K>>(nodes.size());
@@ -200,8 +200,6 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
 
         if (isDone())
             return;
-
-        Collection<K> retries = new LinkedList<K>();
 
         // Create mini futures.
         for (Map.Entry<GridRichNode, Collection<K>> entry : mappings.entrySet()) {
@@ -214,17 +212,21 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
             // If this is the primary or backup node for the keys.
             if (n.isLocal()) {
                 final GridDhtFuture<K, Collection<GridCacheEntryInfo<K, V>>> fut =
-                    dht().getDhtAsync(n.id(), mappedKeys, reload, filters);
+                    dht().getDhtAsync(n.id(), -1, mappedKeys, reload, filters);
 
-                retries.addAll(fut.retries());
+                final Collection<Integer> invalidParts = fut.invalidPartitions();
 
-                if (!retries.isEmpty())
+                if (!F.isEmpty(invalidParts))
                     // Remap.
-                    map(retries, mappings);
+                    map(F.view(keys, new P1<K>() {
+                        @Override public boolean apply(K key) {
+                            return invalidParts.contains(cctx.partition(key));
+                        }
+                    }), mappings);
 
                 // Add new future.
                 add(new GridEmbeddedFuture<Map<K, V>, Collection<GridCacheEntryInfo<K, V>>>(
-                    cacheCtx.kernalContext(),
+                    cctx.kernalContext(),
                     fut,
                     new C2<Collection<GridCacheEntryInfo<K, V>>, Exception, Map<K, V>>() {
                         @Override public Map<K, V> apply(Collection<GridCacheEntryInfo<K, V>> infos, Exception e) {
@@ -250,7 +252,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
                 add(fut); // Append new future.
 
                 try {
-                    cacheCtx.io().send(n, req);
+                    cctx.io().send(n, req);
                 }
                 catch (GridTopologyException e) {
                     fut.onResult(e);
@@ -293,9 +295,9 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
                 }
 
                 if (v != null)
-                    add(new GridFinishedFuture<Map<K, V>>(cacheCtx.kernalContext(), Collections.singletonMap(key, v)));
+                    add(new GridFinishedFuture<Map<K, V>>(cctx.kernalContext(), Collections.singletonMap(key, v)));
                 else {
-                    GridRichNode node = CU.primary0(cacheCtx.affinity(key, nodes));
+                    GridRichNode node = CU.primary0(cctx.affinity(key, nodes));
 
                     Collection<K> keys = mapped.get(node);
 
@@ -332,7 +334,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
      * @return Near cache.
      */
     private GridNearCache<K, V> cache() {
-        return (GridNearCache<K, V>)cacheCtx.cache();
+        return (GridNearCache<K, V>)cctx.cache();
     }
 
     /**
@@ -354,7 +356,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
         Map<K, V> map = empty ? Collections.<K, V>emptyMap() : new GridLeanMap<K, V>(keys.size());
 
         if (!empty) {
-            GridCacheVersion ver = F.isEmpty(infos) ? null : cacheCtx.versions().next();
+            GridCacheVersion ver = F.isEmpty(infos) ? null : cctx.versions().next();
 
             for (GridCacheEntryInfo<K, V> info : infos) {
                 // Entries available locally in DHT should not loaded into near cache for reading.
@@ -416,7 +418,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
          * @param keys Keys.
          */
         MiniFuture(GridRichNode node, Collection<K> keys) {
-            super(cacheCtx.kernalContext());
+            super(cctx.kernalContext());
 
             this.node = node;
             this.keys = keys;
@@ -468,14 +470,19 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
          * @param res Result callback.
          */
         void onResult(GridNearGetResponse<K, V> res) {
-            Collection<K> retries = res.retries();
+            final Collection<Integer> invalidParts = res.invalidPartitions();
 
-            if (!F.isEmpty(retries)) {
+            // Remap invalid partitions.
+            if (!F.isEmpty(invalidParts)) {
                 if (log.isDebugEnabled())
-                    log.debug("Remapping mini get future [leftOvers=" + retries + ", fut=" + this + ']');
+                    log.debug("Remapping mini get future [invalidParts=" + invalidParts + ", fut=" + this + ']');
 
                 // This will append new futures to compound list.
-                map(retries, F.t(node, keys));
+                map(F.view(keys,  new P1<K>() {
+                    @Override public boolean apply(K key) {
+                        return invalidParts.contains(cctx.partition(key));
+                    }
+                }), F.t(node, keys));
             }
 
             onDone(loadEntries(node.id(), keys, res.entries()));

@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtPartitionDemandPool<K, V> {
     /** Dummy message to wake up a blocking queue if a node leaves. */
@@ -406,7 +406,8 @@ public class GridDhtPartitionDemandPool<K, V> {
         void exchangeFuture(GridDhtPartitionsExchangeFuture<K, V> fut) {
             assert fut != null;
 
-            futQ.offer(fut);
+            if (id == 0)
+                futQ.offer(fut);
         }
 
         /**
@@ -529,58 +530,55 @@ public class GridDhtPartitionDemandPool<K, V> {
                         watch.step("EXCHANGE_REALIGN_STEP1");
 
                         // After workers line up and before preloading starts we initialize all futures.
-                        initAll();
+                        if (id == 0) {
+                            initAll();
 
-                        watch.step("FUTURES_INITIALIZED");
+                            watch.step("FUTURES_INITIALIZED");
 
-                        latch.realign2();
+                            watch.step("EXCHANGE_REALIGN_STEP2");
 
-                        watch.step("EXCHANGE_REALIGN_STEP2");
+                            if (log.isDebugEnabled())
+                                log.debug("Before waiting for exchange futures [futs" +
+                                    F.view((cctx.dht().dhtPreloader()).exchangeFutures(), F.unfinishedFutures()) +
+                                    ", worker=" + worker() + ']');
 
-                        if (log.isDebugEnabled())
-                            log.debug("Before waiting for exchange futures [futs" +
-                                F.view((cctx.dht().dhtPreloader()).exchangeFutures(), F.unfinishedFutures()) +
-                                ", worker=" + worker() + ']');
+                            GridDhtPartitionsExchangeFuture<K, V> exchFut = null;
 
-                        GridDhtPartitionsExchangeFuture<K, V> exchFut = null;
+                            while (!isCancelled() && (exchFut == null || dummyExchange(exchFut))) {
+                                // Take next exchange future.
+                                exchFut = take(futQ);
 
-                        while (!isCancelled() && (exchFut == null || dummyExchange(exchFut))) {
-                            // Take next exchange future.
-                            exchFut = take(futQ);
+                                if (exchFut == null || dummyExchange(exchFut))
+                                    initAll();
+                            }
 
-                            if (exchFut == null || dummyExchange(exchFut))
-                                initAll();
-                        }
+                            if (isCancelled())
+                                break;
 
-                        if (isCancelled())
-                            break;
+                            if (log.isDebugEnabled())
+                                log.debug("After waiting for exchange future [exchFut=" + exchFut + ", worker=" +
+                                    worker() + ']');
 
-                        if (log.isDebugEnabled())
-                            log.debug("After waiting for exchange future [exchFut=" + exchFut + ", worker=" +
-                                worker() + ']');
+                            assert exchFut.isDone();
 
-                        assert exchFut.isDone();
+                            // Since future is done, we call 'get' just to check for errors.
+                            exchFut.get();
 
-                        // Since future is done, we call 'get' just to check for errors.
-                        exchFut.get();
+                            watch.step("EXCHANGE_FUTURE_DONE");
 
-                        watch.step("EXCHANGE_FUTURE_DONE");
-
-                        // Just pick first worker to do this, so we don't
-                        // invoke topology callback more than once for the
-                        // same event.
-                        if (id == 0)
+                            // Just pick first worker to do this, so we don't
+                            // invoke topology callback more than once for the
+                            // same event.
                             top.afterExchange(exchFut.exchangeId());
 
-                        latch.realign3();
+                            // Preload event notification.
+                            if (exchFut != null && discoEvt.compareAndSet(null, exchFut.discoveryEvent()))
+                                preloadEvent(EVT_CACHE_PRELOAD_STARTED, exchFut.discoveryEvent());
+                        }
 
-                        // Preload event notification.
-                        if (discoEvt.compareAndSet(null, exchFut.discoveryEvent()))
-                            preloadEvent(EVT_CACHE_PRELOAD_STARTED, exchFut.discoveryEvent());
+                        Map<GridNode, GridDhtPartitionDemandMessage<K, V>> assignments = latch.realign2(reassign());
 
-                        Map<GridNode, GridDhtPartitionDemandMessage<K, V>> assignments = latch.realign4(reassign());
-
-                        watch.step("EXCHANGE_REALIGN_STEP3");
+                        watch.step("EXCHANGE_REALIGN_STEP2");
 
                         // Optimization.
                         if (latchQ.isEmpty())
@@ -1075,14 +1073,6 @@ public class GridDhtPartitionDemandPool<K, V> {
         private final CountDownLatch latch2;
 
         /** */
-        @GridToStringExclude
-        private final CountDownLatch latch3;
-
-        /** */
-        @GridToStringExclude
-        private final CountDownLatch latch4;
-
-        /** */
         @GridToStringInclude
         private GridFuture<?> fut;
 
@@ -1099,8 +1089,6 @@ public class GridDhtPartitionDemandPool<K, V> {
 
             latch1 = new CountDownLatch(threadCnt);
             latch2 = new CountDownLatch(threadCnt);
-            latch3 = new CountDownLatch(threadCnt);
-            latch4 = new CountDownLatch(threadCnt);
 
             this.fut = fut;
         }
@@ -1132,10 +1120,17 @@ public class GridDhtPartitionDemandPool<K, V> {
         }
 
         /**
+         * @param assignments Partition to node assignments.
+         * @return Partition to node assignments.
          * @throws GridException If failed.
          * @throws InterruptedException If interrupted.
          */
-        void realign2() throws GridException, InterruptedException {
+        Map<GridNode, GridDhtPartitionDemandMessage<K, V>> realign2(
+            Map<GridNode, GridDhtPartitionDemandMessage<K, V>> assignments)
+            throws GridException, InterruptedException {
+            if (!F.isEmpty(assignments))
+                this.assignments = assignments;
+
             beforeWait();
 
             latch2.countDown();
@@ -1148,51 +1143,6 @@ public class GridDhtPartitionDemandPool<K, V> {
 
             if (log.isDebugEnabled())
                 log.debug("After waiting on latch2: " + worker());
-        }
-
-        /**
-         * @throws GridException If failed.
-         * @throws InterruptedException If interrupted.
-         */
-        void realign3() throws GridException, InterruptedException {
-            beforeWait();
-
-            latch3.countDown();
-
-            if (log.isDebugEnabled())
-                log.debug("Before waiting on latch3: " + worker());
-
-            // Wait for threads to align at the beginning.
-            U.await(latch3);
-
-            if (log.isDebugEnabled())
-                log.debug("After waiting on latch3: " + worker());
-        }
-
-        /**
-         * @param assignments Partition to node assignments.
-         * @return Partition to node assignments.
-         * @throws GridException If failed.
-         * @throws InterruptedException If interrupted.
-         */
-        Map<GridNode, GridDhtPartitionDemandMessage<K, V>> realign4(
-            Map<GridNode, GridDhtPartitionDemandMessage<K, V>> assignments)
-            throws GridException, InterruptedException {
-            if (!F.isEmpty(assignments))
-                this.assignments = assignments;
-
-            beforeWait();
-
-            latch4.countDown();
-
-            if (log.isDebugEnabled())
-                log.debug("Before waiting on latch4: " + worker());
-
-            // Wait for threads to align at the beginning.
-            U.await(latch4);
-
-            if (log.isDebugEnabled())
-                log.debug("After waiting on latch4: " + worker());
 
             return this.assignments;
         }
@@ -1201,9 +1151,7 @@ public class GridDhtPartitionDemandPool<K, V> {
         @Override public String toString() {
             return S.toString(RealignLatch.class, this,
                 "latch1", latch1.getCount(),
-                "latch2", latch2.getCount(),
-                "latch3", latch3.getCount(),
-                "latch4", latch4.getCount()
+                "latch2", latch2.getCount()
             );
         }
     }

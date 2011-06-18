@@ -9,11 +9,11 @@
 
 package org.gridgain.grid.kernal.processors.cache.distributed.near;
 
-import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.internal.*;
+import org.gridgain.grid.util.tostring.*;
 
 import java.io.*;
 import java.util.*;
@@ -22,15 +22,9 @@ import java.util.*;
  * Near cache prepare response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareResponse<K, V> {
-    /** Retries. */
-    private Collection<K> retries;
-
-    /** Retry bytes. */
-    private Collection<byte[]> retryBytes;
-
     /** Future ID.  */
     private GridUuid futId;
 
@@ -39,6 +33,10 @@ public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareRes
 
     /** DHT version. */
     private GridCacheVersion dhtVer;
+
+    /** */
+    @GridToStringInclude
+    private Collection<Integer> invalidParts;
 
     /**
      * Empty constructor required by {@link Externalizable}.
@@ -52,10 +50,11 @@ public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareRes
      * @param futId Future ID.
      * @param miniId Mini future ID.
      * @param dhtVer DHT version.
+     * @param invalidParts Invalid partitions.
      * @param err Error.
      */
     public GridNearTxPrepareResponse(GridCacheVersion xid, GridUuid futId, GridUuid miniId, GridCacheVersion dhtVer,
-        Throwable err) {
+        Collection<Integer> invalidParts, Throwable err) {
         super(xid, err);
 
         assert futId != null;
@@ -65,6 +64,7 @@ public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareRes
         this.futId = futId;
         this.miniId = miniId;
         this.dhtVer = dhtVer;
+        this.invalidParts = invalidParts;
     }
 
     /**
@@ -89,40 +89,15 @@ public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareRes
     }
 
     /**
-     * @return Retries.
+     * @return Invalid partitions.
      */
-    public Collection<K> retries() {
-        return retries;
-    }
-
-    /**
-     * @param retries Retries.
-     */
-    public void retries(Collection<K> retries) {
-        this.retries = retries;
-    }
-
-    /** {@inheritDoc} */
-    @Override public void p2pMarshal(GridCacheContext<K, V> ctx) throws GridException {
-        super.p2pMarshal(ctx);
-
-        if (retryBytes == null)
-            retryBytes = marshalCollection(retries, ctx);
-    }
-
-    /** {@inheritDoc} */
-    @Override public void p2pUnmarshal(GridCacheContext<K, V> ctx, ClassLoader ldr) throws GridException {
-        super.p2pUnmarshal(ctx, ldr);
-
-        if (retries == null)
-            retries = unmarshalCollection(retryBytes, ctx, ldr);
+    public Collection<Integer> invalidPartitions() {
+        return invalidParts;
     }
 
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
-
-        U.writeCollection(out, retryBytes);
 
         assert futId != null;
         assert miniId != null;
@@ -132,6 +107,8 @@ public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareRes
         U.writeGridUuid(out, miniId);
 
         CU.writeVersion(out, dhtVer);
+
+        U.writeIntCollection(out, invalidParts);
     }
 
     /** {@inheritDoc} */
@@ -139,12 +116,12 @@ public class GridNearTxPrepareResponse<K, V> extends GridDistributedTxPrepareRes
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
-        retryBytes = U.readList(in);
-
         futId = U.readGridUuid(in);
         miniId = U.readGridUuid(in);
 
         dhtVer = CU.readVersion(in);
+
+        invalidParts = U.readIntSet(in);
 
         assert futId != null;
         assert miniId != null;

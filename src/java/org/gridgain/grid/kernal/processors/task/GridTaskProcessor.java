@@ -26,12 +26,13 @@ import java.util.concurrent.*;
 
 import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.kernal.GridTopic.*;
+import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.*;
 
 /**
  * This class defines task processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridTaskProcessor extends GridProcessorAdapter {
     /** Wait for 5 seconds to allow discovery to take effect (best effort). */
@@ -56,11 +57,8 @@ public class GridTaskProcessor extends GridProcessorAdapter {
     private final GridLocalEventListener discoLsnr;
 
     /** */
-    private final ThreadLocal<Collection<? extends GridNode>> subgridCtx =
-        new ThreadLocal<Collection<? extends GridNode>>();
-
-    /** */
-    private final ThreadLocal<String> taskNameCtx = new ThreadLocal<String>();
+    private final ThreadLocal<Map<GridTaskThreadContextKey, Object>> thCtx =
+        new ThreadLocal<Map<GridTaskThreadContextKey, Object>>();
 
     /** */
     private final Object mux = new Object();
@@ -223,17 +221,38 @@ public class GridTaskProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * @param nodes Nodes for the subgrid.
+     * Sets the thread-local context value.
+     *
+     * @param key Key.
+     * @param val Value.
      */
-    public void setProjectionContext(Collection<? extends GridNode> nodes) {
-        subgridCtx.set(nodes);
+    public void setThreadContext(GridTaskThreadContextKey key, Object val) {
+        assert key != null;
+        assert val != null;
+
+        Map<GridTaskThreadContextKey, Object> map = thCtx.get();
+
+        // NOTE: access to 'map' is always single-threaded since it's held
+        // in a thread local.
+        if (map == null)
+            thCtx.set(map = new EnumMap<GridTaskThreadContextKey, Object>(GridTaskThreadContextKey.class));
+
+        map.put(key, val);
     }
 
     /**
-     * @param taskName Task name for the next task execution.
+     * Gets thread-local context value for a given {@code key}.
+     *
+     * @param key Thread-local context key.
+     * @return Thread-local context value associated with given {@code key} - or {@code null}
+     *      if value with given {@code key} doesn't exist.
      */
-    public void setTaskNameContext(@Nullable String taskName) {
-        taskNameCtx.set(taskName);
+    public <T> T getThreadContext(GridTaskThreadContextKey key) {
+        assert(key != null);
+
+        Map<GridTaskThreadContextKey, Object> map = thCtx.get();
+
+        return map == null ? null : (T)map.get(key);
     }
 
     /**
@@ -435,10 +454,11 @@ public class GridTaskProcessor extends GridProcessorAdapter {
 
         long startTime = System.currentTimeMillis();
 
-        // Get and reset taskNameContext for safety.
-        String taskNameCtxVal = taskNameCtx.get();
+        // Get values from thread-local context.
+        Map<GridTaskThreadContextKey, Object> map = thCtx.get();
 
-        taskNameCtx.set(null);
+        // Reset thread-local context.
+        thCtx.set(null);
 
         // Account for overflow.
         if (endTime < 0)
@@ -515,7 +535,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
                     // Set proper class name to make peer-loading possible.
                     taskCls = cls;
 
-                    taskName = taskNameCtxVal != null ? taskNameCtxVal : cls.getName();
+                    taskName = map.containsKey(TC_TASK_NAME) ? (String)map.get(TC_TASK_NAME) : cls.getName();
 
                     // Implicit deploy.
                     dep = ctx.deploy().deploy(cls, ldr);
@@ -541,7 +561,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
                                 "for class: " + taskCls);
                     }
                     else
-                        taskName = taskNameCtxVal != null ? taskNameCtxVal : taskCls.getName();
+                        taskName = map.containsKey(TC_TASK_NAME) ? (String)map.get(TC_TASK_NAME) : cls.getName();
                 }
 
                 if (dep == null)
@@ -583,7 +603,9 @@ public class GridTaskProcessor extends GridProcessorAdapter {
             if (dep == null || !dep.acquire())
                 handleException(lsnr, new GridException("Task not deployed: " + ses.getTaskName()), fut);
             else {
-                Collection<? extends GridNode> subgrid = subgridCtx.get();
+                Collection<? extends GridNode> subgrid = (Collection<? extends GridNode>)map.get(TC_SUBGRID);
+
+                assert subgrid != null;
 
                 if (subgrid.isEmpty())
                     handleException(lsnr, new GridEmptyProjectionException("Projection is empty."), fut);
@@ -598,7 +620,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
                         dep,
                         lsnr,
                         new TaskEventListener(),
-                        subgrid
+                        map
                     );
 
                     synchronized (mux) {
@@ -1023,7 +1045,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.13062011
+     * @version 3.1.1c.17062011
      */
     private class TaskDiscoveryListener implements GridLocalEventListener {
         /** {@inheritDoc} */

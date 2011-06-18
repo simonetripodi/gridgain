@@ -17,7 +17,7 @@ import org.gridgain.grid.lang.GridOutClosure
  * Wrapping Scala function for `GridOutClosure`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 class ScalarOutClosureFunction[R](val inner: GridOutClosure[R]) extends (() => R) {
     assert(inner != null)
@@ -25,5 +25,7 @@ class ScalarOutClosureFunction[R](val inner: GridOutClosure[R]) extends (() => R
     /**
      * Delegates to passed in grid closure.
      */
-    def apply() = inner()
+    def apply(): R = {
+        inner.apply()
+    }
 }

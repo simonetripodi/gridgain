@@ -22,7 +22,7 @@ import java.util.*;
  * Internal API for cache entry ({@code 'Ex'} stands for extended).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
     /**
@@ -216,22 +216,13 @@ public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
      *
      * @param ver Obsolete version.
      * @param swap If {@code true} then remove from swap.
+     * @param readers Flag to clear readers as well.
      * @param filter Optional entry filter.
      * @throws GridException If failed to remove from swap.
      * @return {@code True} if entry was not being used, passed the filter and could be removed.
      */
-    public boolean clear(GridCacheVersion ver, boolean swap,
+    public boolean clear(GridCacheVersion ver, boolean swap, boolean readers,
         @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException;
-
-    /**
-     * Marks entry as obsolete and, if possible or required, removes it
-     * from swap storage.
-     *
-     * @param ver Obsolete version.
-     * @throws GridException If failed to remove from swap.
-     * @return {@code True} if entry was not being used and could be removed.
-     */
-    public boolean clearIfNew(GridCacheVersion ver) throws GridException;
 
     /**
      * This locks is called by transaction manager during prepare step

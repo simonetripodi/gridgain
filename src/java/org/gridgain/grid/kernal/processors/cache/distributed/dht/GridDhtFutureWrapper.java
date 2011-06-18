@@ -19,11 +19,11 @@ import java.util.*;
  * DHT future wrapper.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtFutureWrapper<K, A, T> extends GridFutureWrapper<T, A> implements GridDhtFuture<K, T> {
     /** Retries. */
-    private Collection<K> retries;
+    private Collection<Integer> retries;
 
     /**
      * @param wrapped Wrapped future.
@@ -40,14 +40,14 @@ public class GridDhtFutureWrapper<K, A, T> extends GridFutureWrapper<T, A> imple
      * @param c Transformer.
      * @param retries Keys to retry.
      */
-    public GridDhtFutureWrapper(GridFuture<A> wrapped, GridClosure<A, T> c, Collection<K> retries) {
+    public GridDhtFutureWrapper(GridFuture<A> wrapped, GridClosure<A, T> c, Collection<Integer> retries) {
         this(wrapped, c);
         
-        this.retries = retries == null ? Collections.<K>emptyList() : retries;
+        this.retries = retries == null ? Collections.<Integer>emptyList() : retries;
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<K> retries() {
+    @Override public Collection<Integer> invalidPartitions() {
         return retries;
     }
 }

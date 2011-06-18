@@ -13,6 +13,7 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.controllers.affinity.*;
 import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
+import org.gridgain.grid.kernal.controllers.segmentation.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
 import org.gridgain.grid.kernal.managers.cloud.*;
 import org.gridgain.grid.kernal.managers.collision.*;
@@ -46,6 +47,7 @@ import org.gridgain.grid.util.tostring.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.kernal.GridKernalState.*;
 
@@ -53,7 +55,7 @@ import static org.gridgain.grid.kernal.GridKernalState.*;
  * Implementation of kernal context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @GridToStringExclude
 public class GridKernalContextImpl extends GridMetadataAwareAdapter implements GridKernalContext, Externalizable {
@@ -171,7 +173,7 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     private GridScheduleProcessor scheduleProc;
 
     /*
-     * Controlelrs.
+     * Controllers.
      * ===========
      */
 
@@ -186,6 +188,9 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     @GridToStringInclude
     private GridAffinityController affCtrl;
 
+    @GridToStringInclude
+    private GridSegmentationController segCtrl;
+
     /** */
     @GridToStringExclude
     private List<GridComponent> comps = new LinkedList<GridComponent>();
@@ -198,6 +203,9 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
 
     /** */
     private GridKernalGateway gw;
+
+    /** Network segmented flag. */
+    private final AtomicBoolean segFlag = new AtomicBoolean();
 
     /**
      * No-arg constructor is required by externalization.
@@ -311,6 +319,8 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
             licCtrl = (GridLicenseController)comp;
         else if (comp instanceof GridAffinityController)
             affCtrl = (GridAffinityController)comp;
+        else if (comp instanceof GridSegmentationController)
+            segCtrl = (GridSegmentationController)comp;
 
         else
             assert false : "Unknown manager class: " + comp.getClass();
@@ -531,6 +541,11 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     }
 
     /** {@inheritDoc} */
+    @Override public GridSegmentationController segmentation() {
+        return segCtrl;
+    }
+
+    /** {@inheritDoc} */
     @Override public GridLogger log() {
         return config().getGridLogger();
     }
@@ -543,5 +558,15 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(GridKernalContextImpl.class, this);
+    }
+
+    /** {@inheritDoc} */
+    @Override public void markSegmented() {
+        segFlag.set(true);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean segmented() {
+        return segFlag.get();
     }
 }

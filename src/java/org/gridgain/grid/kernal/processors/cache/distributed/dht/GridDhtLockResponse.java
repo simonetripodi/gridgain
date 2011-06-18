@@ -23,13 +23,9 @@ import java.util.*;
  * DHT cache lock response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtLockResponse<K, V> extends GridDistributedLockResponse<K, V> {
-    /** Evicted partitions. */
-    @GridToStringInclude
-    private int[] dhtEvicted;
-
     /** Evicted readers. */
     @GridToStringInclude
     private Collection<K> nearEvicted;
@@ -39,6 +35,10 @@ public class GridDhtLockResponse<K, V> extends GridDistributedLockResponse<K, V>
 
     /** Mini ID. */
     private GridUuid miniId;
+
+    /** Invalid partitions. */
+    @GridToStringInclude
+    private Set<Integer> invalidParts = new GridLeanSet<Integer>();
 
     /**
      * Empty constructor (required by {@link Externalizable}).
@@ -76,20 +76,6 @@ public class GridDhtLockResponse<K, V> extends GridDistributedLockResponse<K, V>
     }
 
     /**
-     * @return Retries.
-     */
-    public int[] dhtEvicted() {
-        return dhtEvicted;
-    }
-
-    /**
-     * @param dhtEvicted Evicted partitions.
-     */
-    public void dhtEvicted(int[] dhtEvicted) {
-        this.dhtEvicted = dhtEvicted;
-    }
-
-    /**
      * @return Evicted readers.
      */
     public Collection<K> nearEvicted() {
@@ -117,6 +103,20 @@ public class GridDhtLockResponse<K, V> extends GridDistributedLockResponse<K, V>
         return miniId;
     }
 
+    /**
+     * @param part Invalid partition.
+     */
+    public void addInvalidPartition(int part) {
+        invalidParts.add(part);
+    }
+
+    /**
+     * @return Invalid partitions.
+     */
+    public Set<Integer> invalidPartitions() {
+        return invalidParts;
+    }
+
     /** {@inheritDoc} */
     @Override public void p2pMarshal(GridCacheContext<K, V> ctx) throws GridException {
         super.p2pMarshal(ctx);
@@ -138,20 +138,18 @@ public class GridDhtLockResponse<K, V> extends GridDistributedLockResponse<K, V>
 
         assert miniId != null;
 
-        out.writeObject(dhtEvicted);
-
         U.writeCollection(out, nearEvictedBytes);
         U.writeGridUuid(out, miniId);
+        U.writeIntCollection(out, invalidParts);
     }
 
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
-        dhtEvicted = (int[])in.readObject();
-
         nearEvictedBytes = U.readCollection(in);
         miniId = U.readGridUuid(in);
+        invalidParts = U.readIntSet(in);
 
         assert miniId != null;
     }

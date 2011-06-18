@@ -15,6 +15,7 @@ import org.gridgain.grid.kernal.managers.eventstorage.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.marshaller.*;
+import org.gridgain.grid.segmentation.*;
 import org.gridgain.grid.spi.checkpoint.*;
 import org.gridgain.grid.spi.cloud.*;
 import org.gridgain.grid.spi.collision.*;
@@ -41,7 +42,7 @@ import java.util.concurrent.*;
  * will automatically pick default values for all values that are not set.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridConfigurationAdapter implements GridConfiguration {
     /** Optional grid name. */
@@ -127,6 +128,21 @@ public class GridConfigurationAdapter implements GridConfiguration {
 
     /** Discovery SPI. */
     private GridDiscoverySpi discoSpi;
+
+    /** Segmentation policy. */
+    private GridSegmentationPolicy segPlc = DFLT_SEG_PLC;
+
+    /** Segmentation resolvers. */
+    private GridSegmentationResolver[] segResolvers;
+
+    /** Wait for segment on startup flag. */
+    private boolean waitForSegOnStart = DFLT_WAIT_FOR_SEG_ON_START;
+
+    /** All segmentation resolvers pass required flag. */
+    private boolean allResolversPassReq = DFLT_ALL_SEG_RESOLVERS_PASS_REQ;
+
+    /** Segment check frequency. */
+    private int segChkFreq = DFLT_SEG_CHK_FREQ;
 
     /** Communication SPI. */
     private GridCommunicationSpi commSpi;
@@ -250,6 +266,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
          * Order alphabetically for maintenance purposes.
          */
         adminEmails = cfg.getAdminEmails();
+        allResolversPassReq = cfg.isAllSegmentationResolversPassRequired();
         daemon = cfg.isDaemon();
         cacheCfg = cfg.getCacheConfiguration();
         cloudStrategies = cfg.getCloudStrategies();
@@ -280,6 +297,9 @@ public class GridConfigurationAdapter implements GridConfiguration {
         p2pSvc = cfg.getPeerClassLoadingExecutorService();
         restEnabled = cfg.isRestEnabled();
         restSecretKey = cfg.getRestSecretKey();
+        segChkFreq = cfg.getSegmentCheckFrequency();
+        segPlc = cfg.getSegmentationPolicy();
+        segResolvers = cfg.getSegmentationResolvers();
         smtpHost = cfg.getSmtpHost();
         smtpPort = cfg.getSmtpPort();
         smtpUsername = cfg.getSmtpUsername();
@@ -289,6 +309,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
         smtpStartTls = cfg.isSmtpStartTls();
         systemSvc = cfg.getSystemExecutorService();
         userAttrs = cfg.getUserAttributes();
+        waitForSegOnStart = cfg.isWaitForSegmentOnStart();
     }
 
     /** {@inheritDoc} */
@@ -855,6 +876,77 @@ public class GridConfigurationAdapter implements GridConfiguration {
      */
     public void setDiscoverySpi(GridDiscoverySpi discoSpi) {
         this.discoSpi = discoSpi;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridSegmentationPolicy getSegmentationPolicy() {
+        return segPlc;
+    }
+
+    /**
+     * Sets segmentation policy.
+     *
+     * @param segPlc Segmentation policy.
+     */
+    public void setSegmentationPolicy(GridSegmentationPolicy segPlc) {
+        this.segPlc = segPlc;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isWaitForSegmentOnStart() {
+        return waitForSegOnStart;
+    }
+
+    /**
+     * Sets wait for segment on start flag.
+     *
+     * @param waitForSegOnStart {@code True} to wait for segment on start.
+     */
+    public void setWaitForSegOnStart(boolean waitForSegOnStart) {
+        this.waitForSegOnStart = waitForSegOnStart;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isAllSegmentationResolversPassRequired() {
+        return allResolversPassReq;
+    }
+
+    /**
+     * Sets all segmentation resolvers pass required flag.
+     *
+     * @param allResolversPassReq {@code True} if all segmentation resolvers should
+     *      succeed for node to be in the correct segment.
+     */
+    public void setAllSegmentationResolversPassRequired(boolean allResolversPassReq) {
+        this.allResolversPassReq = allResolversPassReq;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridSegmentationResolver[] getSegmentationResolvers() {
+        return segResolvers;
+    }
+
+    /**
+     * Sets segmentation resolvers.
+     *
+     * @param segResolvers Segmentation resolvers.
+     */
+    public void setSegmentationResolvers(@Nullable GridSegmentationResolver... segResolvers) {
+        this.segResolvers = segResolvers;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int getSegmentCheckFrequency() {
+        return segChkFreq;
+    }
+
+    /**
+     * Sets network segment check frequency.
+     *
+     * @param segChkFreq Segment check frequency.
+     */
+    public void setSegmentCheckFrequency(int segChkFreq) {
+        this.segChkFreq = segChkFreq;
     }
 
     /** {@inheritDoc} */

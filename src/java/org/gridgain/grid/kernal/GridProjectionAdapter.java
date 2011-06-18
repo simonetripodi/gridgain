@@ -24,10 +24,11 @@ import java.util.concurrent.*;
 
 import static org.gridgain.grid.GridClosureCallMode.*;
 import static org.gridgain.grid.kernal.GridNodeAttributes.*;
+import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** */
@@ -872,7 +873,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskName, arg, 0, null);
         }
@@ -890,7 +891,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskName, arg, timeout, null);
         }
@@ -908,7 +909,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskName, arg, 0, lsnr);
 
@@ -928,7 +929,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskName, arg, timeout, lsnr);
         }
@@ -945,7 +946,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskCls, arg, 0, null);
         }
@@ -963,7 +964,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskCls, arg, timeout, null);
         }
@@ -1038,7 +1039,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskCls, arg, 0, lsnr);
         }
@@ -1057,7 +1058,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(taskCls, arg, timeout, lsnr);
         }
@@ -1074,7 +1075,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(task, arg, 0, null);
         }
@@ -1092,7 +1093,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(task, arg, timeout, null);
         }
@@ -1110,7 +1111,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(task, arg, 0, lsnr);
         }
@@ -1129,7 +1130,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         guard();
 
         try {
-            ctx.task().setProjectionContext(F.retain(nodes(), true, p));
+            ctx.task().setThreadContext(TC_SUBGRID, F.retain(nodes(), true, p));
 
             return ctx.task().execute(task, arg, timeout, lsnr);
         }
@@ -1285,7 +1286,102 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridProjection named(@Nullable String taskName) {
-        ctx.task().setTaskNameContext(taskName);
+        return withName(taskName);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withName(@Nullable String taskName) {
+        if (taskName != null) {
+            guard();
+
+            try {
+                ctx.task().setThreadContext(TC_TASK_NAME, taskName);
+            }
+            finally {
+                unguard();
+            }
+        }
+
+        return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withResult(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
+        GridJobResultPolicy> res) {
+        if (res != null) {
+            guard();
+
+            try {
+                ctx.task().setThreadContext(TC_RESULT, res);
+            }
+            finally {
+                unguard();
+            }
+        }
+
+        return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withFailoverSpi(@Nullable String spiName) {
+        if (spiName != null) {
+            guard();
+
+            try {
+                ctx.task().setThreadContext(TC_FAILOVER_SPI, spiName);
+            }
+            finally {
+                unguard();
+            }
+        }
+
+        return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withCheckpointSpi(@Nullable String spiName) {
+        if (spiName != null) {
+            guard();
+
+            try {
+                ctx.task().setThreadContext(TC_CHECKPOINT_SPI, spiName);
+            }
+            finally {
+                unguard();
+            }
+        }
+
+        return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withLoadBalancingSpi(@Nullable String spiName) {
+        if (spiName != null) {
+            guard();
+
+            try {
+                ctx.task().setThreadContext(TC_LOAD_BALANCING_SPI, spiName);
+            }
+            finally {
+                unguard();
+            }
+        }
+
+        return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection withTopologySpi(@Nullable String spiName) {
+        if (spiName != null) {
+            guard();
+
+            try {
+                ctx.task().setThreadContext(TC_TOPOLOGY_SPI, spiName);
+            }
+            finally {
+                unguard();
+            }
+        }
 
         return this;
     }

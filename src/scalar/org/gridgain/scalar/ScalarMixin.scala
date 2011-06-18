@@ -31,7 +31,7 @@ import scala.util.control.Breaks._
  * trait and therefore brings with it all implicits into the scope.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 trait ScalarMixin {
     /**
@@ -164,7 +164,7 @@ trait ScalarMixin {
     implicit def toReturnable(v: Any) = new {
         // Ignore the warning below.
         def ^^ {
-            break
+            break()
         }
     }
 
@@ -500,12 +500,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala function to `GridInClosureX`.
+     *
+     * @param f Scala function to convert.
+     */
+    def toInClosureX[T](f: T => Unit): GridInClosureX[T] =
+        f match {
+            case (p: ScalarInClosureXFunction[T]) => p.inner
+            case _ => new ScalarInClosureX[T](f)
+        }
+
+    /**
      * Implicit converter from `GridInClosure` to Scala wrapping function.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromInClosure[T](f: GridInClosure[T]): T => Unit =
         new ScalarInClosureFunction[T](f)
+
+    /**
+     * Implicit converter from `GridInClosureX` to Scala wrapping function.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromInClosureX[T](f: GridInClosureX[T]): T => Unit =
+        new ScalarInClosureXFunction[T](f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -515,6 +534,16 @@ trait ScalarMixin {
     implicit def inClosureDotScala[T](f: GridInClosure[T]) = new {
         def scala: T => Unit =
             fromInClosure(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def inClosureXDotScala[T](f: GridInClosureX[T]) = new {
+        def scala: T => Unit =
+            fromInClosureX(f)
     }
 
     /**
@@ -529,12 +558,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala function to `GridInClosure2X`.
+     *
+     * @param f Scala function to convert.
+     */
+    implicit def toInClosure2X[T1, T2](f: (T1, T2) => Unit): GridInClosure2X[T1, T2] =
+        f match {
+            case (p: ScalarInClosure2XFunction[T1, T2]) => p.inner
+            case _ => new ScalarInClosure2X[T1, T2](f)
+        }
+
+    /**
      * Implicit converter from `GridInClosure2` to Scala wrapping function.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromInClosure2[T1, T2](f: GridInClosure2[T1, T2]): (T1, T2) => Unit =
         new ScalarInClosure2Function(f)
+
+    /**
+     * Implicit converter from `GridInClosure2X` to Scala wrapping function.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromInClosure2X[T1, T2](f: GridInClosure2X[T1, T2]): (T1, T2) => Unit =
+        new ScalarInClosure2XFunction(f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -544,6 +592,16 @@ trait ScalarMixin {
     implicit def inClosure2DotScala[T1, T2](f: GridInClosure2[T1, T2]) = new {
         def scala: (T1, T2) => Unit =
             fromInClosure2(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def inClosure2XDotScala[T1, T2](f: GridInClosure2X[T1, T2]) = new {
+        def scala: (T1, T2) => Unit =
+            fromInClosure2X(f)
     }
 
     /**
@@ -558,12 +616,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala function to `GridInClosure3X`.
+     *
+     * @param f Scala function to convert.
+     */
+    def toInClosure3X[T1, T2, T3](f: (T1, T2, T3) => Unit): GridInClosure3X[T1, T2, T3] =
+        f match {
+            case (p: ScalarInClosure3XFunction[T1, T2, T3]) => p.inner
+            case _ => new ScalarInClosure3X[T1, T2, T3](f)
+        }
+
+    /**
      * Implicit converter from `GridInClosure3` to Scala wrapping function.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromInClosure3[T1, T2, T3](f: GridInClosure3[T1, T2, T3]): (T1, T2, T3) => Unit =
         new ScalarInClosure3Function(f)
+
+    /**
+     * Implicit converter from `GridInClosure3X` to Scala wrapping function.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromInClosure3X[T1, T2, T3](f: GridInClosure3X[T1, T2, T3]): (T1, T2, T3) => Unit =
+        new ScalarInClosure3XFunction(f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -573,6 +650,16 @@ trait ScalarMixin {
     implicit def inClosure3DotScala[T1, T2, T3](f: GridInClosure3[T1, T2, T3]) = new {
         def scala: (T1, T2, T3) => Unit =
             fromInClosure3(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def inClosure3XDotScala[T1, T2, T3](f: GridInClosure3X[T1, T2, T3]) = new {
+        def scala: (T1, T2, T3) => Unit =
+            fromInClosure3X(f)
     }
 
     /**
@@ -587,12 +674,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala function to `GridOutClosureX`.
+     *
+     * @param f Scala function to convert.
+     */
+    def toOutClosureX[R](f: () => R): GridOutClosureX[R] =
+        f match {
+            case (p: ScalarOutClosureXFunction[R]) => p.inner
+            case _ => new ScalarOutClosureX[R](f)
+        }
+
+    /**
      * Implicit converter from `GridOutClosure` to Scala wrapping function.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromOutClosure[R](f: GridOutClosure[R]): () => R =
         new ScalarOutClosureFunction[R](f)
+
+    /**
+     * Implicit converter from `GridOutClosureX` to Scala wrapping function.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromOutClosureX[R](f: GridOutClosureX[R]): () => R =
+        new ScalarOutClosureXFunction[R](f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -602,6 +708,16 @@ trait ScalarMixin {
     implicit def outClosureDotScala[R](f: GridOutClosure[R]) = new {
         def scala: () => R =
             fromOutClosure(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def outClosureXDotScala[R](f: GridOutClosureX[R]) = new {
+        def scala: () => R =
+            fromOutClosureX(f)
     }
 
     /**
@@ -624,12 +740,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala function to `GridAbsClosureX`.
+     *
+     * @param f Scala function to convert.
+     */
+    def toAbsClosureX(f: () => Unit): GridAbsClosureX =
+        f match {
+            case (f: ScalarAbsClosureXFunction) => f.inner
+            case _ => new ScalarAbsClosureX(f)
+        }
+
+    /**
      * Implicit converter from `GridAbsClosure` to Scala wrapping function.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromAbsClosure(f: GridAbsClosure): () => Unit =
         new ScalarAbsClosureFunction(f)
+
+    /**
+     * Implicit converter from `GridAbsClosureX` to Scala wrapping function.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromAbsClosureX(f: GridAbsClosureX): () => Unit =
+        new ScalarAbsClosureXFunction(f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -639,6 +774,16 @@ trait ScalarMixin {
     implicit def absClosureDotScala(f: GridAbsClosure) = new {
         def scala: () => Unit =
             fromAbsClosure(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side absolute closure to pimp.
+      */
+    implicit def absClosureXDotScala(f: GridAbsClosureX) = new {
+        def scala: () => Unit =
+            fromAbsClosureX(f)
     }
 
     /**
@@ -653,12 +798,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala predicate to `GridAbsPredicateX`.
+     *
+     * @param f Scala predicate to convert.
+     */
+    implicit def toAbsPredicateX(f: () => Boolean): GridAbsPredicateX =
+        f match {
+            case (p: ScalarAbsPredicateXFunction) => p.inner
+            case _ => new ScalarAbsPredicateX(f)
+        }
+
+    /**
      * Implicit converter from `GridAbsPredicate` to Scala wrapping predicate.
      *
      * @param p Grid predicate to convert.
      */
     implicit def fromAbsPredicate(p: GridAbsPredicate): () => Boolean =
         new ScalarAbsPredicateFunction(p);
+
+    /**
+     * Implicit converter from `GridAbsPredicateX` to Scala wrapping predicate.
+     *
+     * @param p Grid predicate to convert.
+     */
+    implicit def fromAbsPredicateX(p: GridAbsPredicateX): () => Boolean =
+        new ScalarAbsPredicateXFunction(p);
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -668,6 +832,16 @@ trait ScalarMixin {
     implicit def absPredicateDotScala(p: GridAbsPredicate) = new {
         def scala: () => Boolean =
             fromAbsPredicate(p)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side predicate to pimp.
+      */
+    implicit def absPredicateXDotScala(p: GridAbsPredicateX) = new {
+        def scala: () => Boolean =
+            fromAbsPredicateX(p)
     }
 
     /**
@@ -698,12 +872,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala predicate to Scala wrapping predicate.
+     *
+     * @param f Scala predicate to convert.
+     */
+    def toPredicateX[T](f: T => Boolean) =
+        f match {
+            case (p: ScalarPredicateXFunction[T]) => p.inner
+            case _ => new ScalarPredicateX[T](f)
+        }
+
+    /**
      * Implicit converter from `GridPredicate` to Scala wrapping predicate.
      *
      * @param p Grid predicate to convert.
      */
     implicit def fromPredicate[T](p: GridPredicate[T]): T => Boolean =
         new ScalarPredicateFunction[T](p)
+
+    /**
+     * Implicit converter from `GridPredicate` to Scala wrapping predicate.
+     *
+     * @param p Grid predicate to convert.
+     */
+    implicit def fromPredicateX[T](p: GridPredicateX[T]): T => Boolean =
+        new ScalarPredicateXFunction[T](p)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -713,6 +906,16 @@ trait ScalarMixin {
     implicit def predicateDotScala[T](p: GridPredicate[T]) = new {
         def scala: T => Boolean =
             fromPredicate(p)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side predicate to pimp.
+      */
+    implicit def predicateXDotScala[T](p: GridPredicateX[T]) = new {
+        def scala: T => Boolean =
+            fromPredicateX(p)
     }
 
     /**
@@ -727,12 +930,31 @@ trait ScalarMixin {
         }
 
     /**
-     * Implicit converter from `GridPredicate2` to Scala wrapping predicate.
+     * Implicit converter from Scala predicate to Scala wrapping predicate.
+     *
+     * @param f Scala predicate to convert.
+     */
+    def toPredicate2X[T1, T2](f: (T1, T2) => Boolean) =
+        f match {
+            case (p: ScalarPredicate2XFunction[T1, T2]) => p.inner
+            case _ => new ScalarPredicate2X[T1, T2](f)
+        }
+
+    /**
+     * Implicit converter from `GridPredicate2X` to Scala wrapping predicate.
      *
      * @param p Grid predicate to convert.
      */
     implicit def fromPredicate2[T1, T2](p: GridPredicate2[T1, T2]): (T1, T2) => Boolean =
         new ScalarPredicate2Function[T1, T2](p)
+
+    /**
+     * Implicit converter from `GridPredicate2X` to Scala wrapping predicate.
+     *
+     * @param p Grid predicate to convert.
+     */
+    implicit def fromPredicate2X[T1, T2](p: GridPredicate2X[T1, T2]): (T1, T2) => Boolean =
+        new ScalarPredicate2XFunction[T1, T2](p)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -742,6 +964,16 @@ trait ScalarMixin {
     implicit def predicate2DotScala[T1, T2](p: GridPredicate2[T1, T2]) = new {
         def scala: (T1, T2) => Boolean =
             fromPredicate2(p)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side predicate to pimp.
+      */
+    implicit def predicate2XDotScala[T1, T2](p: GridPredicate2X[T1, T2]) = new {
+        def scala: (T1, T2) => Boolean =
+            fromPredicate2X(p)
     }
 
     /**
@@ -756,12 +988,31 @@ trait ScalarMixin {
         }
 
     /**
-     * Implicit converter from `GridPredicate3` to Scala wrapping predicate.
+     * Implicit converter from Scala predicate to Scala wrapping predicate.
+     *
+     * @param f Scala predicate to convert.
+     */
+    def toPredicate32[T1, T2, T3](f: (T1, T2, T3) => Boolean) =
+        f match {
+            case (p: ScalarPredicate3XFunction[T1, T2, T3]) => p.inner
+            case _ => new ScalarPredicate3X[T1, T2, T3](f)
+        }
+
+    /**
+     * Implicit converter from `GridPredicate3X` to Scala wrapping predicate.
      *
      * @param p Grid predicate to convert.
      */
     implicit def fromPredicate3[T1, T2, T3](p: GridPredicate3[T1, T2, T3]): (T1, T2, T3) => Boolean =
         new ScalarPredicate3Function[T1, T2, T3](p)
+
+    /**
+     * Implicit converter from `GridPredicate3X` to Scala wrapping predicate.
+     *
+     * @param p Grid predicate to convert.
+     */
+    implicit def fromPredicate3X[T1, T2, T3](p: GridPredicate3X[T1, T2, T3]): (T1, T2, T3) => Boolean =
+        new ScalarPredicate3XFunction[T1, T2, T3](p)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -771,6 +1022,16 @@ trait ScalarMixin {
     implicit def predicate3DotScala[T1, T2, T3](p: GridPredicate3[T1, T2, T3]) = new {
         def scala: (T1, T2, T3) => Boolean =
             fromPredicate3(p)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side predicate to pimp.
+      */
+    implicit def predicate3XDotScala[T1, T2, T3](p: GridPredicate3X[T1, T2, T3]) = new {
+        def scala: (T1, T2, T3) => Boolean =
+            fromPredicate3X(p)
     }
 
     /**
@@ -785,12 +1046,31 @@ trait ScalarMixin {
         }
 
     /**
+     * Implicit converter from Scala closure to `GridClosureX`.
+     *
+     * @param f Scala closure to convert.
+     */
+    def toClosureX[A, R](f: A => R): GridClosureX[A, R] =
+        f match {
+            case (c: ScalarClosureXFunction[A, R]) => c.inner
+            case _ => new ScalarClosureX[A, R](f)
+        }
+
+    /**
      * Implicit converter from `GridClosure` to Scala wrapping closure.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromClosure[A, R](f: GridClosure[A, R]): A => R =
         new ScalarClosureFunction[A, R](f)
+
+    /**
+     * Implicit converter from `GridClosureX` to Scala wrapping closure.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromClosureX[A, R](f: GridClosureX[A, R]): A => R =
+        new ScalarClosureXFunction[A, R](f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -800,6 +1080,16 @@ trait ScalarMixin {
     implicit def closureDotScala[A, R](f: GridClosure[A, R]) = new {
         def scala: A => R =
             fromClosure(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def closureXDotScala[A, R](f: GridClosureX[A, R]) = new {
+        def scala: A => R =
+            fromClosureX(f)
     }
 
     /**
@@ -814,12 +1104,31 @@ trait ScalarMixin {
         }
 
     /**
-     * Implicit converter from `GridClosure2` to Scala wrapping closure.
+     * Implicit converter from Scala closure to `GridClosure2X`.
+     *
+     * @param f Scala closure to convert.
+     */
+    def toClosure2X[A1, A2, R](f: (A1, A2) => R): GridClosure2X[A1, A2, R] =
+        f match {
+            case (p: ScalarClosure2XFunction[A1, A2, R]) => p.inner
+            case _ => new ScalarClosure2X[A1, A2, R](f)
+        }
+
+    /**
+     * Implicit converter from `GridClosure2X` to Scala wrapping closure.
      *
      * @param f Grid closure to convert.
      */
     implicit def fromClosure2[A1, A2, R](f: GridClosure2[A1, A2, R]): (A1, A2) => R =
         new ScalarClosure2Function[A1, A2, R](f)
+
+    /**
+     * Implicit converter from `GridClosure2X` to Scala wrapping closure.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromClosure2X[A1, A2, R](f: GridClosure2X[A1, A2, R]): (A1, A2) => R =
+        new ScalarClosure2XFunction[A1, A2, R](f)
 
     /**
       * Pimp for adding explicit conversion method `scala`.
@@ -832,7 +1141,17 @@ trait ScalarMixin {
     }
 
     /**
-     * Implicit converter from Scala closure to `GridClosure3`.
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def closure2XDotScala[A1, A2, R](f: GridClosure2X[A1, A2, R]) = new {
+        def scala: (A1, A2) => R =
+            fromClosure2X(f)
+    }
+
+    /**
+     * Implicit converter from Scala closure to `GridClosure3X`.
      *
      * @param f Scala closure to convert.
      */
@@ -840,6 +1159,17 @@ trait ScalarMixin {
         f match {
             case (p: ScalarClosure3Function[A1, A2, A3, R]) => p.inner
             case _ => new ScalarClosure3[A1, A2, A3, R](f)
+        }
+
+    /**
+     * Implicit converter from Scala closure to `GridClosure3X`.
+     *
+     * @param f Scala closure to convert.
+     */
+    def toClosure3X[A1, A2, A3, R](f: (A1, A2, A3) => R): GridClosure3X[A1, A2, A3, R] =
+        f match {
+            case (p: ScalarClosure3XFunction[A1, A2, A3, R]) => p.inner
+            case _ => new ScalarClosure3X[A1, A2, A3, R](f)
         }
 
     /**
@@ -851,6 +1181,14 @@ trait ScalarMixin {
         new ScalarClosure3Function[A1, A2, A3, R](f)
 
     /**
+     * Implicit converter from `GridClosure3X` to Scala wrapping closure.
+     *
+     * @param f Grid closure to convert.
+     */
+    implicit def fromClosure3X[A1, A2, A3, R](f: GridClosure3X[A1, A2, A3, R]): (A1, A2, A3) => R =
+        new ScalarClosure3XFunction[A1, A2, A3, R](f)
+
+    /**
       * Pimp for adding explicit conversion method `scala`.
       *
       * @param f Java-side closure to pimp.
@@ -858,5 +1196,15 @@ trait ScalarMixin {
     implicit def closure3DotScala[A1, A2, A3, R](f: GridClosure3[A1, A2, A3, R]) = new {
         def scala: (A1, A2, A3) => R =
             fromClosure3(f)
+    }
+
+    /**
+      * Pimp for adding explicit conversion method `scala`.
+      *
+      * @param f Java-side closure to pimp.
+      */
+    implicit def closure3XDotScala[A1, A2, A3, R](f: GridClosure3X[A1, A2, A3, R]) = new {
+        def scala: (A1, A2, A3) => R =
+            fromClosure3X(f)
     }
 }

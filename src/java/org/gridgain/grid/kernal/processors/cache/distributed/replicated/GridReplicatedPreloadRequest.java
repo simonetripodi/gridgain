@@ -19,7 +19,7 @@ import java.io.*;
  * cache entries split into batches.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridReplicatedPreloadRequest<K, V> extends GridCacheMessage<K, V> {
     /** Partition. */
@@ -47,6 +47,11 @@ public class GridReplicatedPreloadRequest<K, V> extends GridCacheMessage<K, V> {
         this.part = part;
         this.mod = mod;
         this.cnt = cnt;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean allowForStartup() {
+        return true;
     }
 
     /**
@@ -84,7 +89,7 @@ public class GridReplicatedPreloadRequest<K, V> extends GridCacheMessage<K, V> {
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
-        
+
         part = in.readInt();
         mod = in.readInt();
         cnt = in.readInt();

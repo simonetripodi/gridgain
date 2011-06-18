@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implements GridCacheMappedVersion {
     /** */
@@ -97,7 +97,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      * @param nearMiniId Near mini future ID.
      * @param nearThreadId Near thread ID.
      * @param implicit Implicit flag.
-     * @param ctx Cache context.
+     * @param cctx Cache context.
      * @param concurrency Concurrency.
      * @param isolation Isolation.
      * @param timeout Timeout.
@@ -113,7 +113,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
         GridUuid nearMiniId,
         long nearThreadId,
         boolean implicit,
-        GridCacheContext<K, V> ctx,
+        GridCacheContext<K, V> cctx,
         GridCacheTxConcurrency concurrency,
         GridCacheTxIsolation isolation,
         long timeout,
@@ -121,10 +121,10 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
         boolean syncCommit,
         boolean syncRollback,
         boolean explicitLock) {
-        super(ctx, ctx.versions().onReceivedAndNext(nearNodeId, nearXidVer), implicit, concurrency, isolation,
+        super(cctx, cctx.versions().onReceivedAndNext(nearNodeId, nearXidVer), implicit, concurrency, isolation,
             timeout, invalidate, false, false);
 
-        assert ctx != null;
+        assert cctx != null;
         assert nearNodeId != null;
         assert nearFutId != null;
         assert nearMiniId != null;
@@ -166,7 +166,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     @Override public Collection<UUID> nodeIds() {
         Collection<UUID> ids = new GridLeanSet<UUID>();
 
-        Collections.addAll(ids, nearNodeId, ctx.nodeId());
+        Collections.addAll(ids, nearNodeId, cctx.nodeId());
 
         ids.addAll(dhtMap.keySet());
         ids.addAll(nearMap.keySet());
@@ -260,7 +260,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> future() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> future() {
         return prepFut.get();
     }
 
@@ -296,7 +296,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                 assert e.cached() != null;
 
                 if (e.cached() == null || e.cached().obsolete()) {
-                    GridCacheEntryEx<K, V> cached = ctx.cache().entryEx(e.key());
+                    GridCacheEntryEx<K, V> cached = cctx.cache().entryEx(e.key());
 
                     e.cached(cached, cached.keyBytes());
                 }
@@ -311,13 +311,13 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                             if (nearEntryMap == null)
                                 nearEntryMap = new GridLeanMap<GridNode, List<GridDhtCacheEntry<K, V>>>();
 
-                            ctx.dhtMap(nearNodeId, (GridDhtCacheEntry<K, V>)e.cached(), log, dhtEntryMap, nearEntryMap);
+                            cctx.dhtMap(nearNodeId, (GridDhtCacheEntry<K, V>)e.cached(), log, dhtEntryMap, nearEntryMap);
                         }
 
                         break;
                     }
                     catch (GridCacheEntryRemovedException ignore) {
-                        GridCacheEntryEx<K, V> cached = ctx.cache().entryEx(e.key());
+                        GridCacheEntryEx<K, V> cached = cctx.cache().entryEx(e.key());
 
                         e.cached(cached, cached.keyBytes());
                     }
@@ -374,7 +374,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     void addDhtMapping(Map<GridNode, List<GridDhtCacheEntry<K, V>>> mappings) {
         addMapping(mappings, dhtMap);
 
-        ctx.tm().recheckFinishTransactions();
+        cctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -383,7 +383,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     void addNearMapping(Map<GridNode, List<GridDhtCacheEntry<K, V>>> mappings) {
         addMapping(mappings, nearMap);
 
-        ctx.tm().recheckFinishTransactions();
+        cctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -421,6 +421,9 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     private boolean removeMapping(UUID nodeId, @Nullable GridCacheEntryEx<K, V> entry,
         Map<UUID, GridDistributedTxMapping<K, V>> map) {
         if (entry != null) {
+            if (log.isDebugEnabled())
+                log.debug("Removing mapping for entry [nodeId=" + nodeId + ", entry=" + entry + ']');
+
             GridCacheTxEntry<K, V> txEntry = txMap.get(entry.key());
 
             if (txEntry == null)
@@ -428,7 +431,12 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
 
             GridDistributedTxMapping<K, V> m = map.get(nodeId);
 
-            return m != null && m.removeEntry(txEntry);
+            boolean ret = m != null && m.removeEntry(txEntry);
+
+            if (m != null && m.empty())
+                map.remove(nodeId);
+
+            return ret;
         }
         else
             return map.remove(nodeId) != null;
@@ -450,13 +458,33 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                     GridDistributedTxMapping<K, V> m = map.get(n.id());
 
                     if (m == null)
-                        map.put(n.id(), m = new GridDistributedTxMapping<K, V>(ctx.rich().rich(n)));
+                        map.put(n.id(), m = new GridDistributedTxMapping<K, V>(cctx.rich().rich(n)));
 
                     m.add(txEntry);
                 }
             }
         }
     }
+
+
+    /** {@inheritDoc} */
+    @Override public void addInvalidPartition(int part) {
+        super.addInvalidPartition(part);
+
+        for (Iterator<GridCacheTxEntry<K, V>> it = txMap.values().iterator(); it.hasNext();) {
+            GridCacheTxEntry<K, V> e = it.next();
+
+            GridCacheEntryEx<K, V> cached = e.cached();
+
+            if (cached != null) {
+                if (cached.partition() == part)
+                    it.remove();
+            }
+            else if (cctx.partition(e.key()) == part)
+                it.remove();
+        }
+    }
+
 
     /**
      * Adds reader to cached entry.
@@ -469,7 +497,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     @Nullable private GridFuture<Boolean> addReader(long msgId, GridDhtCacheEntry<K, V> cached,
         GridCacheTxEntry<K, V> entry) {
         // Don't add local node as reader.
-        if (!ctx.nodeId().equals(nearNodeId)) {
+        if (!cctx.nodeId().equals(nearNodeId)) {
             while (true) {
                 try {
                     return cached.addReader(nearNodeId, msgId);
@@ -478,7 +506,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                     if (log.isDebugEnabled())
                         log.debug("Got removed entry when adding to DHT local transaction: " + cached);
 
-                    cached = ctx.dht().entryExx(entry.key());
+                    cached = cctx.dht().entryExx(entry.key());
                 }
             }
         }
@@ -498,59 +526,66 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
         assert state() == GridCacheTxState.ACTIVE : "Invalid tx state for adding entry [msgId=" + msgId + ", e=" + e +
             ", tx=" + this + ']';
 
-        e.unmarshal(ctx, ctx.deploy().globalLoader());
+        e.unmarshal(cctx, cctx.deploy().globalLoader());
 
         checkInternal(e.key());
 
         assert state() == GridCacheTxState.ACTIVE : "Invalid tx state for adding entry: " + e;
 
-        GridCacheTxEntry<K, V> entry = txMap.get(e.key());
+        try {
+            GridCacheTxEntry<K, V> entry = txMap.get(e.key());
 
-        if (entry != null) {
-            entry.op(e.op()); // Absolutely must set operation, as default is DELETE.
-            entry.value(e.value());
-            entry.ttl(e.ttl());
-            entry.expireTime(e.expireTime());
-            entry.filters(e.filters());
-        }
-        else {
-            entry = e.cleanCopy(ctx);
+            if (entry != null) {
+                entry.op(e.op()); // Absolutely must set operation, as default is DELETE.
+                entry.value(e.value());
+                entry.ttl(e.ttl());
+                entry.expireTime(e.expireTime());
+                entry.filters(e.filters());
+            }
+            else {
+                entry = e.cleanCopy(cctx);
 
-            while (true) {
-                GridDhtCacheEntry<K, V> cached = ctx.dht().entryExx(entry.key());
+                while (true) {
+                    GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(entry.key());
 
-                try {
-                    // Set key bytes to avoid serializing in future.
-                    cached.keyBytes(entry.keyBytes());
+                    try {
+                        // Set key bytes to avoid serializing in future.
+                        cached.keyBytes(entry.keyBytes());
 
-                    entry.cached(cached, entry.keyBytes());
+                        entry.cached(cached, entry.keyBytes());
 
-                    break;
+                        break;
+                    }
+                    catch (GridCacheEntryRemovedException ignore) {
+                        if (log.isDebugEnabled())
+                            log.debug("Got removed entry when adding to dht tx (will retry): " + cached);
+                    }
                 }
-                catch (GridCacheEntryRemovedException ignore) {
-                    if (log.isDebugEnabled())
-                        log.debug("Got removed entry when adding to dht tx (will retry): " + cached);
+
+                GridCacheVersion explicit = entry.explicitVersion();
+
+                if (explicit != null) {
+                    GridCacheVersion dhtVer = cctx.mvcc().mappedVersion(explicit);
+
+                    if (dhtVer == null)
+                        throw new GridException("Failed to find dht mapping for explicit entry version: " + entry);
+
+                    entry.explicitVersion(dhtVer);
                 }
+
+                txMap.put(entry.key(), entry);
+
+                if (log.isDebugEnabled())
+                    log.debug("Added entry to transaction: " + entry);
             }
 
-            GridCacheVersion explicit = entry.explicitVersion();
-
-            if (explicit != null) {
-                GridCacheVersion dhtVer = ctx.mvcc().mappedVersion(explicit);
-
-                if (dhtVer == null)
-                    throw new GridException("Failed to find dht mapping for explicit entry version: " + entry);
-
-                entry.explicitVersion(dhtVer);
-            }
-
-            txMap.put(entry.key(), entry);
-
-            if (log.isDebugEnabled())
-                log.debug("Added entry to transaction: " + entry);
+            return addReader(msgId, cctx.dht().entryExx(entry.key()), entry);
         }
+        catch (GridDhtInvalidPartitionException ex) {
+            addInvalidPartition(ex.partition());
 
-        return addReader(msgId, ctx.dht().entryExx(entry.key()), entry);
+            return new GridFinishedFuture<Boolean>(cctx.kernalContext(), true);
+        }
     }
 
     /**
@@ -563,16 +598,17 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     @SuppressWarnings( {"IfMayBeConditional"})
     public GridFuture<GridCacheReturn<V>> lockAllAsync(Collection<? extends K> keys, long msgId, boolean implicit,
         final boolean read) {
-        assert !F.isEmpty(keys);
-
         try {
             checkValid(CU.<K, V>empty());
         }
         catch (GridException e) {
-            return new GridFinishedFuture<GridCacheReturn<V>>(ctx.kernalContext(), e);
+            return new GridFinishedFuture<GridCacheReturn<V>>(cctx.kernalContext(), e);
         }
 
         final GridCacheReturn<V> ret = new GridCacheReturn<V>(false);
+
+        if (F.isEmpty(keys))
+            return new GridFinishedFuture<GridCacheReturn<V>>(cctx.kernalContext(), ret);
 
         init();
 
@@ -588,28 +624,38 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                 if (key == null)
                     continue;
 
-                GridCacheTxEntry<K, V> txEntry = entry(key);
+                try {
+                    GridCacheTxEntry<K, V> txEntry = entry(key);
 
-                // First time access.
-                if (txEntry == null) {
-                    GridDhtCacheEntry<K, V> cached = ctx.dht().entryExx(key);
+                    // First time access.
+                    if (txEntry == null) {
+                        GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(key);
 
-                    cached.unswap();
+                        cached.unswap();
 
-                    txEntry = addEntry(NOOP, opId, null, cached, CU.<K, V>empty());
+                        txEntry = addEntry(NOOP, opId, null, cached, CU.<K, V>empty());
 
-                    txEntry.cached(cached, txEntry.keyBytes());
+                        txEntry.cached(cached, txEntry.keyBytes());
 
-                    GridFuture<Boolean> f = addReader(msgId, cached, txEntry);
+                        GridFuture<Boolean> f = addReader(msgId, cached, txEntry);
 
-                    if (f != null) {
-                        if (txFut == null)
-                            txFut = new GridCompoundFuture<Boolean, Boolean>(ctx.kernalContext(), CU.boolReducer());
+                        if (f != null) {
+                            if (txFut == null)
+                                txFut = new GridCompoundFuture<Boolean, Boolean>(cctx.kernalContext(), CU.boolReducer());
 
-                        txFut.add(f);
+                            txFut.add(f);
+                        }
+                    }
+                    else {
+                        if (skipped == null)
+                            skipped = new GridLeanSet<K>();
+
+                        skipped.add(key);
                     }
                 }
-                else {
+                catch (GridDhtInvalidPartitionException e) {
+                    addInvalidPartition(e.partition());
+
                     if (skipped == null)
                         skipped = new GridLeanSet<K>();
 
@@ -651,13 +697,13 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                             return obtainLockAsync(ret, opId, passedKeys, read, skip);
                         }
                     },
-                    ctx.kernalContext());
+                    cctx.kernalContext());
             }
         }
         catch (GridException e) {
             setRollbackOnly();
 
-            return new GridFinishedFuture<GridCacheReturn<V>>(ctx.kernalContext(), e);
+            return new GridFinishedFuture<GridCacheReturn<V>>(cctx.kernalContext(), e);
         }
     }
 
@@ -672,13 +718,17 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     private GridFuture<GridCacheReturn<V>> obtainLockAsync(GridCacheReturn<V> ret, final int opId,
         final Collection<? extends K> passedKeys, boolean read, final Set<K> skipped) {
         if (log.isDebugEnabled())
-            log.debug("Before acquiring transaction lock on keys: " + passedKeys);
+            log.debug("Before acquiring transaction lock on keys [passedKeys=" + passedKeys + ", skipped=" +
+                skipped + ']');
 
-        GridFuture<Boolean> fut = ctx.cache().txLockAsync(passedKeys, lockTimeout(), this, read,
-            /*retval*/false, isolation, isInvalidate(), CU.<K, V>empty());
+        if (passedKeys.isEmpty())
+            return new GridFinishedFuture<GridCacheReturn<V>>(cctx.kernalContext(), ret);
+
+        GridFuture<Boolean> fut = cctx.cache().txLockAsync(passedKeys,
+            lockTimeout(), this, read, /*retval*/false, isolation, isInvalidate(), CU.<K, V>empty());
 
         return new GridEmbeddedFuture<GridCacheReturn<V>, Boolean>(
-            ctx.kernalContext(),
+            cctx.kernalContext(),
             fut,
             new PLC1<GridCacheReturn<V>>() {
                 @Override protected GridCacheReturn<V> postLock(GridCacheReturn<V> ret) throws GridException {
@@ -741,7 +791,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     /** {@inheritDoc} */
     @SuppressWarnings({"CatchGenericClass", "ThrowableInstanceNeverThrown"})
     @Override public void finish(boolean commit) throws GridException {
-        assert nearFinFutId != null || isInvalidate();
+        assert nearFinFutId != null || isInvalidate() || !commit;
         assert nearMiniId != null;
 
         if (log.isDebugEnabled())
@@ -790,7 +840,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
             if (!isRollbackOnly()) {
                 invalidate = true;
 
-                log().warning("Set transaction invalidation flag to true due to error [tx=" + this + ", err=" + err + ']');
+                log.warning("Set transaction invalidation flag to true due to error [tx=" + this +
+                    ", err=" + err + ']');
             }
         }
 
@@ -809,12 +860,12 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> prepareAsync() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> prepareAsync() {
         GridDhtTxPrepareFuture<K, V> fut = prepFut.get();
 
         if (fut == null) {
             // Future must be created before any exception can be thrown.
-            if (!prepFut.compareAndSet(null, fut = new GridDhtTxPrepareFuture<K, V>(ctx, this)))
+            if (!prepFut.compareAndSet(null, fut = new GridDhtTxPrepareFuture<K, V>(cctx, this)))
                 return prepFut.get();
         }
         else
@@ -866,7 +917,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
             fut.onPreparedEC();
 
             // Make sure to add future before calling prepare on it.
-            ctx.mvcc().addFuture(fut);
+            cctx.mvcc().addFuture(fut);
 
             fut.prepare();
         }
@@ -907,7 +958,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
             GridCacheMessage<K, V> res = new GridNearTxFinishResponse<K, V>(nearXidVer, nearFinFutId, nearFinMiniId, err);
 
             try {
-                ctx.io().send(nearNodeId, res);
+                cctx.io().send(nearNodeId, res);
             }
             catch (GridTopologyException ignored) {
                 if (log.isDebugEnabled())
@@ -931,9 +982,9 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
 
         prepareAsync();
 
-        final GridDhtTxFinishFuture<K, V> fut = new GridDhtTxFinishFuture<K, V>(ctx, this, /*commit*/true);
+        final GridDhtTxFinishFuture<K, V> fut = new GridDhtTxFinishFuture<K, V>(cctx, this, /*commit*/true);
 
-        ctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut);
 
         if (syncCommit || explicitLock) {
             fut.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
@@ -954,8 +1005,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
             });
         }
 
-        prepFut.get().listenAsync(new CI1<GridFuture<GridCacheTx>>() {
-            @Override public void apply(GridFuture<GridCacheTx> f) {
+        prepFut.get().listenAsync(new CI1<GridFuture<GridCacheTxEx<K, V>>>() {
+            @Override public void apply(GridFuture<GridCacheTxEx<K, V>> f) {
                 try {
                     f.get(); // Check for errors of a parent future.
 
@@ -986,7 +1037,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
             rollbackAsync().get();
         }
         finally {
-            ctx.tm().txContextReset();
+            cctx.tm().txContextReset();
         }
     }
 
@@ -997,7 +1048,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     public GridFuture<GridCacheTx> rollbackAsync() {
         GridDhtTxPrepareFuture<K, V> prepFut = this.prepFut.get();
 
-        final GridDhtTxFinishFuture<K, V> fut = new GridDhtTxFinishFuture<K, V>(ctx, this, /*rollback*/false);
+        final GridDhtTxFinishFuture<K, V> fut = new GridDhtTxFinishFuture<K, V>(cctx, this, /*rollback*/false);
 
         if (syncRollback) {
             fut.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
@@ -1024,7 +1075,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
             });
         }
 
-        ctx.mvcc().addFuture(fut);
+        cctx.mvcc().addFuture(fut);
 
         if (prepFut == null) {
             try {
@@ -1046,8 +1097,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
         else {
             prepFut.complete();
 
-            prepFut.listenAsync(new CI1<GridFuture<GridCacheTx>>() {
-                @Override public void apply(GridFuture<GridCacheTx> f) {
+            prepFut.listenAsync(new CI1<GridFuture<GridCacheTxEx<K, V>>>() {
+                @Override public void apply(GridFuture<GridCacheTxEx<K, V>> f) {
                     try {
                         f.get(); // Check for errors of a parent future.
                     }

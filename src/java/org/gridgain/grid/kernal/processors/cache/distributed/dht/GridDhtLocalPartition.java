@@ -26,7 +26,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Key partition.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalPartition> {
     /** Partition ID. */
@@ -280,6 +280,13 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
     }
 
     /**
+     * 
+     */
+    void onUnlock() {
+        tryEvict();
+    }
+
+    /**
      * Clears values for this partition.
      */
     private void clearAll() {
@@ -288,11 +295,8 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
         for (Iterator<GridDhtCacheEntry<K, V>> it = map.values().iterator(); it.hasNext();) {
             GridDhtCacheEntry<K, V> cached = it.next();
 
-            // Clear readers so entry can be cleared from cache.
-            cached.clearReaders();
-
             try {
-                if (cached.clear(clearVer, cctx.isSwapEnabled(), CU.<K, V>empty()))
+                if (cached.clear(clearVer, cctx.isSwapEnabled(), true, CU.<K, V>empty()))
                     it.remove();
             }
             catch (GridException e) {

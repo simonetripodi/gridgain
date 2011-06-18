@@ -35,7 +35,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -111,7 +111,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     }
                 }
             },
-            EVT_NODE_FAILED, EVT_NODE_LEFT);
+            EVT_NODE_FAILED, EVT_NODE_LEFT, EVT_NODE_SEGMENTED);
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
             if ((!tx.local() || tx.dht()) && !tx.ec() && !cctx.discovery().aliveAll(tx.masterNodeIds())) {
@@ -152,7 +152,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             }
 
             try {
-                tx.invalidate(true);
+                tx.systemInvalidate(true);
 
                 tx.prepare();
 
@@ -658,20 +658,8 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     continue;
             }
 
-            // Clear if partition is invalid.
-            if (!cached.partitionValid()) {
-                try {
-                    if (cached.clear(tx.xidVersion(), false, CU.<K, V>empty())) {
-                        cctx.cache().removeIfObsolete(cached.key());
-
-                        continue;
-                    }
-                }
-                catch (GridException e) {
-                    U.error(log, "Failed to clear entry from cache: " + cached, e);
-                }
-            }
-
+            // Near entries are marked obsolete in many cases even
+            // if transaction operation is not DELETE.
             if (tx.near() || entry.op() == DELETE) {
                 GridCacheVersion obsoleteVer = cached.obsoleteVersion();
 
@@ -1012,8 +1000,19 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     if (log.isDebugEnabled())
                         log.debug("Got removed entry in TM lockMultiple(..) method (will retry): " + txEntry1);
 
-                    // Renew cache entry.
-                    txEntry1.cached(cctx.cache().entryEx(txEntry1.key()), txEntry1.keyBytes());
+                    try {
+                        // Renew cache entry.
+                        txEntry1.cached(cctx.cache().entryEx(txEntry1.key()), txEntry1.keyBytes());
+                    }
+                    catch (GridDhtInvalidPartitionException e) {
+                        assert tx.dht() : "Received invalid partition for non DHT transaction [tx=" +
+                            tx + ", invalidPart=" + e.partition() + ']';
+
+                        // If partition is invalid, we ignore this entry.
+                        tx.addInvalidPartition(e.partition());
+
+                        break;
+                    }
                 }
                 catch (GridDistributedLockCancelledException ignore) {
                     tx.setRollbackOnly();
@@ -1139,23 +1138,6 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * @param nodeId Node ID.
-     * @return Future to wait for all transactions involving given node ID.
-     */
-    public GridFuture<?> finishNode(UUID nodeId) {
-        Collection<GridCacheTxEx<K, V>> waitTxSet = new GridConcurrentHashSet<GridCacheTxEx<K, V>>();
-
-        for (GridCacheTxEx<K, V> tx : idMap.values()) {
-            UUID otherId = tx.otherNodeId();
-
-            if (tx.nodeId().equals(nodeId) || (otherId != null && otherId.equals(nodeId)))
-                waitTxSet.add(tx);
-        }
-
-        return finishTransactions(waitTxSet, null);
-    }
-
-    /**
      * @param parts Partition numbers.
      * @param excl Exclude array.
      * @return Future that signals when all transactions for given partitions will complete.
@@ -1164,7 +1146,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         Collection<GridCacheTxEx<K, V>> waitTxSet = new GridConcurrentHashSet<GridCacheTxEx<K, V>>();
 
         for (GridCacheTxEx<K, V> tx : idMap.values()) {
-            if (F.containsAny(tx.nodeIds(), excl)) {
+            if (!tx.local() || F.containsAny(tx.nodeIds(), excl)) {
                 if (exchLog.isDebugEnabled())
                     exchLog.debug("Skipping transaction for partition wait [excl=" + Arrays.toString(excl) +
                         ", tx=" + tx + ']');
@@ -1212,8 +1194,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * @param excl Exclude array.
      * @return Future for waiting.
      */
-    private GridFuture<?> finishTransactions(final Collection<GridCacheTxEx<K, V>> waitTxSet,
-        @Nullable final UUID[] excl) {
+    private GridFuture<?> finishTransactions(final Collection<GridCacheTxEx<K, V>> waitTxSet, final UUID[] excl) {
         final GridFutureAdapter<?> f = new GridFutureAdapter(cctx.kernalContext());
 
         final GridCacheTxSynchronization sync = new TxSynchronization() {

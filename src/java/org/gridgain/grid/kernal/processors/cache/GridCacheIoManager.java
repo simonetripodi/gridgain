@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Cache communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     /** Number of retries using to send messages. */
@@ -49,12 +49,12 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     private String topic;
 
     /** Handler registry. */
-    private ConcurrentMap<Class<?>, GridInClosure2<UUID, Object>> clsHandlers =
-        new ConcurrentHashMap<Class<?>, GridInClosure2<UUID, Object>>();
+    private ConcurrentMap<Class<? extends GridCacheMessage>, GridInClosure2<UUID, ? extends GridCacheMessage<K, V>>> clsHandlers =
+        new ConcurrentHashMap<Class<? extends GridCacheMessage>, GridInClosure2<UUID, ? extends GridCacheMessage<K, V>>>();
 
     /** Ordered handler registry. */
-    private ConcurrentMap<String, GridInClosure2<UUID, Object>> orderedHandlers =
-        new ConcurrentHashMap<String, GridInClosure2<UUID, Object>>();
+    private ConcurrentMap<String, GridInClosure2<UUID, ? extends GridCacheMessage<K, V>>> orderedHandlers =
+        new ConcurrentHashMap<String, GridInClosure2<UUID, ? extends GridCacheMessage<K, V>>>();
 
     /** Processed message IDs. */
     private Collection<MessageId> msgIds = new GridBoundedConcurrentOrderedSet<MessageId>(MAX_MSG_IDS);
@@ -72,7 +72,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     @SuppressWarnings({"deprecation"})
     private GridMessageListener lsnr = new GridMessageListener() {
         @SuppressWarnings({"CatchGenericClass", "unchecked"})
-        @Override public void onMessage(final UUID nodeId, final Object msg) {
+        @Override public void onMessage(final UUID nodeId, Object msg) {
             // Check for duplicates.
             if (!addMessage(nodeId, msg))
                 return;
@@ -94,13 +94,22 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     log.debug("Received unordered cache communication message [nodeId=" + nodeId +
                         ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
 
+                if (!(msg instanceof GridCacheMessage)) {
+                    U.warn(log, "Received cache message which is not an instance of GridCacheMessage (will ignore): " +
+                        msg);
+
+                    return;
+                }
+
+                final GridCacheMessage<K, V> cacheMsg = (GridCacheMessage<K, V>)msg;
+
                 if (CU.allowForStartup(msg))
-                    processUnordered(nodeId, msg);
+                    processUnordered(nodeId, cacheMsg);
                 else {
                     GridFuture startFut = cctx.preloader().startFuture();
 
                     if (startFut.isDone())
-                        processUnordered(nodeId, msg);
+                        processUnordered(nodeId, cacheMsg);
                     else {
                         if (log.isDebugEnabled())
                             log.debug("Waiting for start future to complete for unordered message [nodeId=" + nodeId +
@@ -115,7 +124,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                                     if (stopping) {
                                         if (log.isDebugEnabled())
                                             log.debug("Received cache communication message while stopping " +
-                                                "(will ignore) [nodeId=" + nodeId + ", msg=" + msg + ']');
+                                                "(will ignore) [nodeId=" + nodeId + ", msg=" + cacheMsg + ']');
 
                                         return;
                                     }
@@ -124,15 +133,15 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                                     if (log.isDebugEnabled())
                                         log.debug("Start future completed for unordered message [nodeId=" + nodeId +
-                                            ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+                                            ", locId=" + cctx.nodeId() + ", msg=" + cacheMsg + ']');
 
-                                    processUnordered(nodeId, msg);
+                                    processUnordered(nodeId, cacheMsg);
                                 }
                                 catch (GridException e) {
                                     // Log once.
                                     if (startErr.compareAndSet(false, true))
                                         U.error(log, "Failed to complete preload start future (will ignore message) " +
-                                            "[fut=" + f + ", nodeId=" + nodeId + ", msg=" + msg + ']', e);
+                                            "[fut=" + f + ", nodeId=" + nodeId + ", msg=" + cacheMsg + ']', e);
                                 }
                                 finally {
                                     rw.readLock().unlock();
@@ -155,9 +164,11 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
      * @param nodeId Node ID.
      * @param msg Message.
      */
-    private void processUnordered(UUID nodeId, Object msg) {
+    @SuppressWarnings( {"unchecked"})
+    private void processUnordered(UUID nodeId, GridCacheMessage<K, V> msg) {
         try {
-            GridInClosure2<UUID, Object> c = clsHandlers.get(msg.getClass());
+            GridInClosure2<UUID, GridCacheMessage<K, V>> c =
+                (GridInClosure2<UUID, GridCacheMessage<K,V>>)clsHandlers.get(msg.getClass());
 
             if (c == null) {
                 U.warn(log, "Received message without registered handler (will ignore) [msg=" + msg +
@@ -486,8 +497,10 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
      * @param c Handler.
      */
     @SuppressWarnings({"unchecked"})
-    public void addHandler(Class<?> type, GridInClosure2<UUID, ?> c) {
-        if (clsHandlers.putIfAbsent(type, (GridInClosure2<UUID, Object>)c) != null)
+    public void addHandler(
+        Class<? extends GridCacheMessage> type,
+        GridInClosure2<UUID, ? extends GridCacheMessage<K, V>> c) {
+        if (clsHandlers.putIfAbsent(type, c) != null)
             assert false : "Handler for class already registered [cls=" + type + ", old=" + clsHandlers.get(type) +
                 ", new=" + c + ']';
 
@@ -527,8 +540,8 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
      * @param c Handler.
      */
     @SuppressWarnings({"unchecked"})
-    public void addOrderedHandler(String topic, GridInClosure2<UUID, ?> c) {
-        if (orderedHandlers.putIfAbsent(topic, (GridInClosure2<UUID, Object>)c) == null) {
+    public void addOrderedHandler(String topic, GridInClosure2<UUID, ? extends GridCacheMessage<K, V>> c) {
+        if (orderedHandlers.putIfAbsent(topic, c) == null) {
             cctx.gridIO().addMessageListener(topic, new OrderedMessageListener(topic));
 
             if (log != null && log.isDebugEnabled())
@@ -681,8 +694,8 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
             this.topic = topic;
         }
 
-        @SuppressWarnings({"CatchGenericClass"})
-        @Override public void onMessage(final UUID nodeId, final Object msg) {
+        @SuppressWarnings( {"CatchGenericClass", "unchecked"})
+        @Override public void onMessage(final UUID nodeId, Object msg) {
             // Check for duplicates.
             if (!addMessage(nodeId, msg))
                 return;
@@ -703,13 +716,22 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                 if (log.isDebugEnabled())
                     log.debug("Received cache ordered message [nodeId=" + nodeId + ", msg=" + msg + ']');
 
+                if (!(msg instanceof GridCacheMessage)) {
+                    U.warn(log, "Received cache message which is not an instance of GridCacheMessage (will ignore): " +
+                        msg);
+
+                    return;
+                }
+
+                final GridCacheMessage<K, V> cacheMsg = (GridCacheMessage<K, V>)msg;
+
                 if (CU.allowForStartup(msg))
-                    processOrdered(nodeId, msg);
+                    processOrdered(nodeId, cacheMsg);
                 else {
                     GridFuture<?> startFut = cctx.preloader().startFuture();
 
                     if (startFut.isDone())
-                        processOrdered(nodeId, msg);
+                        processOrdered(nodeId, cacheMsg);
                     else {
                         if (log.isDebugEnabled())
                             log.debug("Waiting for start future to complete for ordered message [nodeId=" + nodeId +
@@ -724,7 +746,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                                     if (stopping) {
                                         if (log.isDebugEnabled())
                                             log.debug("Received cache ordered message while stopping (will ignore) " +
-                                                "[nodeId=" + nodeId + ", msg=" + msg + ']');
+                                                "[nodeId=" + nodeId + ", msg=" + cacheMsg + ']');
 
                                         return;
                                     }
@@ -733,15 +755,15 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
 
                                     if (log.isDebugEnabled())
                                         log.debug("Start future completed for unordered message [nodeId=" + nodeId +
-                                            ", locId=" + cctx.nodeId() + ", msg=" + msg + ']');
+                                            ", locId=" + cctx.nodeId() + ", msg=" + cacheMsg + ']');
 
-                                    processOrdered(nodeId, msg);
+                                    processOrdered(nodeId, cacheMsg);
                                 }
                                 catch (GridException e) {
                                     // Log once.
                                     if (startErr.compareAndSet(false, true))
                                         U.error(log, "Failed to complete preload start future (will ignore message) " +
-                                            "[fut=" + f + ", nodeId=" + nodeId + ", msg=" + msg + ']', e);
+                                            "[fut=" + f + ", nodeId=" + nodeId + ", msg=" + cacheMsg + ']', e);
                                 }
                                 finally {
                                     rw.readLock().unlock();
@@ -763,9 +785,11 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
          * @param nodeId Node ID.
          * @param msg Message ID.
          */
-        private void processOrdered(UUID nodeId, Object msg) {
+        @SuppressWarnings( {"unchecked"})
+        private void processOrdered(UUID nodeId, GridCacheMessage<K, V> msg) {
             try {
-                GridInClosure2<UUID, Object> c = orderedHandlers.get(topic);
+                GridInClosure2<UUID, GridCacheMessage<K, V>> c =
+                    (GridInClosure2<UUID, GridCacheMessage<K,V>>)orderedHandlers.get(topic);
 
                 if (c == null) {
                     U.warn(log, "Received ordered message without registered handler (will ignore) [topic=" + topic +

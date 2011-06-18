@@ -11,6 +11,7 @@ package org.gridgain.grid;
 
 import org.apache.commons.logging.*;
 import org.gridgain.grid.cache.*;
+import org.gridgain.grid.editions.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.loaders.cmdline.*;
@@ -56,6 +57,7 @@ import org.springframework.beans.factory.xml.*;
 import org.springframework.context.*;
 import org.springframework.context.support.*;
 import org.springframework.core.io.*;
+
 import javax.management.*;
 import java.io.*;
 import java.lang.management.*;
@@ -64,8 +66,11 @@ import java.util.*;
 import java.util.Map.*;
 import java.util.concurrent.*;
 
-import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.GridConfiguration.*;
+import static org.gridgain.grid.GridFactoryState.*;
+import static org.gridgain.grid.GridSystemProperties.*;
+import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
+
 /**
  * This class defines a factory for the main GridGain API. It controls Grid life cycle
  * and allows listening for grid events.
@@ -127,7 +132,7 @@ import static org.gridgain.grid.GridConfiguration.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridFactory {
     /**
@@ -155,6 +160,9 @@ public class GridFactory {
 
     /** Map of named grids. */
     private static final Map<String, GridNamedInstance> grids = new HashMap<String, GridNamedInstance>();
+
+    /** Map of grid states ever started in this JVM. */
+    private static final Map<String, GridFactoryState> gridStates = new HashMap<String, GridFactoryState>();
 
     /** List of state listeners. */
     private static final List<GridFactoryListener> lsnrs = new ArrayList<GridFactoryListener>();
@@ -272,7 +280,13 @@ public class GridFactory {
         }
 
         if (grid == null) {
-            return GridFactoryState.STOPPED;
+            GridFactoryState state;
+
+            synchronized (mux) {
+                state = gridStates.get(name);
+            }
+
+            return state != null ? state : STOPPED;
         }
 
         return grid.getState();
@@ -364,12 +378,20 @@ public class GridFactory {
         if (grid != null) {
             grid.stop(cancel, wait);
 
+            boolean fireEvt;
+
             synchronized (mux) {
-                if (name == null)
+                if (name == null) {
+                    fireEvt = dfltGrid != null;
+
                     dfltGrid = null;
+                }
                 else
-                    grids.remove(name);
+                    fireEvt = grids.remove(name) != null;
             }
+
+            if (fireEvt)
+                notifyStateChange(grid.getName(), grid.getState());
 
             return true;
         }
@@ -426,13 +448,23 @@ public class GridFactory {
         }
 
         // Stop the rest and clear grids map.
-        for (GridNamedInstance grid : copy)
+        for (GridNamedInstance grid : copy) {
             grid.stop(cancel, wait);
 
-        synchronized (mux) {
-            dfltGrid = null;
+            boolean fireEvt;
 
-            grids.clear();
+            synchronized (mux) {
+                if (grid.getName() == null) {
+                    fireEvt = dfltGrid != null;
+
+                    dfltGrid = null;
+                }
+                else
+                    fireEvt = grids.remove(grid.getName()) != null;
+            }
+
+            if (fireEvt)
+                notifyStateChange(grid.getName(), grid.getState());
         }
     }
 
@@ -1094,7 +1126,7 @@ public class GridFactory {
         try {
             grid.start(cfg, single, ctx);
 
-            if (name != null)
+            if (name != null) {
                 synchronized (mux) {
                     if (grids.containsKey(name)) {
                         // Attempt to stop this instance if another one
@@ -1104,13 +1136,16 @@ public class GridFactory {
                         throw new GridException("Grid instance with this name has already been started: " + name);
                     }
 
-                    assert(grid.getState() == GridFactoryState.STARTED);
+                    assert grid.getState() == STARTED;
 
                     grids.put(name, grid);
                 }
+            }
+
+            notifyStateChange(name, STARTED);
         }
         finally {
-            if (grid.getState() != GridFactoryState.STARTED)
+            if (grid.getState() != STARTED)
                 synchronized (mux) {
                     grids.remove(name);
 
@@ -1323,8 +1358,15 @@ public class GridFactory {
 
     /**
      * Adds a lsnr for grid life cycle events.
+     * <p>
+     * Note that unlike other listeners in GridGain this listener will be
+     * notified from the same thread that triggers the state change. Because of
+     * that it is the responsibility of the user to make sure that listener logic
+     * is light-weight and properly handles (catches) any runtime exceptions, if any
+     * are expected.
      *
-     * @param lsnr Listener for grid life cycle events.
+     * @param lsnr Listener for grid life cycle events. If this listener was already added
+     *      this method is no-op.
      */
     public static void addListener(GridFactoryListener lsnr) {
         A.notNull(lsnr, "lsnr");
@@ -1360,6 +1402,10 @@ public class GridFactory {
             localCopy = new ArrayList<GridFactoryListener>(lsnrs);
         }
 
+        synchronized (mux) {
+            gridStates.put(gridName, state);
+        }
+
         for (GridFactoryListener lsnr : localCopy)
             lsnr.onStateChange(gridName, state);
     }
@@ -1368,7 +1414,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.13062011
+     * @version 3.1.1c.17062011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1409,7 +1455,7 @@ public class GridFactory {
         private boolean p2pSvcShutdown;
 
         /** Grid state. */
-        private GridFactoryState state = GridFactoryState.STOPPED;
+        private GridFactoryState state = STOPPED;
 
         /** Shutdown hook. */
         private Thread shutdownHook;
@@ -1682,7 +1728,6 @@ public class GridFactory {
 
             if (marsh == null)
                 marsh = new GridOptimizedMarshaller();
-                //marsh = new GridJBossMarshaller();
 
             myCfg.setUserAttributes(attrs);
             myCfg.setMBeanServer(mbSrv == null ? ManagementFactory.getPlatformMBeanServer() : mbSrv);
@@ -1785,6 +1830,50 @@ public class GridFactory {
             myCfg.setRestEnabled(cfg.isRestEnabled());
             myCfg.setRestJettyPath(cfg.getRestJettyPath());
             myCfg.setRestSecretKey(cfg.getRestSecretKey());
+
+
+            // Validate segmentation configuration.
+            if (!F.isEmpty(cfg.getSegmentationResolvers())) {
+                // Segment check enabled, validate configuration.
+                if (!U.isEnterprise())
+                    throw new GridEnterpriseFeatureException("Network Segmentation Check");
+
+                GridDiscoverySpiReconnectSupport ann =
+                    U.getAnnotation(discoSpi.getClass(), GridDiscoverySpiReconnectSupport.class);
+
+                if (cfg.getSegmentationPolicy() == RECONNECT && (ann == null || !ann.value())) {
+                    throw new GridException("Discovery SPI does not support reconnect (either change segmentation " +
+                        "policy or discovery SPI implementation to one that supports reconnect), " +
+                        "like GridTcpDiscoverySpi.");
+                }
+
+                if ((cfg.getSegmentationPolicy() == RESTART_JVM || cfg.getSegmentationPolicy() == RECONNECT) &&
+                    !cfg.isWaitForSegmentOnStart()) {
+                    U.warn(log, "Found potential configuration problem (forgot to enable waiting for segment?) " +
+                        "[segPlc=" + cfg.getSegmentationPolicy() + ", wait=false]");
+                }
+
+                if (cfg.getSegmentationPolicy() == RECONNECT) {
+                    boolean hasDistrCache = F.forAny(
+                        cfg.getCacheConfiguration(),
+                        new P1<GridCacheConfiguration>() {
+                            @Override public boolean apply(GridCacheConfiguration cfg) {
+                                return cfg.getCacheMode() != GridCacheMode.LOCAL;
+                            }
+                        }
+                    );
+
+                    if (hasDistrCache)
+                        U.warn(log, "It is not recommended to use RECONNECT segmentation policy " +
+                            "when running distributed data grid.");
+                }
+            }
+
+            myCfg.setSegmentationResolvers(cfg.getSegmentationResolvers());
+            myCfg.setSegmentationPolicy(cfg.getSegmentationPolicy());
+            myCfg.setSegmentCheckFrequency(cfg.getSegmentCheckFrequency());
+            myCfg.setWaitForSegOnStart(cfg.isWaitForSegmentOnStart());
+            myCfg.setAllSegmentationResolversPassRequired(cfg.isAllSegmentationResolversPassRequired());
 
             // Override SMTP configuration from system properties
             // and environment variables, if specified.
@@ -1922,7 +2011,7 @@ public class GridFactory {
             try {
                 grid.start(myCfg);
 
-                state = GridFactoryState.STARTED;
+                state = STARTED;
 
                 if (log.isDebugEnabled())
                     log.debug("Grid factory started ok.");
@@ -1947,29 +2036,32 @@ public class GridFactory {
                 throw new GridException("Unexpected exception when starting grid.", e);
             }
 
-            String ggNoHook = X.getSystemOrEnv(GG_NO_SHUTDOWN_HOOK);
-
             // Do not set it up only if GRIDGAIN_NO_SHUTDOWN_HOOK=TRUE is provided.
-            if (ggNoHook == null || !"TRUE".equalsIgnoreCase(ggNoHook)) {
-                Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread() {
-                    @Override public void run() {
-                        if (log.isInfoEnabled())
-                            log.info("Invoking shutdown hook...");
+            if (!"TRUE".equalsIgnoreCase(X.getSystemOrEnv(GG_NO_SHUTDOWN_HOOK))) {
+                try {
+                    Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread() {
+                        @Override public void run() {
+                            if (log.isInfoEnabled())
+                                log.info("Invoking shutdown hook...");
 
-                        GridNamedInstance.this.stop(true, false);
-                    }
-                });
+                            GridNamedInstance.this.stop(true, false);
+                        }
+                    });
 
-                if (log.isDebugEnabled())
-                    log.debug("Shutdown hook is installed.");
+                    if (log.isDebugEnabled())
+                        log.debug("Shutdown hook is installed.");
+                }
+                catch (IllegalStateException e) {
+                    stop(true, false);
+
+                    throw new GridException("Failed to install shutdown hook.", e);
+                }
             }
             else {
                 if (log.isDebugEnabled())
                     log.debug("Shutdown hook has not been installed because environment " +
                         "or system property " + GG_NO_SHUTDOWN_HOOK + " is set.");
             }
-
-            notifyStateChange(name, GridFactoryState.STARTED);
         }
 
         /**
@@ -2060,13 +2152,11 @@ public class GridFactory {
                 U.error(log, "Failed to properly stop grid instance due to undeclared exception.", e);
             }
             finally {
+                state = grid.context().segmented() ? STOPPED_ON_SEGMENTATION : STOPPED;
+
                 grid = null;
 
-                state = GridFactoryState.STOPPED;
-
                 stopExecutor(log);
-
-                notifyStateChange(name, GridFactoryState.STOPPED);
 
                 log = null;
             }
@@ -2231,7 +2321,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.13062011
+         * @version 3.1.1c.17062011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

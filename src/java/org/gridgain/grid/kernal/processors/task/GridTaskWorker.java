@@ -28,12 +28,13 @@ import java.util.concurrent.*;
 import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.kernal.GridTopic.*;
 import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
+import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.*;
 
 /**
  * Grid task worker. Handles full task life cycle.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  * @param <T> Task argument type.
  * @param <R> Task return value type.
  */
@@ -91,7 +92,7 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
     private final Class<?> taskCls;
 
     /** Optional subgrid. */
-    private final Collection<? extends GridNode> subgrid;
+    private final Map<GridTaskThreadContextKey, Object> thCtx;
 
     /** */
     private GridTask<T, R> task;
@@ -162,27 +163,26 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
      * @param dep Deployed task.
      * @param taskLsnr Grid task listener.
      * @param evtLsnr Event listener.
-     * @param subgrid Subgrid for task execution.
+     * @param thCtx Thread-local context from task processor.
      */
     @SuppressWarnings({"deprecation"})
     GridTaskWorker(
         GridKernalContext ctx,
-        T arg,
+        @Nullable T arg,
         GridTaskSessionImpl ses,
         GridTaskFutureImpl<R> fut,
-        Class<?> taskCls,
-        GridTask<T, R> task,
+        @Nullable Class<?> taskCls,
+        @Nullable GridTask<T, R> task,
         GridDeployment dep,
-        GridTaskListener taskLsnr,
+        @Nullable GridTaskListener taskLsnr,
         GridTaskEventListener evtLsnr,
-        Collection<? extends GridNode> subgrid) {
+        @Nullable Map<GridTaskThreadContextKey, Object> thCtx) {
         super(ctx.config().getGridName(), "grid-task-worker", ctx.config().getGridLogger());
 
         assert ses != null;
         assert fut != null;
         assert evtLsnr != null;
         assert dep != null;
-        assert subgrid != null;
 
         this.arg = arg;
         this.ctx = ctx;
@@ -193,11 +193,22 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
         this.dep = dep;
         this.taskLsnr = taskLsnr;
         this.evtLsnr = evtLsnr;
-        this.subgrid = subgrid;
+        this.thCtx = thCtx;
 
         log = ctx.config().getGridLogger().getLogger(getClass());
 
         marshaller = ctx.config().getMarshaller();
+    }
+
+    /**
+     * Gets value from thread-local context.
+     *
+     * @param key Thread-local context key.
+     * @param <T> Type of the return value.
+     * @return Thread-local context value, if any.
+     */
+    private <T> T getThreadContext(GridTaskThreadContextKey key) {
+        return thCtx == null ? null : (T)thCtx.get(key);
     }
 
     /**
@@ -295,6 +306,28 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
             ses.setFailoverSpi(spis.failoverSpi());
             ses.setCheckpointSpi(spis.checkpointSpi());
         }
+
+        // Thread-local overrides annotation based setting.
+
+        String spi = getThreadContext(TC_FAILOVER_SPI);
+
+        if (spi != null)
+            ses.setFailoverSpi(spi);
+
+        spi = getThreadContext(TC_CHECKPOINT_SPI);
+
+        if (spi != null)
+            ses.setCheckpointSpi(spi);
+
+        spi = getThreadContext(TC_LOAD_BALANCING_SPI);
+
+        if (spi != null)
+            ses.setLoadBalancingSpi(spi);
+
+        spi = getThreadContext(TC_TOPOLOGY_SPI);
+
+        if (spi != null)
+            ses.setTopologySpi(spi);
     }
 
     /**
@@ -456,6 +489,10 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
      * @throws GridException Thrown in case of any error.
      */
     private List<GridNode> getTaskTopology() throws GridException {
+        Collection<? extends GridNode> subgrid = getThreadContext(TC_SUBGRID);
+
+        assert subgrid != null;
+
         // Obtain topology from topology SPI.
         Collection<? extends GridNode> nodes = ctx.topology().getTopology(ses, subgrid);
 

@@ -22,7 +22,7 @@ import java.util.*;
  * Get response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable,
     GridCacheVersionable {
@@ -41,10 +41,7 @@ public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements
 
     /** Keys to retry due to ownership shift. */
     @GridToStringInclude
-    private Collection<K> retries;
-
-    /** Retry bytes. */
-    private Collection<byte[]> retryBytes;
+    private Collection<Integer> invalidParts = new GridLeanSet<Integer>();
 
     /** Error. */
     private Throwable err;
@@ -107,15 +104,15 @@ public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements
     /**
      * @return Failed filter set.
      */
-    public Collection<K> retries() {
-        return retries == null ? Collections.<K>emptyList() : retries;
+    public Collection<Integer> invalidPartitions() {
+        return invalidParts;
     }
 
     /**
-     * @param retries Keys to retry due to ownership shift.
+     * @param invalidParts Partitions to retry due to ownership shift.
      */
-    public void retries(Collection<K> retries) {
-        this.retries = retries;
+    public void invalidPartitions(Collection<Integer> invalidParts) {
+        this.invalidParts = invalidParts;
     }
 
     /**
@@ -137,9 +134,6 @@ public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements
         super.p2pMarshal(ctx);
 
         marshalInfos(entries, ctx);
-
-        if (retryBytes == null)
-            retryBytes = marshalCollection(retries, ctx);
     }
 
     /** {@inheritDoc} */
@@ -147,9 +141,6 @@ public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements
         super.p2pUnmarshal(ctx, ldr);
 
         unmarshalInfos(entries, ctx, ldr);
-
-        if (retries == null)
-            retries = unmarshalCollection(retryBytes, ctx, ldr);
     }
 
     /** {@inheritDoc} */
@@ -163,7 +154,7 @@ public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements
         U.writeGridUuid(out, futId);
         U.writeGridUuid(out, miniId);
         U.writeCollection(out, entries);
-        U.writeCollection(out, retryBytes);
+        U.writeIntCollection(out, invalidParts);
 
         CU.writeVersion(out, ver);
 
@@ -177,14 +168,14 @@ public class GridNearGetResponse<K, V> extends GridCacheMessage<K, V> implements
         futId = U.readGridUuid(in);
         miniId = U.readGridUuid(in);
         entries = U.readCollection(in);
-        retryBytes = U.readList(in);
+        invalidParts = U.readIntSet(in);
 
         ver = CU.readVersion(in);
 
         err = (Throwable)in.readObject();
 
-        if (retries == null)
-            retries = Collections.emptyList();
+        if (invalidParts == null)
+            invalidParts = Collections.emptyList();
 
         assert futId != null;
         assert miniId != null;

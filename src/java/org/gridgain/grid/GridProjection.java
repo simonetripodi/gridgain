@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
@@ -1023,7 +1023,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * using function APIs, typedefs, and execution closures on the grid:
      * <pre name="code" class="java">
      * public static int length(final String msg) throws GridException {
-     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.c1("length")), F.sumIntReducer());
+     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.cInvoke("length")), F.sumIntReducer());
      * }
      * </pre>
      * <p>
@@ -1278,15 +1278,25 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
     @Nullable public GridProjection parent();
 
     /**
-     * Sets task name for the next executed task. When task starts
-     * execution name is reset, so one name is used only once.
+     * Deprecated. Use {@link #withName(String)} instead.
+     *
+     * @param taskName Task name.
+     * @return Grid projection ({@code this}).
+     * @deprecated Use {@link #withName(String)} instead.
+     */
+    @Deprecated
+    public GridProjection named(@Nullable String taskName);
+
+    /**
+     * Sets task name for the next executed task on this projection in the <b>current thread</b>.
+     * When task starts execution name is reset, so one name is used only once.
      * <p>
      * You may use this method to set task name when you cannot use
      * {@link GridTaskName} annotation.
      * <p>
      * Here is an example.
      * <pre name="code" class="java">
-     * G.grid().named("MyTask").call(
+     * G.grid().withName("MyTask").call(
      *     BROADCAST,
      *     new CAX() {
      *         &#64;Override public void applyx() throws GridException {
@@ -1299,7 +1309,123 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param taskName Task name.
      * @return Grid projection ({@code this}).
      */
-    public GridProjection named(@Nullable String taskName);
+    public GridProjection withName(@Nullable String taskName);
+
+    /**
+     * Sets custom ad-hoc implementation for {@link GridTask#result(GridJobResult, List)} method for the
+     * next executed task on this projection in the <b>current thread</b>.
+     * When task starts execution the ad-hoc implementation set here is reset - so it is valid only
+     * for one execution from the current thread.
+     *
+     * @param res Ad-hoc implementation for {@link GridTask#result(GridJobResult, List)} method.
+     * @return Grid projection ({@code this}).
+     */
+    public GridProjection withResult(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
+        res);
+
+    /**
+     * Sets failover SPI for the next executed task on this projection in the <b>current thread</b>.
+     * When task starts execution the failover SPI set here is reset - so it is valid only
+     * for one execution from the current thread.
+     * <p>
+     * You may use this method to set specific failover SPI when you cannot use
+     * {@link GridTaskSpis} annotation.
+     * <p>
+     * Here is an example.
+     * <pre name="code" class="java">
+     * G.grid().withFailoverSpi("MyFailoverSpi").call(
+     *     BROADCAST,
+     *     new CAX() {
+     *         &#64;Override public void applyx() throws GridException {
+     *             System.out.println("Hello!");
+     *         }
+     *     }
+     * );
+     * </pre>
+     *
+     * @param spiName Failover SPI name to use.
+     * @return Grid projection ({@code this}).
+     * @see GridTaskSpis
+     */
+    public GridProjection withFailoverSpi(@Nullable String spiName);
+
+    /**
+     * Sets checkpoint SPI for the next executed task on this projection in the <b>current thread</b>.
+     * When task starts execution the checkpoint SPI set here is reset - so it is valid only
+     * for one execution from the current thread.
+     * <p>
+     * You may use this method to set specific checkpoint SPI when you cannot use
+     * {@link GridTaskSpis} annotation.
+     * <p>
+     * Here is an example.
+     * <pre name="code" class="java">
+     * G.grid().withCheckpointSpi("MyCheckpointSpi").call(
+     *     BROADCAST,
+     *     new CAX() {
+     *         &#64;Override public void applyx() throws GridException {
+     *             System.out.println("Hello!");
+     *         }
+     *     }
+     * );
+     * </pre>
+     *
+     * @param spiName Checkpoint SPI name to use.
+     * @return Grid projection ({@code this}).
+     * @see GridTaskSpis
+     */
+    public GridProjection withCheckpointSpi(@Nullable String spiName);
+
+    /**
+     * Sets load balancing SPI for the next executed task on this projection in the <b>current thread</b>.
+     * When task starts execution the load balancing SPI set here is reset - so it is valid only
+     * for one execution from the current thread.
+     * <p>
+     * You may use this method to set specific load balancing SPI when you cannot use
+     * {@link GridTaskSpis} annotation.
+     * <p>
+     * Here is an example.
+     * <pre name="code" class="java">
+     * G.grid().withLoadBalancingSpi("MyLoadBalancingSpi").call(
+     *     BROADCAST,
+     *     new CAX() {
+     *         &#64;Override public void applyx() throws GridException {
+     *             System.out.println("Hello!");
+     *         }
+     *     }
+     * );
+     * </pre>
+     *
+     * @param spiName Load balancing SPI name to use.
+     * @return Grid projection ({@code this}).
+     * @see GridTaskSpis
+     */
+    public GridProjection withLoadBalancingSpi(@Nullable String spiName);
+
+    /**
+     * Sets topology SPI for the next executed task on this projection in the <b>current thread</b>.
+     * When task starts execution the topology SPI set here is reset - so it is valid only
+     * for one execution from the current thread.
+     * <p>
+     * You may use this method to set specific topology SPI when you cannot use
+     * {@link GridTaskSpis} annotation.
+     * <p>
+     * Here is an example.
+     * <pre name="code" class="java">
+     * G.grid().withTopologySpi("MyTopologySpi").call(
+     *     BROADCAST,
+     *     new CAX() {
+     *         &#64;Override public void applyx() throws GridException {
+     *             System.out.println("Hello!");
+     *         }
+     *     }
+     * );
+     * </pre>
+     *
+     * @param spiName Checkpoint SPI name to use.
+     * @return Grid projection ({@code this}).
+     * @see GridTaskSpis
+     */
+    public GridProjection withTopologySpi(@Nullable String spiName);
 
     /**
      * Executes collections of closures using given mapper on this projection.
@@ -1316,7 +1442,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * using function APIs, typedefs, and execution closures on the grid:
      * <pre name="code" class="java">
      * public static int length(final String msg) throws GridException {
-     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.c1("length")), F.sumIntReducer());
+     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.cInvoke("length")), F.sumIntReducer());
      * }
      * </pre>
      * <p>
@@ -1359,7 +1485,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * using function APIs, typedefs, and execution closures on the grid:
      * <pre name="code" class="java">
      * public static int length(final String msg) throws GridException {
-     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.c1("length")), F.sumIntReducer());
+     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.cInvoke("length")), F.sumIntReducer());
      * }
      * </pre>
      * <p>
@@ -1758,7 +1884,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * using function APIs, typedefs, and execution closures on the grid:
      * <pre name="code" class="java">
      * public static int length(final String msg) throws GridException {
-     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.c1("length")), F.sumIntReducer());
+     *     return G.grid().call(SPREAD, F.yield(msg.split(" "), F.cInvoke("length")), F.sumIntReducer());
      * }
      * </pre>
      * <p>

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.*;
  * {@link Collection#remove(Object)} was called which can lead to memory leaks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> implements Queue<E> {
     /** Dummy stamp holder. */
@@ -56,7 +56,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     /**
      * Gets count of cleared nodes that are stuck in the queue and should be removed.
      * To clear, call {@link #gc(int)} method.
-     * 
+     *
      * @return Eden count.
      */
     public int eden() {
@@ -90,7 +90,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * cleared or removed from the middle of the queue. It will make sure
      * that all empty nodes that exceed {@code maxEden} counter will be
      * cleared.
-     * 
+     *
      * @param maxEden Maximum number of void nodes in this LIRS collection.
      */
     public void gc(int maxEden) {
@@ -102,9 +102,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                 for (prev = head.get(); prev != null; prev = prev.next()) {
                     next = prev.next();
 
-                    if (next == null || next.cleared()) {
+                    if (next == null || next.cleared())
                         break;
-                    }
                 }
 
                 // Start shrinking.
@@ -114,9 +113,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
 
                     Node<E> n = prev.next();
 
-                    if (n == null) {
+                    if (n == null)
                         return;
-                    }
 
                     next = n.next();
 
@@ -141,7 +139,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                                     // This is GC step to remove obsolete nodes.
                                     if (casHead(h, n)) {
                                         prev = n;
-                                        
+
                                         decreaseEden();
                                     }
                                 }
@@ -150,9 +148,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                         else {
                             // Once the first gap is over, we break.
                             // (we check next for null to make sure we don't mess around with tail pointer).
-                            if (next == null || !n.cleared() || !prev.casNextIfNotCleared(n, next)) {
+                            if (next == null || !n.cleared() || !prev.casNextIfNotCleared(n, next))
                                 break;
-                            }
 
                             decreaseEden();
                         }
@@ -436,7 +433,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
          */
         QueueIterator(boolean readOnly) {
             this.readOnly = readOnly;
-            
+
             advance();
         }
 

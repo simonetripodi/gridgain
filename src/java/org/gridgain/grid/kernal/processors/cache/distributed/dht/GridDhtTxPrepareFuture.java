@@ -10,7 +10,6 @@
 package org.gridgain.grid.kernal.processors.cache.distributed.dht;
 
 import org.gridgain.grid.*;
-import org.gridgain.grid.cache.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.near.*;
@@ -34,10 +33,10 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
-public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTx>
-    implements GridCacheMvccFuture<K, V, GridCacheTx> {
+public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTxEx<K, V>>
+    implements GridCacheMvccFuture<K, V, GridCacheTxEx<K, V>> {
     /** Context. */
     private GridCacheContext<K, V> cctx;
 
@@ -82,12 +81,12 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
      * @param tx Transaction.
      */
     public GridDhtTxPrepareFuture(GridCacheContext<K, V> cctx, final GridDhtTxLocal<K, V> tx) {
-        super(cctx.kernalContext(), new GridReducer<GridCacheTx, GridCacheTx>() {
-            @Override public boolean collect(GridCacheTx e) {
+        super(cctx.kernalContext(), new GridReducer<GridCacheTxEx<K, V>, GridCacheTxEx<K, V>>() {
+            @Override public boolean collect(GridCacheTxEx<K, V> e) {
                 return true;
             }
 
-            @Override public GridCacheTx apply() {
+            @Override public GridCacheTxEx<K, V> apply() {
                 // Nothing to aggregate.
                 return tx;
             }
@@ -242,7 +241,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
             if (!tx.nearNodeId().equals(cctx.nodeId())) {
                 // Send reply back to near node.
                 GridCacheMessage<K, V> res = new GridNearTxPrepareResponse<K, V>(tx.nearXidVersion(), tx.nearFutureId(),
-                    tx.nearMiniId(), tx.xidVersion(), t);
+                    tx.nearMiniId(), tx.xidVersion(), Collections.<Integer>emptySet(), t);
 
                 try {
                     cctx.io().send(tx.nearNodeId(), res);
@@ -269,7 +268,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
      */
     void onResult(UUID nodeId, GridDhtTxPrepareResponse<K, V> res) {
         if (!isDone()) {
-            for (GridFuture<GridCacheTx> fut : pending())
+            for (GridFuture<GridCacheTxEx<K, V>> fut : pending())
                 if (isMini(fut)) {
                     MiniFuture f = (MiniFuture)fut;
 
@@ -321,7 +320,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
     }
 
     /** {@inheritDoc} */
-    @Override public boolean onDone(GridCacheTx tx0, Throwable err) {
+    @Override public boolean onDone(GridCacheTxEx<K, V> tx0, Throwable err) {
         assert err != null || (initialized() && !hasPending());
 
         if (err == null)
@@ -338,7 +337,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
                 if (!tx.nearNodeId().equals(cctx.nodeId())) {
                     // Send reply back to originating near node.
                     GridDistributedBaseMessage<K, V> res = new GridNearTxPrepareResponse<K, V>(tx.nearXidVersion(),
-                        tx.nearFutureId(), tx.nearMiniId(), tx.xidVersion(), this.err.get());
+                        tx.nearFutureId(), tx.nearMiniId(), tx.xidVersion(), tx.invalidPartitions(), this.err.get());
 
                     GridCacheVersion min = tx.minVersion();
 
@@ -405,6 +404,12 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
      * Initializes future.
      */
     void prepare() {
+        if (tx.empty()) {
+            tx.setRollbackOnly();
+            
+            onDone(tx);
+        }
+        
         if (!prepare(tx.readEntries(), tx.writeEntries())) {
             markInitialized();
 
@@ -443,7 +448,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
 
         // Create mini futures.
         for (GridDistributedTxMapping<K, V> dhtMapping : dhtMap.values()) {
-            assert !dhtMapping.isEmpty();
+            assert !dhtMapping.empty();
 
             GridRichNode n = dhtMapping.node();
 
@@ -576,7 +581,7 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
      * Mini-future for get operations. Mini-futures are only waiting on a single
      * node as opposed to multiple nodes.
      */
-    private class MiniFuture extends GridFutureAdapter<GridCacheTx> {
+    private class MiniFuture extends GridFutureAdapter<GridCacheTxEx<K, V>> {
         /** */
         private final GridUuid futId = GridUuid.randomUuid();
 
@@ -659,16 +664,11 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
                 // Fail the whole compound future.
                 onError(res.error());
             else {
-                int[] dhtEvicted = res.dhtEvicted();
-
-                if (dhtEvicted != null && dhtMapping != null)
-                    // Update mapping.
-                    dhtMapping.evictPartitions(dhtEvicted);
-
+                // Process evicted readers (no need to remap).
                 if (nearMapping != null && !F.isEmpty(res.nearEvicted())) {
                     nearMapping.evictReaders(res.nearEvicted());
 
-                    for (GridCacheTxEntry<K, V> entry : F.concat(false, nearMapping.reads(), nearMapping.writes())) {
+                    for (GridCacheTxEntry<K, V> entry : nearMapping.entries()) {
                         if (res.nearEvicted().contains(entry.key())) {
                             while (true) {
                                 try {
@@ -688,6 +688,29 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
                                 }
                             }
                         }
+                    }
+                }
+
+                // Process invalid partitions (no need to remap).
+                if (!F.isEmpty(res.invalidPartitions())) {
+                    for (Iterator<GridCacheTxEntry<K, V>> it = dhtMapping.entries().iterator(); it.hasNext();) {
+                        GridCacheTxEntry<K, V> entry  = it.next();
+
+                        if (res.invalidPartitions().contains(entry.cached().partition())) {
+                            it.remove();
+
+                            if (log.isDebugEnabled())
+                                log.debug("Removed mapping for entry from dht mapping [key=" + entry.key() +
+                                    ", tx=" + tx + ", dhtMapping=" + dhtMapping + ']');
+                        }
+                    }
+
+                    if (dhtMapping.empty()) {
+                        dhtMap.remove(nodeId);
+
+                        if (log.isDebugEnabled())
+                            log.debug("Removed mapping for node entirely because all partitions are invalid [nodeId=" +
+                                nodeId + ", tx=" + tx + ']');
                     }
                 }
 

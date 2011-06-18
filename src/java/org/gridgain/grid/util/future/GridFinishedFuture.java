@@ -23,7 +23,7 @@ import java.util.concurrent.*;
  * Future that is completed at creation time.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridFinishedFuture<T> extends GridMetadataAwareAdapter implements GridFuture<T>, Externalizable {
     /** Complete value. */
@@ -33,7 +33,7 @@ public class GridFinishedFuture<T> extends GridMetadataAwareAdapter implements G
     private Throwable err;
 
     /** Context. */
-    private GridKernalContext ctx;
+    protected GridKernalContext ctx;
 
     /** Start time. */
     private final long startTime = System.currentTimeMillis();

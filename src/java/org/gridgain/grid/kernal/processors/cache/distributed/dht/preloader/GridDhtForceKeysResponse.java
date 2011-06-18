@@ -22,7 +22,7 @@ import java.util.*;
  * Force keys response. Contains absent keys.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Future ID. */
@@ -40,7 +40,7 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
 
     /** Cache entries in serialized form. */
     @GridToStringExclude
-    private List<byte[]> entryBytes;
+    private List<byte[]> infoBytes;
 
     /** Cache entries. */
     @GridToStringInclude
@@ -80,7 +80,7 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
     /**
      * @return Forced entries.
      */
-    public Collection<GridCacheEntryInfo<K, V>> forcedEntries() {
+    public Collection<GridCacheEntryInfo<K, V>> forcedInfos() {
         return infos == null ? Collections.<GridCacheEntryInfo<K,V>>emptyList() : infos;
     }
 
@@ -112,6 +112,8 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
      * @param info Entry info to add.
      */
     public void addInfo(GridCacheEntryInfo<K, V> info) {
+        assert info != null;
+
         if (infos == null)
             infos = new LinkedList<GridCacheEntryInfo<K, V>>();
 
@@ -129,7 +131,7 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
             for (GridCacheEntryInfo<K, V> e : infos)
                 marshalInfo(e, ctx);
 
-            entryBytes = marshalCollection(infos, ctx);
+            infoBytes = marshalCollection(infos, ctx);
         }
     }
 
@@ -140,8 +142,8 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
         if (missedKeyBytes != null)
             missedKeys = unmarshalCollection(missedKeyBytes, ctx, ldr);
 
-        if (entryBytes != null) {
-            infos = unmarshalCollection(entryBytes, ctx, ldr);
+        if (infoBytes != null) {
+            infos = unmarshalCollection(infoBytes, ctx, ldr);
 
             unmarshalInfos(infos, ctx, ldr);
         }
@@ -154,7 +156,7 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
         U.writeGridUuid(out, futId);
         U.writeGridUuid(out, miniId);
         U.writeCollection(out, missedKeyBytes);
-        U.writeCollection(out, entryBytes);
+        U.writeCollection(out, infoBytes);
     }
 
     /** {@inheritDoc} */
@@ -164,7 +166,7 @@ public class GridDhtForceKeysResponse<K, V> extends GridCacheMessage<K, V> imple
         futId = U.readGridUuid(in);
         miniId = U.readGridUuid(in);
         missedKeyBytes = U.readCollection(in);
-        entryBytes = U.readList(in);
+        infoBytes = U.readList(in);
     }
 
     /** {@inheritDoc} */

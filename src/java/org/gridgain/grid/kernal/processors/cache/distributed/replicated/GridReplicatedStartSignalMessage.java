@@ -18,7 +18,7 @@ import java.io.*;
  * Start signal message for replicated preloader (either request and response).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridReplicatedStartSignalMessage<K, V> extends GridCacheMessage<K, V> {
     /** Flag indicating whether this message is request or response. */
@@ -36,6 +36,11 @@ public class GridReplicatedStartSignalMessage<K, V> extends GridCacheMessage<K, 
      */
     public GridReplicatedStartSignalMessage(boolean req) {
         this.req = req;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean allowForStartup() {
+        return true;
     }
 
     /**

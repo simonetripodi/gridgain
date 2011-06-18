@@ -20,10 +20,20 @@ import java.util.*;
  * DHT partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 @GridToStringExclude
 public interface GridDhtPartitionTopology<K, V> {
+    /**
+     * Locks the topology, usually during mapping on locks or transactions.
+     */
+    public void readLock();
+
+    /**
+     * Unlocks topology locked by {@link #readLock()} method.
+     */
+    public void readUnlock();
+
     /**
      * Pre-initializes this topology.
      *
@@ -39,13 +49,16 @@ public interface GridDhtPartitionTopology<K, V> {
      * @throws GridException If failed.
      */
     public void afterExchange(GridDhtPartitionExchangeId exchId) throws GridException;
-    
+
     /**
      * @param p Partition ID.
      * @param create If {@code true}, then partition will be created if it's not there.
      * @return Local partition.
+     * @throws GridDhtInvalidPartitionException If partition is evicted or absent and
+     *      does not belong to this node.
      */
-    @Nullable public GridDhtLocalPartition<K, V> localPartition(int p, boolean create);
+    @Nullable public GridDhtLocalPartition<K, V> localPartition(int p, boolean create)
+        throws GridDhtInvalidPartitionException;
 
     /**
      * @param key Cache key.
@@ -86,6 +99,12 @@ public interface GridDhtPartitionTopology<K, V> {
      * @return Collection of all nodes who {@code are preloading} this partition.
      */
     public List<GridNode> moving(int p);
+
+    /**
+     * @param p Partition.
+     * @return Owners and moving nodes for partition.
+     */
+    public List<GridNode> ownersAndMoving(int p);
 
     /**
      * @param onlyActive If {@code true}, then only {@code active} partitions will be returned.

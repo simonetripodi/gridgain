@@ -29,7 +29,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxRemoteEx<K, V> {
@@ -191,7 +191,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                             ", tx=" + this + ']');
 
                     // Replace the entry.
-                    txEntry.cached(ctx.cache().entryEx(txEntry.key()), entry.keyBytes());
+                    txEntry.cached(cctx.cache().entryEx(txEntry.key()), entry.keyBytes());
                 }
             }
         }
@@ -244,7 +244,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                     log.debug("Replacing obsolete entry in remote transaction [entry=" + entry + ", tx=" + this + ']');
 
                 // Replace the entry.
-                txEntry.cached(ctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
+                txEntry.cached(cctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
             }
         }
     }
@@ -284,8 +284,8 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
     public void addRead(K key, byte[] keyBytes) {
         checkInternal(key);
 
-        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(ctx, this, READ, null, 0,
-            ctx.cache().entryEx(key));
+        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(cctx, this, READ, null, 0,
+            cctx.cache().entryEx(key));
 
         txEntry.keyBytes(keyBytes);
 
@@ -299,8 +299,8 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
     public void addWrite(K key, byte[] keyBytes) {
         checkInternal(key);
 
-        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(ctx, this, UPDATE, null, 0,
-            ctx.cache().entryEx(key));
+        GridCacheTxEntry<K, V> txEntry = new GridCacheTxEntry<K, V>(cctx, this, UPDATE, null, 0,
+            cctx.cache().entryEx(key));
 
         txEntry.keyBytes(keyBytes);
 
@@ -326,7 +326,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
             }
             // If lock is explicit.
             else {
-                e.cached(ctx.cache().entryEx(e.key()), null);
+                e.cached(cctx.cache().entryEx(e.key()), null);
 
                 // explicit lock.
                 writeMap.put(e.key(), e);
@@ -358,7 +358,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<GridCacheTx> prepareAsync() {
+    @Override public GridFuture<GridCacheTxEx<K, V>> prepareAsync() {
         assert false;
         return null;
     }
@@ -403,7 +403,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
         }
 
         try {
-            ctx.tm().prepareTx(this);
+            cctx.tm().prepareTx(this);
 
             state(PREPARED);
         }
@@ -456,7 +456,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                         if (log.isDebugEnabled())
                             log.debug("Got removed entry while committing (will retry): " + txEntry);
 
-                        txEntry.cached(ctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
+                        txEntry.cached(cctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
                     }
                 }
             }
@@ -468,7 +468,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                 if (!F.isEmpty(writeMap)) {
                     // Register this transaction as completed prior to write-phase to
                     // ensure proper lock ordering for removed entries.
-                    ctx.tm().addCommittedTx(this);
+                    cctx.tm().addCommittedTx(this);
 
                     // Node that for near transactions we grab all entries.
                     for (GridCacheTxEntry<K, V> txEntry : (near() ? allEntries() : writeEntries())) {
@@ -478,16 +478,18 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                     GridCacheEntryEx<K, V> cached = txEntry.cached();
 
                                     if (cached == null)
-                                        txEntry.cached(cached = ctx.cache().entryEx(txEntry.key()), null);
+                                        txEntry.cached(cached = cctx.cache().entryEx(txEntry.key()), null);
 
                                     GridNearCacheEntry<K, V> nearCached = null;
 
-                                    if (ctx.isDht())
-                                        nearCached = ctx.dht().near().peekExx(txEntry.key());
+                                    if (cctx.isDht())
+                                        nearCached = cctx.dht().near().peekExx(txEntry.key());
 
-                                    if (txEntry.op() == CREATE || txEntry.op() == UPDATE) {
+                                    GridCacheOperation op = isSystemInvalidate() ? DELETE : txEntry.op();
+                                    
+                                    if (op == CREATE || op == UPDATE) {
                                         // Invalidate only for near nodes (backups cannot be invalidated).
-                                        if (isInvalidate() && !ctx.isDht())
+                                        if (isInvalidate() && !cctx.isDht())
                                             cached.innerRemove(this, nodeId, nodeId, false, isNotifyEvent(),
                                                 txEntry.filters());
                                         else {
@@ -501,7 +503,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                                     cached.expireTime(), cached.ttl(), nodeId);
                                         }
                                     }
-                                    else if (txEntry.op() == DELETE) {
+                                    else if (op == DELETE) {
                                         cached.innerRemove(this, nodeId, nodeId, false, isNotifyEvent(),
                                             txEntry.filters());
 
@@ -509,18 +511,17 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                         if (nearCached != null)
                                             nearCached.updateOrEvict(xidVer, null, null, 0, 0, nodeId);
                                     }
-                                    else if (txEntry.op() == READ) {
+                                    else if (op == READ) {
                                         assert near();
 
                                         if (log.isDebugEnabled())
                                             log.debug("Ignoring READ entry when committing: " + txEntry);
                                     }
                                     // No-op.
-                                    else {
+                                    else
                                         if (nearCached != null)
                                             nearCached.updateOrEvict(xidVer, cached.rawGet(), cached.valueBytes(),
                                                 cached.expireTime(), cached.ttl(), nodeId);
-                                    }
 
                                     // Assert after setting values as we want to make sure
                                     // that if we replaced removed entries.
@@ -529,8 +530,8 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                             // If candidate is not there, then lock was explicit
                                             // and we simply allow the commit to proceed.
                                             !cached.hasLockCandidateUnsafe(xidVer) || cached.lockedByUnsafe(xidVer) :
-                                        "Transaction does not own lock for commit [entry=" + cached +
-                                            ", tx=" + this + ']';
+                                            "Transaction does not own lock for commit [entry=" + cached +
+                                                ", tx=" + this + ']';
 
                                     // Break out of while loop.
                                     break;
@@ -540,7 +541,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                         log.debug("Attempting to commit a removed entry (will retry): " + txEntry);
 
                                     // Renew cached entry.
-                                    txEntry.cached(ctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
+                                    txEntry.cached(cctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
                                 }
                             }
                         }
@@ -561,7 +562,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                     throw err;
                 }
 
-                ctx.tm().commitTx(this);
+                cctx.tm().commitTx(this);
 
                 state(COMMITTED);
             }
@@ -588,7 +589,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
 
                             try {
                                 if (cacheEntry == null)
-                                    cacheEntry = ctx.cache().peekEx(txEntry.key());
+                                    cacheEntry = cctx.cache().peekEx(txEntry.key());
 
                                 // Commit only locked entries. If some entry is not locked, then
                                 // we will arrive here again whenever lock will be acquired.
@@ -626,7 +627,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                 if (log.isDebugEnabled())
                                     log.debug("Got removed entry in commitEC method (will retry): " + txEntry);
 
-                                txEntry.cached(ctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
+                                txEntry.cached(cctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
                             }
                         }
                     }
@@ -659,14 +660,14 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                             if (log.isDebugEnabled())
                                 log.debug("Got removed entry while committing EC (will retry): " + txEntry);
 
-                            txEntry.cached(ctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
+                            txEntry.cached(cctx.cache().entryEx(txEntry.key()), txEntry.keyBytes());
                         }
                     }
                 }
             }
 
             if (commitAllowed.compareAndSet(false, true)) {
-                ctx.tm().commitTx(this);
+                cctx.tm().commitTx(this);
 
                 if (err != null) {
                     state(UNKNOWN);
@@ -711,7 +712,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
             // Note that we don't evict near entries here -
             // they will be deleted by their corrsesponding transactions.
             if (state(ROLLING_BACK)) {
-                ctx.tm().rollbackTx(this);
+                cctx.tm().rollbackTx(this);
 
                 state(ROLLED_BACK);
             }
@@ -766,7 +767,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                         ", tx=" + this + ']');
 
                 // Register alternate version with TM.
-                ctx.tm().addAlternateVersion(e.explicitVersion(), this);
+                cctx.tm().addAlternateVersion(e.explicitVersion(), this);
             }
         }
     }

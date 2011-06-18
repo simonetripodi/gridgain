@@ -31,9 +31,10 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Force keys request future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
-public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Collection<K>> {
+public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Collection<K>>
+    implements GridDhtFuture<K, Collection<K>> {
     /** Wait for 1 second for topology to change. */
     private static final long REMAP_PAUSE = 1000;
 
@@ -50,7 +51,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
     private Collection<? extends K> keys;
 
     /** Keys for which local node is no longer primary. */
-    private Collection<K> missed = new LinkedList<K>();
+    private Collection<Integer> invalidParts = new GridLeanSet<Integer>();
 
     /** Topology change counter. */
     private AtomicInteger topVer = new AtomicInteger(1);
@@ -65,6 +66,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
     public GridDhtForceKeysFuture(GridCacheContext<K, V> cctx, Collection<? extends K> keys) {
         super(cctx.kernalContext());
 
+        assert cctx.preloader().startFuture().isDone();
         assert !F.isEmpty(keys);
 
         this.cctx = cctx;
@@ -73,6 +75,8 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
         top = cctx.dht().topology();
 
         log = cctx.logger(getClass());
+
+        syncNotify(true);
     }
 
     /**
@@ -89,6 +93,11 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
         return futId;
     }
 
+    /** {@inheritDoc} */
+    @Override public Collection<Integer> invalidPartitions() {
+        return invalidParts;
+    }
+
     /**
      * @param f Future.
      * @return {@code True} if mini-future.
@@ -103,7 +112,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
     @SuppressWarnings( {"unchecked"})
     public void onDiscoveryEvent(GridDiscoveryEvent evt) {
         topVer.incrementAndGet();
-        
+
         int type = evt.type();
 
         for (GridFuture<?> f : futures()) {
@@ -111,7 +120,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
                 MiniFuture mini = (MiniFuture)f;
 
                 mini.onDiscoveryEvent();
-                
+
                 if (type == EVT_NODE_LEFT || type == EVT_NODE_FAILED) {
                     if (mini.node().id().equals(evt.eventNodeId())) {
                         mini.onResult(new GridTopologyException("Node left grid (will retry): " + evt.eventNodeId()));
@@ -221,90 +230,78 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
 
         int part = cctx.partition(key);
 
-        Collection<GridRichNode> nodes = cctx.affinity(part, CU.allNodes(cctx));
+        GridCacheEntryEx<K, V> e = cctx.dht().peekEx(key);
 
-        GridRichNode primary = F.first(nodes);
+        try {
+            if (e != null && !e.isNew()) {
+                if (log.isDebugEnabled())
+                    log.debug("Will not preload key (entry is not new) [cacheName=" + cctx.name() +
+                        ", key=" + key + ", part=" + part + ", locId=" + cctx.nodeId() + ']');
 
-        assert primary != null : "Primary node returned by affinity cannot be null: " + key;
-
-        if (!loc.id().equals(primary.id())) {
-            missed.add(key);
-
-            if (log.isDebugEnabled())
-                log.debug("Will not preload key (local node is not primary) [cacheName=" + cctx.name() +
-                    ", key=" + key + ", part=" + part + ", locId=" + cctx.nodeId() + ']');
+                // Key has been preloaded or retrieved already.
+                return;
+            }
         }
-        else {
-            GridCacheEntryEx<K, V> e = cctx.dht().peekEx(key);
+        catch (GridCacheEntryRemovedException ignore) {
+            if (log.isDebugEnabled())
+                log.debug("Received removed DHT entry for force keys request [entry=" + e +
+                    ", locId=" + cctx.nodeId() + ']');
+        }
 
-            try {
-                if (e != null && !e.isNew()) {
-                    if (log.isDebugEnabled())
-                        log.debug("Will not preload key (entry is not new) [cacheName=" + cctx.name() +
-                            ", key=" + key + ", part=" + part + ", locId=" + cctx.nodeId() + ']');
-                    
-                    // Key has been preloaded or retrieved already.
-                    return;
-                }
-            }
-            catch (GridCacheEntryRemovedException ignore) {
+        List<GridNode> owners = F.isEmpty(exc) ? top.owners(part) :
+            new ArrayList<GridNode>(F.view(top.owners(part), F.notIn(exc)));
+
+        if (owners.isEmpty() || (owners.contains(loc) && cctx.preloadEnabled())) {
+            if (log.isDebugEnabled())
+                log.debug("Will not preload key (local node is owner) [key=" + key + ", part=" + part +
+                    ", locId=" + cctx.nodeId() + ']');
+
+            // Key is already preloaded.
+            return;
+        }
+
+        // Create partition.
+        GridDhtLocalPartition<K, V> locPart = top.localPartition(part, false);
+
+        if (locPart == null)
+            invalidParts.add(part);
+        // If preloader is disabled, then local partition is always MOVING.
+        else if (locPart.state() == MOVING) {
+            Collections.sort(owners, CU.nodeComparator(false));
+
+            // Load from youngest owner.
+            GridNode pick = F.first(owners);
+
+            assert pick != null;
+
+            if (!cctx.preloadEnabled() && loc.id().equals(pick.id()))
+                pick = F.first(F.view(owners, F.<GridNode>remoteNodes(loc.id())));
+
+            if (pick == null) {
                 if (log.isDebugEnabled())
-                    log.debug("Received removed DHT entry for force keys request [entry=" + e +
-                        ", locId=" + cctx.nodeId() + ']');
-            }
+                    log.debug("Will not preload key (no nodes to request from with preloading disabled) [key=" +
+                        key + ", part=" + part + ", locId=" + cctx.nodeId() + ']');
 
-            List<GridNode> owners = F.isEmpty(exc) ? top.owners(part) :
-                new ArrayList<GridNode>(F.view(top.owners(part), F.notIn(exc)));
-
-            if (owners.isEmpty() || (owners.contains(loc) && cctx.preloadEnabled())) {
-                if (log.isDebugEnabled())
-                    log.debug("Will not preload key (local node is owner) [key=" + key + ", part=" + part +
-                        ", locId=" + cctx.nodeId() + ']');
-                
-                // Key is already preloaded.
                 return;
             }
 
-            // Create partition.
-            GridDhtLocalPartition<K, V> locPart = top.localPartition(part, true);
+            Collection<K> mappedKeys = F.addIfAbsent(mappings, pick, F.<K>newSet());
 
-            assert locPart != null;
+            assert mappedKeys != null;
 
-            // If preloader is disabled, then local partition is always MOVING.
-            if (locPart.state() == MOVING) {
-                Collections.sort(owners, CU.nodeComparator(false));
+            mappedKeys.add(key);
 
-                // Load from youngest owner.
-                GridNode pick = F.first(owners);
-
-                assert pick != null;
-
-                if (!cctx.preloadEnabled() && loc.id().equals(pick.id()))
-                    pick = F.first(F.view(owners, F.<GridNode>remoteNodes(loc.id())));
-
-                if (pick == null) {
-                    if (log.isDebugEnabled())
-                        log.debug("Will not preload key (no nodes to request from with preloading disabled) [key=" +
-                            key + ", part=" + part + ", locId=" + cctx.nodeId() + ']');
-
-                    return;
-                }
-
-                Collection<K> mappedKeys = F.addIfAbsent(mappings, pick, F.<K>newSet());
-
-                assert mappedKeys != null;
-
-                mappedKeys.add(key);
-
-                if (log.isDebugEnabled())
-                    log.debug("Will preload key from node [cacheName=" + cctx.namex() + ", key=" + key + ", part=" +
-                        part + ", node=" + pick.id() + ", locId=" + cctx.nodeId() + ']');
-            }
-            else {
-                if (log.isDebugEnabled())
-                    log.debug("Will not preload key (local partition is not MOVING) [cacheName=" + cctx.name() +
-                        ", key=" + key + ", part=" + locPart + ", locId=" + cctx.nodeId() + ']');
-            }
+            if (log.isDebugEnabled())
+                log.debug("Will preload key from node [cacheName=" + cctx.namex() + ", key=" + key + ", part=" +
+                    part + ", node=" + pick.id() + ", locId=" + cctx.nodeId() + ']');
+        }
+        else if (locPart.state() != OWNING) {
+            invalidParts.add(part);
+        }
+        else {
+            if (log.isDebugEnabled())
+                log.debug("Will not preload key (local partition is not MOVING) [cacheName=" + cctx.name() +
+                    ", key=" + key + ", part=" + locPart + ", locId=" + cctx.nodeId() + ']');
         }
     }
 
@@ -371,7 +368,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
         }
 
         /**
-         * 
+         *
          */
         void onDiscoveryEvent() {
             pauseLatch.countDown();
@@ -409,7 +406,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
 
             boolean remapMissed = false;
 
-            if (!F.isEmpty(missed)) {
+            if (!F.isEmpty(missedKeys)) {
                 if (curTopVer != topVer.get() || pauseLatch.getCount() == 0)
                     map(missedKeys, Collections.<GridNode>emptyList());
                 else
@@ -421,46 +418,42 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
                 Collection<K> retryKeys = F.view(
                     keys,
                     F.notIn(missedKeys),
-                    F.notIn(F.viewReadOnly(res.forcedEntries(), CU.<K, V>info2Key())));
+                    F.notIn(F.viewReadOnly(res.forcedInfos(), CU.<K, V>info2Key())));
 
                 if (!retryKeys.isEmpty())
                     map(retryKeys, F.concat(false, node, exc));
             }
 
-            GridRichNode loc = cctx.localNode();
-
-            for (GridCacheEntryInfo<K, V> info : res.forcedEntries()) {
+            for (GridCacheEntryInfo<K, V> info : res.forcedInfos()) {
                 int p = cctx.partition(info.key());
 
-                if (cctx.primary(loc, p)) {
-                    GridDhtLocalPartition<K, V> locPart = top.localPartition(p, false);
+                GridDhtLocalPartition<K, V> locPart = top.localPartition(p, false);
 
-                    if (locPart != null && locPart.state() == MOVING && locPart.reserve()) {
-                        GridCacheEntryEx<K, V> entry = cctx.dht().entryEx(info.key());
+                if (locPart != null && locPart.state() == MOVING && locPart.reserve()) {
+                    GridCacheEntryEx<K, V> entry = cctx.dht().entryEx(info.key());
 
-                        try {
-                            entry.initialValue(
-                                info.value(),
-                                info.valueBytes(),
-                                info.version(),
-                                info.ttl(),
-                                info.expireTime(),
-                                info.metrics()
-                            );
-                        }
-                        catch (GridException e) {
-                            onDone(e);
+                    try {
+                        entry.initialValue(
+                            info.value(),
+                            info.valueBytes(),
+                            info.version(),
+                            info.ttl(),
+                            info.expireTime(),
+                            info.metrics()
+                        );
+                    }
+                    catch (GridException e) {
+                        onDone(e);
 
-                            return;
-                        }
-                        catch (GridCacheEntryRemovedException ignore) {
-                            if (log.isDebugEnabled())
-                                log.debug("Trying to preload removed entry (will ignore) [cacheName=" +
-                                    cctx.namex() + ", entry=" + entry + ']');
-                        }
-                        finally {
-                            locPart.release();
-                        }
+                        return;
+                    }
+                    catch (GridCacheEntryRemovedException ignore) {
+                        if (log.isDebugEnabled())
+                            log.debug("Trying to preload removed entry (will ignore) [cacheName=" +
+                                cctx.namex() + ", entry=" + entry + ']');
+                    }
+                    finally {
+                        locPart.release();
                     }
                 }
             }

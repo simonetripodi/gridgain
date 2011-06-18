@@ -14,6 +14,7 @@ import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
+import org.gridgain.grid.util.tostring.*;
 
 import java.io.*;
 import java.util.*;
@@ -22,11 +23,12 @@ import java.util.*;
  * Embedded DHT future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public class GridDhtEmbeddedFuture<K, A, B> extends GridEmbeddedFuture<A, B> implements GridDhtFuture<K, A> {
     /** Retries. */
-    private Collection<K> retries;
+    @GridToStringInclude
+    private Collection<Integer> invalidParts;
 
     /**
      * Empty constructor required for {@link Externalizable}.
@@ -43,25 +45,25 @@ public class GridDhtEmbeddedFuture<K, A, B> extends GridEmbeddedFuture<A, B> imp
     public GridDhtEmbeddedFuture(GridKernalContext ctx, GridFuture<B> embedded, GridClosure2<B, Exception, A> c) {
         super(ctx, embedded, c);
 
-        retries = Collections.emptyList();
+        invalidParts = Collections.emptyList();
     }
 
     /**
      * @param ctx Context.
      * @param embedded Embedded.
      * @param c Closure.
-     * @param retries Retries.
+     * @param invalidParts Retries.
      */
     public GridDhtEmbeddedFuture(GridKernalContext ctx, GridFuture<B> embedded, GridClosure2<B, Exception, A> c,
-        Collection<K> retries) {
+        Collection<Integer> invalidParts) {
         super(ctx, embedded, c);
 
-        this.retries = retries;
+        this.invalidParts = invalidParts;
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<K> retries() {
-        return retries;
+    @Override public Collection<Integer> invalidPartitions() {
+        return invalidParts;
     }
 
     /**

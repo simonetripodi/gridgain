@@ -9,6 +9,7 @@
 
 package org.gridgain.grid;
 
+import org.gridgain.grid.segmentation.*;
 import org.jetbrains.annotations.*;
 
 /**
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.*;
  * method.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.13062011
+ * @version 3.1.1c.17062011
  */
 public enum GridFactoryState {
     /**
@@ -28,7 +29,16 @@ public enum GridFactoryState {
     /**
      * Grid factory stopped.
      */
-    STOPPED;
+    STOPPED,
+
+    /**
+     * Grid factory stopped due to network segmentation issues.
+     * <p>
+     * Notification on this state will be fired only when segmentation policy is
+     * set to {@link GridSegmentationPolicy#STOP} or {@link GridSegmentationPolicy#RESTART_JVM}
+     * and node is stopped from internals of GridGain after segment becomes invalid.
+     */
+    STOPPED_ON_SEGMENTATION;
 
     /** Enumerated values. */
     private static final GridFactoryState[] VALS = values();
