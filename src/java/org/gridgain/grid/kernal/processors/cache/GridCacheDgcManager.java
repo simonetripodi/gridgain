@@ -29,7 +29,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * Distributed Garbage Collector for cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     /** GC thread. */
@@ -88,10 +88,14 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         A.ensure(dgcSuspectLockTimeout >= 0, "dgcSuspiciousLockTimeout cannot be negative");
 
         if (dgcFreq > 0) {
-            U.warn(log, "Locks older than " + dgcSuspectLockTimeout + " milliseconds " +
+            U.warn(log,
+                "Locks older than " + dgcSuspectLockTimeout + "ms. " +
                 "will be implicitly removed in case they are not present on lock owner nodes. " +
                 "To change this behavior please configure 'dgcFrequency' and 'dgcSuspectLockTimeout' " +
-                "cache configuration properties.");
+                "cache configuration properties.",
+                "Locks older than " + dgcSuspectLockTimeout + "ms. " +
+                "will be removed in case they are not present on lock owner nodes. "
+            );
 
             gcThread = new GridThread(new GcWorker());
 
@@ -109,10 +113,9 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         cctx.io().addHandler(GridCacheDgcRequest.class, reqHandler);
         cctx.io().addHandler(GridCacheDgcResponse.class, resHandler);
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug("Started DGC manager " +
                 "[dgcFreq=" + dgcFreq + ", suspectLockTimeout=" + dgcSuspectLockTimeout + ']');
-        }
     }
 
     /** {@inheritDoc} */

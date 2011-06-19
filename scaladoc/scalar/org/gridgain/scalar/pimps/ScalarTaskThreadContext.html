@@ -42,7 +42,7 @@
           <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>This trait provide mixin for properly typed version of <code>GridProjection#withName(...)</code> method.</p><p>Method on <code>GridProjection</code> always returns an instance of type <code>GridProjection</code> even when
 called on a sub-class. This trait's method <code>withName$</code> return the instance of the same type
 it was called on.
-</p></div><dl class="attributes block"> <dt>Self Type</dt><dd><a name="org.gridgain.scalar.pimps.ScalarTaskThreadContext" class="extype" href="">ScalarTaskThreadContext</a>[T] with <span name="scalaz.PimpedType" class="extype">PimpedType</span>[T]</dd><dt>Version</dt><dd><p>GridGain 3.1 build#17062011
+</p></div><dl class="attributes block"> <dt>Self Type</dt><dd><a name="org.gridgain.scalar.pimps.ScalarTaskThreadContext" class="extype" href="">ScalarTaskThreadContext</a>[T] with <span name="scalaz.PimpedType" class="extype">PimpedType</span>[T]</dd><dt>Version</dt><dd><p>GridGain 3.1 build#19062011
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="org.gridgain.scalar.ScalarMixin" class="extype" href="../ScalarMixin.html">ScalarMixin</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
@@ -674,6 +674,19 @@ it was called on.
       </h4>
       <p class="shortcomment cmt">Implicit converter from Java <code>GridReducer3</code> to Scala function.</p><div class="fullcomment"><div class="comment cmt"><p>Implicit converter from Java <code>GridReducer3</code> to Scala function.
 </p></div><dl class="paramcmts block"><dt class="param">r</dt><dd class="cmt"><p>Java <code>GridReducer3</code> to convert.
+</p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd><dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.ScalarMixin" class="extype" href="../ScalarMixin.html">ScalarMixin</a></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.ScalarMixin#fromSymbol" data-isabs="false">
+      <a id="fromSymbol(Symbol):String"></a>
+      <h4 class="signature">
+      <span class="kind">implicit def</span>
+      <span class="symbol"> 
+        <span class="name">fromSymbol</span>
+        
+        <span class="params">(<span name="s">s: <span name="scala.Symbol" class="extype">Symbol</span></span>)</span><span class="result">: String</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Converts from <code>Symbol</code> to <code>String</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Converts from <code>Symbol</code> to <code>String</code>.
+</p></div><dl class="paramcmts block"><dt class="param">s</dt><dd class="cmt"><p>Symbol to convert.
 </p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd><dt>Definition Classes</dt><dd><a name="org.gridgain.scalar.ScalarMixin" class="extype" href="../ScalarMixin.html">ScalarMixin</a></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarMixin#fromTuple2" data-isabs="false">
       <a id="fromTuple2[A, B](GridTuple2[A, B]):(A, B)"></a>
@@ -1852,6 +1865,45 @@ will use <code>peek()
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withCheckpointSpi$" data-isabs="false">
+      <a id="withCheckpointSpi$(String):T"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">withCheckpointSpi$</span>
+        
+        <span class="params">(<span name="spiName">spiName: String</span>)</span><span class="result">: T</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withCheckpointSpi(...)</code> method.</p><div class="fullcomment"><div class="comment cmt"><p>Properly typed version of <code>GridProjection#withCheckpointSpi(...)</code> method.
+</p></div><dl class="paramcmts block"><dt class="param">spiName</dt><dd class="cmt"><p>Name of the SPI.
+</p></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withFailoverSpi$" data-isabs="false">
+      <a id="withFailoverSpi$(String):T"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">withFailoverSpi$</span>
+        
+        <span class="params">(<span name="spiName">spiName: String</span>)</span><span class="result">: T</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withFailoverSpi(...)</code> method.</p><div class="fullcomment"><div class="comment cmt"><p>Properly typed version of <code>GridProjection#withFailoverSpi(...)</code> method.
+</p></div><dl class="paramcmts block"><dt class="param">spiName</dt><dd class="cmt"><p>Name of the SPI.
+</p></dd></dl></div>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withLoadBalancingSpi$" data-isabs="false">
+      <a id="withLoadBalancingSpi$(String):T"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">withLoadBalancingSpi$</span>
+        
+        <span class="params">(<span name="spiName">spiName: String</span>)</span><span class="result">: T</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withLoadBalancingSpi(...)</code> method.</p><div class="fullcomment"><div class="comment cmt"><p>Properly typed version of <code>GridProjection#withLoadBalancingSpi(...)</code> method.
+</p></div><dl class="paramcmts block"><dt class="param">spiName</dt><dd class="cmt"><p>Name of the SPI.
+</p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withName$" data-isabs="false">
       <a id="withName$(String):T"></a>
       <h4 class="signature">
@@ -1865,17 +1917,30 @@ will use <code>peek()
       <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withName(...)</code> method.</p><div class="fullcomment"><div class="comment cmt"><p>Properly typed version of <code>GridProjection#withName(...)</code> method.
 </p></div><dl class="paramcmts block"><dt class="param">taskName</dt><dd class="cmt"><p>Name of the task.
 </p></dd></dl></div>
-    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withResult$" data-isabs="false">
-      <a id="withResult$((GridJobResult, List[GridJobResult]) ⇒ GridJobResultPolicy):T"></a>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withResultClosure$" data-isabs="false">
+      <a id="withResultClosure$((GridJobResult, List[GridJobResult]) ⇒ GridJobResultPolicy):T"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
-        <span class="name">withResult$</span>
+        <span class="name">withResultClosure$</span>
         
         <span class="params">(<span name="f">f: (<span name="org.gridgain.grid.GridJobResult" class="extype">GridJobResult</span>, <span name="java.util.List" class="extype">List</span>[<span name="org.gridgain.grid.GridJobResult" class="extype">GridJobResult</span>]) ⇒ <span name="org.gridgain.grid.GridJobResultPolicy" class="extype">GridJobResultPolicy</span></span>)</span><span class="result">: T</span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withResult(...)</code> method.</p>
+      <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withResultClosure(...)</code> method.</p>
+    </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarTaskThreadContext#withTopologySpi$" data-isabs="false">
+      <a id="withTopologySpi$(String):T"></a>
+      <h4 class="signature">
+      <span class="kind">def</span>
+      <span class="symbol"> 
+        <span class="name">withTopologySpi$</span>
+        
+        <span class="params">(<span name="spiName">spiName: String</span>)</span><span class="result">: T</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Properly typed version of <code>GridProjection#withTopologySpi(...)</code> method.</p><div class="fullcomment"><div class="comment cmt"><p>Properly typed version of <code>GridProjection#withTopologySpi(...)</code> method.
+</p></div><dl class="paramcmts block"><dt class="param">spiName</dt><dd class="cmt"><p>Name of the SPI.
+</p></dd></dl></div>
     </li></ol>
             </div>
 
@@ -1898,7 +1963,7 @@ will use <code>peek()
                         <td align="left" valign="center">
                             <nobr>GridGain = High Performance Cloud Computing</nobr>
                             <br>
-                            <b>Version:</b> 3.1 build#17062011
+                            <b>Version:</b> 3.1 build#19062011
                             <br>
                             <a target=_blank href="http://www.gridgain.com"><nobr>2005-2011 Copyright &#169; GridGain Systems, Inc.</nobr></a>
                         </td>

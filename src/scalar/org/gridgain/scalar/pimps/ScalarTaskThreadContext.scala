@@ -24,7 +24,7 @@ import org.gridgain.scalar._
  * it was called on.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 trait ScalarTaskThreadContext[T <: GridProjection] extends ScalarMixin { this: PimpedType[T] =>
     /**
@@ -36,11 +36,43 @@ trait ScalarTaskThreadContext[T <: GridProjection] extends ScalarMixin { this: P
         value.withName(taskName).asInstanceOf[T]
 
     /**
-     * Properly typed version of `GridProjection#withResult(...)` method.
+     * Properly typed version of `GridProjection#withFailoverSpi(...)` method.
+     *
+     * @param spiName Name of the SPI.
+     */
+    def withFailoverSpi$(@Nullable spiName: String): T =
+        value.withFailoverSpi(spiName).asInstanceOf[T]
+
+    /**
+     * Properly typed version of `GridProjection#withTopologySpi(...)` method.
+     *
+     * @param spiName Name of the SPI.
+     */
+    def withTopologySpi$(@Nullable spiName: String): T =
+        value.withTopologySpi(spiName).asInstanceOf[T]
+
+    /**
+     * Properly typed version of `GridProjection#withCheckpointSpi(...)` method.
+     *
+     * @param spiName Name of the SPI.
+     */
+    def withCheckpointSpi$(@Nullable spiName: String): T =
+        value.withCheckpointSpi(spiName).asInstanceOf[T]
+
+    /**
+     * Properly typed version of `GridProjection#withLoadBalancingSpi(...)` method.
+     *
+     * @param spiName Name of the SPI.
+     */
+    def withLoadBalancingSpi$(@Nullable spiName: String): T =
+        value.withLoadBalancingSpi(spiName).asInstanceOf[T]
+
+    /**
+     * Properly typed version of `GridProjection#withResultClosure(...)` method.
      *
      * @param res Ad-hoc implementation of `GridTask#result(...)` method.
      */
-    def withResult$(@Nullable f: (GridJobResult, java.util.List[GridJobResult]) => GridJobResultPolicy): T =
-        value.withResult(toClosure2X(f)).asInstanceOf[T]
+    def withResultClosure$(@Nullable f: (GridJobResult, java.util.List[GridJobResult]) => GridJobResultPolicy): T =
+        value.withResultClosure(toClosure2X(f)).asInstanceOf[T]
 
 }

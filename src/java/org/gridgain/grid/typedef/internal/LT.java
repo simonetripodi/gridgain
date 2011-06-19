@@ -17,7 +17,7 @@ import org.gridgain.grid.util.*;
  * use only and meant to provide for more terse code when readability of code is not compromised.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 @SuppressWarnings({"ExtendsUtilityClass"})
 public class LT extends GridLogThrottle { /* No-op. */ }

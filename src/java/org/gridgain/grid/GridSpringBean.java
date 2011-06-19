@@ -60,7 +60,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -1030,11 +1030,11 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public GridProjection withResult(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
+    @Override public GridProjection withResultClosure(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
         GridJobResultPolicy> res) {
         assert g != null;
 
-        return g.withResult(res);
+        return g.withResultClosure(res);
     }
 
     /** {@inheritDoc} */

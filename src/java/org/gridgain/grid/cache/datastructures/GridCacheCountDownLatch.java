@@ -28,7 +28,7 @@ import java.util.concurrent.*;
  * {@link GridCache#countDownLatch(String, int, boolean)}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  * @see GridCache#countDownLatch(String, int, boolean)
  * @see GridCache#countDownLatch(String)
  * @see GridCache#removeCountDownLatch(String)

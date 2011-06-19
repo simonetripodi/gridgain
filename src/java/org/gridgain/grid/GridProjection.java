@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
@@ -1313,15 +1313,34 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
 
     /**
      * Sets custom ad-hoc implementation for {@link GridTask#result(GridJobResult, List)} method for the
-     * next executed task on this projection in the <b>current thread</b>.
-     * When task starts execution the ad-hoc implementation set here is reset - so it is valid only
+     * next executed closure on this projection in the <b>current thread</b>.
+     * When closure starts execution the ad-hoc implementation set here is reset - so it is valid only
      * for one execution from the current thread.
+     * <p>
+     * Note that this method makes sense <b>only for closure executions</b>, i.e. the case where GridGain
+     * automatically converts closure to a grid task. If a user provided task is executed this ad-hoc
+     * closure is ignored.
+     * <p>
+     * This particular useful when you need to disable, for example, failover on specific closure
+     * execution like in the following example (note that <code>X.NO_FAILOVER</code> provides
+     * built-in closure that effectively disables failover logic):
+     * <pre name="code" class="java">
+     * G.grid().withResultClosure(X.NO_FAILOVER).call(
+     *     BROADCAST,
+     *     new CAX() {
+     *         &#64;Override public void applyx() throws GridException {
+     *             System.out.println("Hello!");
+     *         }
+     *     }
+     * );
+     * </pre>
      *
      * @param res Ad-hoc implementation for {@link GridTask#result(GridJobResult, List)} method.
      * @return Grid projection ({@code this}).
+     * @see X#NO_FAILOVER
      */
-    public GridProjection withResult(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>
-        res);
+    public GridProjection withResultClosure(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
+        GridJobResultPolicy> res);
 
     /**
      * Sets failover SPI for the next executed task on this projection in the <b>current thread</b>.

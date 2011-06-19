@@ -26,14 +26,17 @@ import java.util.*;
  * when this typedef <b>does not sacrifice</b> the code readability.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 public final class X {
     /** Time span dividers. */
     private static final long[] SPAN_DIVS = new long[] {1000L, 60L, 60L, 60L};
 
     /**
-     * Closure for no-failover policy.
+     * Closure for no-failover policy. It is a convenient shortcut for method
+     * {@link GridProjection#withResultClosure(GridClosure2X)} to disable any failover.
+     *
+     * @see GridProjection#withResultClosure(GridClosure2X)
      */
     public static final GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> NO_FAILOVER =
         new GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>() {

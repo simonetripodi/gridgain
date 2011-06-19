@@ -31,7 +31,7 @@ import scala.util.control.Breaks._
  * trait and therefore brings with it all implicits into the scope.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 trait ScalarMixin {
     /**
@@ -155,6 +155,17 @@ trait ScalarMixin {
 
         lst
     }
+
+    /**
+     * Converts from `Symbol` to `String`.
+     *
+     * @param s Symbol to convert.
+     */
+    implicit def fromSymbol(s: Symbol): String =
+        if (s == null)
+            null
+        else
+            s.toString().substring(1)
 
     /**
      * Introduction of `^^` operator for `Any` type that will call `break`.

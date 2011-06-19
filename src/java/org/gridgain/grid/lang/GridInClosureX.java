@@ -10,7 +10,7 @@
 package org.gridgain.grid.lang;
 
 import org.gridgain.grid.*;
-import org.gridgain.grid.typedef.F;
+import org.gridgain.grid.typedef.*;
 
 /**
  * Convenient in-closure subclass that allows for thrown grid exception. This class
@@ -18,7 +18,7 @@ import org.gridgain.grid.typedef.F;
  * and properly wraps {@link GridException} into {@link GridClosureException} instance.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  * @see CIX1
  */
 public abstract class GridInClosureX<T> extends GridInClosure<T> {

@@ -28,7 +28,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** */
@@ -1306,7 +1306,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public GridProjection withResult(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
+    @Override public GridProjection withResultClosure(@Nullable GridClosure2X<GridJobResult, List<GridJobResult>,
         GridJobResultPolicy> res) {
         if (res != null) {
             guard();

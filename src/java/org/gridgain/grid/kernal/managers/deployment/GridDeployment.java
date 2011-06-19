@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.*;
  * Represents single class deployment.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 public class GridDeployment extends GridMetadataAwareAdapter implements GridDeploymentInfo {
     /** Timestamp. */

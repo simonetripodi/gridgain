@@ -18,7 +18,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.gridgain.grid.GridFactoryState.STOPPED;
+import static org.gridgain.grid.GridFactoryState.*;
 import static org.gridgain.grid.GridSystemProperties.*;
 
 /**
@@ -32,7 +32,7 @@ import static org.gridgain.grid.GridSystemProperties.*;
  * this loader and you can use them as an example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  */
 @SuppressWarnings({"CallToSystemExit"})
 @GridLoader(description = "Command line loader")
@@ -41,7 +41,7 @@ public final class GridCommandLineLoader {
     private static final String VER = "3.1.1c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "17062011";
+    private static final String BUILD = "19062011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -119,7 +119,7 @@ public final class GridCommandLineLoader {
      * @return Configuration file path. {@code null} if operation  was cancelled.
      * @throws IOException In case of error.
      */
-    private static String askConfigFile() throws IOException {
+    @Nullable private static String askConfigFile() throws IOException {
         List<String> files = GridConfigurationFinder.getConfigurationFiles();
 
         String title = "Available configuration files:";
@@ -208,7 +208,7 @@ public final class GridCommandLineLoader {
 
         G.addListener(new GridFactoryListener() {
             @Override public void onStateChange(String name, GridFactoryState state) {
-                if (state == STOPPED)
+                if (state == STOPPED || state == STOPPED_ON_SEGMENTATION)
                     latch.countDown();
             }
         });

@@ -96,14 +96,14 @@ import static org.gridgain.grid.GridEventType.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.17062011
+ * @version 3.1.1c.19062011
  * @see GridEventStorageSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.17062011")
+    version = "3.1.1c.19062011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEventStorageSpi,
     GridMemoryEventStorageSpiMBean {
@@ -175,9 +175,8 @@ public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEve
         registerMBean(gridName, this, GridMemoryEventStorageSpiMBean.class);
 
         // Ack ok start.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(startInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -188,9 +187,8 @@ public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEve
         evts.clear();
 
         // Ack ok stop.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /**
@@ -279,9 +277,8 @@ public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEve
             queueSize.incrementAndGet();
 
             // Make sure to filter out metrics updates to prevent log from flooding.
-            if (evt.type() != EVT_NODE_METRICS_UPDATED && log.isDebugEnabled()) {
+            if (evt.type() != EVT_NODE_METRICS_UPDATED && log.isDebugEnabled())
                 log.debug("Event recorded: " + evt);
-            }
         }
     }
 
@@ -305,9 +302,8 @@ public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEve
 
                     GridEvent expired = evts.poll();
 
-                    if (log.isDebugEnabled()) {
+                    if (log.isDebugEnabled())
                         log.debug("Event expired by count: " + expired);
-                    }
                 }
 
                 while (!evts.isEmpty() && now - evts.peek().timestamp() >= expireAgeMs) {
@@ -315,9 +311,8 @@ public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEve
 
                     GridEvent expired = evts.poll();
 
-                    if (log.isDebugEnabled()) {
+                    if (log.isDebugEnabled())
                         log.debug("Event expired by age: " + expired);
-                    }
                 }
             }
             finally {
