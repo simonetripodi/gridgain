@@ -1405,7 +1405,10 @@ public class GridCacheContext<K, V> implements Externalizable {
      * bigger than network timeout by default.
      */
     public long preloadExchangeTimeout() {
-        long timeout = gridConfig().getNetworkTimeout() * 4;
+        long t1 = gridConfig().getNetworkTimeout() * 4;
+        long t2 = gridConfig().getNetworkTimeout() * gridConfig().getCacheConfiguration().length * 2;
+
+        long timeout = Math.max(t1, t2);
 
         return timeout < 0 ? Long.MAX_VALUE : timeout;
     }

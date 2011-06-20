@@ -20,8 +20,10 @@ import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
 import org.jetbrains.annotations.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.GridEventType.*;
@@ -43,6 +45,12 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** Partition map futures. */
     private final ExchangeFutureSet exchFuts = new ExchangeFutureSet();
 
+    /** Last join order. */
+    private final AtomicLong lastJoinOrder = new AtomicLong();
+
+    /** Set for join futures. */
+    private final GridConcurrentHashSet<JoinFuture> joinFuts = new GridConcurrentHashSet<JoinFuture>();
+
     /** Force key futures. */
     private final ConcurrentHashMap<GridUuid, GridDhtForceKeysFuture<K, V>> forceKeyFuts =
         new ConcurrentHashMap<GridUuid, GridDhtForceKeysFuture<K, V>>();
@@ -55,6 +63,9 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
     /** Start future. */
     private final GridFutureAdapter<?> startFut;
+
+    /** Latch which completes after local exchange future is created. */
+    private final CountDownLatch locExchFutLatch = new CountDownLatch(1);
 
     /** Busy lock to prevent activities from accessing exchanger while it's stopping. */
     private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
@@ -76,10 +87,8 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
                 assert !loc.id().equals(n.id());
 
-                GridDhtPartitionExchangeId exchId = exchangeId(n.id(), n.order(), e.type(), e.timestamp());
-
-                // Start exchange process.
-                GridDhtPartitionsExchangeFuture<K, V> exchFut = exchangeFuture(exchId, e);
+                for (GridDhtForceKeysFuture<K, V> f : forceKeyFuts.values())
+                    f.onDiscoveryEvent(e);
 
                 if (e.type() == EVT_NODE_LEFT || e.type() == EVT_NODE_FAILED) {
                     assert cctx.discovery().node(n.id()) == null;
@@ -88,19 +97,35 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                     top.remove(n.id());
 
                     for (GridDhtPartitionsExchangeFuture<K, V> f : exchFuts.values())
-                        f.onNodeLeft(n.id(), exchFut);
+                        f.onNodeLeft(n.id());
                 }
 
-                for (GridDhtForceKeysFuture<K, V> f : forceKeyFuts.values())
-                    f.onDiscoveryEvent(e);
+                // For joining nodes we ignore events for nodes with lesser
+                // order than the local node.
+                if (e.type() != EVT_NODE_JOINED || n.order() > loc.order()) {
+                    // Synchronously wait until local node future will be added.
+                    locExchFutLatch.await();
 
-                if (log.isDebugEnabled())
-                    log.debug("Discovery event (will start exchange): " + exchId);
+                    GridDhtPartitionExchangeId exchId = exchangeId(n.id(), n.order(), e.type(), e.timestamp());
 
-                // Event callback - without this callback future will never complete.
-                exchFut.onEvent(exchId, e);
+                    // Start exchange process.
+                    GridDhtPartitionsExchangeFuture<K, V> exchFut = exchangeFuture(exchId, e);
 
-                demandPool.onDiscoveryEvent(n.id(), exchFut);
+                    if (log.isDebugEnabled())
+                        log.debug("Discovery event (will start exchange): " + exchId);
+
+                    // Event callback - without this callback future will never complete.
+                    exchFut.onEvent(exchId, e);
+
+                    demandPool.onDiscoveryEvent(n.id(), exchFut);
+                }
+                else
+                    if (log.isDebugEnabled())
+                        log.debug("Ignoring discovery event for joining node with lesser order than local one " +
+                            "[locOrder=" + loc.order() + ", joinNode=" + n + ']');
+            }
+            catch (InterruptedException ignore) {
+                U.warn(log, "Got interrupted while processing discovery event (event won't be processed): " + evt);
             }
             finally {
                 leaveBusy();
@@ -189,6 +214,8 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
         supplyPool.start();
         demandPool.start(fut);
 
+        locExchFutLatch.countDown();
+
         if (log.isDebugEnabled())
             log.debug("Beginning to wait on exchange future: " + fut);
 
@@ -220,6 +247,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings( {"LockAcquiredButNotSafelyReleased"})
     @Override public void onKernalStop() {
         if (log.isDebugEnabled())
             log.debug("DHT preloader onKernalStop callback.");
@@ -516,7 +544,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
      * @param discoEvt Discovery event.
      * @return Exchange future.
      */
-    GridDhtPartitionsExchangeFuture<K, V> exchangeFuture(GridDhtPartitionExchangeId exchId,
+    GridDhtPartitionsExchangeFuture<K, V> exchangeFuture(final GridDhtPartitionExchangeId exchId,
         @Nullable GridDiscoveryEvent discoEvt) {
         GridDhtPartitionsExchangeFuture<K, V> fut;
 
@@ -528,6 +556,63 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
         if (discoEvt != null)
             fut.onEvent(exchId, discoEvt);
+
+        if (exchId.isJoined())
+            fut.listenAsync(new CI1<GridFuture<Object>>() {
+                @Override public void apply(GridFuture<Object> t) {
+                    updateLastJoinOrder(exchId.order());
+                }
+            });
+
+        return fut;
+    }
+
+    /**
+     * @param order Order of last joined node.
+     */
+    private void updateLastJoinOrder(long order) {
+        while (true) {
+            long cur = lastJoinOrder.get();
+
+            if (order > cur) {
+                if (lastJoinOrder.compareAndSet(cur, order)) {
+                    for (JoinFuture f : joinFuts)
+                        f.onOrderUpdated(order);
+
+                    return;
+                }
+            }
+            else
+                return;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> joinFuture(long order) {
+        JoinFuture fut = new JoinFuture(lastJoinOrder.get(), order);
+
+        JoinFuture prev = joinFuts.addx(fut);
+
+        if (prev != null) {
+            fut = prev;
+
+            if (log.isDebugEnabled())
+                log.debug("Retrieved join future: " + fut);
+        }
+        else {
+            // Double check to avoid raise conditions.
+            fut.onOrderUpdated(lastJoinOrder.get());
+
+            if (log.isDebugEnabled())
+                log.debug("Created join future: " + fut);
+
+            fut.listenAsync(new CI1<GridFuture<?>>() {
+                @SuppressWarnings( {"SuspiciousMethodCalls"})
+                @Override public void apply(GridFuture<?> f) {
+                    joinFuts.remove(f);
+                }
+            });
+        }
 
         return fut;
     }
@@ -637,6 +722,81 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
         /** {@inheritDoc} */
         @Override public synchronized String toString() {
             return S.toString(ExchangeFutureSet.class, this, super.toString());
+        }
+    }
+
+    /**
+     * Future which waits for exchange future on join event with a certain
+     * order to complete.
+     */
+    private class JoinFuture extends GridFutureAdapter<Long> {
+        /** Order to wait for. */
+        private final long waitOrder;
+
+        /** Order at the creation time. */
+        private final long startOrder;
+
+        /**
+         * @param startOrder Order at the creation time.
+         * @param waitOrder Order to wait for.
+         */
+        JoinFuture(long startOrder, long waitOrder) {
+            syncNotify(true);
+
+            this.startOrder = startOrder;
+            this.waitOrder = waitOrder;
+        }
+
+        /**
+         * Empty constructor required by {@link Externalizable}.
+         */
+        public JoinFuture() {
+            assert false;
+
+            startOrder = -1;
+            waitOrder = -1;
+        }
+
+        /**
+         * @return Order to wait for.
+         */
+        long waitOrder() {
+            return waitOrder;
+        }
+
+        /**
+         * @return Start order.
+         */
+        long startOrder() {
+            return startOrder;
+        }
+
+        /**
+         * @param newOrder New order.
+         */
+        void onOrderUpdated(long newOrder) {
+            if (waitOrder <= newOrder)
+                onDone(waitOrder);
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean equals(Object o) {
+            if (this == o)
+                return true;
+
+            JoinFuture other = (JoinFuture)o;
+
+            return other.waitOrder == waitOrder && other.startOrder == startOrder;
+        }
+
+        /** {@inheritDoc} */
+        @Override public int hashCode() {
+            return 31 * (int)(waitOrder ^ (waitOrder >>> 32)) + (int)(startOrder ^ (startOrder >>> 32));
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(JoinFuture.class, this);
         }
     }
 }

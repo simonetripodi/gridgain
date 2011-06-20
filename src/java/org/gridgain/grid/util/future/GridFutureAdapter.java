@@ -96,7 +96,17 @@ public class GridFutureAdapter<R> extends GridMetadataAwareAdapter implements Gr
      * @param ctx Kernal context.
      */
     public GridFutureAdapter(GridKernalContext ctx) {
+        this(ctx, SYNC_NOTIFY);
+    }
+
+    /**
+     * @param syncNotify Synchronous notify flag.
+     * @param ctx Kernal context.
+     */
+    public GridFutureAdapter(GridKernalContext ctx, boolean syncNotify) {
         assert ctx != null;
+
+        this.syncNotify = syncNotify;
 
         this.ctx = ctx;
 

@@ -35,7 +35,7 @@ public class GridCachePreloaderAdapter<K, V> implements GridCachePreloader<K, V>
     protected final GridCacheAffinity<K> aff;
 
     /** Start future (always completed by default). */
-    private final GridFuture startFut;
+    private final GridFuture finFut;
 
     /**
      * @param cctx Cache context.
@@ -48,7 +48,7 @@ public class GridCachePreloaderAdapter<K, V> implements GridCachePreloader<K, V>
         log = cctx.logger(getClass());
         aff = cctx.config().getAffinity();
 
-        startFut = new GridFinishedFuture(cctx.kernalContext());
+        finFut = new GridFinishedFuture(cctx.kernalContext());
     }
 
     /** {@inheritDoc} */
@@ -73,7 +73,12 @@ public class GridCachePreloaderAdapter<K, V> implements GridCachePreloader<K, V>
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> startFuture() {
-        return startFut;
+        return finFut;
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> joinFuture(long order) {
+        return finFut;
     }
 
     /**

@@ -427,6 +427,19 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         }
     }
 
+    /**
+     * Warns if this node is a daemon node.
+     */
+    private void checkDaemon() {
+        if (isDaemon())
+            U.warn(
+                log(),
+                "Executing closures on daemon node is reserved for special administrative operations. " +
+                "Coming from the user application it is likely a misuse.",
+                "Executing closures on daemon node is reserved for admin operations."
+            );
+    }
+
     /** {@inheritDoc} */
     @Override public <R> GridFuture<R> callAsync(@Nullable Callable<R> job) throws GridException {
         A.notNull(job, "job");
@@ -434,6 +447,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         guard();
 
         try {
+            checkDaemon();
+
             return ctx.closure().callAsync(UNICAST, job, nodes);
         }
         finally {
@@ -449,6 +464,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         guard();
 
         try {
+            checkDaemon();
+
             return ctx.closure().callAsync(UNICAST, jobs, nodes);
         }
         finally {
@@ -464,6 +481,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         guard();
 
         try {
+            checkDaemon();
+
             return ctx.closure().forkjoinAsync(UNICAST, jobs, rdc, nodes);
         }
         finally {
@@ -478,6 +497,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         guard();
 
         try {
+            checkDaemon();
+
             return ctx.closure().runAsync(UNICAST, job, nodes);
         }
         finally {
@@ -492,6 +513,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         guard();
 
         try {
+            checkDaemon();
+
             return ctx.closure().runAsync(UNICAST, jobs, nodes);
         }
         finally {

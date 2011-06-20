@@ -13,12 +13,17 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.lang.*;
 
 /**
- * This is the base class for segmentation resolvers.
+ * This is the base class for segmentation (a.k.a "split-brain" problem) resolvers.
  * <p>
  * Each segmentation resolver checks segment for validity, using its inner logic.
  * Typically, resolver should run light-weight single check (i.e. one IP address or
  * one shared folder). Compound segment checks may be performed using several
  * resolvers.
+ * <p>
+ * Note that GridGain support a logical segmentation and not limited to network
+ * related segmentation only. For example, a particular segmentation resolver
+ * can check for specific application or service present on the network and
+ * mark the topology as segmented in case it is not available.
  * <p>
  * The following implementations are provided (Enterprise edition only):
  * <ul>

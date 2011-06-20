@@ -527,7 +527,7 @@ public class GridCacheMap<K, V> {
 
                 GridCacheMapEntry<K, V> e = b.entry();
 
-                assert e != null;
+                assert e != null : "Null entry for bucket: " + b;
 
                 do {
                     GridCacheMapEntry<K, V> next = e.next();
@@ -655,6 +655,8 @@ public class GridCacheMap<K, V> {
             e = next;
         }
 
+        assert b == null || b.entry() != null;
+
         return e;
     }
 
@@ -688,6 +690,12 @@ public class GridCacheMap<K, V> {
     private GridCacheMapEntry<K, V> addEntry(int hash, K key, V val, int idx, long ttl) {
         Bucket<K, V> b = table[idx];
 
+        GridCacheMapEntry<K, V> prev = b == null ? null : b.entry();
+
+        GridCacheMapEntry<K, V> e = factory.create(ctx, key, hash, val, prev, ttl);
+
+        // Create bucket after creating entry, so we don't end up with empty
+        // bucket in case if there is exception.
         if (b == null) {
             b = new Bucket<K, V>();
 
@@ -698,13 +706,13 @@ public class GridCacheMap<K, V> {
             bucketCnt++;
         }
 
-        GridCacheMapEntry<K, V> e = factory.create(ctx, key, hash, val, b.entry(), ttl);
-
         b.onAdd(e);
 
         // Calculate only non internal entry.
         if (!(key instanceof GridCacheInternal))
             pubSize.getAndIncrement();
+
+        assert b.entry() != null;
 
         if (size.getAndIncrement() >= threshold)
             resize(2 * table.length);
@@ -1570,6 +1578,11 @@ public class GridCacheMap<K, V> {
          */
         int onRemove() {
             return --cnt;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(Bucket.class, this);
         }
     }
 }

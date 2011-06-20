@@ -791,7 +791,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
     /** {@inheritDoc} */
     @SuppressWarnings({"CatchGenericClass", "ThrowableInstanceNeverThrown"})
     @Override public void finish(boolean commit) throws GridException {
-        assert nearFinFutId != null || isInvalidate() || !commit;
+        assert nearFinFutId != null || isInvalidate() || !commit || isSystemInvalidate();
         assert nearMiniId != null;
 
         if (log.isDebugEnabled())

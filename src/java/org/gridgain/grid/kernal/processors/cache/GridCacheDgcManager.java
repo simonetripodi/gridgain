@@ -94,7 +94,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
                 "To change this behavior please configure 'dgcFrequency' and 'dgcSuspectLockTimeout' " +
                 "cache configuration properties.",
                 "Locks older than " + dgcSuspectLockTimeout + "ms. " +
-                "will be removed in case they are not present on lock owner nodes. "
+                "will be removed in case they are not present on lock owner nodes."
             );
 
             gcThread = new GridThread(new GcWorker());

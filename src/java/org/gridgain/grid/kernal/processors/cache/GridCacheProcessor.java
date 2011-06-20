@@ -239,8 +239,6 @@ public class GridCacheProcessor extends GridProcessorAdapter {
     /** {@inheritDoc} */
     @SuppressWarnings( {"unchecked"})
     @Override public void start() throws GridException {
-        assert caches != null;
-
         if (ctx.config().isDaemon())
             return;
 
@@ -445,6 +443,38 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         }
     }
 
+    /**
+     * @param cache Cache.
+     * @throws GridException If failed.
+     */
+    private void onKernalStart(GridCacheAdapter<?, ?> cache) throws GridException {
+        GridCacheContext<?, ?> ctx = cache.context();
+
+        // Start DHT cache as well.
+        if (ctx.config().getCacheMode() == PARTITIONED) {
+            GridDhtCache dht = ctx.near().dht();
+
+            GridCacheContext<?, ?> dhtCtx = dht.context();
+
+            for (GridCacheManager mgr : dhtManagers(dhtCtx))
+                mgr.onKernalStart();
+
+            dht.onKernalStart();
+
+            if (log.isDebugEnabled())
+                log.debug("Executed onKernalStart() callback for DHT cache: " + dht.name());
+        }
+
+        for (GridCacheManager mgr : F.view(ctx.managers(), F.notContains(dhtExcludes(ctx))))
+            mgr.onKernalStart();
+
+        cache.onKernalStart();
+
+        if (log.isDebugEnabled())
+            log.debug("Executed onKernalStart() callback for cache [name=" + cache.name() + ", mode=" +
+                cache.configuration().getCacheMode() + ']');
+    }
+
     /** {@inheritDoc} */
     @Override public void onKernalStart() throws GridException {
         if (ctx.config().isDaemon())
@@ -453,33 +483,8 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         for (GridNode n : ctx.discovery().remoteNodes())
             checkCache(n);
 
-        for (GridCacheAdapter<?, ?> cache : caches.values()) {
-            GridCacheContext<?, ?> ctx = cache.context();
-
-            // Start DHT cache as well.
-            if (ctx.config().getCacheMode() == PARTITIONED) {
-                GridDhtCache dht = ctx.near().dht();
-
-                GridCacheContext<?, ?> dhtCtx = dht.context();
-
-                for (GridCacheManager mgr : dhtManagers(dhtCtx))
-                    mgr.onKernalStart();
-
-                dht.onKernalStart();
-
-                if (log.isDebugEnabled())
-                    log.debug("Executed onKernalStart() callback for DHT cache: " + dht.name());
-            }
-
-            for (GridCacheManager mgr : F.view(ctx.managers(), F.notContains(dhtExcludes(ctx))))
-                mgr.onKernalStart();
-
-            cache.onKernalStart();
-
-            if (log.isDebugEnabled())
-                log.debug("Executed onKernalStart() callback for cache [name=" + cache.name() + ", mode=" +
-                    cache.configuration().getCacheMode() + ']');
-        }
+        for (GridCacheAdapter<?, ?> cache : caches.values())
+            onKernalStart(cache);
 
         for (GridCache<?, ?> proxy : proxies.values()) {
             try {

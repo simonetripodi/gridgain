@@ -51,6 +51,15 @@ public interface GridCachePreloader<K, V> {
     public GridFuture<?> startFuture();
 
     /**
+     * Future which completes after node with given order is joined and
+     * partition exchange for it completed.
+     *
+     * @param order Order to wait for.
+     * @return Future for the order.
+     */
+    public GridFuture<?> joinFuture(long order);
+
+    /**
      * Requests that preloader sends the request for the key.
      *
      * @param keys Keys to request.

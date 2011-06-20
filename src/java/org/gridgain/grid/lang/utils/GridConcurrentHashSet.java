@@ -10,6 +10,7 @@
 package org.gridgain.grid.lang.utils;
 
 import org.gridgain.grid.typedef.internal.*;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -26,7 +27,7 @@ public class GridConcurrentHashSet<E> extends GridSetWrapper<E> {
      * load factor, and concurrencyLevel.
      */
     public GridConcurrentHashSet() {
-        super(new ConcurrentHashMap<E, Object>());
+        super(new ConcurrentHashMap<E, E>());
     }
 
     /**
@@ -39,7 +40,7 @@ public class GridConcurrentHashSet<E> extends GridSetWrapper<E> {
      *      elements is negative.
      */
     public GridConcurrentHashSet(int initCap) {
-        super(new ConcurrentHashMap<E, Object>(initCap));
+        super(new ConcurrentHashMap<E, E>(initCap));
     }
 
     /**
@@ -59,7 +60,7 @@ public class GridConcurrentHashSet<E> extends GridSetWrapper<E> {
      *      non-positive.
      */
     public GridConcurrentHashSet(int initCap, float loadFactor, int conLevel) {
-        super(new ConcurrentHashMap<E, Object>(initCap, loadFactor, conLevel));
+        super(new ConcurrentHashMap<E, E>(initCap, loadFactor, conLevel));
     }
 
     /**
@@ -71,16 +72,35 @@ public class GridConcurrentHashSet<E> extends GridSetWrapper<E> {
      * @param c Collection to add.
      */
     public GridConcurrentHashSet(Collection<E> c) {
-        super(new ConcurrentHashMap<E, Object>(c.size()));
+        super(new ConcurrentHashMap<E, E>(c.size()));
 
         addAll(c);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Note that unlike regular add operation on a set, this method will only
+     * add the passed in element if it's not already present in set.
+     *
+     * @param e Element to add.
+     * @return {@code True} if element was added.
+     */
     @Override public boolean add(E e) {
         ConcurrentMap<E, Object> m = (ConcurrentMap<E, Object>)map;
 
-        return m.putIfAbsent(e, VAL) == null;
+        return m.putIfAbsent(e, e) == null;
+    }
+
+    /**
+     * Note that unlike regular add operation on a set, this method will only
+     * add the passed in element if it's not already present in set.
+     *
+     * @param e Element to add.
+     * @return Value previously present in set or {@code null} if set didn't have this value.
+     */
+    @Nullable public E addx(E e) {
+        ConcurrentMap<E, E> m = (ConcurrentMap<E, E>)map;
+
+        return m.putIfAbsent(e, e);
     }
 
     /** {@inheritDoc} */

@@ -166,7 +166,7 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** {@inheritDoc} */
     @Override public GridCacheMvccCandidate<K> removeLock() {
         GridCacheMvccCandidate<K> ret = super.removeLock();
-        
+
         locPart.onUnlock();
 
         return ret;

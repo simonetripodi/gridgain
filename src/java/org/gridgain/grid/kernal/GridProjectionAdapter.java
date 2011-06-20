@@ -504,6 +504,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
             if (F.isEmpty(nodes))
                 return this;
 
+            // Check for daemons in the projection.
+            if (F.exist(nodes, new GridPredicate<GridNode>() {
+                @Override public boolean apply(GridNode e) {
+                    return ctx.rich().rich(e).isDaemon();
+                }
+            }))
+                U.warn(log, "Creating projection with daemon node. Likely a misuse.");
+
             // Maintain dynamic/static static of the projection.
             return !dynamic() ? new GridProjectionImpl(this, ctx, F.retain(nodes(), true, nodes)) :
                 new GridProjectionImpl(this, ctx, F.and(predicate(),
@@ -562,6 +570,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         try {
             if (F.isEmpty(ids))
                 return this;
+
+            // Check for daemons in the projection.
+            if (F.exist(ids, new GridPredicate<UUID>() {
+                @Override public boolean apply(UUID id) {
+                    return node(id, EMPTY_PN).isDaemon();
+                }
+            }))
+                U.warn(log, "Creating projection with daemon node. Likely a misuse.");
 
             // Maintain dynamic/static static of the projection.
             return !dynamic() ? new GridProjectionImpl(this, ctx, F.retain(nodes(), true, F.<GridNode>nodeForNodeIds(ids))) :

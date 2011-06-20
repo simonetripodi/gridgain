@@ -283,7 +283,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
              */
             @SuppressWarnings("deprecation")
             @Override public void onEvent(GridEvent evt) {
-                assert evt instanceof GridDiscoveryEvent;
+                assert evt instanceof GridDiscoveryEvent : "Invalid event: " + evt;
 
                 GridDiscoveryEvent discoEvt = (GridDiscoveryEvent)evt;
 

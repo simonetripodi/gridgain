@@ -746,6 +746,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
      * @param entries Entries.
      * @return {@code True} if some mapping was added.
      */
+    @SuppressWarnings( {"ForLoopReplaceableByForEach"})
     private boolean map(Iterable<GridDhtCacheEntry<K, V>> entries) {
         // Assign keys to primary nodes.
         for (GridDhtCacheEntry<K, V> entry : entries) {

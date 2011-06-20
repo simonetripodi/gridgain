@@ -90,6 +90,9 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
     /** Events of these types should not be recorded. */
     private int[] exclEvtTypes;
 
+    /** Is local node daemon? */
+    private boolean isDaemon;
+
     /**
      * Constructs manager.
      *
@@ -222,6 +225,8 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
 
         GridIoManager io = ctx.io();
 
+        isDaemon = ctx.grid().localNode().isDaemon();
+
         if (io != null) {
             io.removeMessageListener(TOPIC_EVENT.name(), msgLsnr);
             io.removeMessageListener(TOPIC_EVENT);
@@ -273,14 +278,14 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
         try {
             int type = evt.type();
 
-            if (isUserRecordable(type) && !isHiddenEvent(type)) {
+            // Override user recordable settings for daemon node.
+            if ((isDaemon || isUserRecordable(type)) && !isHiddenEvent(type))
                 try {
                     getSpi().record(evt);
                 }
                 catch (GridSpiException e) {
                     U.error(log, "Failed to record event: " + evt, e);
                 }
-            }
 
             if (isRecordable(type))
                 notifyListeners(evt);

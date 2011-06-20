@@ -71,18 +71,18 @@ public class GridDhtPartitionSupplyPool<K, V> {
 
         for (int i = 0; i < poolSize; i++)
             workers.add(new SupplyWorker());
+
+        cctx.io().addHandler(GridDhtPartitionDemandMessage.class, new CI2<UUID, GridDhtPartitionDemandMessage<K, V>>() {
+            @Override public void apply(UUID id, GridDhtPartitionDemandMessage<K, V> m) {
+                processDemandMessage(id, m);
+            }
+        });
     }
 
     /**
      *
      */
     void start() {
-        cctx.io().addHandler(GridDhtPartitionDemandMessage.class, new CI2<UUID, GridDhtPartitionDemandMessage<K, V>>() {
-            @Override public void apply(UUID id, GridDhtPartitionDemandMessage<K, V> m) {
-                processDemandMessage(id, m);
-            }
-        });
-
         for (SupplyWorker w : workers)
             new GridThread(cctx.gridName(), "preloader-supply-worker", w).start();
     }

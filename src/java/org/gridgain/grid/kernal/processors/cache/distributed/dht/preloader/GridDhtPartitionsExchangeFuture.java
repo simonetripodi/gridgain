@@ -36,6 +36,9 @@ import java.util.concurrent.locks.*;
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
+    /** Dummy flag. */
+    private final boolean dummy;
+
     /** */
     private GridDhtPartitionTopology<K, V> top;
 
@@ -96,6 +99,24 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
     private GridLogger log;
 
     /**
+     * Dummy future created to trigger reassignments if partition
+     * topology changed while preloading.
+     *
+     * @param cctx Cache context.
+     * @param discoEvt Discovery event.
+     */
+    public GridDhtPartitionsExchangeFuture(GridCacheContext<K, V> cctx, GridDiscoveryEvent discoEvt) {
+        super(cctx.kernalContext());
+        dummy = true;
+
+        this.discoEvt = discoEvt;
+
+        syncNotify(true);
+
+        onDone();
+    }
+
+    /**
      * @param cctx Cache context.
      * @param busyLock Busy lock.
      * @param exchId Exchange ID.
@@ -104,8 +125,12 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
         GridDhtPartitionExchangeId exchId) {
         super(cctx.kernalContext());
 
+        syncNotify(true);
+
         assert busyLock != null;
         assert exchId != null;
+
+        dummy = false;
 
         this.cctx = cctx;
         this.busyLock = busyLock;
@@ -117,6 +142,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
         GridRichNode loc = cctx.localNode();
 
+        // In case of join, only wait for nodes with smaller or equal version
+        // to the joining node.
         Collection<GridRichNode> allNodes = new LinkedList<GridRichNode>(
             exchId.isJoined() ? CU.allNodes(cctx, exchId.order()) : CU.allNodes(cctx));
 
@@ -128,7 +155,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
         rmtIds = new HashSet<UUID>(F.viewReadOnly(rmtNodes, F.node2id()));
 
-        initFut = new GridFutureAdapter<Boolean>(ctx);
+        initFut = new GridFutureAdapter<Boolean>(ctx, true);
 
         addWatch(cctx.stopwatch("EXCHANGE_PARTITIONS"));
 
@@ -141,7 +168,16 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      * Empty constructor required for {@link Externalizable}.
      */
     public GridDhtPartitionsExchangeFuture() {
-        // No-op.
+        assert false;
+
+        dummy = true;
+    }
+
+    /**
+     * @return Dummy flag.
+     */
+    boolean dummy() {
+        return dummy;
     }
 
     /**
@@ -411,7 +447,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
     /** {@inheritDoc} */
     @Override public boolean onDone(Object res, Throwable err) {
-        if (super.onDone(res, err)) {
+        if (super.onDone(res, err) && !dummy) {
             if (log.isDebugEnabled())
                 log.debug("Completed partition exchange [localNode=" + cctx.nodeId() + ", exchange= " + this + ']');
 
@@ -426,7 +462,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             return true;
         }
 
-        return false;
+        return dummy;
     }
 
     /**
@@ -476,7 +512,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             }
             else if (log.isDebugEnabled())
                 log.debug("Exchange future full map is not sent [allReceived=" + allReceived() + ", ready=" + ready +
-                    ", replied=" + replied.get() + ", fut=" + this + ']');
+                    ", replied=" + replied.get() + ", init=" + init.get() + ", fut=" + this + ']');
         }
     }
 
@@ -514,9 +550,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
     /**
      * @param nodeId Left node id.
-     * @param otherExchFut Other future.
      */
-    public void onNodeLeft(final UUID nodeId, GridDhtPartitionsExchangeFuture<K, V> otherExchFut) {
+    public void onNodeLeft(final UUID nodeId) {
         if (isDone())
             return;
 
@@ -524,8 +559,12 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             return;
 
         try {
-            otherExchFut.initFuture().listenAsync(new CI1<GridFuture<?>>() {
-                @Override public void apply(GridFuture<?> t) {
+            // Wait for initialization part of this future to complete.
+            initFut.listenAsync(new CI1<GridFuture<?>>() {
+                @Override public void apply(GridFuture<?> f) {
+                    if (f.isDone())
+                        return;
+
                     if (!enterBusy())
                         return;
 
@@ -621,7 +660,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                 }
 
                 @Override public long endTime() {
-                    return startTime + cctx.gridConfig().getNetworkTimeout();
+                    return cctx.gridConfig().getNetworkTimeout() * cctx.gridConfig().getCacheConfiguration().length +
+                        startTime;
                 }
 
                 @Override public void onTimeout() {
@@ -633,7 +673,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                     try {
                         U.warn(log,
-                            "Retrying preload partition exchange due to timeout: " + GridDhtPartitionsExchangeFuture.this,
+                            "Retrying preload partition exchange due to timeout: " +
+                                GridDhtPartitionsExchangeFuture.this,
                             "Retrying preload partition exchange due to timeout ...");
 
                         recheck();

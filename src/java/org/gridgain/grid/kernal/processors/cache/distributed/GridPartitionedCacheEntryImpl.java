@@ -12,6 +12,7 @@ package org.gridgain.grid.kernal.processors.cache.distributed;
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.kernal.processors.cache.*;
+import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -53,7 +54,7 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
     /**
      * @return Dht cache.
      */
-    private GridCacheAdapter<K, V> dht() {
+    private GridDhtCache<K, V> dht() {
         return ctx.near().dht();
     }
 
@@ -158,9 +159,9 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
             GridCacheProjectionImpl<K, V> prev = ctx.gate().enter(prjPerCall);
 
             try {
-                return ctx.cloneOnFlag(
-                    dht().entryEx(key).peek0(false, mode, filter, ctx.tm().localTxx())
-                );
+                GridCacheEntryEx<K, V> entry = dht().peekEx(key);
+
+                return entry == null ? null : ctx.cloneOnFlag(entry.peek0(false, mode, filter, ctx.tm().localTxx()));
             }
             catch (GridCacheEntryRemovedException ignore) {
                 // No-op.
@@ -208,7 +209,12 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
 
     /** {@inheritDoc} */
     @Override protected GridCacheEntryEx<K, V> entryEx() {
-        return ctx.belongs(key, ctx.localNode()) ? dht().entryEx(key) : ctx.near().entryEx(key);
+        try {
+            return ctx.belongs(key, ctx.localNode()) ? dht().entryEx(key) : ctx.near().entryEx(key);
+        }
+        catch (GridDhtInvalidPartitionException ignore) {
+            return ctx.near().entryEx(key);
+        }
     }
 
     /** {@inheritDoc} */
