@@ -34,7 +34,7 @@ import java.util.*;
  * This set does not allow {@code null} values.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.20062011
+ * @version 3.1.1c.21062011
  */
 public class GridListSet<V> extends GridSerializableSet<V> implements Cloneable {
     /** Internal list. */

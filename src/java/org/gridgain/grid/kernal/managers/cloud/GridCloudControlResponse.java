@@ -19,7 +19,7 @@ import java.util.*;
  * Cloud control response. Coordinator node sends it as receipt.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.20062011
+ * @version 3.1.1c.21062011
  */
 class GridCloudControlResponse implements Externalizable {
     /** Response status: node that received command is not cloud coordinator. */

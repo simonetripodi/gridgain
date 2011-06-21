@@ -23,7 +23,7 @@ import static org.gridgain.grid.util.gridify.GridifyUtils.UNKNOWN_SIZE;
  * This adapter used in grid task for {@link GridifySetToSet} annotation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.20062011
+ * @version 3.1.1c.21062011
  */
 public class GridifySetToSetAbstractAspect {
     /**

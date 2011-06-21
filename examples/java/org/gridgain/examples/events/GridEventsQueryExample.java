@@ -17,7 +17,7 @@ import org.gridgain.grid.typedef.*;
  * task to generate events, and then query them.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.20062011
+ * @version 3.1.1c.21062011
  */
 public final class GridEventsQueryExample {
     /**

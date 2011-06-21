@@ -17,7 +17,7 @@ import org.gridgain.grid.util.mbean.*;
  * about file-based swapspace SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.20062011
+ * @version 3.1.1c.21062011
  */
 @GridMBeanDescription("MBean that provides access to file-based swap space SPI configuration.")
 public interface GridFileSwapSpaceSpiMBean extends GridSpiManagementMBean {
