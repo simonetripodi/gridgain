@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction adapter for cache transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxLocalEx<K, V> {
@@ -103,6 +103,11 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
         super(cctx, xidVer, implicit, true, concurrency, isolation, timeout, invalidate, swapEnabled, storeEnabled);
 
         minVer = xidVer;
+    }
+
+    /** {@inheritDoc} */
+    @Override public UUID eventNodeId() {
+        return cctx.nodeId();
     }
 
     /** {@inheritDoc} */
@@ -506,23 +511,23 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                                         ((GridNearCacheEntry<K, V>)cached).recordDhtVersion(txEntry.dhtVersion());
 
                                     GridCacheOperation op = isSystemInvalidate() ? DELETE : txEntry.op();
-                                    
+
                                     if (op == CREATE || op == UPDATE) {
-                                        T2<Boolean, V> t = cached.innerSet(this, nodeId, txEntry.nodeId(),
+                                        T2<Boolean, V> t = cached.innerSet(this, eventNodeId(), txEntry.nodeId(),
                                             txEntry.value(), txEntry.valueBytes(), false, txEntry.expireTime(),
                                             txEntry.ttl(), true, txEntry.filters());
 
                                         if (nearCached != null && t.get1())
-                                            nearCached.innerSet(null, nodeId, nodeId, txEntry.value(),
+                                            nearCached.innerSet(null, eventNodeId(), nodeId, txEntry.value(),
                                                 txEntry.valueBytes(), false, txEntry.expireTime(), txEntry.ttl(), false,
                                                 CU.<K, V>empty());
                                     }
                                     else if (op == DELETE) {
-                                        T2<Boolean, V> t = cached.innerRemove(this, nodeId, txEntry.nodeId(), false,
-                                            true, txEntry.filters());
+                                        T2<Boolean, V> t = cached.innerRemove(this, eventNodeId(), txEntry.nodeId(),
+                                            false, true, txEntry.filters());
 
                                         if (nearCached != null && t.get1())
-                                            nearCached.innerRemove(null, nodeId, nodeId, false, false,
+                                            nearCached.innerRemove(null, eventNodeId(), nodeId, false, false,
                                                 CU.<K, V>empty());
                                     }
                                     else if (op == READ) {

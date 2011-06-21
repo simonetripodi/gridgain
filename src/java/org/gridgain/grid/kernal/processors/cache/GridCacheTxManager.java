@@ -14,6 +14,7 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.events.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
+import org.gridgain.grid.kernal.processors.cache.distributed.near.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.logger.*;
@@ -35,7 +36,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -651,20 +652,22 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         for (GridCacheTxEntry<K, V> entry : entries) {
             GridCacheEntryEx<K, V> cached = entry.cached();
 
-            if (cached == null) {
+            if (cached == null)
                 cached = cctx.cache().peekEx(entry.key());
-
-                if (cached == null)
-                    continue;
-            }
 
             // Near entries are marked obsolete in many cases even
             // if transaction operation is not DELETE.
-            if (tx.near() || entry.op() == DELETE) {
-                GridCacheVersion obsoleteVer = cached.obsoleteVersion();
+            if (cached != null) {
+                if (tx.near() || entry.op() == DELETE)
+                    if (cached.obsolete())
+                        cctx.cache().removeIfObsolete(entry.key());
+            }
 
-                if (obsoleteVer != null)
-                    cctx.cache().removeIfObsolete(entry.key());
+            if (tx.dht()) {
+                GridNearCacheEntry<K, V> e = cctx.dht().near().peekExx(entry.key());
+
+                if (e != null && e.obsolete())
+                    cctx.dht().near().removeIfObsolete(e.key());
             }
         }
     }
@@ -872,6 +875,9 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
 
             // 13. Clear context.
             txContextReset();
+
+            // 14. Unwind any left-over events.
+            cctx.events().unwind();
 
             if (log.isDebugEnabled())
                 log.debug("Committed from TM: " + tx);

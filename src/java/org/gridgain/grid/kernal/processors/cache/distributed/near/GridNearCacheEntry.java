@@ -28,7 +28,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
@@ -162,30 +162,29 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
      * @param expireTime Expire time.
      * @param ttl Time to live.
      * @param primaryNodeId Primary node ID.
-     * @throws GridCacheEntryRemovedException If removed.
      */
     public void updateOrEvict(GridCacheVersion dhtVer, @Nullable V val, @Nullable byte[] valBytes, long expireTime,
-        long ttl, UUID primaryNodeId) throws GridCacheEntryRemovedException {
+        long ttl, UUID primaryNodeId) {
         assert dhtVer != null;
 
         cctx.versions().onReceived(primaryNodeId, dhtVer);
 
         synchronized (mux) {
-            checkObsolete();
+            if (!obsolete()) {
+                // Don't set DHT version to null until we get a match from DHT remote transaction.
+                if (F.eq(this.dhtVer, dhtVer))
+                    this.dhtVer = null;
 
-            // Don't set DHT version to null until we get a match from DHT remote transaction.
-            if (F.eq(this.dhtVer, dhtVer))
-                this.dhtVer = null;
-
-            // If we are here, then we already tried to evict this entry.
-            // If cannot evict, then update.
-            if (this.dhtVer == null) {
-                if (!markObsolete(dhtVer, true)) {
-                    this.val = val;
-                    this.valBytes = valBytes;
-                    this.expireTime = expireTime;
-                    this.ttl = ttl;
-                    this.primaryNodeId = primaryNodeId;
+                // If we are here, then we already tried to evict this entry.
+                // If cannot evict, then update.
+                if (this.dhtVer == null) {
+                    if (!markObsolete(dhtVer, true)) {
+                        this.val = val;
+                        this.valBytes = valBytes;
+                        this.expireTime = expireTime;
+                        this.ttl = ttl;
+                        this.primaryNodeId = primaryNodeId;
+                    }
                 }
             }
         }

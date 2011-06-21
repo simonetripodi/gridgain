@@ -132,7 +132,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridFactory {
     /**
@@ -1232,8 +1232,14 @@ public class GridFactory {
             if (dfltGrid != null)
                 allGrids.add(dfltGrid.getGrid());
 
-            for (GridNamedInstance grid : grids.values())
-                allGrids.add(grid.getGrid());
+            for (GridNamedInstance grid : grids.values()) {
+                if (grid != null) {
+                    Grid g = grid.getGrid();
+
+                    if (g != null)
+                        allGrids.add(g);
+                }
+            }
 
             return allGrids;
         }
@@ -1414,7 +1420,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.19062011
+     * @version 3.1.1c.20062011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -2321,7 +2327,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.19062011
+         * @version 3.1.1c.20062011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

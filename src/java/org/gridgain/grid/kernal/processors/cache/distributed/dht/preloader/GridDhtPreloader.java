@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * DHT cache preloader.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** Exchange history size. */
@@ -76,10 +76,10 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
             if (!enterBusy())
                 return;
 
+            GridDiscoveryEvent e = (GridDiscoveryEvent)evt;
+
             try {
                 GridRichNode loc = cctx.localNode();
-
-                GridDiscoveryEvent e = (GridDiscoveryEvent)evt;
 
                 assert e.type() == EVT_NODE_JOINED || e.type() == EVT_NODE_LEFT || e.type() == EVT_NODE_FAILED;
 
@@ -125,7 +125,8 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                             "[locOrder=" + loc.order() + ", joinNode=" + n + ']');
             }
             catch (InterruptedException ignore) {
-                U.warn(log, "Got interrupted while processing discovery event (event won't be processed): " + evt);
+                U.warn(log, "Got interrupted while processing discovery event (is grid stopping?) [evt=" +
+                    evt.name() + ", evtNodeId=" + e.eventNodeId() + ']');
             }
             finally {
                 leaveBusy();
@@ -242,7 +243,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
             demandPool.syncFuture().get();
 
-            U.log(log, "Completed preloading in SYNC mode in " + (System.currentTimeMillis() - start) + "ms.");
+            U.log(log, "Completed preloading in SYNC mode in " + (System.currentTimeMillis() - start) + " ms.");
         }
     }
 

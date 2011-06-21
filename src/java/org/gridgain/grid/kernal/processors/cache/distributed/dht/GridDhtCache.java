@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -644,10 +644,12 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /**
      * @param nodeId Node ID.
      * @param req Request.
+     * @param res Response.
      * @return Remote transaction.
      * @throws GridException If failed.
      */
-    @Nullable GridDhtTxRemote<K, V> startRemoteTx(UUID nodeId, GridDhtTxPrepareRequest<K, V> req) throws GridException {
+    @Nullable GridDhtTxRemote<K, V> startRemoteTx(UUID nodeId, GridDhtTxPrepareRequest<K, V> req,
+        GridDhtTxPrepareResponse res) throws GridException {
         if (!F.isEmpty(req.writes())) {
             GridDhtTxRemote<K, V> tx = new GridDhtTxRemote<K, V>(
                 req.nearNodeId(),
@@ -677,14 +679,16 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
             // in prepare phase will get properly ordered as well.
             tx.prepare();
 
+            res.invalidPartitions(tx.invalidPartitions());
+
             if (tx.empty()) {
                 tx.rollback();
 
                 return null;
             }
-
-            // Add remote candidates and reorder completed and uncompleted versions.
-            tx.addRemoteCandidates(req.candidatesByKey(), req.committedVersions(), req.rolledbackVersions());
+            else
+                // Add remote candidates and reorder completed and uncompleted versions.
+                tx.addRemoteCandidates(req.candidatesByKey(), req.committedVersions(), req.rolledbackVersions());
 
             if (req.concurrency() == EVENTUALLY_CONSISTENT) {
                 if (log.isDebugEnabled())
@@ -910,8 +914,8 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
                         res.addInvalidPartition(e.partition());
 
-                        if (tx != null) {
-                            tx.clearEntry(entry.key());
+                        if (tx != null && key != null) {
+                            tx.clearEntry(key);
 
                             if (log.isDebugEnabled())
                                 log.debug("Cleared invalid entry from remote transaction (will retry) [entry=" +
@@ -1061,11 +1065,11 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
         GridDhtTxPrepareResponse<K, V> res;
 
         try {
+            res = new GridDhtTxPrepareResponse<K, V>(req.version(), req.futureId(), req.miniId());
+
             // Start near transaction first.
             nearTx = near.startRemoteTx(ctx.deploy().globalLoader(), nodeId, req);
-            dhtTx = startRemoteTx(nodeId, req);
-
-            res = new GridDhtTxPrepareResponse<K, V>(req.version(), req.futureId(), req.miniId());
+            dhtTx = startRemoteTx(nodeId, req, res);
 
             // Set evicted keys from near transaction.
             if (nearTx != null) {

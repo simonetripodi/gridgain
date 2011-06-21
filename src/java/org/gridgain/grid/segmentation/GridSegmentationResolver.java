@@ -23,26 +23,40 @@ import org.gridgain.grid.lang.*;
  * Note that GridGain support a logical segmentation and not limited to network
  * related segmentation only. For example, a particular segmentation resolver
  * can check for specific application or service present on the network and
- * mark the topology as segmented in case it is not available.
+ * mark the topology as segmented in case it is not available. In other words
+ * you can equate the service outage with network outage via segmentation resolution
+ * and employ the unified approach in dealing with these types of problems.
  * <p>
- * The following implementations are provided (Enterprise edition only):
+ * The following implementations are built-in (Enterprise edition only):
  * <ul>
- *     <li>{@code GridReachabilitySegmentationResolver}</li>
- *     <li>{@code GridSharedFsSegmentationResolver}</li>
- *     <li>{@code GridTcpSegmentationResolver}</li>
+ *     <li>{@link org.gridgain.grid.segmentation.reachability.GridReachabilitySegmentationResolver}</li>
+ *     <li>{@link org.gridgain.grid.segmentation.sharedfs.GridSharedFsSegmentationResolver}</li>
+ *     <li>{@link org.gridgain.grid.segmentation.tcp.GridTcpSegmentationResolver}</li>
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  * @see GridConfiguration#getSegmentationResolvers()
  * @see GridConfiguration#getSegmentationPolicy()
  * @see GridConfiguration#getSegmentCheckFrequency()
  * @see GridConfiguration#isAllSegmentationResolversPassRequired()
  * @see GridConfiguration#isWaitForSegmentOnStart()
+ * @see GridSegmentationPolicy
  */
 public abstract class GridSegmentationResolver extends GridAbsPredicate {
     /**
      * Checks whether segment is valid.
+     * <p>
+     * When segmentation happens every node ends up in either one of two segments:
+     * <ul>
+     *     <li>Correct segment</li>
+     *     <li>Invalid segment</li>
+     * </ul>
+     * Nodes in correct segment will continue operate as if nodes in the invalid segment
+     * simply left the topology (i.e. the topology just got "smaller"). Nodes in the
+     * invalid segment will realized that were "left out or disconnected" from the correct segment
+     * and will try to reconnect via {@link GridSegmentationPolicy segmentation policy} set
+     * in configuration.
      *
      * @return {@code True} if segment is correct, {@code false} otherwise.
      * @throws GridException If an error occurred.

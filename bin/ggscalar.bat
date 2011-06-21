@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.19062011
+:: Version: 3.1.1c.20062011
 ::
 
 ::
@@ -67,11 +67,11 @@ if "%OS%" == "Windows_NT" set PROG_NAME=%~nx0%
 ::
 :: Set Java options.
 ::
-set JAVA_OPTS=-Xss2m
+set JAVA_OPTS=-Xss2m  -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%"
 
 ::
 :: Start REPL.
 ::
-scala %QUIET%  -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%" -cp "%CP%" -i %GRIDGAIN_HOME%\bin\scalar.scala
+scala %QUIET% -cp "%CP%" -i %GRIDGAIN_HOME%\bin\scalar.scala
 
 :error_finish

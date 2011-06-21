@@ -9,6 +9,8 @@
 
 package org.gridgain.grid.lang.utils;
 
+import org.gridgain.grid.lang.*;
+
 import java.util.concurrent.atomic.*;
 
 /**
@@ -16,7 +18,7 @@ import java.util.concurrent.atomic.*;
  * also addes greater than and less than atomic set operations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridAtomicLong extends AtomicLong {
     /**
@@ -95,6 +97,26 @@ public class GridAtomicLong extends AtomicLong {
             long cur = get();
 
             if (check <= cur) {
+                if (compareAndSet(cur, update))
+                    return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    /**
+     * Atomically updates value only if passed in predicate returns {@code true}.
+     *
+     * @param p Predicate to check.
+     * @param update Value to set.
+     * @return {@code True} if value was set.
+     */
+    public boolean checkAndSet(GridPredicate<Long> p, long update) {
+        while (true) {
+            long cur = get();
+
+            if (p.apply(cur)) {
                 if (compareAndSet(cur, update))
                     return true;
             }

@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
@@ -216,8 +216,12 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
         GridNode node = cctx.discovery().node(nodeId);
 
         // If remote node has no near cache, don't add it.
-        if (node == null || !U.hasNearCache(node, cctx.dht().near().name()))
+        if (node == null || !U.hasNearCache(node, cctx.dht().near().name())) {
+            if (log.isDebugEnabled())
+                log.debug("Ignoring near reader because near cache is disabled: " + nodeId);
+
             return null;
+        }
 
         // If remote node is (primary?) or back up, don't add it as a reader.
         if (U.nodeIds(cctx.affinity(partition(), CU.allNodes(cctx))).contains(nodeId))

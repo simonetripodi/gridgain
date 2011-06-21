@@ -31,7 +31,7 @@ import org.junit.runners.Suite.*;
  * configuration file.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 @RunWith(GridJunit4Suite.class)
 @SuiteClasses({

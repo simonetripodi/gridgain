@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -934,6 +934,13 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
         return super.keySize();
     }
 
+    /**
+     * @return Near entries.
+     */
+    public Set<GridCacheEntry<K, V>> nearEntries() {
+        return super.entrySet(CU.<K, V>empty());
+    }
+
     /** {@inheritDoc} */
     @Override public Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<? extends K> keys) {
         return CU.mapKeysToNodes(ctx, keys);
@@ -983,6 +990,15 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     @Override public boolean evict(K key, @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         // Use unary 'and' to make sure that both sides execute.
         return super.evict(key, filter) & dht.evict(key, filter);
+    }
+
+    /**
+     * @param key Key to evict.
+     * @param filter Optional filter.
+     * @return {@code True} if evicted.
+     */
+    public boolean evictNearOnly(K key, @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return super.evict(key, filter);
     }
 
     /** {@inheritDoc} */

@@ -16,21 +16,22 @@ import org.gridgain.grid.loaders.cmdline.*;
  * Policy that defines how node will react on topology segmentation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
+ * @see GridSegmentationResolver
  */
 public enum GridSegmentationPolicy {
     /**
      * When segmentation policy is {@code RESTART_JVM}, all listeners will receive
      * {@link GridEventType#EVT_NODE_SEGMENTED} event and then JVM will be restarted.
-     * Note, that this will work only if GridGain is started with {@link GridCommandLineLoader}
-     * via standard ggstart.{sh|bat} shell script.
+     * Note, that this will work <b>only</b> if GridGain is started with {@link GridCommandLineLoader}
+     * via standard <code>ggstart.{sh|bat}</code> shell script.
      */
     RESTART_JVM,
 
     /**
      * When segmentation policy is {@code STOP}, all listeners will receive
      * {@link GridEventType#EVT_NODE_SEGMENTED} event and then particular grid node
-     * will be restarted via call to {@link GridFactory#stop(boolean, boolean)}.
+     * will be stopped via call to {@link GridFactory#stop(boolean, boolean)}.
      */
     STOP,
 
@@ -50,7 +51,7 @@ public enum GridSegmentationPolicy {
      * a implement logic to handle this event.
      * <p>
      * This policy is intended to use when it is needed to perform user-defined
-     * specific node stop and then start.
+     * logic on node stop and then start.
      */
     NOOP
 }

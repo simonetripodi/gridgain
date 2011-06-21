@@ -14,16 +14,19 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.affinity.*;
 import org.gridgain.grid.cache.affinity.partitioned.*;
 import org.gridgain.grid.cache.affinity.replicated.*;
+import org.gridgain.grid.cache.eviction.*;
 import org.gridgain.grid.cache.eviction.always.*;
 import org.gridgain.grid.cache.eviction.lirs.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.kernal.processors.cache.datastructures.*;
+import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.near.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.replicated.*;
 import org.gridgain.grid.kernal.processors.cache.local.*;
 import org.gridgain.grid.kernal.processors.cache.query.*;
+import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
@@ -41,7 +44,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -133,11 +136,18 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                 if (cfg.getNearEvictionPolicy() != null)
                     U.warn(log, "Ignoring near eviction policy since near cache is disabled.");
 
-                cfg.setNearEvictionPolicy(new GridCacheAlwaysEvictionPolicy());
+                cfg.setNearEvictionPolicy(new NearEvictionPolicyWrapper(new GridCacheAlwaysEvictionPolicy()));
             }
+            else {
+                GridCacheEvictionPolicy policy = cfg.getNearEvictionPolicy();
 
-            if (cfg.getNearEvictionPolicy() == null)
-                cfg.setNearEvictionPolicy(new GridCacheLirsEvictionPolicy((DFLT_NEAR_SIZE)));
+                if (policy == null)
+                    cfg.setNearEvictionPolicy(new NearEvictionPolicyWrapper(
+                        new GridCacheLirsEvictionPolicy((DFLT_NEAR_SIZE))));
+                else
+                    cfg.setNearEvictionPolicy(policy instanceof NearEvictionPolicyWrapper ? policy :
+                        new NearEvictionPolicyWrapper(policy));
+            }
         }
     }
 
@@ -775,6 +785,32 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         /** {@inheritDoc} */
         @Override public int partition(Object key) {
             return 0;
+        }
+    }
+
+    /**
+     *
+     */
+    private static class NearEvictionPolicyWrapper<K, V> implements GridCacheEvictionPolicy<K, V> {
+        /** Wrapped policy. */
+        private final GridCacheEvictionPolicy<K, V> policy;
+
+        /**
+         * @param policy Wrapped near policy.
+         */
+        private NearEvictionPolicyWrapper(GridCacheEvictionPolicy<K, V> policy) {
+            this.policy = policy;
+        }
+
+        /** {@inheritDoc} */
+        @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
+            policy.onEntryAccessed(rmv, new GridCacheEntryWrapper<K, V>(entry) {
+                @Override public boolean evict(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter) {
+                    GridPartitionedCacheEntryImpl<K, V> e = (GridPartitionedCacheEntryImpl<K, V>)wrapped();
+
+                    return e.evictNearOnly(filter);
+                }
+            });
         }
     }
 }

@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Future for exchanging partition maps.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
@@ -310,6 +310,9 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                 assert discoEvt != null;
 
+                // Update before waiting for locks.
+                top.updateJoinVersion(exchId);
+
                 // Only wait in case of join event. If a node leaves,
                 // then transactions handled by it will be either remapped
                 // or invalidated.
@@ -562,7 +565,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             // Wait for initialization part of this future to complete.
             initFut.listenAsync(new CI1<GridFuture<?>>() {
                 @Override public void apply(GridFuture<?> f) {
-                    if (f.isDone())
+                    if (isDone())
                         return;
 
                     if (!enterBusy())
@@ -660,8 +663,15 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                 }
 
                 @Override public long endTime() {
-                    return cctx.gridConfig().getNetworkTimeout() * cctx.gridConfig().getCacheConfiguration().length +
-                        startTime;
+                    long t = cctx.gridConfig().getNetworkTimeout() * cctx.gridConfig().getCacheConfiguration().length;
+
+                    // Account for overflow.
+                    long endTime = t < 0 ? Long.MAX_VALUE : startTime + t;
+
+                    // Account for overflow.
+                    endTime = endTime < 0 ? Long.MAX_VALUE : endTime;
+
+                    return endTime;
                 }
 
                 @Override public void onTimeout() {
@@ -675,7 +685,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                         U.warn(log,
                             "Retrying preload partition exchange due to timeout: " +
                                 GridDhtPartitionsExchangeFuture.this,
-                            "Retrying preload partition exchange due to timeout ...");
+                            "Retrying preload partition exchange due to timeout.");
 
                         recheck();
                     }

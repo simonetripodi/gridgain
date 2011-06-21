@@ -18,13 +18,14 @@ import org.gridgain.grid.cache.eviction.*;
  * and its size should be kept at {@code 0}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridCacheAlwaysEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheAlwaysEvictionPolicyMBean {
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
         // Always evict.
-        entry.evict();
+        if (!rmv)
+            entry.evict();
     }
 }

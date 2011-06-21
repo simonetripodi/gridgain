@@ -23,7 +23,7 @@ import GridClosureCallMode._
  * two nodes. It is analogous to `GridMessagingPingPongExample` on Java side.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 object ScalarPingPongExample {
     def main(args: Array[String]) {
@@ -93,7 +93,7 @@ object ScalarPingPongExample {
         val g = grid$
 
         if (g.remoteNodes().size() < 2) {
-            error("I need at least two remote nodes!")
+            sys.error("I need at least two remote nodes!")
 
             return
         }
@@ -117,7 +117,7 @@ object ScalarPingPongExample {
         // Configure remote node 'n2' to receive messages from 'n1'.
         n2.remoteListenAsync(n1, new GridListenActor[String] {
             // Get local count down latch.
-            private val latch: CountDownLatch = g.nodeLocal.get("latch")
+            private lazy val latch: CountDownLatch = g.nodeLocal.get("latch")
 
             def receive(nid: UUID, msg: String) {
                 println(msg)
@@ -139,6 +139,8 @@ object ScalarPingPongExample {
             val latch = new CountDownLatch(10)
 
             g.nodeLocal[String, CountDownLatch].put("latch", latch)
+
+            println("Latch set: " + g.nodeLocal.get("latch"))
 
             n1 !< "PING"
 

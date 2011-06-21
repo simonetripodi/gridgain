@@ -32,13 +32,13 @@ import org.gridgain.grid.typedef.internal.*;
  * scripts that's used to set up class path for the main scripts.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.19062011")
+    version = "3.1.1c.20062011")
 @GridSpiMultipleInstancesSupport(false)
 public class GridJxinsightTracingSpi extends GridSpiAdapter implements GridTracingSpi, GridJxinsightTracingSpiMBean {
     /** Logger. */

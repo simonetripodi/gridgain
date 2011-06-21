@@ -19,7 +19,7 @@ import org.gridgain.grid._
  * Peer deploy aware adapter for Java's `GridAbsClosureX`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 class ScalarAbsClosureX(private val f: () => Unit) extends GridAbsClosureX {
     assert(f != null)

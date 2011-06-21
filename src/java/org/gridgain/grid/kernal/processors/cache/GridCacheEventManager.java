@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.*;
  * Cache event manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridCacheEventManager<K, V> extends GridCacheManager<K, V> {
     /** Local node ID. */
@@ -91,38 +91,39 @@ public class GridCacheEventManager<K, V> extends GridCacheManager<K, V> {
     /**
      * @param part Partition.
      * @param key Key for the event.
-     * @param nodeId Node ID.
+     * @param evtNodeId Node ID.
      * @param owner Possible surrounding lock.
      * @param type Event type.
      * @param newVal New value.
      * @param oldVal Old value.
      */
-    public void addEvent(int part, K key, UUID nodeId, GridCacheMvccCandidate<K> owner,
+    public void addEvent(int part, K key, UUID evtNodeId, GridCacheMvccCandidate<K> owner,
         int type, V newVal, V oldVal) {
         GridCacheTx tx = owner == null ? null : cctx.tm().tx(owner.version());
 
-        addEvent(part, key, nodeId, tx == null ? null : tx.xid(), owner == null ? null : owner.id(), type,
+        addEvent(part, key, evtNodeId, tx == null ? null : tx.xid(), owner == null ? null : owner.id(), type,
             newVal, oldVal);
     }
 
     /**
      * @param part Partition.
      * @param key Key for the event.
-     * @param nodeId Node ID.
+     * @param evtNodeId Event node ID.
      * @param xid Transaction ID.
      * @param lockId Lock ID.
      * @param type Event type.
      * @param newVal New value.
      * @param oldVal Old value.
      */
-    public void addEvent(int part, K key, UUID nodeId, UUID xid, @Nullable UUID lockId, int type, @Nullable V newVal, @Nullable V oldVal) {
+    public void addEvent(int part, K key, UUID evtNodeId, UUID xid, @Nullable UUID lockId, int type, @Nullable V newVal,
+        @Nullable V oldVal) {
         assert key != null;
 
         if (cctx.gridEvents().isRecordable(type))
             // Events are not made for internal entry.
             if (!(key instanceof GridCacheInternal))
-                evts.add(new GridCacheEvent(cctx.name(), nodeId, "Cache event.", type, part, key, xid, lockId,
-                    newVal, oldVal));
+                evts.add(new GridCacheEvent(cctx.name(), cctx.nodeId(), evtNodeId, "Cache event.", type, part, key, xid,
+                    lockId, newVal, oldVal));
     }
 
     /**

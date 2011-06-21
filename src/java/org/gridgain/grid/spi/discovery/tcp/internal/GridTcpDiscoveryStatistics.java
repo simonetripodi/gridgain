@@ -23,7 +23,7 @@ import java.util.concurrent.*;
  * Statistics for {@link GridTcpDiscoverySpi}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridTcpDiscoveryStatistics {
     /** Join started timestamp. */
@@ -362,7 +362,6 @@ public class GridTcpDiscoveryStatistics {
         Long sentTs = ringMsgsSendTs.get(msg.id());
 
         if (sentTs != null) {
-
             long duration  = System.currentTimeMillis() - sentTs;
 
             if (maxRingMsgTime < duration) {

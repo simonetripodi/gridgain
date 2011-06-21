@@ -23,7 +23,7 @@ import collection.JavaConversions._
  * Demonstrates basic Data Grid (a.k.a cache) operations with Scalar.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 object ScalarCacheExample {
     /**
@@ -84,7 +84,7 @@ object ScalarCacheExample {
     def twoViewsOneCache() {
         // Create two typed views on the same cache.
         val view1 = cache$("partitioned").get.viewByType(classOf[String], classOf[Int])
-        val view2 = cache$("partitioned").get.viewByType(classOf[Symbol], classOf[String])
+        val view2 = cache$("partitioned").get.viewByType(classOf[Int], classOf[String])
 
         view1 += ("key1" -> 1)
         view1 += ("key2" -> 2)
@@ -92,8 +92,8 @@ object ScalarCacheExample {
         // Attempt to update with predicate (will not update due to predicate failing).
         view1 += ("key2" -> 3, (k: String, v: Int) => v != 2)
 
-        view2 += ('sym1 -> "val1")
-        view2 += ('sym2 -> "val2")
+        view2 += (1 -> "val1")
+        view2 += (2 -> "val2")
 
         println("Values in view1:")
         view1.values foreach println

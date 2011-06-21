@@ -27,7 +27,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Partitioned cache entry public API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V> {
     /**
@@ -56,6 +56,14 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
      */
     private GridDhtCache<K, V> dht() {
         return ctx.near().dht();
+    }
+
+    /**
+     * @param filter Optional filter.
+     * @return {@code True} if evicted.
+     */
+    public boolean evictNearOnly(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return ctx.near().evictNearOnly(key, filter);
     }
 
     /** {@inheritDoc} */

@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridFunc {
     /** */
@@ -5446,11 +5446,11 @@ public class GridFunc {
     }
 
     /**
-     * Calls given {@code one-way} closure over the each element of the provided
+     * Calls given {@code side-effect only} closure over the each element of the provided
      * collection.
      *
      * @param c Collection to call closure over.
-     * @param f One-way closure to call over the collection.
+     * @param f Side-effect only closure to call over the collection.
      * @param p Optional set of predicates. Only if collection element evaluates
      *      to {@code true} for given predicates the closure will be applied to it.
      *      If no predicates provided - closure will be applied to all collection
@@ -5468,10 +5468,10 @@ public class GridFunc {
     }
 
     /**
-     * Calls given {@code one-way} closure over the each element of the provided array.
+     * Calls given {@code side-effect only} closure over the each element of the provided array.
      *
      * @param c Array to call closure over.
-     * @param f One-way closure to call over the array.
+     * @param f Side-effect only closure to call over the array.
      * @param p Optional set of predicates. Only if collection element evaluates
      *      to {@code true} for given predicates the closure will be applied to it.
      *      If no predicates provided - closure will be applied to all collection
@@ -5802,7 +5802,7 @@ public class GridFunc {
     }
 
     /**
-     * Calls given {@code one-way} closure (if provided) over the each element of the
+     * Calls given {@code side-effect only} closure (if provided) over the each element of the
      * provided map. If provided closure is {@code null} this method is no-op.
      *
      * @param m Map to call closure over.
@@ -7452,54 +7452,106 @@ public class GridFunc {
      * @return {@code True} if both collections have equal elements in the same order.
      */
     public static boolean eqOrdered(@Nullable Collection<?> c1, @Nullable Collection<?> c2) {
-        if (c1 == c2) {
+        if (c1 == c2)
             return true;
-        }
 
-        if (c1 == null || c2 == null) {
+        if (c1 == null || c2 == null)
             return false;
-        }
 
-        if (c1.size() != c2.size()) {
+        if (c1.size() != c2.size())
             return false;
-        }
 
         Iterator<?> it1 = c1.iterator();
         Iterator<?> it2 = c2.iterator();
 
-        while (it1.hasNext() && it2.hasNext()) {
-            if (!eq(it1.next(), it2.next())) {
+        while (it1.hasNext() && it2.hasNext())
+            if (!eq(it1.next(), it2.next()))
                 return false;
-            }
-        }
 
         return it1.hasNext() == it2.hasNext();
     }
 
     /**
      * Checks if both collections have equal elements in any order.
+     * <p>
+     * Implementation of this method takes optimization steps based on the actual type
+     * of the collections. Dups are allowed in the collection. Note that if collections
+     * allow fixed-time random access (implementing {@link RandomAccess} marker interface
+     * - having them pre-sorted dramatically improves the performance.
      *
      * @param c1 First collection.
      * @param c2 Second collection.
      * @return {@code True} if both collections have equal elements in any order.
      */
     public static boolean eqNotOrdered(@Nullable Collection<?> c1, @Nullable Collection<?> c2) {
-        if (c1 == c2) {
+        if (c1 == c2)
             return true;
-        }
 
-        if (c1 == null || c2 == null) {
+        if (c1 == null || c2 == null)
             return false;
-        }
 
-        if (c1.size() != c2.size()) {
+        if (c1.size() != c2.size())
             return false;
-        }
 
-        for (Object o : c1) {
-            if (!c2.contains(o)) {
-                return false;
+        // Random index access is fixed time (at least for one), dups are allowed.
+        // Optimize to 'n * log(n)' complexity. Pre-sorting of random accessed collection
+        // helps HUGE as it will reduce complexity to 'n'.
+        if (c1 instanceof RandomAccess || c2 instanceof RandomAccess) {
+            Collection<?> col;
+            List<?> lst;
+
+            if (c1 instanceof RandomAccess) {
+                col = c2;
+                lst = (List<?>)c1;
             }
+            else {
+                col = c1;
+                lst = (List<?>)c2;
+            }
+
+            int p = 0;
+
+            // Collections are of the same size.
+            int size = c1.size();
+
+            for (Object o1 : col) {
+                boolean found = false;
+
+                for (int i = p; i < size; i++) {
+                    if (F.eq(lst.get(i), o1)) {
+                        found = true;
+
+                        if (i == p)
+                            p++;
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                    return false;
+            }
+        }
+        else if (c1 instanceof Set && c2 instanceof Set) {
+            // Sets don't have dups - we can skip cross checks.
+            // Access is fixed-time - can do 'k*n' complexity.
+            for (Object o : c1)
+                if (!c2.contains(o))
+                    return false;
+        }
+        // Non-sets, non random access and collections of different types
+        // will do full cross-checks of '2k*n*n' complexity.
+        else {
+            // Dups are possible and no fixed-time random access...
+            // Have to do '2k*n*n' complexity in worst case.
+            for (Object o : c1)
+                if (!c2.contains(o))
+                    return false;
+
+            for (Object o : c2)
+                if (!c1.contains(o))
+                    return false;
+
         }
 
         return true;

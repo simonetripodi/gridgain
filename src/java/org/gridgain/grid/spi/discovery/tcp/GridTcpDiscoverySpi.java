@@ -145,14 +145,14 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.19062011")
+    version = "3.1.1c.20062011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
 @GridDiscoverySpiReconnectSupport(true)

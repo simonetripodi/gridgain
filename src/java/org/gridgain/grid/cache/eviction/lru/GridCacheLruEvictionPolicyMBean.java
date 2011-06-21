@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code LRU} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 @GridMBeanDescription("MBean for LRU cache eviction policy.")
 public interface GridCacheLruEvictionPolicyMBean {

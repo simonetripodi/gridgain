@@ -67,7 +67,7 @@ import java.util.logging.*;
  * injection.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridJavaLogger extends GridMetadataAwareAdapter implements GridLogger {
     /** Java Logging implementation proxy. */

@@ -46,7 +46,7 @@ import junit.framework.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridJunit3LocalTestSuite extends TestSuite {
     /** */

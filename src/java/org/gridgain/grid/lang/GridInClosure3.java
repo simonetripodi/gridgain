@@ -12,7 +12,7 @@ package org.gridgain.grid.lang;
 import org.gridgain.grid.typedef.*;
 
 /**
- * Defines a convenient {@code one-way} closure, i.e. the closure that has {@code void} return type.
+ * Defines a convenient {@code side-effect only} closure, i.e. the closure that has {@code void} return type.
  * Since Java 6 doesn't provide a language construct for first-class function the closures are
  * implemented as interfaces.
  * <h2 class="header">Type Alias</h2>
@@ -25,7 +25,7 @@ import org.gridgain.grid.typedef.*;
  * if any.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  * @param <E1> Type of the first free variable, i.e. the element the closure is called or closed on.
  * @param <E2> Type of the second free variable, i.e. the element the closure is called or closed on.
  * @param <E3> Type of the third free variable, i.e. the element the closure is called or closed on.

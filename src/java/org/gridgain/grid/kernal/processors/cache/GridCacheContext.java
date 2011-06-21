@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -767,8 +767,8 @@ public class GridCacheContext<K, V> implements Externalizable {
      */
     @SuppressWarnings({"ErrorNotRethrown"})
     public <K, V> boolean isAll(GridCacheEntryEx<K, V> e,
-        GridPredicate<? super GridCacheEntry<K, V>>[] p) throws GridException {
-        return isAll(e.wrap(false), p);
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] p) throws GridException {
+        return F.isEmpty(p) || isAll(e.wrap(false), p);
     }
 
     /**
@@ -782,7 +782,10 @@ public class GridCacheContext<K, V> implements Externalizable {
      * @throws GridException If failed.
      */
     @SuppressWarnings({"ErrorNotRethrown"})
-    public <E> boolean isAll(E e, GridPredicate<? super E>[] p) throws GridException {
+    public <E> boolean isAll(E e, @Nullable GridPredicate<? super E>[] p) throws GridException {
+        if (F.isEmpty(p))
+            return true;
+
         // We should allow only local read-only operations within filter checking.
         GridCacheFlag[] oldFlags = forceFlags(FLAG_LOCAL_READ);
 

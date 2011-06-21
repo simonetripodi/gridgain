@@ -57,7 +57,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  * @see GridEventType#EVT_CACHE_ENTRY_CREATED
  * @see GridEventType#EVT_CACHE_ENTRY_DESTROYED
  * @see GridEventType#EVT_CACHE_ENTRY_EVICTED
@@ -97,11 +97,16 @@ public class GridCacheEvent extends GridEventAdapter {
     @GridToStringInclude
     private final Object oldVal;
 
+    /** Event node ID. */
+    @GridToStringExclude
+    private final UUID evtNodeId;
+
     /**
      * Constructs cache event.
      *
      * @param cacheName Cache name.
-     * @param nodeId Event node ID.
+     * @param nodeId Local node ID.
+     * @param evtNodeId Event node ID.
      * @param msg Event message.
      * @param type Event type.
      * @param partition Partition for the event (usually the partition the key belongs to).
@@ -111,10 +116,11 @@ public class GridCacheEvent extends GridEventAdapter {
      * @param newVal New value.
      * @param oldVal Old value.
      */
-    public GridCacheEvent(String cacheName, UUID nodeId, String msg, int type, int partition, Object key, UUID xid,
+    public GridCacheEvent(String cacheName, UUID nodeId, UUID evtNodeId, String msg, int type, int partition, Object key, UUID xid,
         UUID lockId, Object newVal, Object oldVal) {
         super(nodeId, msg, type);
         this.cacheName = cacheName;
+        this.evtNodeId = evtNodeId;
         this.partition = partition;
         this.key = key;
         this.xid = xid;
@@ -139,6 +145,15 @@ public class GridCacheEvent extends GridEventAdapter {
      */
     public int partition() {
         return partition;
+    }
+
+    /**
+     * Gets ID of the node which initiated cache operation.
+     *
+     * @return ID of the node which initiated cache operation.
+     */
+    public UUID eventNodeId() {
+        return evtNodeId;
     }
 
     /**
@@ -194,6 +209,7 @@ public class GridCacheEvent extends GridEventAdapter {
     @Override public String toString() {
         return S.toString(GridCacheEvent.class, this,
             "nodeId8", U.id8(nodeId()),
+            "evtNodeId8", U.id8(evtNodeId),
             "msg", message(),
             "type", name(),
             "tstamp", timestamp());

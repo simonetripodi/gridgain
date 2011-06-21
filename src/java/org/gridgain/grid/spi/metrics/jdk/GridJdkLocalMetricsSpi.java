@@ -42,13 +42,13 @@ import java.net.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.19062011")
+    version = "3.1.1c.20062011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalMetricsSpi,
     GridJdkLocalMetricsSpiMBean {

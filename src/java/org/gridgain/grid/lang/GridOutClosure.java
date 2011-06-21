@@ -15,7 +15,7 @@ import org.gridgain.grid.typedef.internal.*;
 import java.util.concurrent.*;
 
 /**
- * Defines a convenient {@code one-way} factory closure. This closure takes no parameters
+ * Defines a convenient {@code side-effect only} factory closure. This closure takes no parameters
  * and returns instance of given type every time its {@link #apply()} method is called. Most
  * implementations will return a new instance every time, however, there's no requirement for that.
  * Note also that factory closure doesn't have free variables (i.e. it has {@code void} as its
@@ -30,13 +30,13 @@ import java.util.concurrent.*;
  * {@link GridJobAdapterEx}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  * @param <T> Type of return value from this closure.
  * @see GridFunc
  */
 public abstract class GridOutClosure<T> extends GridLambdaAdapter implements Callable<T>, GridJob {
     /**
-     * One-way factory closure body.
+     * Factory closure body.
      *
      * @return Element.
      */

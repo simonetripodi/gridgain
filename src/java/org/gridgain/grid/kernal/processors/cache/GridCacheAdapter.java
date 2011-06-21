@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -1297,6 +1297,31 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
         for (K k : keys) {
             clear(obsoleteVer, k, filter);
+        }
+    }
+
+    /**
+     * @param keys Keys.
+     * @param readers Readers flag.
+     */
+    public void clearAll(Collection<? extends K> keys, boolean readers) {
+        if (F.isEmpty(keys)) {
+            return;
+        }
+
+        GridCacheVersion obsoleteVer = ctx.versions().next();
+
+        for (K key : keys) {
+            GridCacheEntryEx<K, V> e = peekEx(key);
+
+            try {
+                if (e != null && e.clear(obsoleteVer, ctx.isSwapEnabled(), readers, null))
+                    removeIfObsolete(key);
+            }
+            catch (GridException ex) {
+                U.error(log, "Failed to clear entry from swap storage (will continue to clear other entries): " + e,
+                    ex);
+            }
         }
     }
 

@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.19062011
+# Version: 3.1.1c.20062011
 #
 
 #
@@ -25,10 +25,12 @@ if [ "$JAVA_HOME" = "" ]; then
     exit 1
 fi
 
+JAVA=${JAVA_HOME}/bin/java
+
 #
 # Check JDK.
 #
-if [ ! -e "$JAVA_HOME/bin/java" ]; then
+if [ ! -e "$JAVA" ]; then
     echo $0", ERROR: The JAVA is not found in $JAVA_HOME."
     echo $0", ERROR: Please modify your script so that JAVA_HOME would point"
     echo $0", ERROR: to valid location of Java installation."
@@ -36,7 +38,7 @@ if [ ! -e "$JAVA_HOME/bin/java" ]; then
     exit 1
 fi
 
-JAVA_VER=`${JAVA_HOME}/bin/java -version 2>&1 | grep -E "1\.[67]\."`
+JAVA_VER=`$JAVA -version 2>&1 | grep -E "1\.[67]\."`
 
 if [ "$JAVA_VER" == "" ]; then
     echo $0", ERROR: The version of JAVA installed in $JAVA_HOME is incorrect."
@@ -159,9 +161,9 @@ ERRORCODE="-1"
 while [ "${ERRORCODE}" -ne "130" ]
 do
     if [ -z "${INTERACTIVE}" ] ; then
-        "${JAVA_HOME}/bin/java" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"
+        "$JAVA" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"
     else
-        "${JAVA_HOME}/bin/java" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader
+        "$JAVA" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader
     fi
 
     ERRORCODE="$?"

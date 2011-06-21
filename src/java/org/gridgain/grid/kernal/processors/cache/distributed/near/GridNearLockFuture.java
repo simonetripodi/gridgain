@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -915,8 +915,7 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
      */
     private void map(K key, ConcurrentMap<GridRichNode, Collection<K>> mappings, Collection<GridRichNode> nodes,
         Map<GridRichNode, Collection<K>> mapped) {
-        GridRichNode primary = CU.primary0(cctx.affinity(key, F.view(nodes,
-            F.in(cctx.topology().ownersAndMoving(cctx.partition(key))))));
+        GridRichNode primary = CU.primary0(cctx.affinity(key, nodes));
 
         Collection<K> keys = mapped.get(primary);
 

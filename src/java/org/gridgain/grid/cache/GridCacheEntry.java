@@ -89,7 +89,7 @@ import java.util.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  * @param <K> Key type.
  * @param <V> Value type.
  */
@@ -271,13 +271,15 @@ public interface GridCacheEntry<K, V> extends Map.Entry<K, V>, GridMetadataAware
 
     /**
      * Gets the flag indicating current node's primary ownership for this entry.
+     * <p>
+     * Note, that this value is dynamic and may change with grid topology changes.
      *
      * @return {@code true} if current grid node is the primary owner for this entry.
      */
     public boolean primary();
 
     /**
-     * Gest affinity partition id for this entry.
+     * Gets affinity partition id for this entry.
      *
      * @return Partition id.
      */

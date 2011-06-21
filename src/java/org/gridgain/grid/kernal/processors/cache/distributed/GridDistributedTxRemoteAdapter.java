@@ -29,7 +29,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxRemoteEx<K, V> {
@@ -101,6 +101,11 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
     }
 
     /** {@inheritDoc} */
+    @Override public UUID eventNodeId() {
+        return nodeId;
+    }
+
+    /** {@inheritDoc} */
     @Override public Collection<UUID> masterNodeIds() {
         return Collections.singleton(nodeId);
     }
@@ -108,7 +113,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
     /**
      * @return Checks if transaction has no entries.
      */
-    public boolean empty() {
+    @Override public boolean empty() {
         return readMap.isEmpty() && writeMap.isEmpty();
     }
 
@@ -486,16 +491,16 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                         nearCached = cctx.dht().near().peekExx(txEntry.key());
 
                                     GridCacheOperation op = isSystemInvalidate() ? DELETE : txEntry.op();
-                                    
+
                                     if (op == CREATE || op == UPDATE) {
                                         // Invalidate only for near nodes (backups cannot be invalidated).
                                         if (isInvalidate() && !cctx.isDht())
-                                            cached.innerRemove(this, nodeId, nodeId, false, isNotifyEvent(),
+                                            cached.innerRemove(this, eventNodeId(), nodeId, false, isNotifyEvent(),
                                                 txEntry.filters());
                                         else {
-                                            cached.innerSet(this, nodeId, nodeId, txEntry.value(), txEntry.valueBytes(),
-                                                false, txEntry.expireTime(), txEntry.ttl(), isNotifyEvent(),
-                                                    txEntry.filters());
+                                            cached.innerSet(this, eventNodeId(), nodeId, txEntry.value(),
+                                                txEntry.valueBytes(), false, txEntry.expireTime(), txEntry.ttl(),
+                                                isNotifyEvent(), txEntry.filters());
 
                                             // Keep near entry up to date.
                                             if (nearCached != null)
@@ -504,7 +509,7 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
                                         }
                                     }
                                     else if (op == DELETE) {
-                                        cached.innerRemove(this, nodeId, nodeId, false, isNotifyEvent(),
+                                        cached.innerRemove(this, eventNodeId(), nodeId, false, isNotifyEvent(),
                                             txEntry.filters());
 
                                         // Keep near entry up to date.

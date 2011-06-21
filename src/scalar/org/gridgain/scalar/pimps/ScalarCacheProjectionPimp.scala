@@ -26,7 +26,7 @@ import scalaz._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 object ScalarCacheProjectionPimp {
     /**
@@ -66,7 +66,7 @@ object ScalarCacheProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.19062011
+ * @version 3.1.1c.20062011
  */
 class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedType[GridCacheProjection[K, V]]
     with Iterable[GridCacheEntry[K, V]] {
@@ -210,6 +210,9 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      */
     private def toJavaType(c: Class[_]) = {
         assert(c != null)
+
+        if (c == classOf[Symbol])
+            throw new GridException("Cache type projeciton on 'scala.Symbol' are not supported.")
 
         if (c == classOf[Int])
             classOf[java.lang.Integer]
