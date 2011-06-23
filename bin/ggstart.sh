@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.21062011
+# Version: 3.1.1c.22062011
 #
 
 #
@@ -161,9 +161,9 @@ ERRORCODE="-1"
 while [ "${ERRORCODE}" -ne "130" ]
 do
     if [ -z "${INTERACTIVE}" ] ; then
-        "$JAVA" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"
+        "$JAVA" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"
     else
-        "$JAVA" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader
+        "$JAVA" ${JVM_OPTS} ${QUIET} ${RESTART_SUCCESS_OPT} ${JMX_MON}  -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader
     fi
 
     ERRORCODE="$?"

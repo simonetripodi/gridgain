@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<GridCacheTxEx<K, V>>
     implements GridCacheMvccFuture<K, V, GridCacheTxEx<K, V>> {
@@ -406,10 +406,10 @@ public class GridDhtTxPrepareFuture<K, V> extends GridCompoundIdentityFuture<Gri
     void prepare() {
         if (tx.empty()) {
             tx.setRollbackOnly();
-            
+
             onDone(tx);
         }
-        
+
         if (!prepare(tx.readEntries(), tx.writeEntries())) {
             markInitialized();
 

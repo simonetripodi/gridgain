@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Thread pool for supplying partitions to demanding nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridDhtPartitionSupplyPool<K, V> {
     /** */
@@ -146,6 +146,44 @@ public class GridDhtPartitionSupplyPool<K, V> {
     }
 
     /**
+     * There is currently a case where {@code interrupted}
+     * flag on a thread gets flipped during stop which causes the pool to hang.  This check
+     * will always make sure that interrupted flag gets reset before going into wait conditions.
+     * <p>
+     * The true fix should actually make sure that interrupted flag does not get reset or that
+     * interrupted exception gets propagated. Until we find a real fix, this method should
+     * always work to make sure that there is no hanging during stop.
+     */
+    private void beforeWait() {
+        GridWorker w = worker();
+
+        if (w != null && w.isCancelled())
+            Thread.currentThread().interrupt();
+    }
+
+    /**
+     * @return Current worker.
+     */
+    private GridWorker worker() {
+        GridWorker w = GridWorkerGroup.instance(cctx.gridName()).currentWorker();
+
+        assert w != null;
+
+        return w;
+    }
+
+    /**
+     * @param deque Deque to poll from.
+     * @return Polled item.
+     * @throws InterruptedException If interrupted.
+     */
+    private <T> T take(LinkedBlockingDeque<T> deque) throws InterruptedException {
+        beforeWait();
+
+        return deque.take();
+    }
+
+    /**
      * Supply work.
      */
     private class SupplyWorker extends GridWorker {
@@ -169,7 +207,7 @@ public class GridDhtPartitionSupplyPool<K, V> {
             while (!isCancelled()) {
                 watch.step("DEMAND_WAIT");
 
-                DemandMessage<K, V> msg = queue.take();
+                DemandMessage<K, V> msg = take(queue);
 
                 watch.step("DEMAND_RECEIVED");
 
@@ -312,6 +350,11 @@ public class GridDhtPartitionSupplyPool<K, V> {
          */
         public GridDhtPartitionDemandMessage<K, V> message() {
             return get2();
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return "DemandMessage [senderId=" + senderId() + ", msg=" + message() + ']';
         }
     }
 }

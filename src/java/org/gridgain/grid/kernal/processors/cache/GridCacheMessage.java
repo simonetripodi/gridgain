@@ -26,21 +26,51 @@ import java.util.*;
  * Parent of all cache messages.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public abstract class GridCacheMessage<K, V> implements Externalizable {
+    /** Null message ID. */
+    private static final long NULL_MSG_ID = -1;
+
     /** ID of this message. */
-    private long msgId = -1;
+    private long msgId = NULL_MSG_ID;
 
     /** */
     @GridToStringInclude
     private GridDeploymentInfo depInfo;
+
+    /** */
+    private transient Exception err;
 
     /**
      * @return {@code True} if this message is preloader message.
      */
     public boolean allowForStartup() {
         return false;
+    }
+
+    /**
+     * @return {@code True} if class loading errors should be ignored, false otherwise.
+     */
+    public boolean ignoreClassErrors() {
+        return false;
+    }
+
+    /**
+     * If class loading error occurred during unmarshalling and {@link #ignoreClassErrors()} is
+     * set to {@code true}, then the error will be passed into this method.
+     *
+     * @param err Error.
+     */
+    public void onClassError(Exception err) {
+        this.err = err;
+    }
+
+    /**
+     * @return Error set via {@link #onClassError(Exception)} method.
+     */
+    public Exception classError() {
+        return err;
     }
 
     /**

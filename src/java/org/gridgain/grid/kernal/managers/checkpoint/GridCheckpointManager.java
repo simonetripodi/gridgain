@@ -18,6 +18,7 @@ import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.checkpoint.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
 
@@ -31,7 +32,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
  * This class defines a checkpoint manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "deprecation"})
 public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi> {
@@ -349,6 +350,19 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
 
             ctx.event().record(new GridCheckpointEvent(ctx.config().getNodeId(), msg, type, key));
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        int keyMapSize;
+
+        synchronized (mux) {
+            keyMapSize = keyMap.size();
+        }
+
+        X.println(">>>");
+        X.println(">>> Checkpoint manager memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  keyMap: " + keyMapSize);
     }
 
     /** */

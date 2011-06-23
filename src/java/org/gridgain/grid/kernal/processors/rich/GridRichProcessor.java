@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Rich entity processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridRichProcessor extends GridProcessorAdapter {
     /** */
@@ -43,7 +43,7 @@ public class GridRichProcessor extends GridProcessorAdapter {
     /** Cache cleaning worker. */
     private GcWorker gcWorker = new GcWorker();
 
-    /**  */
+    /** GC thread. */
     private GridThread gcThread;
 
     /**
@@ -235,6 +235,14 @@ public class GridRichProcessor extends GridProcessorAdapter {
         }
 
         return rich;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Rich processor memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  nodeCacheSize: " + nodeCache.size());
+        X.println(">>>  cloudCacheSize: " + cloudCache.size());
     }
 
     /**

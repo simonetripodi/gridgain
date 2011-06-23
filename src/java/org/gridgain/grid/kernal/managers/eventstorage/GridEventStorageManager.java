@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid event storage SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridEventStorageManager extends GridManagerAdapter<GridEventStorageSpi> {
     /** Internally-used events. */
@@ -100,6 +100,13 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
      */
     public GridEventStorageManager(GridKernalContext ctx) {
         super(GridEventStorageSpi.class, ctx, ctx.config().getEventStorageSpi());
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Event storage manager memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  lsnrsSize: " + lsnrs.size());
     }
 
     /**

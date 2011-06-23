@@ -12,6 +12,7 @@ package org.gridgain.grid.kernal.processors.cache;
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.events.*;
+import org.gridgain.grid.typedef.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.*;
  * Cache event manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheEventManager<K, V> extends GridCacheManager<K, V> {
     /** Local node ID. */
@@ -160,5 +161,12 @@ public class GridCacheEventManager<K, V> extends GridCacheManager<K, V> {
                 unwinding.set(false);
             }
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override protected void printMemoryStats() {
+        X.println(">>> ");
+        X.println(">>> Cache event manager memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   evtsSize: " + evts.size());
     }
 }

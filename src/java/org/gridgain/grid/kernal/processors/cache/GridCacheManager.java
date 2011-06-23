@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.*;
  * Adapter for cache managers.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public abstract class GridCacheManager<K, V> {
     /** Context. */
@@ -134,6 +134,15 @@ public abstract class GridCacheManager<K, V> {
      *
      */
     protected void onKernalStop0() {
+        // No-op.
+    }
+
+    /**
+     * Prints memory statistics (sizes of internal data structures, etc.).
+     *
+     * NOTE: this method is for testing and profiling purposes only.
+     */
+    protected void printMemoryStats() {
         // No-op.
     }
 

@@ -13,6 +13,7 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.typedef.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.*;
  * Processes job metrics.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridJobMetricsProcessor extends GridProcessorAdapter {
     /** Time to live. */
@@ -229,11 +230,24 @@ public class GridJobMetricsProcessor extends GridProcessorAdapter {
         return set.firstx();
     }
 
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Job metrics processor processor memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  activeJobMaxSetSize: " + activeJobMaxSet.size());
+        X.println(">>>  waitingJobMaxSetSize: " + waitingJobMaxSet.size());
+        X.println(">>>  cancelledJobMaxSetSize: " + cancelledJobMaxSet.size());
+        X.println(">>>  rejectedJobMaxSetSize: " + rejectedJobMaxSet.size());
+        X.println(">>>  execTimeMaxSetSize: " + execTimeMaxSet.size());
+        X.println(">>>  waitTimeMaxSetSize: " + waitTimeMaxSet.size());
+        X.println(">>>  queueSize: " + queue.size());
+    }
+
     /**
      * All metrics counters.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     private class MetricCounters {
         /** */

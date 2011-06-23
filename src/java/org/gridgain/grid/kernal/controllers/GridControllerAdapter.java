@@ -18,9 +18,9 @@ import org.gridgain.grid.util.tostring.*;
  * Convenient adapter for grid controllers.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
-public class GridControllerAdapter implements GridController {
+public abstract class GridControllerAdapter implements GridController {
     /** Kernal context. */
     @GridToStringExclude
     protected GridKernalContext ctx;
@@ -32,7 +32,7 @@ public class GridControllerAdapter implements GridController {
     /**
      * @param ctx Kernal context.
      */
-    public GridControllerAdapter(GridKernalContext ctx) {
+    protected GridControllerAdapter(GridKernalContext ctx) {
         this.ctx = ctx;
 
         log = ctx.log(getClass());
@@ -60,6 +60,11 @@ public class GridControllerAdapter implements GridController {
 
     /** {@inheritDoc} */
     @Override public void onKernalStop(boolean cancel, boolean wait) {
+        // No-op.
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
         // No-op.
     }
 }

@@ -12,13 +12,15 @@ package org.gridgain.grid.kernal.processors.port;
 import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
+import org.gridgain.grid.typedef.*;
+
 import java.util.*;
 
 /**
  * Registers and deregisters all ports used by SPI and Manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridPortProcessor extends GridProcessorAdapter {
     /** Collection of records about ports use. */
@@ -45,16 +47,14 @@ public class GridPortProcessor extends GridProcessorAdapter {
 
     /** {@inheritDoc} */
     @Override public void start() throws GridException {
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug("Started port processor.");
-        }
     }
 
     /** {@inheritDoc} */
     @Override public void stop(boolean cancel, boolean wait) throws GridException {
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug("Stopped port processor.");
-        }
     }
 
     /**
@@ -77,7 +77,7 @@ public class GridPortProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Deregisters all ports used by passed class. 
+     * Deregisters all ports used by passed class.
      *
      * @param cls Class.
      */
@@ -88,9 +88,8 @@ public class GridPortProcessor extends GridProcessorAdapter {
             for (Iterator<GridPortRecord> iter = recs.iterator(); iter.hasNext();) {
                 GridPortRecord pr = iter.next();
 
-                if (pr.clazz().equals(cls)) {
+                if (pr.clazz().equals(cls))
                     iter.remove();
-                }
             }
         }
 
@@ -113,9 +112,8 @@ public class GridPortProcessor extends GridProcessorAdapter {
             for (Iterator<GridPortRecord> iter = recs.iterator(); iter.hasNext();) {
                 GridPortRecord pr = iter.next();
 
-                if (pr.port() == port && pr.protocol() == proto && pr.clazz().equals(cls)) {
+                if (pr.port() == port && pr.protocol() == proto && pr.clazz().equals(cls))
                     iter.remove();
-                }
             }
         }
 
@@ -153,7 +151,7 @@ public class GridPortProcessor extends GridProcessorAdapter {
      */
     public void removePortListener(GridPortListener lsnr) {
         assert lsnr != null;
-        
+
         synchronized (lsnrs) {
             lsnrs.remove(lsnr);
         }
@@ -164,9 +162,28 @@ public class GridPortProcessor extends GridProcessorAdapter {
      */
     private void notifyListeners() {
         synchronized (lsnrs) {
-            for (GridPortListener lsnr : lsnrs) {
+            for (GridPortListener lsnr : lsnrs)
                 lsnr.onPortChange();
-            }
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        int recsSize;
+
+        synchronized (recs) {
+            recsSize = recs.size();
+        }
+
+        int lsnrsSize;
+
+        synchronized (lsnrs) {
+            lsnrsSize = lsnrs.size();
+        }
+
+        X.println(">>>");
+        X.println(">>> Task session processor memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  recsSize: " + recsSize);
+        X.println(">>>  lsnrsSize: " + lsnrsSize);
     }
 }

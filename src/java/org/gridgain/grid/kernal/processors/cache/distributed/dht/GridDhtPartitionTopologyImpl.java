@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -60,7 +60,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     private GridDhtPartitionExchangeId lastExchangeId;
 
     /** */
-    private long lastJoinVer;
+    private long lastJoinVer = -1;
 
     /** */
     private final AtomicLong updateSeq = new AtomicLong(1);
@@ -136,6 +136,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
         lock.writeLock().lock();
 
         try {
+            assert exchId.order() > 0;
             assert !exchId.isJoined() || exchId.order() > lastJoinVer;
 
             if (exchId.isJoined())
@@ -662,6 +663,9 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
             consistencyCheck();
 
+            if (log.isDebugEnabled())
+                log.debug("Partition map after full update: " + fullMapString());
+
             return changed ? localPartitionMap() : null;
         }
         finally {
@@ -745,6 +749,9 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
             consistencyCheck();
 
+            if (log.isDebugEnabled())
+                log.debug("Partition map after single update: " + fullMapString());
+
             return changed ? localPartitionMap() : null;
         }
         finally {
@@ -776,28 +783,45 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                 if (!affNodes.contains(cctx.localNode())) {
                     Collection<UUID> nodeIds = F.view(part2node.get(p), withState(p, OWNING));
 
-                    int ownerCnt = nodeIds.size();
-                    int affCnt = affNodes.size();
+                    // If all affinity nodes are owners, then evict partition from local node.
+                    if (nodeIds.containsAll(F.nodeIds(affNodes))) {
+                        part.rent();
 
-                    if (ownerCnt > affCnt) {
-                        List<GridNode> sorted = new ArrayList<GridNode>(cctx.discovery().nodes(nodeIds));
+                        updateLocal(part.id(), locId, part.state(), updateSeq);
 
-                        // Sort by node orders in ascending order.
-                        Collections.sort(sorted, CU.nodeComparator(true));
+                        changed = true;
 
-                        int diff = sorted.size() - affCnt;
+                        if (log.isDebugEnabled())
+                            log.debug("Evicted local partition (all affinity nodes are owners): " + part);
+                    }
+                    else {
+                        int ownerCnt = nodeIds.size();
+                        int affCnt = affNodes.size();
 
-                        for (int i = 0; i < diff; i++) {
-                            GridNode n = sorted.get(i);
+                        if (ownerCnt > affCnt) {
+                            List<GridNode> sorted = new ArrayList<GridNode>(cctx.discovery().nodes(nodeIds));
 
-                            if (locId.equals(n.id())) {
-                                part.rent();
+                            // Sort by node orders in ascending order.
+                            Collections.sort(sorted, CU.nodeComparator(true));
 
-                                updateLocal(part.id(), locId, part.state(), updateSeq);
+                            int diff = sorted.size() - affCnt;
 
-                                changed = true;
+                            for (int i = 0; i < diff; i++) {
+                                GridNode n = sorted.get(i);
 
-                                break;
+                                if (locId.equals(n.id())) {
+                                    part.rent();
+
+                                    updateLocal(part.id(), locId, part.state(), updateSeq);
+
+                                    changed = true;
+
+                                    if (log.isDebugEnabled())
+                                        log.debug("Evicted local partition (this node is oldest non-affinity node): " +
+                                            part);
+
+                                    break;
+                                }
                             }
                         }
                     }

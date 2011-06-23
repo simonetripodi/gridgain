@@ -32,7 +32,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Manages lock order within a thread.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /** Maxim number of removed locks. */
@@ -599,6 +599,20 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
         return add;
     }
+
+    /** {@inheritDoc} */
+    @Override protected void printMemoryStats() {
+        X.println(">>> ");
+        X.println(">>> Mvcc manager memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   rmvLocksSize: " + rmvLocks.size());
+        X.println(">>>   rmtCandsSize: " + rmtCands.size());
+        X.println(">>>   locCandsSize: " + locCands.size());
+        X.println(">>>   lockedSize: " + locked.size());
+        X.println(">>>   futsSize: " + futs.size());
+        X.println(">>>   near2dhtSize: " + near2dht.size());
+        X.println(">>>   finishFutsSize: " + finishFuts.size());
+    }
+
 
     /**
      * @param nodeId Node ID.

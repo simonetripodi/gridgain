@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * DHT cache preloader.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** Exchange history size. */
@@ -148,7 +148,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** {@inheritDoc} */
     @Override public void start() {
         if (log.isDebugEnabled())
-            log.debug("Starting DHT preloader ...");
+            log.debug("Starting DHT preloader...");
 
         cctx.io().addHandler(GridDhtPartitionsSingleMessage.class,
             new MessageHandler<GridDhtPartitionsSingleMessage<K, V>>() {
@@ -239,7 +239,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
         if (cctx.config().getPreloadMode() == SYNC) {
             long start = System.currentTimeMillis();
 
-            U.log(log, "Starting preloading in SYNC mode ...");
+            U.log(log, "Starting preloading in SYNC mode...");
 
             demandPool.syncFuture().get();
 
@@ -410,8 +410,12 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
             return;
 
         try {
-            if (msg.exchangeId() == null)
+            if (msg.exchangeId() == null) {
+                if (log.isDebugEnabled())
+                    log.debug("Received full partition update [node=" + node.id() + ", msg=" + msg + ']');
+
                 top.update(null, msg.partitions());
+            }
             else
                 exchangeFuture(msg.exchangeId(), null).onReceive(node.id(), msg);
         }
@@ -429,8 +433,13 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
             return;
 
         try {
-            if (msg.exchangeId() == null)
+            if (msg.exchangeId() == null) {
+                if (log.isDebugEnabled())
+                    log.debug("Received local partition update [nodeId=" + node.id() + ", parts=" +
+                        msg.partitions().toFullString() + ']');
+
                 top.update(null, msg.partitions());
+            }
             else
                 exchangeFuture(msg.exchangeId(), null).onReceive(node.id(), msg);
         }
@@ -457,7 +466,12 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
             if (oldest.id().equals(cctx.nodeId())) {
                 rmts = CU.remoteNodes(cctx);
 
-                sendAllPartitions(rmts, top.partitionMap(true));
+                GridDhtPartitionFullMap map = top.partitionMap(true);
+
+                if (log.isDebugEnabled())
+                    log.debug("Refreshing partitions from oldest node: " + map.toFullString());
+
+                sendAllPartitions(rmts, map);
             }
             else
                 sendLocalPartitions(oldest, null);

@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Future for exchanging partition maps.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
@@ -373,6 +373,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
             watch.step("EXCHANGE_STARTED");
         }
+        else
+            assert false : "Skipped init future: " + this;
     }
 
     /**
@@ -479,7 +481,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      * @param nodeId Sender node id.
      * @param msg Single partition info.
      */
-    void onReceive(UUID nodeId, GridDhtPartitionsSingleMessage<K, V> msg) {
+    void onReceive(final UUID nodeId, final GridDhtPartitionsSingleMessage<K, V> msg) {
         assert msg != null;
 
         assert msg.exchangeId().equals(exchId);
@@ -503,19 +505,23 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             }
         }
         else {
-            rcvdIds.add(nodeId);
+            initFut.listenAsync(new CI1<GridFuture<Boolean>>() {
+                @Override public void apply(GridFuture<Boolean> t) {
+                    rcvdIds.add(nodeId);
 
-            top.update(exchId, msg.partitions());
+                    top.update(exchId, msg.partitions());
 
-            // If got all replies, and initialization finished, and reply has not been sent yet.
-            if (allReceived() && ready.get() && replied.compareAndSet(false, true)) {
-                spreadPartitions(top.partitionMap(true));
+                    // If got all replies, and initialization finished, and reply has not been sent yet.
+                    if (allReceived() && ready.get() && replied.compareAndSet(false, true)) {
+                        spreadPartitions(top.partitionMap(true));
 
-                onDone();
-            }
-            else if (log.isDebugEnabled())
-                log.debug("Exchange future full map is not sent [allReceived=" + allReceived() + ", ready=" + ready +
-                    ", replied=" + replied.get() + ", init=" + init.get() + ", fut=" + this + ']');
+                        onDone();
+                    }
+                    else if (log.isDebugEnabled())
+                        log.debug("Exchange future full map is not sent [allReceived=" + allReceived() + ", ready=" + ready +
+                            ", replied=" + replied.get() + ", init=" + init.get() + ", fut=" + this + ']');
+                }
+            });
         }
     }
 
@@ -523,7 +529,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      * @param nodeId Sender node ID.
      * @param msg Full partition info.
      */
-    void onReceive(UUID nodeId, GridDhtPartitionsFullMessage<K, V> msg) {
+    void onReceive(UUID nodeId, final GridDhtPartitionsFullMessage<K, V> msg) {
         assert msg != null;
 
         if (isDone()) {
@@ -546,9 +552,13 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
         if (log.isDebugEnabled())
             log.debug("Received full partition map from node [nodeId=" + nodeId + ", msg=" + msg + ']');
 
-        top.update(exchId, msg.partitions());
+        initFut.listenAsync(new CI1<GridFuture<Boolean>>() {
+            @Override public void apply(GridFuture<Boolean> t) {
+                top.update(exchId, msg.partitions());
 
-        onDone();
+                onDone();
+            }
+        });
     }
 
     /**
@@ -683,8 +693,12 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                     try {
                         U.warn(log,
-                            "Retrying preload partition exchange due to timeout: " +
-                                GridDhtPartitionsExchangeFuture.this,
+                            "Retrying preload partition exchange due to timeout [done=" + isDone() +
+                                ", dummy=" + dummy + ", exchId=" +  exchId + ", rcvdIds=" + F.id8s(rcvdIds) +
+                                ", rmtIds=" + F.id8s(rmtIds) + ", init=" + init +  ", initFut=" + initFut.isDone() +
+                                ", ready=" + ready + ", replied=" + replied + ", added=" + added +
+                                ", oldest=" + U.id8(oldestNode.id()) + ", oldestOrder=" + oldestNode.order() +
+                                ", evtLatch=" + evtLatch.getCount() + ']',
                             "Retrying preload partition exchange due to timeout.");
 
                         recheck();

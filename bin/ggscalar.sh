@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.21062011
+# Version: 3.1.1c.22062011
 #
 
 #
@@ -93,4 +93,4 @@ JAVA_OPTS=-Xss2m
 #
 # Start REPL.
 #
-env JAVA_OPTS=${JAVA_OPTS} scala ${QUIET}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" -i ${GRIDGAIN_HOME}/bin/scalar.scala
+env JAVA_OPTS=${JAVA_OPTS} scala ${QUIET}  -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" -i ${GRIDGAIN_HOME}/bin/scalar.scala

@@ -18,7 +18,7 @@ import java.util.*;
  * This interface defines JMX view on kernal.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @GridMBeanDescription("MBean that provides access to Kernal information.")
 public interface GridKernalMBean {

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
  * Grid task worker. Handles full task life cycle.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  * @param <T> Task argument type.
  * @param <R> Task return value type.
  */
@@ -497,7 +497,7 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
         Collection<? extends GridNode> nodes = ctx.topology().getTopology(ses, subgrid);
 
         if (F.isEmpty(nodes))
-            throw new GridException("Task topology provided by topology SPI is empty or null.");
+            throw new GridEmptyProjectionException("Topology projection is empty.");
 
         List<GridNode> shuffledNodes = new ArrayList<GridNode>(nodes);
 

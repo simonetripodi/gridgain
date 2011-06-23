@@ -8,7 +8,7 @@
  * /____/  \___/  \__,_/  /_/   \__,_/  /_/         /____/_(_)____/
  *
  */
- 
+
 package org.gridgain.scalar.examples
 
 import org.gridgain.scalar.scalar
@@ -23,7 +23,7 @@ import collection.JavaConversions._
  * Demonstrates basic Data Grid (a.k.a cache) operations with Scalar.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 object ScalarCacheExample {
     /**

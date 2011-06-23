@@ -22,6 +22,7 @@ import static org.gridgain.grid.GridEventType.*;
  */
 public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionExchangeId>, Externalizable {
     /** Node ID. */
+    @GridToStringExclude
     private UUID nodeId;
 
     /** Event. */
@@ -157,6 +158,8 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridDhtPartitionExchangeId.class, this, "evt", U.gridEventName(evt));
+        return S.toString(GridDhtPartitionExchangeId.class, this,
+            "nodeId", U.id8(nodeId),
+            "evt", U.gridEventName(evt));
     }
 }

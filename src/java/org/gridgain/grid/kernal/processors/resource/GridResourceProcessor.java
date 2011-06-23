@@ -32,7 +32,7 @@ import java.util.concurrent.*;
  * Processor for all Grid and task/job resources.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridResourceProcessor extends GridProcessorAdapter {
     /** Grid instance injector. */
@@ -640,5 +640,13 @@ public class GridResourceProcessor extends GridProcessorAdapter {
         }
 
         return target;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Resource processor memory stats [grid=" + ctx.gridName() + ']');
+
+        ioc.printMemoryStats();
     }
 }

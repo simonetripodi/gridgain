@@ -15,7 +15,7 @@ import org.gridgain.grid.*;
  * Exception thrown whenever grid transactions time out.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheTxTimeoutException extends GridException {
     /**

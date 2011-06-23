@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Cache query index. Manages full life-cycle of query index database (h2).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public class GridCacheQueryIndex<K, V> {
@@ -343,8 +343,7 @@ public class GridCacheQueryIndex<K, V> {
     /**
      *
      */
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
-    void stop() {
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"}) void stop() {
         if (log.isDebugEnabled())
             log.debug("Stopping cache query index...");
 
@@ -1809,6 +1808,75 @@ public class GridCacheQueryIndex<K, V> {
     }
 
     /**
+     * NOTE: For testing purposes only.
+     *
+     * @throws GridException In case of failure.
+     */
+    public void printH2Stats() throws GridException {
+        X.println(">>> Printing H2 statistics...");
+
+        Connection conn = connectionForThread();
+
+        schemaReadLock();
+
+        try {
+            for (TableDescriptor table : tables) {
+                PreparedStatement stmt = conn.prepareStatement("select count(*) from " + table.fullTableName());
+
+                ResultSet rs = stmt.executeQuery();
+
+                X.println(">>> Size of table '" + table.tableName() + "': " + (rs.next() ? rs.getInt(1) : 0));
+            }
+        }
+        catch (SQLException e) {
+            U.rollbackConnection(conn, log);
+
+            onSqlException();
+
+            throw new GridException("Failed to print H2 statistics", e);
+        }
+        finally {
+            schemaReadUnlock();
+        }
+    }
+
+    /**
+     * NOTE: For testing purposes only.
+     *
+     * @throws GridException In case of failure.
+     * @return Total query index size, i.e. size of all H2 user tables.
+     */
+    public int size() throws GridException {
+        Connection conn = connectionForThread();
+
+        schemaReadLock();
+
+        try {
+            int size = 0;
+
+            for (TableDescriptor table : tables) {
+                PreparedStatement stmt = conn.prepareStatement("select count(*) from " + table.fullTableName());
+
+                ResultSet rs = stmt.executeQuery();
+
+                size += rs.next() ? rs.getInt(1) : 0;
+            }
+
+            return size;
+        }
+        catch (SQLException e) {
+            U.rollbackConnection(conn, log);
+
+            onSqlException();
+
+            throw new GridException("Failed to print H2 statistics", e);
+        }
+        finally {
+            schemaReadUnlock();
+        }
+    }
+
+    /**
      * Wrapper to store connection and flag is schema set or not.
      */
     private static class ConnectionWrapper {
@@ -2593,10 +2661,10 @@ public class GridCacheQueryIndex<K, V> {
      * Prints memory statistics for debugging purposes.
      */
     void printMemoryStats() {
-        X.println("    Classes: " + clsMap.size());
-        X.println("    Tables: " + tables.size());
-        X.println("    Statement caches: " + stmtCaches.size());
-        X.println("    Connections: " + conns.size());
+        X.println(">>>   Classes: " + clsMap.size());
+        X.println(">>>   Tables: " + tables.size());
+        X.println(">>>   Statement caches: " + stmtCaches.size());
+        X.println(">>>   Connections: " + conns.size());
     }
 
     /**

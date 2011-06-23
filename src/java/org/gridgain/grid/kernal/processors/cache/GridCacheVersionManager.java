@@ -26,7 +26,7 @@ import static org.gridgain.grid.GridEventType.*;
  * caches.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheVersionManager<K, V> extends GridCacheManager<K, V> {
     /**
@@ -71,9 +71,8 @@ public class GridCacheVersionManager<K, V> extends GridCacheManager<K, V> {
 
     /** {@inheritDoc} */
     @Override protected void onKernalStart0() throws GridException {
-        for (GridNode n : cctx.discovery().remoteNodes()) {
+        for (GridNode n : cctx.discovery().remoteNodes())
             onReceived(n.id(), n.metrics().getLastDataVersion());
-        }
     }
 
     /** {@inheritDoc} */
@@ -100,13 +99,11 @@ public class GridCacheVersionManager<K, V> extends GridCacheManager<K, V> {
 
                 // If another version is larger, we update.
                 if (ver > order) {
-                    if (!this.order.compareAndSet(order, ver)) {
+                    if (!this.order.compareAndSet(order, ver))
                         // Try again.
                         continue;
-                    }
-                    else if (log.isDebugEnabled()) {
+                    else if (log.isDebugEnabled())
                         log.debug("Updated version from node [nodeId=" + nodeId + ", ver=" + ver + ']');
-                    }
                 }
                 else if (log.isDebugEnabled()) {
                     log.debug("Did not update version from node (version has lower order) [nodeId=" + nodeId +

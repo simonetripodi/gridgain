@@ -15,7 +15,7 @@ import org.gridgain.grid.*;
  * Interface for all main internal GridGain components (managers, processor and controllers).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public interface GridComponent {
     /**
@@ -50,4 +50,11 @@ public interface GridComponent {
      * @param wait Flag indicating whether to wait for task completion.
      */
     public void onKernalStop(boolean cancel, boolean wait);
+
+    /**
+     * Prints memory statistics (sizes of internal structures, etc.).
+     *
+     * NOTE: this method is for testing and profiling purposes only.
+     */
+    public void printMemoryStats();
 }

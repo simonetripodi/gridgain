@@ -18,7 +18,7 @@ import org.gridgain.grid.util.*;
  * be configured with cloud IDs they should be enabled for. By default, it is enabled for any cloud.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public abstract class GridCloudEnabledAdapter extends GridMetadataAwareAdapter implements GridCloudEnabled {
     /** Cloud identifiers. */

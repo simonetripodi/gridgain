@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -1443,6 +1443,26 @@ public class GridCacheContext<K, V> implements Externalizable {
         fut.markInitialized();
 
         return fut;
+    }
+
+    /**
+     * Print memory statistics of all cache managers.
+     *
+     * NOTE: this method is for testing and profiling purposes only.
+     */
+    public void printMemoryStats() {
+        X.println(">>> ");
+        X.println(">>> Cache memory stats [grid=" + ctx.gridName() + ", cache=" + name() + ']');
+
+        if (isNear()) {
+            X.println(">>>  Near cache size: " + cache().keySize());
+            X.println(">>>  Dht cache size: " + near().dht().keySize());
+        }
+        else
+            X.println(">>>  Cache size: " + cache().keySize());
+
+        for (GridCacheManager mgr : managers())
+            mgr.printMemoryStats();
     }
 
     /** {@inheritDoc} */

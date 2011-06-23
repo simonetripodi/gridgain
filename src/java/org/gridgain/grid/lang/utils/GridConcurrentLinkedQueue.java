@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.*;
  * {@link Collection#remove(Object)} was called which can lead to memory leaks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> implements Queue<E> {
     /** Dummy stamp holder. */
@@ -298,6 +298,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                 else if (casHead(h, first)) { // Move head pointer.
                     assert first != null;
 
+                    size.decrementAndGet();
+
                     E c = first.value();
 
                     if (c != null) {
@@ -334,9 +336,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     @Override public E element() {
         E e = peek();
 
-        if (e == null) {
+        if (e == null)
             throw new NoSuchElementException();
-        }
 
         return e;
     }
@@ -389,9 +390,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     private void decreaseEden() {
         int e = eden.decrementAndGet();
 
-        if (e < 0) {
+        if (e < 0)
             eden.compareAndSet(e, 0);
-        }
     }
 
     /**
@@ -568,9 +568,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                         return ret;
                     }
 
-                    if (next == next()) {
+                    if (next == next())
                         return null;
-                    }
                 }
             }
 

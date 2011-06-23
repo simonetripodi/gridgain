@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -1113,6 +1113,13 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                         GridNearCacheEntry<K, V> entry = cctx.near().entryExx(k);
 
                         try {
+                            if (res.dhtVersion(i) == null) {
+                                onDone(new GridException("Failed to receive DHT version from remote node " +
+                                    "(will fail the lock): " + res));
+
+                                return;
+                            }
+
                             // Lock is held at this point, so we can set the
                             // returned value if any.
                             entry.resetFromPrimary(res.value(i), res.valueBytes(i), lockVer, res.dhtVersion(i), node.id());

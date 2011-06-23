@@ -44,7 +44,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -751,12 +751,13 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      * Callback invoked by deployment manager for whenever a class loader
      * gets undeployed.
      *
+     * @param leftNodeId Left node ID.
      * @param ldr Class loader.
      */
-    public void onUndeployed(ClassLoader ldr) {
+    public void onUndeployed(@Nullable UUID leftNodeId, ClassLoader ldr) {
         if (!ctx.isStopping())
             for (GridCacheAdapter<?, ?> cache : caches.values())
-                cache.onUndeploy(ldr);
+                cache.onUndeploy(leftNodeId, ldr);
     }
 
     /**

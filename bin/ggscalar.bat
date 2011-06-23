@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.21062011
+:: Version: 3.1.1c.22062011
 ::
 
 ::
@@ -67,7 +67,7 @@ if "%OS%" == "Windows_NT" set PROG_NAME=%~nx0%
 ::
 :: Set Java options.
 ::
-set JAVA_OPTS=-Xss2m  -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%"
+set JAVA_OPTS=-Xss2m  -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%"
 
 ::
 :: Start REPL.

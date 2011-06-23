@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -400,7 +400,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                 // Attempt to load from swap.
                 if (val == null && readSwap) {
                     // Only unswap when loading initial state.
-                    if (isNew())
+                    if (isNew()) {
                         // If this entry is already expired (expiration time was too low),
                         // we simply remove from swap and clear index.
                         if (expired) {
@@ -424,6 +424,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                                     expired = true;
                             }
                         }
+                    }
                 }
 
                 // Only calculate asynchronous refresh-ahead, if there is no other
@@ -1762,7 +1763,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
             if (F.isEmpty(filter)) {
                 synchronized (mux) {
                     if ((!hasReaders() || swap) && markObsolete(obsoleteVer)) {
-                        if (swap)
+                        if (swap) {
                             if (startVer != ver)
                                 try {
                                     // Write to swap.
@@ -1771,6 +1772,9 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                                 catch (GridException e) {
                                     U.error(log, "Failed to write entry to swap storage: " + this, e);
                                 }
+                        }
+                        else
+                            clearIndex();
 
                         // Nullify value after swap.
                         val = null;
@@ -1796,7 +1800,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                         return evictInternal(swap, obsoleteVer, filter);
 
                     if ((!hasReaders() || swap) && markObsolete(obsoleteVer)) {
-                        if (swap)
+                        if (swap) {
                             if (startVer != ver)
                                 try {
                                     // Write to swap.
@@ -1805,6 +1809,9 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                                 catch (GridException e) {
                                     U.error(log, "Failed to write entry to swap storage: " + this, e);
                                 }
+                        }
+                        else
+                            clearIndex();
 
                         // Nullify value after swap.
                         val = null;

@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.21062011
+# Version: 3.1.1c.22062011
 #
 
 #
@@ -161,4 +161,4 @@ JVM_OPTS="-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSi
 # Uncomment and change if remote debugging is required.
 # JVM_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n ${JVM_OPTS}"
 
-"${JAVA_HOME}/bin/java" ${JVM_OPTS} ${JMX_MON} ${QUIET}  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"
+"${JAVA_HOME}/bin/java" ${JVM_OPTS} ${JMX_MON} ${QUIET} -DGRIDGAIN_SCRIPT  -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "${CONFIG}"

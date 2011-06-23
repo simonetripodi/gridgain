@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridFunc {
     /** */
@@ -398,12 +398,34 @@ public class GridFunc {
 
     /** */
     private static final GridClosure<GridNode, UUID> NODE2ID = new GridClosure<GridNode, UUID>() {
-        @Override public UUID apply(GridNode e) {
-            return e.id();
+        @Override public UUID apply(GridNode n) {
+            return n.id();
         }
 
         @Override public String toString() {
             return "Grid node to node ID transformer closure.";
+        }
+    };
+
+    /** */
+    private static final GridClosure<GridNode, String> NODE2ID8 = new GridClosure<GridNode, String>() {
+        @Override public String apply(GridNode n) {
+            return U.id8(n.id());
+        }
+
+        @Override public String toString() {
+            return "Grid node to node ID8 transformer closure.";
+        }
+    };
+
+    /** */
+    private static final GridClosure<UUID, String> ID2ID8 = new GridClosure<UUID, String>() {
+        @Override public String apply(UUID id) {
+            return U.id8(id);
+        }
+
+        @Override public String toString() {
+            return "UUID to ID8 transformer closure.";
         }
     };
 
@@ -1370,6 +1392,42 @@ public class GridFunc {
     }
 
     /**
+     * Convenient utility method that returns collection of node ID8s for a given
+     * collection of grid nodes. ID8 is a shorter string representation of node ID,
+     * mainly the first 8 characters.
+     * <p>
+     * Note that this method doesn't create a new collection but simply iterates
+     * over the input one.
+     *
+     * @param nodes Collection of grid nodes.
+     * @return Collection of node IDs for given collection of grid nodes.
+     */
+    public static Collection<String> nodeId8s(@Nullable Collection<? extends GridNode> nodes) {
+        if (nodes == null || nodes.isEmpty())
+            return Collections.emptyList();
+
+        return F.viewReadOnly(nodes, node2id8());
+    }
+
+    /**
+     * Convenient utility method that returns collection of node ID8s for a given
+     * collection of node IDs. ID8 is a shorter string representation of node ID,
+     * mainly the first 8 characters.
+     * <p>
+     * Note that this method doesn't create a new collection but simply iterates
+     * over the input one.
+     *
+     * @param ids Collection of nodeIds.
+     * @return Collection of node IDs for given collection of grid nodes.
+     */
+    public static Collection<String> id8s(@Nullable Collection<UUID> ids) {
+        if (ids == null || ids.isEmpty())
+            return Collections.emptyList();
+
+        return F.viewReadOnly(ids, id2id8());
+    }
+
+    /**
      * Convenient utility method that returns collection of node attributes for a given
      * collection of grid nodes.
      * <p>
@@ -2097,6 +2155,24 @@ public class GridFunc {
      */
     public static GridClosure<GridNode, UUID> node2id() {
         return NODE2ID;
+    }
+
+    /**
+     * Gets closure which converts node to node ID8 representation (shorter and good enough).
+     *
+     * @return Closure which converts node to node ID8 representation (shorter and good enough).
+     */
+    public static GridClosure<GridNode, String> node2id8() {
+        return NODE2ID8;
+    }
+
+    /**
+     * Gets closure which converts node ID to node ID8 representation (shorter and good enough).
+     *
+     * @return Closure which converts node ID to node ID8 representation (shorter and good enough).
+     */
+    public static GridClosure<UUID, String> id2id8() {
+        return ID2ID8;
     }
 
     /**

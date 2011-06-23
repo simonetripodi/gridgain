@@ -24,7 +24,7 @@ import java.util.*;
  * Near cache lock response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V> {
     /** Collection of versions that are pending and less than lock version. */
@@ -99,7 +99,7 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
      * @return DHT version.
      */
     public GridCacheVersion dhtVersion(int idx) {
-        return dhtVers[idx];
+        return dhtVers == null ? null : dhtVers[idx];
     }
 
     /**

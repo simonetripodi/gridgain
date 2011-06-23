@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.21062011
+:: Version: 3.1.1c.22062011
 ::
 
 ::
@@ -140,7 +140,7 @@ if "%OS%" == "Windows_NT" set PROG_NAME=%~nx0%
 :: set JVM_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n %JVM_OPTS%
 ::
 
-"%JAVA_HOME%\bin\java.exe" %JVM_OPTS% %JMX_MON% %QUIET%  -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%" -cp "%CP%" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "%CONFIG%"
+"%JAVA_HOME%\bin\java.exe" %JVM_OPTS% %JMX_MON% %QUIET% -DGRIDGAIN_SCRIPT  -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%" -cp "%CP%" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "%CONFIG%"
 
 :error_finish
 

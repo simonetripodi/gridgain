@@ -15,6 +15,7 @@ import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.typedef.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -24,12 +25,13 @@ import java.util.concurrent.*;
  * Schedules cron-based execution of grid tasks and closures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridScheduleProcessor extends GridProcessorAdapter {
     /** Cron scheduler. */
     private Scheduler sched;
 
+    /** Schedule futures. */
     private Set<GridScheduleFuture<?>> schedFuts = new GridConcurrentHashSet<GridScheduleFuture<?>>();
 
     /**
@@ -125,5 +127,12 @@ public class GridScheduleProcessor extends GridProcessorAdapter {
         }
 
         sched = null;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Schedule processor memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>   schedFutsSize: " + schedFuts.size());
     }
 }

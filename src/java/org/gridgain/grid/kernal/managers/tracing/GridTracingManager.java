@@ -18,7 +18,7 @@ import org.gridgain.grid.spi.tracing.*;
  * This class defines a grid tracing manager manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridTracingManager extends GridManagerAdapter<GridTracingSpi> {
     /** Interception listener. */
@@ -53,9 +53,8 @@ public class GridTracingManager extends GridManagerAdapter<GridTracingSpi> {
 
         proxyFactory.addListener(lsnr);
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(startInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -64,9 +63,8 @@ public class GridTracingManager extends GridManagerAdapter<GridTracingSpi> {
 
         stopSpi();
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /**
@@ -75,16 +73,14 @@ public class GridTracingManager extends GridManagerAdapter<GridTracingSpi> {
     private class GridMethodsInterceptionListener implements GridProxyListener {
         /** {@inheritDoc} */
         @Override public void beforeCall(Class<?> cls, String methodName, Object[] args) {
-            for (GridTracingSpi spi : getSpis()) {
+            for (GridTracingSpi spi : getSpis())
                 spi.beforeCall(cls, methodName, args);
-            }
         }
 
         /** {@inheritDoc} */
         @Override public void afterCall(Class<?> cls, String methodName, Object[] args, Object res, Throwable exc) {
-            for (GridTracingSpi spi : getSpis()) {
+            for (GridTracingSpi spi : getSpis())
                 spi.afterCall(cls, methodName, args, res, exc);
-            }
         }
     }
 }

@@ -27,7 +27,7 @@ import static org.gridgain.grid.GridEventType.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
     /** */
@@ -53,18 +53,16 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
 
         locNodeId = ctx.localNodeId();
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(startInfo());
-        }
     }
 
     /** {@inheritDoc} */
     @Override public void stop(boolean cancel, boolean wait) throws GridException {
         stopSpi();
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /**
@@ -83,9 +81,8 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
         try {
             GridSwapByteArray val = getSpi().read(space, key);
 
-            if (val != null) {
+            if (val != null)
                 recordEvent(EVT_SWAP_SPACE_DATA_READ, space);
-            }
 
             return val;
         }
@@ -118,9 +115,8 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
 
                 return (T)unmarshal(val, key.getClass().getClassLoader());
             }
-            else {
+            else
                 return null;
-            }
         }
         catch (GridSpiException e) {
             throw new GridException("Failed to read from swap space [space=" + space + ", key=" + key + ']', e);
@@ -193,9 +189,8 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
         try {
             boolean removed = getSpi().remove(space, key, c);
 
-            if (removed) {
+            if (removed)
                 recordEvent(EVT_SWAP_SPACE_DATA_REMOVED, space);
-            }
 
             return removed;
         }
@@ -360,15 +355,13 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
         GridSwapByteArray swapKey = marshal(key);
         GridSwapByteArray swapVal = read(space, swapKey);
 
-        if (swapVal != null) {
+        if (swapVal != null)
             return (T)unmarshal(swapVal, ses.getClassLoader());
-        }
 
         swapVal = read(globalSpace, swapKey);
 
-        if (swapVal != null) {
+        if (swapVal != null)
             return (T)unmarshal(swapVal, ses.getClassLoader());
-        }
 
         return null;
     }
@@ -388,11 +381,10 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
 
         remove(ses.getId().toString(), swapKey, new CIX1<GridSwapByteArray>() {
             @Override public void applyx(GridSwapByteArray removed) throws GridException {
-                if (removed != null) {
+                if (removed != null)
                     // If value has been actually removed from session-related space
                     // then remove from global space.
                     remove(globalSpace, swapKey, null);
-                }
             }
         });
     }
@@ -462,9 +454,8 @@ public class GridSwapSpaceManager extends GridManagerAdapter<GridSwapSpaceSpi> {
 
         GridSwapByteArray swapVal = read(globalSpace, marshal(key));
 
-        if (swapVal != null) {
+        if (swapVal != null)
             return (T)unmarshal(swapVal, key.getClass().getClassLoader());
-        }
 
         return null;
     }

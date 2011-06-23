@@ -21,6 +21,7 @@ import org.gridgain.grid.kernal.processors.jobmetrics.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.spi.collision.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
 
@@ -37,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Responsible for all grid job execution and communication.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings({"deprecation"})
 public class GridJobProcessor extends GridProcessorAdapter {
@@ -438,6 +439,26 @@ public class GridJobProcessor extends GridProcessorAdapter {
         // Outside of synchronization handle whichever snapshot was added last
         if ((snapshot = lastSnapshot.getAndSet(null)) != null)
             snapshot.onCollision();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        int activeJobsSize;
+        int passiveJobsSize;
+        int cancelledJobsSize;
+
+        synchronized (mux) {
+            activeJobsSize = activeJobs.size();
+            passiveJobsSize = passiveJobs.size();
+            cancelledJobsSize = cancelledJobs.size();
+        }
+
+        X.println(">>>");
+        X.println(">>> Job processor memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>   activeJobsSize: " + activeJobsSize);
+        X.println(">>>   passiveJobsSize: " + passiveJobsSize);
+        X.println(">>>   cancelledJobsSize: " + cancelledJobsSize);
+        X.println(">>>   cancelReqsSize: " + cancelReqs.size());
     }
 
     /** */
@@ -894,7 +915,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Handles job execution requests.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     private class JobExecutionListener implements GridMessageListener {
         @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
@@ -1235,7 +1256,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     private class JobDiscoveryListener implements GridLocalEventListener {
         /**

@@ -37,7 +37,7 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * Cache eviction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     /** */
@@ -129,6 +129,11 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
 
         if (fut != null)
             fut.onResponse(nodeId, res);
+        else {
+            if (log.isDebugEnabled())
+                log.debug("Unable to find eviction future for response [res=" + res + ", node=" + nodeId +
+                    ", localNode=" + cctx.nodeId() + ']');
+        }
     }
 
     /**
@@ -337,6 +342,13 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
+     *
+     */
+    private void evictQueueGc() {
+        evictQ.gc(EVICT_QUEUE_MAX_EDEN_SIZE);
+    }
+
+    /**
      * @param entry Entry to evict.
      * @param obsoleteVer Obsolete version.
      * @param filter Filter.
@@ -356,8 +368,12 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
             if (log.isDebugEnabled())
                 log.debug("Entry got evicted [entry=" + entry + ", localNode=" + cctx.nodeId() + ']');
         }
-        else if (log.isDebugEnabled())
-            log.debug("Entry didn't get evicted [entry=" + entry + ", localNode=" + cctx.nodeId() + ']');
+        else {
+            //U.debug("Entry didn't get evicted [entry=" + entry + ']'); // TODO
+
+            if (log.isDebugEnabled())
+                log.debug("Entry didn't get evicted [entry=" + entry + ", localNode=" + cctx.nodeId() + ']');
+        }
 
         return evicted;
     }
@@ -381,7 +397,7 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                 fut.rejectEntry(e.cached());
         }
 
-        evictQ.gc(EVICT_QUEUE_MAX_EDEN_SIZE);
+        evictQueueGc();
     }
 
     /**
@@ -401,7 +417,7 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
         for (EvictionFuture fut : futs.values())
             fut.rejectEntry(entry);
 
-        evictQ.gc(EVICT_QUEUE_MAX_EDEN_SIZE);
+        evictQueueGc();
     }
 
     /**
@@ -416,14 +432,16 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
         if (entry == null)
             return true;
 
-        // Entry cannot be evicted if entry contains GridCacheInternal key.
+        // Do not evict internal entries.
         if (entry.key() instanceof GridCacheInternal)
             return false;
 
+        /* TODO
         if (!cctx.isSwapEnabled() && !cctx.isNear())
             // Entry cannot be evicted on backup node if swap is disabled.
             if (!entry.wrap(false).primary())
                 return false;
+        */
 
         if (cctx.config().getCacheMode() == LOCAL || cctx.isNear() ||
             !cctx.config().isEvictSynchronized() || cctx.isSwapEnabled()) {
@@ -550,7 +568,7 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
 
                 Collection<EvictionInfo> evictedEntries = t.get1();
 
-                for (final EvictionInfo info : evictedEntries) {
+                for (EvictionInfo info : evictedEntries) {
                     GridCacheEntryEx<K, V> entry = info.entry();
 
                     try {
@@ -560,18 +578,8 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                                 r.get1().id() /* reader node id */,
                                 r.get2() /* eviction response id */);
 
-                        // If version has changed since we started the whole process
-                        // then we should not evict entry.
-                        GridPredicate<? super GridCacheEntry<K, V>>[] filter =
-                            cctx.vararg(new P1<GridCacheEntry<K, V>>() {
-                                @Override public boolean apply(GridCacheEntry<K, V> e) {
-                                    GridCacheVersion ver = (GridCacheVersion)e.version();
-
-                                    return info.version().equals(ver) && F.isAll(info.filter());
-                                }
-                            });
-
-                        evict0(entry, obsoleteVer, filter);
+                        if (!evict0(entry, obsoleteVer, versionFilter(info)))
+                            touch(info.entry());
                     }
                     catch (GridException e) {
                         log.error("Failed to evict entry [entry=" + entry +
@@ -587,8 +595,29 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                 // Touch rejected entries.
                 Collection<EvictionInfo> rejectedEntries = t.get2();
 
-                for (EvictionInfo info : rejectedEntries)
+                for (EvictionInfo info : rejectedEntries) {
+                    if (log.isDebugEnabled())
+                        log.debug("Touching rejected entry [entry=" + info.entry() + ", localNode="
+                            + cctx.nodeId() + ']');
+
                     touch(info.entry());
+                }
+            }
+        });
+    }
+
+    /**
+     * @param info Eviction info.
+     * @return Version aware filter.
+     */
+    private GridPredicate<? super GridCacheEntry<K, V>>[] versionFilter(final EvictionInfo info) {
+        // If version has changed since we started the whole process
+        // then we should not evict entry.
+        return cctx.vararg(new P1<GridCacheEntry<K, V>>() {
+            @Override public boolean apply(GridCacheEntry<K, V> e) {
+                GridCacheVersion ver = (GridCacheVersion)e.version();
+
+                return info.version().equals(ver) && F.isAll(info.filter());
             }
         });
     }
@@ -695,6 +724,16 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
         }
     }
 
+    /** {@inheritDoc} */
+    @Override protected void printMemoryStats() {
+        X.println(">>> ");
+        X.println(">>> Eviction manager memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   evictionQueueSize: " + evictQ.size());
+        X.println(">>>   txsSize: " + txs.size());
+        X.println(">>>   entriesSize: " + entries.size());
+        X.println(">>>   futsSize: " + futs.size());
+    }
+
     /**
      * Wrapper around an entry to be put into queue.
      */
@@ -755,7 +794,7 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
 
         /** */
         @GridToStringInclude
-        private ConcurrentMap<K, EvictionInfo> entries;
+        private final ConcurrentMap<K, EvictionInfo> entries = new ConcurrentHashMap<K, EvictionInfo>();
 
         /** */
         @GridToStringInclude
@@ -793,13 +832,12 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
         /**
          * Prepares future (sends all required requests).
          */
-        @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"}) void prepare() {
+        @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
+        void prepare() {
             if (log.isDebugEnabled())
                 log.debug("Preparing eviction future [futId=" + id + ", localNode=" + cctx.nodeId() + ']');
 
             futs.put(id, this);
-
-            entries = new ConcurrentHashMap<K, EvictionInfo>();
 
             Collection<EvictionInfo> locals = new HashSet<EvictionInfo>();
 
@@ -863,6 +901,10 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                     locals.add(info);
             }
 
+            evictQueueGc();
+
+            assert evictQ.isEmpty();
+
             // Evict entries without remote participant nodes immediately.
             GridCacheVersion obsoleteVer = cctx.versions().next();
 
@@ -871,11 +913,19 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                     log.debug("Evicting key without remote participant nodes: " + info);
 
                 try {
-                    evict0(info.entry(), obsoleteVer, info.filter());
+                    if (!evict0(info.entry(), obsoleteVer, versionFilter(info)))
+                        touch(info.entry());
                 }
                 catch (GridException e) {
                     log.error("Failed to evict entry: " + info.entry(), e);
                 }
+            }
+
+            // If there were only local entries.
+            if (entries.isEmpty()) {
+                complete();
+
+                return;
             }
 
             // Send eviction requests.

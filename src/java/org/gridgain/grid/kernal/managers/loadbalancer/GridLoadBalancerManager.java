@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Load balancing manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancingSpi> {
     /** Number of entries to keep in annotation cache. */
@@ -414,6 +414,7 @@ public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancin
      * @param annCls Annotation class for the fields.
      * @param mtds Methods to cache.
      */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     private void cacheMethods(Class<?> cls, Class<? extends Annotation> annCls,
         List<Method> mtds) {
         lock.writeLock().lock();
@@ -429,5 +430,13 @@ public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancin
         finally {
             lock.writeLock().unlock();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Load balancer manager memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  fieldCacheSize: " + fieldCache.size());
+        X.println(">>>  mtdCacheSize: " + mtdCache.size());
     }
 }

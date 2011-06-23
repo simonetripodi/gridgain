@@ -60,6 +60,8 @@ import java.util.jar.*;
 import java.util.regex.*;
 import java.util.zip.*;
 
+import static org.fusesource.jansi.Ansi.*;
+import static org.fusesource.jansi.Ansi.Attribute.*;
 import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
@@ -67,7 +69,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -496,7 +498,8 @@ public abstract class GridUtils {
      * @param msg Message to print with the stack.
      */
     public static void dumpStack(String msg) {
-        new Exception(msg).printStackTrace(System.out);
+        new Exception('<' + DEBUG_DATE_FMT.format(new Date(System.currentTimeMillis())) + "><DEBUG><" +
+            Thread.currentThread().getName() + "> " + msg).printStackTrace(System.out);
     }
 
     /**
@@ -1437,7 +1440,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -2193,7 +2196,7 @@ public abstract class GridUtils {
             if (F.eq(o, val))
                 return true;
 
-            if (!F.isEmpty(vals))
+            if (vals != null && vals.length > 0)
                 for (Object v : vals)
                     if (F.eq(o, v))
                         return true;
@@ -2843,7 +2846,10 @@ public abstract class GridUtils {
 
         assert log == null || log.isQuiet();
 
-        System.err.println("[" + SHORT_DATE_FMT.format(new java.util.Date()) + "] (!) " + compact(shortMsg.toString()));
+        System.err.println(
+            "[" + SHORT_DATE_FMT.format(new java.util.Date()) + "] " +
+            bright("(!) ") +
+            compact(shortMsg.toString()));
     }
 
     /**
@@ -2916,7 +2922,7 @@ public abstract class GridUtils {
 
         assert log == null || log.isQuiet();
 
-        System.err.println("[" + SHORT_DATE_FMT.format(new java.util.Date()) + "] (!!) " +
+        System.err.println("[" + SHORT_DATE_FMT.format(new java.util.Date()) + "] " + bright("(!!) ") +
             compact(shortMsg.toString()));
 
         if (e != null)
@@ -3153,7 +3159,7 @@ public abstract class GridUtils {
      * @param exec ExecutorService to shutdown.
      * @param log The logger to possible exceptions and warnings.
      */
-    public static void shutdownNow(Class<?> owner, ExecutorService exec, GridLogger log) {
+    public static void shutdownNow(Class<?> owner, @Nullable ExecutorService exec, @Nullable GridLogger log) {
         if (exec != null) {
             List<Runnable> tasks = exec.shutdownNow();
 
@@ -3164,8 +3170,13 @@ public abstract class GridUtils {
             try {
                 exec.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             }
-            catch (InterruptedException ignore) {
+            catch (InterruptedException ignored) {
                 warn(log, "Got interrupted while waiting for executor service to stop.");
+
+                exec.shutdownNow();
+
+                // Preserve interrupt status.
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -5283,5 +5294,52 @@ public abstract class GridUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Returns string with appended ANSI escape sequences
+     * that makes it bright when printed out to console.
+     * <p>
+     * Works only on *NIX systems and MAC OS. On others
+     * original string will be returned.
+     *
+     * @param str Original string.
+     * @return Escaped string (if supported).
+     */
+    public static String bright(@Nullable String str) {
+        if (F.isEmpty(str))
+            return str;
+
+        return isAnsiEscape() ?
+            ansi().a(INTENSITY_BOLD).a(str).reset().toString() : str;
+    }
+
+    /**
+     * Returns string with appended ANSI escape sequences
+     * that makes it bright when printed out to console.
+     * <p>
+     * Works only on *NIX systems and MAC OS. On others
+     * original string will be returned.
+     * <p>
+     * <b>NOTE:</b> this option is not widely supported.
+     *
+     * @param str Original string.
+     * @return Escaped string (if supported).
+     */
+    public static String dim(@Nullable String str) {
+        if (F.isEmpty(str))
+            return str;
+
+        return isAnsiEscape() ?
+            ansi().a(INTENSITY_FAINT).a(str).reset().toString() : str;
+    }
+
+    /**
+     * Tests whether current runtime support ANSI escape characters.
+     *
+     * @return <code>True</code> if ANSI escape characters are supported.
+     */
+    private static boolean isAnsiEscape() {
+        return System.getProperty("GRIDGAIN_SCRIPT") != null && (isUnix() || isLinux() || isMacOs());
     }
 }

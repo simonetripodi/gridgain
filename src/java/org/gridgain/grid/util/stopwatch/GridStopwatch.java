@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.*;
  * Stopwatch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @GridToStringExclude
 public interface GridStopwatch {

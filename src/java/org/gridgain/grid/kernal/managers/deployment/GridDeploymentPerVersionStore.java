@@ -18,6 +18,7 @@ import org.gridgain.grid.spi.deployment.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.lang.utils.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
@@ -30,7 +31,7 @@ import static org.gridgain.grid.GridEventType.*;
  * {@link GridDeploymentMode#CONTINUOUS} modes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
     /** Shared deployment cache. */
@@ -83,7 +84,7 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
         }
 
         for (SharedDeployment dep : copy)
-            dep.recordUndeployed();
+            dep.recordUndeployed(null);
 
         if (log.isDebugEnabled())
             log.debug(stopInfo());
@@ -144,7 +145,7 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
                     }
                 }
 
-                recordUndeployed(undeployed);
+                recordUndeployed(discoEvt.eventNodeId(), undeployed);
             }
         };
 
@@ -191,7 +192,7 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
             }
         }
 
-        recordUndeployed(undeployed);
+        recordUndeployed(null, undeployed);
 
         if (log.isDebugEnabled())
             log.debug("Registered deployment discovery listener: " + discoLsnr);
@@ -523,12 +524,13 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
     /**
      * Records all undeployed tasks.
      *
+     * @param nodeId Left node ID.
      * @param undeployed Undeployed deployments.
      */
-    private void recordUndeployed(Collection<SharedDeployment> undeployed) {
+    private void recordUndeployed(@Nullable UUID nodeId, Collection<SharedDeployment> undeployed) {
         if (!F.isEmpty(undeployed))
             for (SharedDeployment d : undeployed)
-                d.recordUndeployed();
+                d.recordUndeployed(nodeId);
     }
 
     /**
@@ -632,13 +634,16 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
 
                     // Only check deployments with no participants.
                     if (!dep.hasParticipants()) {
-                        assert dep.deployMode() == CONTINUOUS;
-
-                        if (dep.existingDeployedClass(meta.className()) != null) {
-                            // Change from shared deploy to shared undeploy or user version change.
-                            // Simply remove all deployments with no participating nodes.
-                            if (meta.deploymentMode() == SHARED || !meta.userVersion().equals(dep.userVersion()))
-                                doomed = dep;
+                        // In case of SHARED deployment it is possible to get hear if
+                        // unmarshalling happens during undeploy. In this case, we
+                        // simply don't do anything.
+                        if (dep.deployMode() == CONTINUOUS) {
+                            if (dep.existingDeployedClass(meta.className()) != null) {
+                                // Change from shared deploy to shared undeploy or user version change.
+                                // Simply remove all deployments with no participating nodes.
+                                if (meta.deploymentMode() == SHARED || !meta.userVersion().equals(dep.userVersion()))
+                                    doomed = dep;
+                            }
                         }
                     }
                     // If there are participants, we undeploy if class loader ID on some node changed.
@@ -756,7 +761,7 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
 
                                 // Outside synchronization.
                                 if (removed)
-                                    undep.recordUndeployed();
+                                    undep.recordUndeployed(null);
                             }
                         });
                     }
@@ -811,7 +816,7 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
             }
         }
 
-        recordUndeployed(undeployed);
+        recordUndeployed(null, undeployed);
     }
 
     /**
@@ -1093,8 +1098,10 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
 
         /**
          * Called to record all undeployed classes..
+         *
+         * @param leftNodeId Left node ID.
          */
-        void recordUndeployed() {
+        void recordUndeployed(@Nullable UUID leftNodeId) {
             assert !Thread.holdsLock(mux);
 
             for (Map.Entry<String, Class<?>> depCls : deployedClassMap().entrySet()) {
@@ -1124,7 +1131,7 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
                 // Resource cleanup.
                 ctx.resource().onUndeployed(this);
 
-                ctx.cache().onUndeployed(loader());
+                ctx.cache().onUndeployed(leftNodeId, loader());
             }
         }
 

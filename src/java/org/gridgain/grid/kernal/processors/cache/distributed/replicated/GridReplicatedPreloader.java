@@ -39,7 +39,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Class that takes care about entries preloading in replicated cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** */
@@ -82,6 +82,9 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     /** {partition, mod} -> {node id, initial preload request} */
     private final Map<GridTuple2<Integer, Integer>, GridTuple2<UUID, GridReplicatedPreloadRequest<K, V>>> progress =
         new ConcurrentHashMap<GridTuple2<Integer, Integer>, GridTuple2<UUID, GridReplicatedPreloadRequest<K, V>>>();
+
+    /** Initial remote nodes. */
+    private Collection<GridRichNode> initRmts;
 
     /**
      * Constructor.
@@ -401,9 +404,9 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      * @throws GridException If failed to send initial preload requests.
      */
     private void sendInitialPreloadRequests() throws GridException {
-        Collection<GridRichNode> nodes = new HashSet<GridRichNode>(CU.remoteNodes(cctx));
+        initRmts = new GridConcurrentHashSet<GridRichNode>(GridCacheUtils.remoteNodes(cctx));
 
-        if (nodes.isEmpty()) {
+        if (initRmts.isEmpty()) {
             if (log.isDebugEnabled())
                 log.debug("There are no nodes to send preload request (preloading will finish).");
 
@@ -415,7 +418,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
         Set<Integer> parts = partitions(cctx.localNode());
 
         for (int part : parts) {
-            HashSet<GridRichNode> partNodes = new HashSet<GridRichNode>(aff.nodes(part, nodes));
+            HashSet<GridRichNode> partNodes = new HashSet<GridRichNode>(aff.nodes(part, initRmts));
 
             if (partNodes.isEmpty())
                 continue;
@@ -501,10 +504,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 failed = true;
             }
         }
-        else {
-            if (log.isDebugEnabled())
-                log.debug("Received preload request while node itself is in preload state (will fail request).");
-        }
+        else if (log.isDebugEnabled())
+            log.debug("Received preload request while node itself is in preload state (will fail request).");
 
         GridCacheMessage<K, V> res = new GridReplicatedPreloadResponse<K, V>(req.mod(), failed);
 
@@ -608,6 +609,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      * @param failedNodeId Failed node id.
      */
     private void resendPreloadRequest(UUID failedNodeId) {
+        assert failedNodeId != null;
+
         if (log.isDebugEnabled())
             log.debug("Resending initial preloader request for failed node: " + failedNodeId);
 
@@ -632,29 +635,23 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      * @param nodeCnt Number of nodes.
      */
     public void resendPreloadRequest(UUID failedNodeId, int part, int mod, int nodeCnt) {
+        assert failedNodeId != null;
+
         if (log.isDebugEnabled())
             log.debug("Resending initial preloader request [failedNodeId=" + failedNodeId + ", part=" + part +
                 ", mod=" + mod + ", nodeCnt=" + nodeCnt + "]");
 
         GridRichNode failedNode = cctx.node(failedNodeId);
 
-        List<GridRichNode> nodes = new ArrayList<GridRichNode>(GridCacheUtils.remoteNodes(cctx));
-
-        Collections.sort(nodes, new Comparator<GridRichNode>() {
-            @Override public int compare(GridRichNode n1, GridRichNode n2) {
-                return n1.order() > n2.order() ? 1 : -1;
-            }
-        });
-
         if (failedNode != null)
-            nodes.remove(failedNode);
+            initRmts.remove(failedNode);
 
         GridReplicatedPreloadRequest<K, V> req = new GridReplicatedPreloadRequest<K, V>(part, mod, nodeCnt);
 
-        if (!nodes.isEmpty()) {
+        if (!initRmts.isEmpty()) {
             boolean sent = false;
 
-            for (GridRichNode node : nodes) {
+            for (GridRichNode node : initRmts) {
                 if (!cctx.belongs(part, node))
                     continue;
 

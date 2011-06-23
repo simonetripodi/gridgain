@@ -40,7 +40,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
     /** */
@@ -1700,11 +1700,35 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
         removeMessageListener(topic.name());
     }
 
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        int msgSetMapSize;
+        int closedTopicsSize;
+        int discoWaitMapSize;
+        int syncReqMapSize;
+
+        synchronized (mux) {
+            msgSetMapSize = msgSetMap.size();
+            closedTopicsSize = closedTopics.size();
+            discoWaitMapSize = discoWaitMap.size();
+            syncReqMapSize = syncReqMap.size();
+        }
+
+        X.println(">>>");
+        X.println(">>> IO manager memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>  lsnrMapSize: " + lsnrMap.size());
+        X.println(">>>  msgSetMapSize: " + msgSetMapSize);
+        X.println(">>>  msgIdMapSize: " + msgIdMap.size());
+        X.println(">>>  closedTopicsSize: " + closedTopicsSize);
+        X.println(">>>  discoWaitMapSize: " + discoWaitMapSize);
+        X.println(">>>  syncReqMapSize: " + syncReqMapSize);
+    }
+
     /**
      * This class represents a pair of listener and its corresponding message p.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     @SuppressWarnings("deprecation")
     private class GridFilteredMessageListener implements GridMessageListener {
@@ -1756,7 +1780,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a message listener wrapper that knows about peer deployment.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     @SuppressWarnings("deprecation")
     private class GridUserMessageListener implements GridMessageListener {
@@ -1852,7 +1876,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * Ordered communication message set.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     private class GridCommunicationMessageSet implements GridTimeoutObject {
         /** */
@@ -1913,9 +1937,8 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
         @Override public void onTimeout() {
             assert !Thread.holdsLock(this);
 
-            if (log.isDebugEnabled()) {
+            if (log.isDebugEnabled())
                 log.debug("Removing message set due to timeout: " + this);
-            }
 
             synchronized (mux) {
                 Map<UUID, GridCommunicationMessageSet> map = msgSetMap.get(topic);
@@ -2026,7 +2049,9 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(GridCommunicationMessageSet.class, this);
+            synchronized (mux) {
+                return S.toString(GridCommunicationMessageSet.class, this);
+            }
         }
     }
 }

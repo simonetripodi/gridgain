@@ -14,6 +14,7 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.events.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
+import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.thread.*;
 import org.gridgain.grid.typedef.*;
@@ -40,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -103,7 +104,11 @@ public class GridDhtPartitionDemandPool<K, V> {
 
         poolSize = cctx.preloadEnabled() ? cctx.config().getPreloadThreadPoolSize() : 1;
 
-        barrier = new CyclicBarrier(poolSize);
+        barrier = new CyclicBarrier(poolSize, new Runnable() {
+            @Override public void run() {
+                GridDhtPartitionDemandPool.this.cctx.deploy().unwind();
+            }
+        });
 
         dmdWorkers = new ArrayList<DemandWorker>(poolSize);
 
@@ -325,14 +330,15 @@ public class GridDhtPartitionDemandPool<K, V> {
     /**
      * Refresh partitions.
      *
+     * @param timeout Timeout.
      * @throws GridInterruptedException If interrupted.
      */
-    private void refreshPartitions() throws GridInterruptedException {
+    private void refreshPartitions(long timeout) throws GridInterruptedException {
         long last = lastRefresh.get();
 
         long now = System.currentTimeMillis();
 
-        if (last != -1 && now - last >= cctx.gridConfig().getNetworkTimeout()) {
+        if (last != -1 && now - last >= timeout) {
             if (lastRefresh.compareAndSet(last, now))
                 cctx.dht().dhtPreloader().refreshPartitions();
         }
@@ -476,18 +482,19 @@ public class GridDhtPartitionDemandPool<K, V> {
 
             // Grow by 50% only if another thread didn't do it already.
             if (GridDhtPartitionDemandPool.this.timeout.compareAndSet(timeout, newTimeout))
-                U.warn(log, "Increased preloading message timeout [prevTimeout=" + timeout + ", newTimeout=" +
-                    newTimeout + ']');
+                U.warn(log, "Increased preloading message timeout from " + timeout + "ms to " +
+                    newTimeout + "ms.");
         }
 
         /**
          * @param pick Node picked for preloading.
          * @param p Partition.
          * @param entry Preloaded entry.
+         * @return {@code False} if partition has become invalid during preloading.
          * @throws GridInterruptedException If interrupted.
          */
-        private void preloadEntry(GridNode pick, int p, GridCacheEntryInfo<K, V> entry)
-            throws GridInterruptedException {
+        private boolean preloadEntry(GridNode pick, int p, GridCacheEntryInfo<K, V> entry)
+            throws GridException, GridInterruptedException {
             try {
                 GridCacheEntryEx<K, V> cached = null;
 
@@ -514,14 +521,22 @@ public class GridDhtPartitionDemandPool<K, V> {
                         log.debug("Entry has been concurrently removed while preloading (will ignore) [key=" +
                             cached.key() + ", part=" + p + ']');
                 }
+                catch (GridDhtInvalidPartitionException ignored) {
+                    if (log.isDebugEnabled())
+                        log.debug("Partition became invalid during preloading (will ignore): " + p);
+
+                    return false;
+                }
             }
             catch (GridInterruptedException e) {
                 throw e;
             }
             catch (GridException e) {
-                U.error(log, "Failed to cache preloaded entry [local=" + cctx.nodeId() + ", node=" + pick.id() +
-                    ", key=" + entry.key() + ", part=" + p + ']', e);
+                throw new GridException("Failed to cache preloaded entry (will stop preloading) [local=" +
+                    cctx.nodeId() + ", node=" + pick.id() + ", key=" + entry.key() + ", part=" + p + ']', e);
             }
+
+            return true;
         }
 
         /**
@@ -542,8 +557,7 @@ public class GridDhtPartitionDemandPool<K, V> {
          * @throws GridException If failed to send message.
          */
         private Set<Integer> demandFromNode(GridNode node, GridDhtPartitionDemandMessage<K, V> d,
-            GridDhtPartitionsExchangeFuture<K, V> exchFut)
-            throws InterruptedException, GridException {
+            GridDhtPartitionsExchangeFuture<K, V> exchFut) throws InterruptedException, GridException {
             GridRichNode loc = cctx.localNode();
 
             cntr++;
@@ -553,7 +567,7 @@ public class GridDhtPartitionDemandPool<K, V> {
 
             Set<Integer> missed = new HashSet<Integer>();
 
-            Collection<Integer> remaining = new HashSet<Integer>(d.partitions());
+            Collection<Integer> remaining = d.partitions();
 
             // Drain queue before processing a new node.
             drainQueue();
@@ -598,9 +612,28 @@ public class GridDhtPartitionDemandPool<K, V> {
                         if (s == null) {
                             if (msgQ.isEmpty()) { // Safety check.
                                 U.warn(log, "Timed out waiting for partitions to load, will retry in " + timeout +
-                                    "ms" + ']');
+                                    "ms (you may need to increase 'networkTimeout' or 'preloadBatchSize' " +
+                                    "in configuration)");
 
                                 growTimeout(timeout);
+
+                                // Ordered listener was removed if timeout expired.
+                                cctx.io().removeOrderedHandler(d.topic());
+
+                                // Must create copy to be able to work with IO manager thread local caches.
+                                d = new GridDhtPartitionDemandMessage<K, V>(d);
+
+                                // Create new topic.
+                                d.topic(topic(++cntr));
+
+                                // Create new ordered listener.
+                                cctx.io().addOrderedHandler(d.topic(),
+                                    new CI2<UUID, GridDhtPartitionSupplyMessage<K, V>>() {
+                                        @Override public void apply(UUID nodeId,
+                                            GridDhtPartitionSupplyMessage<K, V> msg) {
+                                            addMessage(new SupplyMessage<K, V>(nodeId, msg));
+                                        }
+                                    });
 
                                 // Resend message with larger timeout.
                                 retry = true;
@@ -631,6 +664,14 @@ public class GridDhtPartitionDemandPool<K, V> {
 
                         GridDhtPartitionSupplyMessage<K, V> supply = s.supply();
 
+                        if (supply.classError() != null) {
+                            if (log.isDebugEnabled())
+                                log.debug("Class got undeployed during preloading: " + supply.classError());
+
+                            // Quit preloading.
+                            break;
+                        }
+
                         // Preload.
                         for (Map.Entry<Integer, Collection<GridCacheEntryInfo<K, V>>> e : supply.infos().entrySet()) {
                             int p = e.getKey();
@@ -647,9 +688,20 @@ public class GridDhtPartitionDemandPool<K, V> {
                                         cctx.gridName() + ", cacheName=" + cctx.namex() + ", part=" + part + ']';
 
                                     try {
+                                        Collection<Integer> invalidParts = new GridLeanSet<Integer>();
+
                                         // Loop through all received entries and try to preload them.
-                                        for (GridCacheEntryInfo<K, V> entry : e.getValue())
-                                            preloadEntry(node, p, entry);
+                                        for (GridCacheEntryInfo<K, V> entry : e.getValue()) {
+                                            if (!invalidParts.contains(p)) {
+                                                if (!preloadEntry(node, p, entry)) {
+                                                    invalidParts.add(p);
+
+                                                    if (log.isDebugEnabled())
+                                                        log.debug("Got entries for invalid partition during " +
+                                                            "preloading (will skip) [p=" + p + ", entry=" + entry + ']');
+                                                }
+                                            }
+                                        }
 
                                         watch.step("PRELOADED_ENTRIES");
 
@@ -674,11 +726,19 @@ public class GridDhtPartitionDemandPool<K, V> {
                                         part.release();
                                     }
                                 }
-                                else if (log.isDebugEnabled())
-                                    log.debug("Skipping loading of partition (state is not MOVING): " + part);
+                                else {
+                                    remaining.remove(p);
+
+                                    if (log.isDebugEnabled())
+                                        log.debug("Skipping loading partition (state is not MOVING): " + part);
+                                }
                             }
-                            else if (log.isDebugEnabled())
-                                log.debug("Skipping loading of partition (it does not belong on current node): " + p);
+                            else {
+                                remaining.remove(p);
+
+                                if (log.isDebugEnabled())
+                                    log.debug("Skipping loading partition (it does not belong on current node): " + p);
+                            }
                         }
 
                         remaining.removeAll(s.supply().missed());
@@ -731,8 +791,9 @@ public class GridDhtPartitionDemandPool<K, V> {
                 while (!isCancelled()) {
                     try {
                         // Barrier check must come first because we must always execute it.
-                        if (barrier.await() == 0 && exchFut != null && !exchFut.dummy())
+                        if (barrier.await() == 0 && exchFut != null && !exchFut.dummy()) {
                             preloadEvent(EVT_CACHE_PRELOAD_STOPPED, exchFut.discoveryEvent());
+                        }
                     }
                     catch (BrokenBarrierException ignore) {
                         throw new InterruptedException("Demand worker stopped.");
@@ -888,6 +949,8 @@ public class GridDhtPartitionDemandPool<K, V> {
 
         /** {@inheritDoc} */
         @Override protected void body() throws InterruptedException, GridInterruptedException {
+            long timeout = cctx.gridConfig().getNetworkTimeout();
+
             while (!isCancelled()) {
                 GridStopwatch watch = W.stopwatch("PARTITION_MAP_SYNCUP");
 
@@ -897,7 +960,7 @@ public class GridDhtPartitionDemandPool<K, V> {
                     // If not first preloading and no more topology events present,
                     // then we periodically refresh partition map.
                     if (futQ.isEmpty() && syncFut.isDone())
-                        refreshPartitions();
+                        refreshPartitions(timeout);
 
                     // After workers line up and before preloading starts we initialize all futures.
                     if (log.isDebugEnabled())
@@ -906,7 +969,10 @@ public class GridDhtPartitionDemandPool<K, V> {
                             ", worker=" + worker() + ']');
 
                     // Take next exchange future.
-                    exchFut = take(futQ);
+                    exchFut = poll(futQ, timeout);
+
+                    if (exchFut == null)
+                        continue; // Main while loop.
 
                     busy = true;
 

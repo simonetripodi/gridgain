@@ -47,7 +47,7 @@ import java.util.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @GridToStringExclude
 public interface GridKernalContext extends GridMetadataAware, Iterable<GridComponent> {
@@ -356,4 +356,11 @@ public interface GridKernalContext extends GridMetadataAware, Iterable<GridCompo
      * @return {@code True} if network is currently segmented, {@code false} otherwise.
      */
     public boolean segmented();
+
+    /**
+     * Print grid kernal memory stats (sizes of internal structures, etc.).
+     *
+     * NOTE: This method is for testing and profiling purposes only.
+     */
+    public void printMemoryStats();
 }

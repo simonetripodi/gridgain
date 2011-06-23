@@ -18,6 +18,7 @@ import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.stopwatch.*;
 import org.jetbrains.annotations.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -30,7 +31,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Cache communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     /** Number of retries using to send messages. */
@@ -560,6 +561,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     @SuppressWarnings({"unchecked"})
     public void removeOrderedHandler(String topic) {
         if (orderedHandlers.remove(topic) != null) {
+            cctx.gridIO().removeMessageId(topic);
             cctx.gridIO().removeMessageListener(topic);
 
             if (log != null && log.isDebugEnabled())
@@ -612,7 +614,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
      * @param msg Message.
      * @throws GridException If failed.
      */
-    @SuppressWarnings( {"unchecked"})
+    @SuppressWarnings( {"unchecked", "ErrorNotRethrown"})
     private void unmarshall(UUID nodeId, Object msg) throws GridException {
         if (msg instanceof GridCacheMessage) {
             GridCacheMessage<K, V> cacheMsg = (GridCacheMessage<K, V>)msg;
@@ -627,8 +629,40 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     log.debug("Set P2P context [senderId=" + nodeId + ", msg=" + msg + ']');
             }
 
-            cacheMsg.p2pUnmarshal(cctx, cctx.deploy().globalLoader());
+            try {
+                cacheMsg.p2pUnmarshal(cctx, cctx.deploy().globalLoader());
+            }
+            catch (GridException e) {
+                if (cacheMsg.ignoreClassErrors()) {
+                    if (X.hasCause(e, InvalidClassException.class, ClassNotFoundException.class,
+                        NoClassDefFoundError.class, UnsupportedClassVersionError.class))
+                        cacheMsg.onClassError(e);
+                    else
+                        throw e;
+                }
+                else
+                    throw e;
+            }
+            catch (Error e) {
+                if (cacheMsg.ignoreClassErrors()) {
+                    if (X.hasCause(e, NoClassDefFoundError.class, UnsupportedClassVersionError.class))
+                        cacheMsg.onClassError(new GridException("Failed to load class during unmarshalling: " + e, e));
+                    else
+                        throw e;
+                }
+                else
+                    throw e;
+            }
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override protected void printMemoryStats() {
+        X.println(">>> ");
+        X.println(">>> Cache IO manager memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   clsHandlersSize: " + clsHandlers.size());
+        X.println(">>>   orderedHandlersSize: " + orderedHandlers.size());
+        X.println(">>>   msgIdsSize: " + msgIds.size());
     }
 
     /**
@@ -792,7 +826,8 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                     (GridInClosure2<UUID, GridCacheMessage<K,V>>)orderedHandlers.get(topic);
 
                 if (c == null) {
-                    U.warn(log, "Received ordered message without registered handler (will ignore) [topic=" + topic +
+                    if (log.isDebugEnabled())
+                        log.debug("Received ordered message without registered handler (will ignore) [topic=" + topic +
                         ", msg=" + msg + ", nodeId=" + nodeId + ']');
 
                     return;

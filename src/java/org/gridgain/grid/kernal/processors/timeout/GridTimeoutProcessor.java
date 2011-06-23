@@ -14,6 +14,7 @@ import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.thread.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.worker.*;
 import java.util.*;
@@ -22,7 +23,7 @@ import java.util.*;
  * Detects timeout events and processes them.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 public class GridTimeoutProcessor extends GridProcessorAdapter {
     /** */
@@ -105,7 +106,7 @@ public class GridTimeoutProcessor extends GridProcessorAdapter {
      * Handles job timeouts.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.21062011
+     * @version 3.1.1c.22062011
      */
     private class TimeoutWorker extends GridWorker {
         /** */
@@ -162,5 +163,12 @@ public class GridTimeoutProcessor extends GridProcessorAdapter {
                 }
             }
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Timeout processor memory stats [grid=" + ctx.gridName() + ']');
+        X.println(">>>   timeoutObjsSize: " + timeoutObjs.size());
     }
 }

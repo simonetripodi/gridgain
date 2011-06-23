@@ -26,7 +26,7 @@ import java.util.concurrent.locks.*;
  * Caches used to improve the efficiency of standard Java reflection mechanism.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 class GridResourceIoc {
     /** Number of entries to keep in annotation cache. */
@@ -433,5 +433,13 @@ class GridResourceIoc {
         finally {
             lock.writeLock().unlock();
         }
+    }
+
+    /** {@inheritDoc} */
+    public void printMemoryStats() {
+        X.println(">>>   taskMapSize: " + taskMap.size());
+        X.println(">>>   fieldCacheSize: " + fieldCache.size());
+        X.println(">>>   mtdCacheSize: " + mtdCache.size());
+        X.println(">>>   skipCacheSize: " + skipCache.size());
     }
 }

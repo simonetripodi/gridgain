@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Query and index manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.21062011
+ * @version 3.1.1c.22062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V> {
@@ -209,6 +209,15 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      */
     public Collection<String> indexTables() {
         return idx.indexTables();
+    }
+
+    /**
+     * NOTE: For testing purposes.
+     *
+     * @return Query index.
+     */
+    public GridCacheQueryIndex<K, V> index() {
+        return idx;
     }
 
     /**
@@ -751,9 +760,10 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
     /**
      * Prints memory statistics for debugging purposes.
      */
-    public void printMemoryStats() {
-        X.println(">>> Query memory stats: ");
-        X.println("    Metrics: " + metrics.size());
+    @Override public void printMemoryStats() {
+        X.println(">>>");
+        X.println(">>> Query manager memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   Metrics: " + metrics.size());
 
         idx.printMemoryStats();
     }
