@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -53,8 +53,11 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Near cache eviction policy. */
     private GridCacheEvictionPolicy nearEvictPolicy;
 
-    /** Flag indicating whether eviction is synchronized between nodes. */
-    private boolean evictSynchronized = true;
+    /** Flag indicating whether eviction is synchronized with backup nodes. */
+    private boolean backupEvictSynchronized;
+
+    /** Flag indicating whether eviction is synchronized with near nodes. */
+    private boolean nearEvictSynchronized;
 
     /** Maximum eviction overflow ratio. */
     private float maxEvictionOverflowRatio = DFLT_MAX_EVICTION_OVERFLOW_RATIO;
@@ -211,7 +214,8 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         nearStartSize = cacheCfg.getNearStartSize();
         nearEnabled = cacheCfg.isNearEnabled();
         nearEvictPolicy = cacheCfg.getNearEvictionPolicy();
-        evictSynchronized = cacheCfg.isEvictSynchronized();
+        backupEvictSynchronized = cacheCfg.isBackupEvictSynchronized();
+        nearEvictSynchronized = cacheCfg.isNearEvictSynchronized();
         maxEvictionOverflowRatio = cacheCfg.getMaxEvictionOverflowRatio();
         preloadMode = cacheCfg.getPreloadMode();
         preloadBatchSize = cacheCfg.getPreloadBatchSize();
@@ -289,18 +293,32 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     }
 
     /** {@inheritDoc} */
-    @Override public boolean isEvictSynchronized() {
-        return evictSynchronized;
+    @Override public boolean isBackupEvictSynchronized() {
+        return backupEvictSynchronized;
     }
 
     /**
-     * Sets flag indicating whether eviction is synchronized between nodes for
-     * replicated and partitioned cache.
+     * Sets flag indicating whether eviction is synchronized with backup nodes
+     * (or the rest of the nodes for replicated cache).
      *
-     * @param evictSynchronized {@code true} if synchronized, {@code false} if not.
+     * @param backupEvictSynchronized {@code true} if synchronized, {@code false} if not.
      */
-    public void setEvictSynchronized(boolean evictSynchronized) {
-        this.evictSynchronized = evictSynchronized;
+    public void setBackupEvictSynchronized(boolean backupEvictSynchronized) {
+        this.backupEvictSynchronized = backupEvictSynchronized;
+    }
+
+    /**
+     * Sets flag indicating whether eviction is synchronized with near nodes.
+     *
+     * @param nearEvictSynchronized {@code true} if synchronized, {@code false} if not.
+     */
+    public void setNearEvictSynchronized(boolean nearEvictSynchronized) {
+        this.nearEvictSynchronized = nearEvictSynchronized;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isNearEvictSynchronized() {
+        return nearEvictSynchronized;
     }
 
     /** {@inheritDoc} */

@@ -34,7 +34,7 @@ import java.util.*;
  * default configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public interface GridCacheConfiguration {
     /** Default query log name. */
@@ -154,24 +154,42 @@ public interface GridCacheConfiguration {
     public <K, V> GridCacheEvictionPolicy<K, V> getNearEvictionPolicy();
 
     /**
-     * Gets flag indicating whether eviction for replicated and partitioned cache
-     * is synchronized between nodes. If this parameter is {@code true} and swap
-     * is disabled then {@link GridCacheProjection#evict(Object, GridPredicate[])}
-     * and all its variations will involve all nodes where an entry is kept. For
-     * replicated cache this is a group of nodes responsible for a partition to
-     * which a corresponding key belongs. For partitioned cache all near caches
-     * that keep the entry will be involved as well as backup nodes. Default value
-     * is {@code true}.
+     * Gets flag indicating whether eviction is synchronized between primary and
+     * backup nodes. In case of replicated cache all nodes are synchronized. If
+     * this parameter is {@code true} and swap is disabled then
+     * {@link GridCacheProjection#evict(Object, GridPredicate[])} and all its
+     * variations will involve all nodes where an entry is kept. For replicated
+     * cache this is a group of nodes responsible for partition to which
+     * corresponding key belongs. If this property is set to {@code false} then
+     * eviction is done independently on cache nodes. Default value is {@code false}.
+     * <p>
+     * Note that it's not recommended to set this value to {@code true} if cache
+     * store is configured since it will allow to significantly improve cache
+     * performance.
      *
-     * @return {@code true} If eviction is synchronized for replicated
-     *      and partitioned cache, {@code false} if not.
+     * @return {@code true} If eviction is synchronized with backup nodes (or the
+     *      rest of the nodes in case of replicated cache), {@code false} if not.
      */
-    public boolean isEvictSynchronized();
+    public boolean isBackupEvictSynchronized();
+
+    /**
+     * Gets flag indicating whether eviction on primary node is synchronized with
+     * near nodes where entry is kept. Default value is {@code true}.
+     * <p>
+     * Note that in most cases this property should be set to {@code true} to keep
+     * cache consistency. But there may be the cases when user may use some
+     * special near eviction policy to have desired control over near cache
+     * entry set.
+     *
+     * @return {@code true} If eviction is synchronized with near nodes in
+     *      partitioned cache, {@code false} if not.
+     */
+    public boolean isNearEvictSynchronized();
 
     /**
      * This value denotes the maximum size of eviction queue in percents of cache
      * size in case of distributed cache (replicated and partitioned) and using
-     * synchronized eviction (that is if {@link #isEvictSynchronized()} returns
+     * synchronized eviction (that is if {@link #isBackupEvictSynchronized()} returns
      * {@code true}).
      * <p>
      * That queue is used internally as a buffer to decrease network costs for

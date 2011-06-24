@@ -20,7 +20,7 @@ import java.io.*;
  *  {@link GridCacheTransformQuery}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public interface GridCacheQueryBase<K, V> extends GridMetadataAware, Closeable {
     /** Default query page size. */
@@ -114,7 +114,7 @@ public interface GridCacheQueryBase<K, V> extends GridMetadataAware, Closeable {
 
     /**
      * Sets whether or not to include backup entries into query result. This flag
-     * is {@code true} by default.
+     * is {@code false} by default.
      *
      * @param incBackups Query {@code includeBackups} flag.
      */
@@ -130,7 +130,7 @@ public interface GridCacheQueryBase<K, V> extends GridMetadataAware, Closeable {
     /**
      * Sets whether or not to deduplicate query result set. If this flag is {@code true}
      * then query result will not contain some key more than once even if several nodes
-     * returned entries with the same keys. Default value is {@code true}.
+     * returned entries with the same keys. Default value is {@code false}.
      *
      * @param dedup Query {@code enableDedup} flag.
      */

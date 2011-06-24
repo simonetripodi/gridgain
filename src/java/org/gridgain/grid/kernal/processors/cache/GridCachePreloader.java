@@ -15,10 +15,10 @@ import java.util.*;
 
 /**
  * Cache preloader that is responsible for loading cache entries either from remote
- * nodes (for distributed cache) or anywhere else at cache startup. 
+ * nodes (for distributed cache) or anywhere else at cache startup.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public interface GridCachePreloader<K, V> {
     /**
@@ -49,15 +49,6 @@ public interface GridCachePreloader<K, V> {
      * @return Future which will complete when preloader is safe to use.
      */
     public GridFuture<?> startFuture();
-
-    /**
-     * Future which completes after node with given order is joined and
-     * partition exchange for it completed.
-     *
-     * @param order Order to wait for.
-     * @return Future for the order.
-     */
-    public GridFuture<?> joinFuture(long order);
 
     /**
      * Requests that preloader sends the request for the key.

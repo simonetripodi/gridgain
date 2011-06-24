@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction adapter for cache transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxLocalEx<K, V> {
@@ -564,7 +564,7 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
                             "(all transaction entries will be invalidated, however there was a window when entries " +
                             "for this transaction were visible to others): " + this, ex);
 
-                        U.error(log, err);
+                        U.error(log, "Heuristic transaction failure.", err);
 
                         commitErr.compareAndSet(null, err);
 

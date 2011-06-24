@@ -13,6 +13,7 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.dht.preloader.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtPartitionState.*;
@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -63,7 +63,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     private long lastJoinVer = -1;
 
     /** */
-    private final AtomicLong updateSeq = new AtomicLong(1);
+    private final GridAtomicLong updateSeq = new GridAtomicLong(1);
 
     /** Lock. */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -132,7 +132,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
-    @Override public void updateJoinVersion(GridDhtPartitionExchangeId exchId) {
+    @Override public void updateJoinOrder(GridDhtPartitionExchangeId exchId) {
         lock.writeLock().lock();
 
         try {
@@ -144,6 +144,20 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
         }
         finally {
             lock.writeLock().unlock();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public long lastJoinOrder() {
+        lock.readLock().lock();
+
+        try {
+            assert lastJoinVer > 0;
+
+            return lastJoinVer;
+        }
+        finally {
+            lock.readLock().unlock();
         }
     }
 
@@ -160,6 +174,9 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
         try {
             assert !exchId.isJoined() || lastJoinVer == exchId.order() : "Invalid last join version [lastJoinVer=" +
                 lastJoinVer + ", exchId=" + exchId + ']';
+
+            if (!exchId.isJoined())
+                removeNode(exchId.nodeId());
 
             // In case if node joins, get topology at the time of joining node.
             Collection<GridRichNode> allNodes = CU.allNodes(cctx, lastJoinVer);
@@ -505,7 +522,8 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
             Collection<UUID> nodeIds = part2node.get(p);
 
-            nodeIds = nodeIds == null ? Collections.<UUID>emptyList() : F.view(nodeIds, withState(p, OWNING, MOVING));
+            nodeIds = nodeIds == null ? Collections.<UUID>emptyList() : F.view(nodeIds,
+                withState(p, OWNING, MOVING, RENTING));
 
             return new ArrayList<GridNode>(cctx.discovery().nodes(
                 F.concat(false, affIds, F.view(nodeIds, F.notIn(affIds)))));
@@ -534,6 +552,9 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
     /** {@inheritDoc} */
     @Override public List<GridNode> moving(int p) {
+        if (!cctx.preloadEnabled())
+            return ownersAndMoving(p);
+
         lock.readLock().lock();
 
         try {
@@ -546,8 +567,11 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
         }
     }
 
-    /** {@inheritDoc} */
-    @Override public List<GridNode> ownersAndMoving(int p) {
+    /**
+     * @param p Partition.
+     * @return List of nodes in state OWNING or MOVING.
+     */
+    private List<GridNode> ownersAndMoving(int p) {
         lock.readLock().lock();
 
         try {
@@ -583,6 +607,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     @Nullable @Override public GridDhtPartitionMap update(@Nullable GridDhtPartitionExchangeId exchId,
         GridDhtPartitionFullMap partMap) {
         if (log.isDebugEnabled())
@@ -674,6 +699,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     @Override @Nullable public GridDhtPartitionMap update(@Nullable GridDhtPartitionExchangeId exchId,
         GridDhtPartitionMap parts) {
         if (log.isDebugEnabled())
@@ -768,7 +794,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
         boolean changed = false;
 
-        Collection<GridRichNode> allNodes = CU.allNodes(cctx);
+        Collection<GridRichNode> allNodes = CU.allNodes(cctx, lastJoinVer);
 
         UUID locId = cctx.nodeId();
 
@@ -783,6 +809,8 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                 if (!affNodes.contains(cctx.localNode())) {
                     Collection<UUID> nodeIds = F.view(part2node.get(p), withState(p, OWNING));
 
+                    for (UUID id : nodeIds)
+                        assert id != null;
                     // If all affinity nodes are owners, then evict partition from local node.
                     if (nodeIds.containsAll(F.nodeIds(affNodes))) {
                         part.rent();
@@ -840,6 +868,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
      * @param state State.
      * @param updateSeq Update sequence.
      */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     private void updateLocal(int p, UUID nodeId, GridDhtPartitionState state, long updateSeq) {
         assert lock.isWriteLockedByCurrentThread();
         assert nodeId.equals(cctx.nodeId());
@@ -860,44 +889,45 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
         ids.add(nodeId);
     }
 
-    /** {@inheritDoc} */
-    @Override public void remove(UUID nodeId) {
+    /**
+     * @param nodeId Node to remove.
+     */
+    private void removeNode(UUID nodeId) {
         assert nodeId != null;
+        assert lock.writeLock().isHeldByCurrentThread();
 
-        GridNode oldest = CU.oldest(CU.allNodes(cctx));
+        GridNode oldest = CU.oldest(CU.allNodes(cctx, lastJoinVer));
 
         GridNode loc = cctx.localNode();
 
-        lock.writeLock().lock();
+        if (node2part != null) {
+            if (oldest.equals(loc) && !node2part.nodeId().equals(loc.id())) {
+                updateSeq.setIfGreater(node2part.updateSequence());
 
-        try {
-            if (node2part != null) {
-                node2part = oldest.equals(loc) && !node2part.nodeId().equals(loc.id()) ?
-                    new GridDhtPartitionFullMap(loc.id(), loc.order(), updateSeq.incrementAndGet(), node2part, false) :
-                    new GridDhtPartitionFullMap(node2part, updateSeq.incrementAndGet());
+                node2part = new GridDhtPartitionFullMap(loc.id(), loc.order(), updateSeq.incrementAndGet(),
+                    node2part, false);
+            }
+            else
+                node2part = new GridDhtPartitionFullMap(node2part, node2part.updateSequence());
 
-                part2node = new HashMap<Integer, Set<UUID>>(part2node);
+            part2node = new HashMap<Integer, Set<UUID>>(part2node);
 
-                GridDhtPartitionMap parts = node2part.remove(nodeId);
+            GridDhtPartitionMap parts = node2part.remove(nodeId);
 
-                if (parts != null) {
-                    for (Integer p : parts.keySet()) {
-                        Set<UUID> nodeIds = part2node.get(p);
+            if (parts != null) {
+                for (Integer p : parts.keySet()) {
+                    Set<UUID> nodeIds = part2node.get(p);
 
-                        if (nodeIds != null) {
-                            nodeIds.remove(nodeId);
+                    if (nodeIds != null) {
+                        nodeIds.remove(nodeId);
 
-                            if (nodeIds.isEmpty())
-                                part2node.remove(p);
-                        }
+                        if (nodeIds.isEmpty())
+                            part2node.remove(p);
                     }
                 }
-
-                consistencyCheck();
             }
-        }
-        finally {
-            lock.writeLock().unlock();
+
+            consistencyCheck();
         }
     }
 
@@ -947,6 +977,9 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
         final GridDhtPartitionState... matches) {
         return new P1<UUID>() {
             @Override public boolean apply(UUID nodeId) {
+                if (nodeId == null)
+                    return false;
+
                 GridDhtPartitionMap parts = node2part.get(nodeId);
 
                 // Set can be null if node has been removed.

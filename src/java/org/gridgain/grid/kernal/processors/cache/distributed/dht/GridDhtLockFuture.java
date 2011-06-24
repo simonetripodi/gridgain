@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<K, Boolean>, GridCacheMappedVersion {
@@ -782,8 +782,6 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
             tx.addDhtMapping(dhtMap);
             tx.addNearMapping(nearMap);
         }
-
-        cctx.mvcc().recheckPendingLocks();
 
         if (isDone()) {
             if (log.isDebugEnabled())

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
 
@@ -27,7 +28,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> {
     /** Near node ID. */
@@ -206,6 +207,9 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
      * @throws GridException If failed.
      */
     private void addWrites(Iterable<GridCacheTxEntry<K, V>> writes, ClassLoader ldr) throws GridException {
+        if (isSystemInvalidate())
+            return;
+
         if (!F.isEmpty(writes)) {
             for (GridCacheTxEntry<K, V> entry : writes) {
                 entry.unmarshal(cctx, ldr);
@@ -237,6 +241,9 @@ public class GridDhtTxRemote<K, V> extends GridDistributedTxRemoteAdapter<K, V> 
      */
     void addWrite(K key, byte[] keyBytes, @Nullable V val, @Nullable byte[] valBytes) {
         checkInternal(key);
+
+        if (isSystemInvalidate())
+            return;
 
         GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(key);
 

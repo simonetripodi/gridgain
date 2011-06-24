@@ -49,13 +49,14 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.kernal.GridKernalState.*;
 
 /**
  * Implementation of kernal context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @GridToStringExclude
 public class GridKernalContextImpl extends GridMetadataAwareAdapter implements GridKernalContext, Externalizable {
@@ -577,5 +578,10 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
 
         for (GridComponent comp : comps)
             comp.printMemoryStats();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isDaemon() {
+        return config().isDaemon() || "true".equalsIgnoreCase(System.getProperty(GG_DAEMON));
     }
 }

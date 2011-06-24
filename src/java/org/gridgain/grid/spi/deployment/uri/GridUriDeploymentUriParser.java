@@ -21,7 +21,7 @@ import org.gridgain.grid.util.tostring.*;
  * Expected format is (schema):(//)URL(?|#)(parameters)
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 class GridUriDeploymentUriParser {
     /** Input string which should be parsed and encoded. */

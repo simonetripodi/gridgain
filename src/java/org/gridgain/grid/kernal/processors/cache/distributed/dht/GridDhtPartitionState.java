@@ -15,7 +15,7 @@ import org.jetbrains.annotations.*;
  * Partition states.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public enum GridDhtPartitionState {
     /** Partition is being loaded from another node. */
@@ -45,6 +45,6 @@ public enum GridDhtPartitionState {
      * @return {@code True} if state is active or owning.
      */
     public boolean active() {
-        return this == MOVING || this == OWNING;
+        return this != EVICTED;
     }
 }

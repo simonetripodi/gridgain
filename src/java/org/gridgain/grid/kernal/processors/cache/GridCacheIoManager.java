@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Cache communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     /** Number of retries using to send messages. */
@@ -172,8 +172,9 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                 (GridInClosure2<UUID, GridCacheMessage<K,V>>)clsHandlers.get(msg.getClass());
 
             if (c == null) {
-                U.warn(log, "Received message without registered handler (will ignore) [msg=" + msg +
-                    ", nodeId=" + nodeId + ']');
+                if (log.isDebugEnabled())
+                    log.debug("Received message without registered handler (will ignore) [msg=" + msg +
+                        ", nodeId=" + nodeId + ']');
 
                 return;
             }
@@ -828,7 +829,7 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                 if (c == null) {
                     if (log.isDebugEnabled())
                         log.debug("Received ordered message without registered handler (will ignore) [topic=" + topic +
-                        ", msg=" + msg + ", nodeId=" + nodeId + ']');
+                            ", msg=" + msg + ", nodeId=" + nodeId + ']');
 
                     return;
                 }

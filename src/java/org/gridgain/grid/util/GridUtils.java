@@ -69,7 +69,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1440,7 +1440,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.22062011
+     * @version 3.1.1c.24062011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -2820,9 +2820,16 @@ public abstract class GridUtils {
     public static void error(@Nullable GridLogger log, Object msg) {
         assert msg != null;
 
-        String s = msg.toString();
+        if (msg instanceof Throwable) {
+            Throwable t = (Throwable)msg;
 
-        error(log, s, s, null);
+            error(log, t.getMessage(), t);
+        }
+        else {
+            String s = msg.toString();
+
+            error(log, s, s, null);
+        }
     }
 
     /**
@@ -3179,6 +3186,16 @@ public abstract class GridUtils {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Creates appropriate empty projection exception.
+     *
+     * @return Empty projection exception.
+     */
+    public static GridEmptyProjectionException makeException() {
+        return new GridEmptyProjectionException("Topology projection is empty. Note that dynamic projection " +
+            "can be empty from call to call.");
     }
 
     /**

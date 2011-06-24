@@ -17,11 +17,9 @@ import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.near.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
-import org.gridgain.grid.logger.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
-import org.gridgain.grid.util.future.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -36,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -83,13 +81,6 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      */
     private final ConcurrentMap<GridCacheVersion, GridCacheVersion> mappedVers =
         new ConcurrentHashMap<GridCacheVersion, GridCacheVersion>(5120);
-
-    private GridLogger exchLog;
-
-    /** {@inheritDoc} */
-    @Override protected void start0() throws GridException {
-        exchLog = cctx.logger(getClass().getName() + ".exchange");
-    }
 
     /** {@inheritDoc} */
     @Override protected void onKernalStart0() {
@@ -153,6 +144,13 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             }
 
             try {
+                if (!tx.markFinalizing()) {
+                    if (log.isDebugEnabled())
+                        log.debug("Will not try to commit invalidate transaction (could not mark finalized): " + tx);
+
+                    return;
+                }
+
                 tx.systemInvalidate(true);
 
                 tx.prepare();
@@ -1082,11 +1080,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * @return Registered transaction synchronizations
      */
     public Collection<GridCacheTxSynchronization> synchronizations() {
-        return F.view(syncs, new P1<GridCacheTxSynchronization>() {
-            @Override public boolean apply(GridCacheTxSynchronization sync) {
-                return !(sync instanceof TxSynchronization);
-            }
-        });
+        return Collections.unmodifiableList(new LinkedList<GridCacheTxSynchronization>(syncs));
     }
 
     /**
@@ -1144,158 +1138,6 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * @param parts Partition numbers.
-     * @param excl Exclude array.
-     * @return Future that signals when all transactions for given partitions will complete.
-     */
-    public GridFuture<?> finishPartitions(Collection<Integer> parts, UUID[] excl) {
-        Collection<GridCacheTxEx<K, V>> waitTxSet = new GridConcurrentHashSet<GridCacheTxEx<K, V>>();
-
-        for (GridCacheTxEx<K, V> tx : idMap.values()) {
-            if (!tx.local() || F.containsAny(tx.nodeIds(), excl)) {
-                if (exchLog.isDebugEnabled())
-                    exchLog.debug("Skipping transaction for partition wait [excl=" + Arrays.toString(excl) +
-                        ", tx=" + tx + ']');
-
-                continue;
-            }
-
-            boolean added = false;
-
-            for (GridCacheTxEntry<K, V> e : tx.writeEntries()) {
-                if (parts.contains(cctx.partition(e.key()))) {
-                    waitTxSet.add(tx);
-
-                    added = true;
-
-                    break; // Inner for.
-                }
-            }
-
-            if (!added) {
-                for (GridCacheTxEntry<K, V> e : tx.readEntries()) {
-                    if (parts.contains(cctx.partition(e.key()))) {
-                        waitTxSet.add(tx);
-
-                        break; // Inner for.
-                    }
-                }
-            }
-        }
-
-        if (exchLog.isDebugEnabled()) {
-            if (waitTxSet.isEmpty())
-                exchLog.debug("Wait tx set is empty [excl=" + Arrays.toString(excl) + ", parts=" + parts + ']');
-            else
-                for (GridCacheTxEx<K, V> tx : waitTxSet)
-                    exchLog.debug("Will wait for tx [excludes=" + Arrays.toString(excl) + ", nodeIds=" + tx.nodeIds() +
-                        ", contains=" + F.containsAny(tx.nodeIds(), excl) + ", tx=" + tx + ']');
-        }
-
-        return finishTransactions(waitTxSet, excl);
-    }
-
-    /**
-     * @param waitTxSet Set of transactions to wait for.
-     * @param excl Exclude array.
-     * @return Future for waiting.
-     */
-    private GridFuture<?> finishTransactions(final Collection<GridCacheTxEx<K, V>> waitTxSet, final UUID[] excl) {
-        final GridFutureAdapter<?> f = new GridFutureAdapter(cctx.kernalContext());
-
-        final GridCacheTxSynchronization sync = new TxSynchronization() {
-            @SuppressWarnings( {"SuspiciousMethodCalls"})
-            @Override public void onStateChanged(GridCacheTxState prevState, GridCacheTxState newState,
-                GridCacheTx tx) {
-                if (newState == COMMITTED || newState == ROLLED_BACK) {
-                    if (exchLog.isDebugEnabled())
-                        exchLog.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
-
-                    waitTxSet.remove(tx);
-                }
-
-                if (waitTxSet.isEmpty()) {
-                    if (exchLog.isDebugEnabled())
-                        exchLog.debug("TxSynchronization finished: " + this);
-
-                    f.onDone();
-                }
-            }
-
-            @Override public void recheck() {
-                if (exchLog.isDebugEnabled())
-                    exchLog.debug("Rechecking transactions for synchronization [excl=" + Arrays.toString(excl) +
-                    ", sync=" + this + ']');
-
-                for (Iterator<GridCacheTxEx<K, V>> it = waitTxSet.iterator(); it.hasNext();) {
-                    GridCacheTxEx<K, V> tx = it.next();
-
-                    if (F.containsAny(tx.nodeIds(), excl)) {
-                        it.remove();
-
-                        if (exchLog.isDebugEnabled())
-                            exchLog.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + this + ']');
-                    }
-                }
-
-                if (waitTxSet.isEmpty()) {
-                    if (exchLog.isDebugEnabled())
-                        exchLog.debug("TxSynchronization finished: " + this);
-
-                    f.onDone();
-                }
-            }
-
-            @Override public String toString() {
-                return "TxSynchronization [excl=" + Arrays.toString(excl) + ", waitTxState=" + waitTxSet + ']';
-            }
-        };
-
-        addSynchronizations(sync);
-
-        // Double check just in case some transaction completed before we added synchronization.
-        for (Iterator<GridCacheTxEx<K, V>> it = waitTxSet.iterator(); it.hasNext();) {
-            GridCacheTxEx<K, V> tx = it.next();
-
-            if (tx.state() == COMMITTED || tx.state() == ROLLED_BACK || F.containsAny(tx.nodeIds(), excl)) {
-                if (exchLog.isDebugEnabled())
-                    exchLog.debug("Removed transaction from wait set [tx=" + tx + ", sync=" + sync + ']');
-
-                it.remove();
-            }
-        }
-
-        if (waitTxSet.isEmpty()) {
-            if (exchLog.isDebugEnabled())
-                exchLog.debug("TxSynchronization finished: " + sync);
-
-            f.onDone();
-        }
-
-        f.listenAsync(new CI1<GridFuture<?>>() {
-            @Override public void apply(GridFuture<?> e) {
-                removeSynchronizations(sync);
-            }
-        });
-
-        return f;
-    }
-
-    /**
-     *
-     */
-    public void recheckFinishTransactions() {
-        if (exchLog.isDebugEnabled())
-            exchLog.debug("Rechecking finish transactions [locId=" + cctx.nodeId() + ", syncs=" + syncs + ']');
-
-        for (GridCacheTxSynchronization sync : syncs) {
-            if (sync instanceof TxSynchronization) {
-                ((TxSynchronization)sync).recheck();
-            }
-        }
-    }
-
-    /**
      * Atomic integer that compares only using references, not values.
      */
     private static final class AtomicInt extends AtomicInteger {
@@ -1316,15 +1158,5 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
         @Override public int hashCode() {
             return super.hashCode();
         }
-    }
-
-    /**
-     *
-     */
-    private interface TxSynchronization extends GridCacheTxSynchronization {
-        /**
-         *
-         */
-        public void recheck();
     }
 }

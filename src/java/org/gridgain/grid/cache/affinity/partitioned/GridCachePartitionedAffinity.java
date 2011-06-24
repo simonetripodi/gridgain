@@ -47,7 +47,7 @@ import static org.gridgain.grid.GridEventType.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
     /** Default number of partitions. */
@@ -372,30 +372,56 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
                 return grid.nodes(F.concat(false, primaryId, backupIds));
             }
             else {
+                Collection <UUID> ids;
                 if (!exclNeighbors || nodes.size() == 1) {
-                    Collection<UUID> ids = nodeHash.nodes(part, backups + 1, nodeIds);
+                    ids = nodeHash.nodes(part, backups + 1, nodeIds);
 
                     if (ids.size() == 1)
                         return Collections.singletonList(grid.node(ids.iterator().next()));
-
-                    return grid.nodes(ids);
                 }
                 else {
-                    final Collection<UUID> ids = new GridLeanSet<UUID>();
+                    ids = new ArrayList<UUID>(1 + backups);
 
-                    for (int i = 0; i < 1 + backups; i++) {
+                    final Collection<UUID> ids0 = ids;
+
+                    int size = nodes.size();
+
+                    for (int i = 0; i < size; i++) {
                         UUID id = nodeHash.node(part, F.contains(nodeIds), new P1<UUID>() {
                             @Override public boolean apply(UUID id) {
-                                return !F.containsAny(ids, F.nodeIds(grid.node(id).neighbors().nodes()));
+                                GridRichNode n = grid.node(id);
+
+                                // Dead nodes get handled by cache logic.
+                                return n == null || !F.containsAny(ids0, F.nodeIds(n.neighbors().nodes()));
+
                             }
                         });
 
                         if (id != null)
                             ids.add(id);
-                    }
 
-                    return grid.nodes(ids);
+                        if (ids.size() == size)
+                            break;
+                    }
                 }
+
+                Map<UUID, GridRichNode> lookup = new GridLeanMap<UUID, GridRichNode>(nodes.size());
+
+                // Store nodes in map for fast lookup.
+                for (GridRichNode n : nodes)
+                    lookup.put(n.id(), n);
+
+                Collection<GridRichNode> ret = new ArrayList<GridRichNode>(1 + backups);
+
+                for (UUID id : ids) {
+                    GridRichNode n = lookup.get(id);
+
+                    assert n != null;
+
+                    ret.add(n);
+                }
+
+                return ret;
             }
         }
         finally {

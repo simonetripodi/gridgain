@@ -24,6 +24,7 @@ import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
 import org.jetbrains.annotations.*;
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -38,7 +39,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid event storage SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridEventStorageManager extends GridManagerAdapter<GridEventStorageSpi> {
     /** Internally-used events. */
@@ -69,7 +70,7 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
 
         Arrays.sort(INT_EVTS);
 
-        HIDDEN_EVTS = new int[6];
+        HIDDEN_EVTS = new int[1];
 
         HIDDEN_EVTS[0] = EVT_NODE_METRICS_UPDATED;
     }
@@ -110,105 +111,6 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
     }
 
     /**
-     *
-     */
-    @SuppressWarnings("deprecation")
-    private class RequestListener implements GridMessageListener {
-        @SuppressWarnings("deprecation")
-        @Override public void onMessage(UUID nodeId, Object msg) {
-            assert nodeId != null;
-            assert msg != null;
-
-            if (!enterBusy())
-                return;
-
-            try {
-                if (!(msg instanceof GridEventStorageMessage)) {
-                    U.warn(log, "Received unknown message: " + msg);
-
-                    return;
-                }
-
-                GridEventStorageMessage req = (GridEventStorageMessage)msg;
-
-                GridNode node = ctx.discovery().node(nodeId);
-
-                if (node == null) {
-                    U.warn(log, "Failed to resolve sender node that does not exist: " + nodeId);
-
-                    return;
-                }
-
-                if (log.isDebugEnabled())
-                    log.debug("Received event query request: " + req);
-
-                Throwable ex = null;
-
-                GridPredicate<GridEvent> filter = null;
-
-                Collection<GridEvent> evts;
-
-                try {
-                    GridDeployment dep = ctx.deploy().getGlobalDeployment(
-                        req.deploymentMode(),
-                        req.filterClassName(),
-                        req.filterClassName(),
-                        req.sequenceNumber(),
-                        req.userVersion(),
-                        nodeId,
-                        req.classLoaderId(),
-                        req.loaderParticipants(),
-                        null);
-
-                    if (dep == null)
-                        throw new GridException("Failed to obtain deployment for event filter " +
-                            "(is peer class loading turned on?): " + req);
-
-                    filter = U.unmarshal(ctx.config().getMarshaller(), req.filter(), dep.classLoader());
-
-                    // Resource injection.
-                    ctx.resource().inject(dep, dep.deployedClass(req.filterClassName()), filter);
-
-                    // Get local events.
-                    evts = localEvents(filter);
-                }
-                catch (GridException e) {
-                    U.error(log, "Failed to query events [nodeId=" + nodeId + ", filter=" + filter + ']', e);
-
-                    evts = Collections.emptyList();
-
-                    ex = e;
-                }
-                catch (Throwable e) {
-                    U.error(log, "Failed to query events due to user exception [nodeId=" + nodeId +
-                        ", filter=" + filter + ']', e);
-
-                    evts = Collections.emptyList();
-
-                    ex = e;
-                }
-
-                // Response message.
-                Serializable res = new GridEventStorageMessage(evts, ex);
-
-                try {
-                    if (log.isDebugEnabled())
-                        log.debug("Sending event query response to node [nodeId=" + nodeId + "res=" + res + ']');
-
-                    ctx.io().send(node, req.responseTopic(), res, PUBLIC_POOL);
-                }
-                catch (GridException e) {
-                    U.error(log, "Failed to send event query response to node [node=" + nodeId + ", res=" +
-                        res + ']', e);
-                }
-            }
-            finally {
-                leaveBusy();
-            }
-        }
-    }
-
-    /**
      * Enters busy state in which manager cannot be stopped.
      *
      * @return {@code true} if entered to busy state.
@@ -232,8 +134,6 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
 
         GridIoManager io = ctx.io();
 
-        isDaemon = ctx.grid().localNode().isDaemon();
-
         if (io != null) {
             io.removeMessageListener(TOPIC_EVENT.name(), msgLsnr);
             io.removeMessageListener(TOPIC_EVENT);
@@ -254,6 +154,8 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
 
     /** {@inheritDoc} */
     @Override public void start() throws GridException {
+        isDaemon = ctx.isDaemon();
+
         inclEvtTypes = ctx.config().getIncludeEventTypes();
         exclEvtTypes = ctx.config().getExcludeEventTypes();
 
@@ -375,9 +277,8 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
             try {
                 getOrCreate(type).add(lsnr);
 
-                if (types != null)
-                    for (int t : types)
-                        getOrCreate(t).add(lsnr);
+                for (int t : types)
+                    getOrCreate(t).add(lsnr);
             }
             finally {
                 leaveBusy();
@@ -539,10 +440,9 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
      * @param nodes Collection of nodes.
      * @param timeout Maximum time to wait for result, if {@code 0}, then wait until result is received.
      * @return Collection of events.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<List<GridEvent>> remoteEventsAsync(final GridPredicate<? super GridEvent> p,
-        final Collection<? extends GridNode> nodes, final long timeout) throws GridException {
+        final Collection<? extends GridNode> nodes, final long timeout) {
         assert p != null;
         assert nodes != null && !nodes.isEmpty();
 
@@ -719,5 +619,104 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
         }
 
         return evts;
+    }
+
+    /**
+     *
+     */
+    @SuppressWarnings("deprecation")
+    private class RequestListener implements GridMessageListener {
+        @SuppressWarnings("deprecation")
+        @Override public void onMessage(UUID nodeId, Object msg) {
+            assert nodeId != null;
+            assert msg != null;
+
+            if (!enterBusy())
+                return;
+
+            try {
+                if (!(msg instanceof GridEventStorageMessage)) {
+                    U.warn(log, "Received unknown message: " + msg);
+
+                    return;
+                }
+
+                GridEventStorageMessage req = (GridEventStorageMessage)msg;
+
+                GridNode node = ctx.discovery().node(nodeId);
+
+                if (node == null) {
+                    U.warn(log, "Failed to resolve sender node that does not exist: " + nodeId);
+
+                    return;
+                }
+
+                if (log.isDebugEnabled())
+                    log.debug("Received event query request: " + req);
+
+                Throwable ex = null;
+
+                GridPredicate<GridEvent> filter = null;
+
+                Collection<GridEvent> evts;
+
+                try {
+                    GridDeployment dep = ctx.deploy().getGlobalDeployment(
+                        req.deploymentMode(),
+                        req.filterClassName(),
+                        req.filterClassName(),
+                        req.sequenceNumber(),
+                        req.userVersion(),
+                        nodeId,
+                        req.classLoaderId(),
+                        req.loaderParticipants(),
+                        null);
+
+                    if (dep == null)
+                        throw new GridException("Failed to obtain deployment for event filter " +
+                            "(is peer class loading turned on?): " + req);
+
+                    filter = U.unmarshal(ctx.config().getMarshaller(), req.filter(), dep.classLoader());
+
+                    // Resource injection.
+                    ctx.resource().inject(dep, dep.deployedClass(req.filterClassName()), filter);
+
+                    // Get local events.
+                    evts = localEvents(filter);
+                }
+                catch (GridException e) {
+                    U.error(log, "Failed to query events [nodeId=" + nodeId + ", filter=" + filter + ']', e);
+
+                    evts = Collections.emptyList();
+
+                    ex = e;
+                }
+                catch (Throwable e) {
+                    U.error(log, "Failed to query events due to user exception [nodeId=" + nodeId +
+                        ", filter=" + filter + ']', e);
+
+                    evts = Collections.emptyList();
+
+                    ex = e;
+                }
+
+                // Response message.
+                Serializable res = new GridEventStorageMessage(evts, ex);
+
+                try {
+                    if (log.isDebugEnabled())
+                        log.debug("Sending event query response to node [nodeId=" + nodeId + "res=" + res + ']');
+
+                    ctx.io().send(node, req.responseTopic(), res, PUBLIC_POOL);
+                }
+                catch (GridException e) {
+                    U.error(log, "Failed to send event query response to node [node=" + nodeId + ", res=" +
+                        res + ']', e);
+                }
+            }
+            finally {
+                leaveBusy();
+            }
+        }
     }
 }

@@ -23,7 +23,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheMvccCandidate.M
  * Lock candidate.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<GridCacheMvccCandidate<K>> {
     /** Locking node ID. */
@@ -49,6 +49,10 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     /** Use flags approach to preserve space. */
     @GridToStringExclude
     private short flags;
+
+    /** Topology version. */
+    @GridToStringInclude
+    private transient volatile long topVer;
 
     /** Linked reentry. */
     private GridCacheMvccCandidate<K> reentry;
@@ -148,6 +152,20 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     }
 
     /**
+     * @return Topology for which this lock was acquired.
+     */
+    public long topologyVersion() {
+        return topVer;
+    }
+
+    /**
+     * @param topVer Topology version.
+     */
+    public void topologyVersion(long topVer) {
+        this.topVer = topVer;
+    }
+
+    /**
      * @return Reentry candidate.
      */
     public GridCacheMvccCandidate<K> reenter() {
@@ -155,6 +173,8 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
 
         GridCacheMvccCandidate<K> reentry = new GridCacheMvccCandidate<K>(parent, nodeId, otherNodeId, otherVer,
             threadId, ver, timeout, local(), /*reentry*/true, ec(), tx(), nearLocal(), dhtLocal());
+
+        reentry.topVer = topVer;
 
         if (old != null)
             reentry.reentry = old;
@@ -352,6 +372,20 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     }
 
     /**
+     * @return Removed flag.
+     */
+    public boolean removed() {
+        return REMOVED.get(flags());
+    }
+
+    /**
+     * Sets removed flag.
+     */
+    public void setRemoved() {
+        mask(REMOVED, true);
+    }
+
+    /**
      * @return {@code True} if is or was an owner.
      */
     public boolean owner() {
@@ -498,7 +532,8 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
         EC(0x20),
         TX(0x40),
         DHT_LOCAL(0x80),
-        NEAR_LOCAL(0x100);
+        NEAR_LOCAL(0x100),
+        REMOVED(0x200);
 
         /** All mask values. */
         private static final Mask[] MASKS = values();

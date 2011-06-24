@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Query adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareAdapter implements
     GridCacheQueryBase<K, V> {
@@ -100,10 +100,10 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     private volatile boolean keepAll = true;
 
     /** */
-    private volatile boolean incBackups = true;
+    private volatile boolean incBackups;
 
     /** */
-    private volatile boolean dedup = true;
+    private volatile boolean dedup;
 
     /** */
     private volatile boolean readThrough;

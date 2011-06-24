@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridFunc {
     /** */
@@ -1384,7 +1384,9 @@ public class GridFunc {
      * @param nodes Collection of grid nodes.
      * @return Collection of node IDs for given collection of grid nodes.
      */
-    public static Collection<UUID> nodeIds(@Nullable Collection<? extends GridNode> nodes) {
+    public static Collection<UUID>
+
+    nodeIds(@Nullable Collection<? extends GridNode> nodes) {
         if (nodes == null || nodes.isEmpty())
             return Collections.emptyList();
 
@@ -3974,13 +3976,11 @@ public class GridFunc {
             private Iterator<? extends T1> iter = c.iterator();
 
             @Override public boolean hasNext() {
-                if (isEmpty(p)) {
+                if (isEmpty(p))
                     return iter.hasNext();
-                }
                 else {
-                    if (!moved) {
+                    if (!moved)
                         return more;
-                    }
                     else {
                         more = false;
 
@@ -4004,25 +4004,22 @@ public class GridFunc {
             }
 
             @Nullable @Override public T2 next() {
-                if (isEmpty(p)) {
+                if (isEmpty(p))
                     return trans.apply(iter.next());
-                }
                 else {
                     if (hasNext()) {
                         moved = true;
 
                         return trans.apply(elem);
                     }
-                    else {
+                    else
                         throw new NoSuchElementException();
-                    }
                 }
             }
 
             @Override public void remove() {
-                if (readOnly) {
+                if (readOnly)
                     throw new UnsupportedOperationException("Cannot modify read-only iterator.");
-                }
 
                 iter.remove();
             }

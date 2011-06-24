@@ -29,7 +29,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * Distributed Garbage Collector for cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     /** GC thread. */
@@ -248,18 +248,12 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
         Collection<GridRichNode> nodes = CU.remoteNodes(cctx);
 
-        if (global && !nodes.isEmpty()) {
-            try {
-                cctx.closures().callAsync(
-                    BROADCAST,
-                    new DgcCallable(cctx.name(), suspectLockTimeout),
-                    nodes
-                );
-            }
-            catch (GridException e) {
-                log.error("Failed to send DGC closure to nodes: " + nodes, e);
-            }
-        }
+        if (global && !nodes.isEmpty())
+            cctx.closures().callAsync(
+                BROADCAST,
+                new DgcCallable(cctx.name(), suspectLockTimeout),
+                nodes
+            );
 
         if (log.isDebugEnabled())
             log.debug("Finished DGC iteration.");

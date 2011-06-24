@@ -33,7 +33,7 @@ import org.gridgain.grid._
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 class ScalarRichCloudPimp extends ScalarProjectionPimp[GridRichCloud]
     with Ordered[GridRichCloud]
@@ -50,7 +50,7 @@ class ScalarRichCloudPimp extends ScalarProjectionPimp[GridRichCloud]
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 object ScalarRichCloudPimp {
     /**

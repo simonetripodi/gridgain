@@ -20,10 +20,8 @@ import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
 import org.jetbrains.annotations.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.GridEventType.*;
@@ -33,7 +31,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * DHT cache preloader.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** Exchange history size. */
@@ -46,10 +44,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     private final ExchangeFutureSet exchFuts = new ExchangeFutureSet();
 
     /** Last join order. */
-    private final AtomicLong lastJoinOrder = new AtomicLong();
-
-    /** Set for join futures. */
-    private final GridConcurrentHashSet<JoinFuture> joinFuts = new GridConcurrentHashSet<JoinFuture>();
+    private final GridAtomicLong lastJoinOrder = new GridAtomicLong();
 
     /** Force key futures. */
     private final ConcurrentHashMap<GridUuid, GridDhtForceKeysFuture<K, V>> forceKeyFuts =
@@ -65,7 +60,11 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     private final GridFutureAdapter<?> startFut;
 
     /** Latch which completes after local exchange future is created. */
-    private final CountDownLatch locExchFutLatch = new CountDownLatch(1);
+    private final GridFutureAdapter<?> locExchFut;
+
+    /** Pending futures. */
+    private final ConcurrentLinkedQueue<GridDhtPartitionsExchangeFuture<K, V>> pendingFuts =
+        new ConcurrentLinkedQueue<GridDhtPartitionsExchangeFuture<K, V>>();
 
     /** Busy lock to prevent activities from accessing exchanger while it's stopping. */
     private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
@@ -83,7 +82,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
                 assert e.type() == EVT_NODE_JOINED || e.type() == EVT_NODE_LEFT || e.type() == EVT_NODE_FAILED;
 
-                GridNodeShadow n = e.shadow();
+                final GridNodeShadow n = e.shadow();
 
                 assert !loc.id().equals(n.id());
 
@@ -93,9 +92,6 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                 if (e.type() == EVT_NODE_LEFT || e.type() == EVT_NODE_FAILED) {
                     assert cctx.discovery().node(n.id()) == null;
 
-                    // Remove mapping for non-existing node.
-                    top.remove(n.id());
-
                     for (GridDhtPartitionsExchangeFuture<K, V> f : exchFuts.values())
                         f.onNodeLeft(n.id());
                 }
@@ -103,30 +99,48 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                 // For joining nodes we ignore events for nodes with lesser
                 // order than the local node.
                 if (e.type() != EVT_NODE_JOINED || n.order() > loc.order()) {
-                    // Synchronously wait until local node future will be added.
-                    locExchFutLatch.await();
+                    boolean set = lastJoinOrder.setIfGreater(n.order());
 
-                    GridDhtPartitionExchangeId exchId = exchangeId(n.id(), n.order(), e.type(), e.timestamp());
+                    assert e.type() != EVT_NODE_JOINED || set;
 
-                    // Start exchange process.
+                    GridDhtPartitionExchangeId exchId = exchangeId(n.id(), n.order(), lastJoinOrder.get(), e.type(),
+                        e.timestamp());
+
                     GridDhtPartitionsExchangeFuture<K, V> exchFut = exchangeFuture(exchId, e);
 
-                    if (log.isDebugEnabled())
-                        log.debug("Discovery event (will start exchange): " + exchId);
+                    // Start exchange process.
+                    pendingFuts.add(exchFut);
 
                     // Event callback - without this callback future will never complete.
                     exchFut.onEvent(exchId, e);
 
-                    demandPool.onDiscoveryEvent(n.id(), exchFut);
+                    if (log.isDebugEnabled())
+                        log.debug("Discovery event (will start exchange): " + exchId);
+
+                    locExchFut.listenAsync(new CI1<GridFuture<?>>() {
+                        @Override public void apply(GridFuture<?> t) {
+                            if (!enterBusy())
+                                return;
+
+                            try {
+                                // Unwind in the order of discovery events.
+                                for (GridDhtPartitionsExchangeFuture<K, V> f = pendingFuts.poll(); f != null;
+                                    f = pendingFuts.poll()) {
+                                    U.debug(log, "Notifying demand pool [node=" + n.id() + ", fut=" + f + ']');
+
+                                    demandPool.onDiscoveryEvent(n.id(), f);
+                                }
+                            }
+                            finally {
+                                leaveBusy();
+                            }
+                        }
+                    });
                 }
                 else
                     if (log.isDebugEnabled())
                         log.debug("Ignoring discovery event for joining node with lesser order than local one " +
                             "[locOrder=" + loc.order() + ", joinNode=" + n + ']');
-            }
-            catch (InterruptedException ignore) {
-                U.warn(log, "Got interrupted while processing discovery event (is grid stopping?) [evt=" +
-                    evt.name() + ", evtNodeId=" + e.eventNodeId() + ']');
             }
             finally {
                 leaveBusy();
@@ -142,6 +156,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
         top = cctx.dht().topology();
 
+        locExchFut = new GridFutureAdapter<Object>(cctx.kernalContext(), true);
         startFut = new GridFutureAdapter<Object>(cctx.kernalContext());
     }
 
@@ -202,7 +217,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
         assert startTime > 0;
 
-        GridDhtPartitionExchangeId exchId = exchangeId(loc.id(), loc.order(), EVT_NODE_JOINED,
+        GridDhtPartitionExchangeId exchId = exchangeId(loc.id(), loc.order(), loc.order(), EVT_NODE_JOINED,
             loc.metrics().getStartTime());
 
         // Generate dummy discovery event for local node joining.
@@ -215,7 +230,8 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
         supplyPool.start();
         demandPool.start(fut);
 
-        locExchFutLatch.countDown();
+        // Allow discovery events to get processed.
+        locExchFut.onDone();
 
         if (log.isDebugEnabled())
             log.debug("Beginning to wait on exchange future: " + fut);
@@ -546,12 +562,14 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /**
      * @param nodeId Cause node ID.
      * @param order Cause node order.
+     * @param lastJoinOrder Last join order.
      * @param evt Event type.
      * @param timestamp Event timestamp.
      * @return ActivityFuture id.
      */
-    private GridDhtPartitionExchangeId exchangeId(UUID nodeId, long order, int evt, long timestamp) {
-        return new GridDhtPartitionExchangeId(nodeId, evt, order, timestamp);
+    private GridDhtPartitionExchangeId exchangeId(UUID nodeId, long order, long lastJoinOrder, int evt,
+        long timestamp) {
+        return new GridDhtPartitionExchangeId(nodeId, evt, order, lastJoinOrder, timestamp);
     }
 
     /**
@@ -559,7 +577,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
      * @param discoEvt Discovery event.
      * @return Exchange future.
      */
-    GridDhtPartitionsExchangeFuture<K, V> exchangeFuture(final GridDhtPartitionExchangeId exchId,
+    GridDhtPartitionsExchangeFuture<K, V> exchangeFuture(GridDhtPartitionExchangeId exchId,
         @Nullable GridDiscoveryEvent discoEvt) {
         GridDhtPartitionsExchangeFuture<K, V> fut;
 
@@ -571,63 +589,6 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
 
         if (discoEvt != null)
             fut.onEvent(exchId, discoEvt);
-
-        if (exchId.isJoined())
-            fut.listenAsync(new CI1<GridFuture<Object>>() {
-                @Override public void apply(GridFuture<Object> t) {
-                    updateLastJoinOrder(exchId.order());
-                }
-            });
-
-        return fut;
-    }
-
-    /**
-     * @param order Order of last joined node.
-     */
-    private void updateLastJoinOrder(long order) {
-        while (true) {
-            long cur = lastJoinOrder.get();
-
-            if (order > cur) {
-                if (lastJoinOrder.compareAndSet(cur, order)) {
-                    for (JoinFuture f : joinFuts)
-                        f.onOrderUpdated(order);
-
-                    return;
-                }
-            }
-            else
-                return;
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridFuture<?> joinFuture(long order) {
-        JoinFuture fut = new JoinFuture(lastJoinOrder.get(), order);
-
-        JoinFuture prev = joinFuts.addx(fut);
-
-        if (prev != null) {
-            fut = prev;
-
-            if (log.isDebugEnabled())
-                log.debug("Retrieved join future: " + fut);
-        }
-        else {
-            // Double check to avoid raise conditions.
-            fut.onOrderUpdated(lastJoinOrder.get());
-
-            if (log.isDebugEnabled())
-                log.debug("Created join future: " + fut);
-
-            fut.listenAsync(new CI1<GridFuture<?>>() {
-                @SuppressWarnings( {"SuspiciousMethodCalls"})
-                @Override public void apply(GridFuture<?> f) {
-                    joinFuts.remove(f);
-                }
-            });
-        }
 
         return fut;
     }
@@ -737,81 +698,6 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
         /** {@inheritDoc} */
         @Override public synchronized String toString() {
             return S.toString(ExchangeFutureSet.class, this, super.toString());
-        }
-    }
-
-    /**
-     * Future which waits for exchange future on join event with a certain
-     * order to complete.
-     */
-    private class JoinFuture extends GridFutureAdapter<Long> {
-        /** Order to wait for. */
-        private final long waitOrder;
-
-        /** Order at the creation time. */
-        private final long startOrder;
-
-        /**
-         * @param startOrder Order at the creation time.
-         * @param waitOrder Order to wait for.
-         */
-        JoinFuture(long startOrder, long waitOrder) {
-            syncNotify(true);
-
-            this.startOrder = startOrder;
-            this.waitOrder = waitOrder;
-        }
-
-        /**
-         * Empty constructor required by {@link Externalizable}.
-         */
-        public JoinFuture() {
-            assert false;
-
-            startOrder = -1;
-            waitOrder = -1;
-        }
-
-        /**
-         * @return Order to wait for.
-         */
-        long waitOrder() {
-            return waitOrder;
-        }
-
-        /**
-         * @return Start order.
-         */
-        long startOrder() {
-            return startOrder;
-        }
-
-        /**
-         * @param newOrder New order.
-         */
-        void onOrderUpdated(long newOrder) {
-            if (waitOrder <= newOrder)
-                onDone(waitOrder);
-        }
-
-        /** {@inheritDoc} */
-        @Override public boolean equals(Object o) {
-            if (this == o)
-                return true;
-
-            JoinFuture other = (JoinFuture)o;
-
-            return other.waitOrder == waitOrder && other.startOrder == startOrder;
-        }
-
-        /** {@inheritDoc} */
-        @Override public int hashCode() {
-            return 31 * (int)(waitOrder ^ (waitOrder >>> 32)) + (int)(startOrder ^ (startOrder >>> 32));
-        }
-
-        /** {@inheritDoc} */
-        @Override public String toString() {
-            return S.toString(JoinFuture.class, this);
         }
     }
 }

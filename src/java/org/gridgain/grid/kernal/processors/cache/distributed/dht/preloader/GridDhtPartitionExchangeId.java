@@ -32,6 +32,9 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
     /** Node order. */
     private long order;
 
+    /** Last join order. */
+    private long lastJoinOrder;
+
     /** */
     private long timestamp;
 
@@ -39,9 +42,10 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
      * @param nodeId Node ID.
      * @param evt Event.
      * @param order Order.
+     * @param lastJoinOrder Last join order.
      * @param timestamp Event timestamp.
      */
-    GridDhtPartitionExchangeId(UUID nodeId, int evt, long order, long timestamp) {
+    GridDhtPartitionExchangeId(UUID nodeId, int evt, long order, long lastJoinOrder, long timestamp) {
         assert nodeId != null;
         assert order > 0;
         assert timestamp > 0;
@@ -50,6 +54,7 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
         this.nodeId = nodeId;
         this.evt = evt;
         this.order = order;
+        this.lastJoinOrder = lastJoinOrder;
         this.timestamp = timestamp;
     }
 
@@ -65,6 +70,13 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
      */
     public UUID nodeId() {
         return nodeId;
+    }
+
+    /**
+     * @return Last join order.
+     */
+    public long lastJoinOrder() {
+        return lastJoinOrder;
     }
 
     /**
@@ -106,6 +118,7 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         U.writeUuid(out, nodeId);
         out.writeLong(order);
+        out.writeLong(lastJoinOrder);
         out.writeInt(evt);
         out.writeLong(timestamp);
     }
@@ -114,6 +127,7 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         nodeId = U.readUuid(in);
         order = in.readLong();
+        lastJoinOrder = in.readLong();
         evt = in.readInt();
         timestamp = in.readLong();
     }

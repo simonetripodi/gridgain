@@ -28,7 +28,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class GridClosureProcessor extends GridProcessorAdapter {
@@ -108,10 +108,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param jobs Closures to execute.
      * @param nodes Grid nodes.
      * @return Task execution future.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Collection<? extends Runnable> jobs,
-        @Nullable Collection<? extends GridNode> nodes) throws GridException {
+        @Nullable Collection<? extends GridNode> nodes) {
         return runAsync(mode, jobs, nodes, false);
     }
 
@@ -122,17 +121,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param nodes Grid nodes.
      * @param sys If {@code true}, then system pool will be used.
      * @return Task execution future.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Collection<? extends Runnable> jobs,
-        @Nullable Collection<? extends GridNode> nodes, boolean sys) throws GridException {
+        @Nullable Collection<? extends GridNode> nodes, boolean sys) {
         assert mode != null;
 
         enterBusy2();
 
         try {
-            if (F.isEmpty(jobs) || F.isEmpty(nodes))
+            if (F.isEmpty(jobs))
                 return new GridFinishedFuture(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -209,10 +210,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param job Closure to execute.
      * @param nodes Grid nodes.
      * @return Task execution future.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Runnable job,
-        @Nullable Collection<? extends GridNode> nodes) throws GridException {
+        @Nullable Collection<? extends GridNode> nodes) {
         return runAsync(mode, job, nodes, false);
     }
 
@@ -223,17 +223,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param nodes Grid nodes.
      * @param sys If {@code true}, then system pool will be used.
      * @return Task execution future.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Runnable job,
-        @Nullable Collection<? extends GridNode> nodes, boolean sys) throws GridException {
+        @Nullable Collection<? extends GridNode> nodes, boolean sys) {
         assert mode != null;
 
         enterBusy2();
 
         try {
-            if (job == null || F.isEmpty(nodes))
+            if (job == null)
                 return new GridFinishedFuture(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -451,18 +453,20 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param <R1> Type.
      * @param <R2> Type.
      * @return Reduced result.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R1, R2> GridFuture<R2> forkjoinAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends Callable<R1>> jobs,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable Collection<? extends GridNode> nodes) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable Collection<? extends GridNode> nodes) {
         assert mode != null;
 
         enterBusy2();
 
         try {
-            if (F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
+            if (F.isEmpty(jobs) || rdc == null)
                 return new GridFinishedFuture<R2>(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture<R2>(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -548,11 +552,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param jobs Closures to execute.
      * @return Grid future.
      * @param nodes Grid nodes.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<?> runAsync(@Nullable GridMapper<Runnable, GridRichNode> mapper,
-        @Nullable Collection<? extends Runnable> jobs, @Nullable Collection<? extends GridNode> nodes)
-        throws GridException {
+        @Nullable Collection<? extends Runnable> jobs, @Nullable Collection<? extends GridNode> nodes) {
         return runAsync(mapper, jobs, nodes, false);
     }
 
@@ -562,16 +564,17 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param sys If {@code true}, then system pool will be used.
      * @return Grid future.
      * @param nodes Grid nodes.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridFuture<?> runAsync(@Nullable GridMapper<Runnable, GridRichNode> mapper,
-        @Nullable Collection<? extends Runnable> jobs, @Nullable Collection<? extends GridNode> nodes, boolean sys)
-        throws GridException {
+        @Nullable Collection<? extends Runnable> jobs, @Nullable Collection<? extends GridNode> nodes, boolean sys) {
         enterBusy2();
 
         try {
-            if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
+            if (mapper == null || F.isEmpty(jobs))
                 return new GridFinishedFuture(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -651,11 +654,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param jobs Closures to execute.
      * @return Grid future.
      * @param nodes Grid nodes.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R> GridFuture<Collection<R>> callAsync(@Nullable GridMapper<Callable<R>, GridRichNode> mapper,
-        @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes)
-        throws GridException {
+        @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes) {
         return callAsync(mapper, jobs, nodes, false);
     }
 
@@ -665,16 +666,18 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @return Grid future.
      * @param nodes Grid nodes.
      * @param sys If {@code true}, then system pool will be used.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R> GridFuture<Collection<R>> callAsync(@Nullable GridMapper<Callable<R>, GridRichNode> mapper,
         @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes,
-        boolean sys) throws GridException {
+        boolean sys) {
         enterBusy2();
 
         try {
-            if (mapper == null || F.isEmpty(jobs) || F.isEmpty(nodes))
+            if (mapper == null || F.isEmpty(jobs))
                 return new GridFinishedFuture<Collection<R>>(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture<Collection<R>>(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -683,6 +686,15 @@ public class GridClosureProcessor extends GridProcessorAdapter {
         finally {
             leaveBusy();
         }
+    }
+
+    /**
+     * Creates appropriate empty projection exception.
+     *
+     * @return Empty projection exception.
+     */
+    private GridEmptyProjectionException makeException() {
+        return new GridEmptyProjectionException("Topology projection is empty.");
     }
 
     /**
@@ -762,16 +774,18 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param <R2> Type.
      * @param <C> Any subclass or {@code Callable<R1>}.
      * @return Reduced result future.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R1, R2, C extends Callable<R1>> GridFuture<R2> forkjoinAsync(@Nullable GridMapper<C, GridRichNode> mapper,
         @Nullable Collection<C> jobs, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable Collection<? extends GridNode> nodes) throws GridException {
+        @Nullable Collection<? extends GridNode> nodes) {
         enterBusy2();
 
         try {
-            if (mapper == null || F.isEmpty(jobs) || rdc == null || F.isEmpty(nodes))
+            if (mapper == null || F.isEmpty(jobs) || rdc == null)
                 return new GridFinishedFuture<R2>(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture<R2>(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -862,11 +876,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param nodes Grid nodes.
      * @param <R> Type.
      * @return Grid future for collection of closure results.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
-        @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes)
-        throws GridException {
+        @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes) {
         return callAsync(mode, jobs, nodes, false);
     }
 
@@ -878,18 +890,20 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param sys If {@code true}, then system pool will be used.
      * @param <R> Type.
      * @return Grid future for collection of closure results.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends Callable<R>> jobs, @Nullable Collection<? extends GridNode> nodes,
-        boolean sys) throws GridException {
+        boolean sys) {
         assert mode != null;
 
         enterBusy2();
 
         try {
-            if (F.isEmpty(jobs) || F.isEmpty(nodes))
+            if (F.isEmpty(jobs))
                 return new GridFinishedFuture<Collection<R>>(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture<Collection<R>>(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 
@@ -969,10 +983,9 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param nodes Grid nodes.
      * @param <R> Type.
      * @return Grid future for collection of closure results.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R> GridFuture<R> callAsync(GridClosureCallMode mode,
-        @Nullable Callable<R> job, @Nullable Collection<? extends GridNode> nodes) throws GridException {
+        @Nullable Callable<R> job, @Nullable Collection<? extends GridNode> nodes) {
         return callAsync(mode, job, nodes, false);
     }
 
@@ -984,17 +997,19 @@ public class GridClosureProcessor extends GridProcessorAdapter {
      * @param sys If {@code true}, then system pool will be used.
      * @param <R> Type.
      * @return Grid future for collection of closure results.
-     * @throws GridException Thrown in case of any errors.
      */
     public <R> GridFuture<R> callAsync(GridClosureCallMode mode,
-        @Nullable Callable<R> job, @Nullable Collection<? extends GridNode> nodes, boolean sys) throws GridException {
+        @Nullable Callable<R> job, @Nullable Collection<? extends GridNode> nodes, boolean sys) {
         assert mode != null;
 
         enterBusy2();
 
         try {
-            if (job == null || F.isEmpty(nodes))
+            if (job == null)
                 return new GridFinishedFuture<R>(ctx);
+
+            if (F.isEmpty(nodes))
+                return new GridFinishedFuture<R>(ctx, makeException());
 
             ctx.task().setThreadContext(TC_SUBGRID, nodes);
 

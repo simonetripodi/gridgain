@@ -32,7 +32,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Manages lock order within a thread.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     /** Maxim number of removed locks. */
@@ -633,16 +633,18 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
     /**
      * @param parts Partition numbers.
-     * @param exclIds Exclude IDs.
+     * @param exclId Exclude ID.
      * @return Future that signals when all locks for given partitions are released.
      */
     @SuppressWarnings({"unchecked"})
-    public GridFuture<?> finishPartitions(final Collection<Integer> parts, UUID... exclIds) {
-        return finishLocks(new GridPredicate[]{new P1<K>() {
+    public GridFuture<?> finishPartitions(final Collection<Integer> parts, UUID exclId) {
+        assert exclId != null;
+
+        return finishLocks(new GridPredicate[] { new P1<K>() {
             @Override public boolean apply(K key) {
                 return parts != null && parts.contains(cctx.partition(key));
             }
-        }}, exclIds);
+        }}, exclId);
     }
 
     /**
@@ -655,11 +657,11 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
 
     /**
      * @param keyFilter Key filter.
-     * @param exclIds Exclude IDs.
+     * @param exclId Exclude ID.
      * @return Future that signals when all locks for given partitions will be released.
      */
     @SuppressWarnings({"unchecked"})
-    public GridFuture<?> finishLocks(@Nullable final GridPredicate<K>[] keyFilter, @Nullable UUID[] exclIds) {
+    public GridFuture<?> finishLocks(@Nullable final GridPredicate<K>[] keyFilter, @Nullable UUID exclId) {
         final FinishLockFuture finishFut = new FinishLockFuture(
             F.view(locked.values(),
                 new P1<GridDistributedCacheEntry<K, V>>() {
@@ -667,7 +669,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
                             return F.isAll(e.key(), keyFilter);
                     }
                 }
-            ), exclIds);
+            ), exclId);
 
         finishFuts.add(finishFut);
 
@@ -715,7 +717,7 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
     private class FinishLockFuture extends GridFutureAdapter<Object> {
         /** Exclude IDs. */
         @GridToStringInclude
-        private final UUID[] exclIds;
+        private final UUID exclId;
 
         /** */
         @GridToStringInclude
@@ -728,17 +730,17 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
         public FinishLockFuture() {
             assert false;
 
-            exclIds = null;
+            exclId = null;
         }
 
         /**
-         * @param exclIds Exclude IDs.
+         * @param exclId Exclude ID.
          * @param entries Entries.
          */
-        FinishLockFuture(Iterable<GridDistributedCacheEntry<K, V>> entries, UUID[] exclIds) {
-            super(cctx.kernalContext());
+        FinishLockFuture(Iterable<GridDistributedCacheEntry<K, V>> entries, UUID exclId) {
+            super(cctx.kernalContext(), true);
 
-            this.exclIds = exclIds;
+            this.exclId = exclId;
 
             for (GridCacheEntryEx<K, V> entry : entries) {
                 try {
@@ -769,21 +771,21 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
             }
 
             if (exchLog.isDebugEnabled())
-                exchLog.debug("Pending lock set [excludes=" + Arrays.toString(exclIds) + ", locks=" + pending + ']');
+                exchLog.debug("Pending lock set [exclude=" + exclId + ", locks=" + pending + ']');
         }
 
         /**
          * @return Filter.
          */
         private GridPredicate<GridCacheMvccCandidate<K>> excludeFilter() {
-            if (F.isEmpty(exclIds))
+            if (exclId == null)
                 return F.alwaysTrue();
 
             return new P1<GridCacheMvccCandidate<K>>() {
                 @Override public boolean apply(GridCacheMvccCandidate<K> c) {
                     UUID otherId = c.otherNodeId();
 
-                    return !U.containsObjectArray(exclIds, otherId) && !F.containsAny(c.mappedNodeIds(), exclIds);
+                    return c.topologyVersion() == 0 || (otherId != null && !otherId.equals(exclId));
                 }
             };
         }
@@ -828,61 +830,42 @@ public class GridCacheMvccManager<K, V> extends GridCacheManager<K, V> {
             Collection<GridCacheMvccCandidate<K>> cands = pending.get(entry.key());
 
             if (cands != null) {
-                try {
-                    Collection<GridCacheMvccCandidate<K>> rmts = entry.remoteMvccSnapshot();
-                    Collection<GridCacheMvccCandidate<K>> locs = entry.localCandidates();
+                synchronized (cands) {
+                    for (Iterator<GridCacheMvccCandidate<K>> it = cands.iterator(); it.hasNext(); ) {
+                        GridCacheMvccCandidate<K> cand = it.next();
 
-                    boolean dht = cctx.isDht();
+                        UUID otherId = cand.otherNodeId();
 
-                    synchronized (cands) {
-                        for (Iterator<GridCacheMvccCandidate<K>> it = cands.iterator(); it.hasNext(); ) {
-                            GridCacheMvccCandidate<K> cand = it.next();
-
-                            if (U.containsObjectArray(exclIds, cand.nodeId(), cand.otherNodeId()) ||
-                                U.containsObjectArray(exclIds, cand.mappedNodeIds())) {
-                                if (exchLog.isDebugEnabled())
-                                    exchLog.debug("Removing candidate from mapping list [exclIds=" +
-                                        Arrays.toString(exclIds) + ", cand=" + cand + ", pending=" + pending + ']');
-
-                                it.remove();
-                            }
-                            else {
-                                if ((rmts == null || !rmts.contains(cand)) &&
-                                    (!dht || locs == null || !locs.contains(cand))) {
-                                    if (exchLog.isDebugEnabled())
-                                        exchLog.debug("Removing candidate from mapping list [exclIds=" +
-                                            Arrays.toString(exclIds) + ", cand=" + cand + ", pending=" + pending + ']');
-
-                                    it.remove();
-                                }
-                            }
-                        }
-
-                        if (cands.isEmpty())
-                            pending.remove(entry.key());
+                        // Check exclude ID again, as key could have been reassigned.
+                        if (cand.removed() || (otherId != null && otherId.equals(exclId)))
+                            it.remove();
                     }
-                }
-                catch (GridCacheEntryRemovedException ignored) {
-                    if (exchLog.isDebugEnabled())
-                        exchLog.debug("Got removed entry when adding it to finish lock future " +
-                            "(will remove pending lock): " + entry);
 
-                    pending.remove(entry.key());
-                }
-                finally {
-                    if (pending.isEmpty()) {
+                    if (cands.isEmpty())
+                        pending.remove(entry.key());
+
+                    if (pending.isEmpty())
                         onDone();
 
-                        if (exchLog.isDebugEnabled())
-                            exchLog.debug("Finish lock future is done: " + this);
-                    }
+                    if (exchLog.isDebugEnabled())
+                        exchLog.debug("Finish lock future is done: " + this);
                 }
             }
         }
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(FinishLockFuture.class, this, super.toString());
+            if (!pending.isEmpty()) {
+                Map<GridCacheVersion, GridCacheTxEx> txs = new HashMap<GridCacheVersion, GridCacheTxEx>(1, 1.0f);
+
+                for (Collection<GridCacheMvccCandidate<K>> cands : pending.values())
+                    for (GridCacheMvccCandidate<K> c : cands)
+                        txs.put(c.version(), cctx.tm().<GridCacheTxEx>tx(c.version()));
+
+                return S.toString(FinishLockFuture.class, this, "txs=" + txs + ", super=" + super.toString());
+            }
+            else
+                return S.toString(FinishLockFuture.class, this, super.toString());
         }
     }
 }

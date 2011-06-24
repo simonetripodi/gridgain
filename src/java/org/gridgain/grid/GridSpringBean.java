@@ -60,7 +60,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -324,7 +324,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridOutClosure<GridFuture<T>> gridify(GridClosureCallMode mode, Callable<T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -332,8 +332,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridOutClosure<GridFuture<?>> gridify(GridClosureCallMode mode, Runnable r,
-        @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, r, p);
@@ -341,7 +340,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <E, T> GridClosure<E, GridFuture<T>> gridify(GridClosureCallMode mode, GridClosure<E, T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -350,7 +349,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <E1, E2, T> GridClosure2<E1, E2, GridFuture<T>> gridify(GridClosureCallMode mode,
         GridClosure2<E1, E2, T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -359,7 +358,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <E1, E2, E3, T> GridClosure3<E1, E2, E3, GridFuture<T>> gridify(
         GridClosureCallMode mode, GridClosure3<E1, E2, E3, T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -367,7 +366,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <E> GridClosure<E, GridFuture<?>> gridify(GridClosureCallMode mode, GridInClosure<E> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -375,8 +374,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <E1, E2> GridClosure2<E1, E2, GridFuture<?>> gridify(GridClosureCallMode mode,
-        GridInClosure2<E1, E2> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        GridInClosure2<E1, E2> c, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -385,7 +383,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <E1, E2, E3> GridClosure3<E1, E2, E3, GridFuture<?>> gridify(
         GridClosureCallMode mode, GridInClosure3<E1, E2, E3> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -393,7 +391,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridOutClosure<GridFuture<Boolean>> gridify(GridClosureCallMode mode, GridAbsPredicate c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -401,7 +399,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <E> GridClosure<E, GridFuture<Boolean>> gridify(GridClosureCallMode mode, GridPredicate<E> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -410,7 +408,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <E1, E2> GridClosure2<E1, E2, GridFuture<Boolean>> gridify(GridClosureCallMode mode,
         GridPredicate2<E1, E2> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -419,7 +417,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <E1, E2, E3> GridClosure3<E1, E2, E3, GridFuture<Boolean>> gridify(
         GridClosureCallMode mode, GridPredicate3<E1, E2, E3> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.gridify(mode, c, p);
@@ -527,7 +525,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> remoteListenAsync(@Nullable GridNode node,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException {
+        @Nullable GridPredicate2<UUID, ? super T>... p) {
         assert g != null;
 
         return g.remoteListenAsync(node, p);
@@ -535,7 +533,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> remoteListenAsync(@Nullable Collection<? extends GridNode> nodes,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException {
+        @Nullable GridPredicate2<UUID, ? super T>... p) {
         assert g != null;
 
         return g.remoteListenAsync(nodes, p);
@@ -543,7 +541,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> remoteListenAsync(@Nullable GridPredicate<? super GridRichNode> pn,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException {
+        @Nullable GridPredicate2<UUID, ? super T>... p) {
         assert g != null;
 
         return g.remoteListenAsync(pn, p);
@@ -919,7 +917,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2, T extends Callable<R1>> GridFuture<R2> mapreduceAsync(
         @Nullable GridMapper<T, GridRichNode> mapper, @Nullable Collection<T> jobs, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.mapreduceAsync(mapper, jobs, rdc, p);
@@ -993,7 +991,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Runnable job,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mode, job, p);
@@ -1009,7 +1007,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Collection<? extends Runnable> jobs,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mode, jobs, p);
@@ -1075,7 +1073,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <R> GridFuture<R> callAsync(GridClosureCallMode mode, @Nullable Callable<R> job,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mode, job, p);
@@ -1092,7 +1090,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends Callable<R>> jobs,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mode, jobs, p);
@@ -1109,7 +1107,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         Collection<? extends Callable<R1>> jobs, GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.reduceAsync(mode, jobs, rdc, p);
@@ -1197,7 +1195,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridFuture<List<GridEvent>> remoteEventsAsync(GridPredicate<? super GridEvent> pe, long timeout,
-        @Nullable GridPredicate<? super GridRichNode>... pn) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... pn) {
         assert g != null;
 
         return g.remoteEventsAsync(pe, timeout, pn);
@@ -1282,8 +1280,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <R> GridFuture<Collection<R>> callAsync(@Nullable GridMapper<Callable<R>, GridRichNode> mapper,
-        @Nullable Collection<? extends Callable<R>> jobs, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable Collection<? extends Callable<R>> jobs, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mapper, jobs, p);
@@ -1301,7 +1298,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridClosure<? super T, R>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mode, jobs, args, p);
@@ -1319,7 +1316,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R> job, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mode, job, args, p);
@@ -1337,7 +1334,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R> job, @Nullable GridOutClosure<T> pdc, int cnt,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mode, job, pdc, cnt, p);
@@ -1355,7 +1352,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridInClosure<? super T>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mode, jobs, args, p);
@@ -1371,8 +1368,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mode, job, args, p);
@@ -1388,8 +1384,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mode, job, pdc, cnt, p);
@@ -1407,7 +1402,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridClosure<? super T, R1>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.reduceAsync(mode, jobs, args, rdc, p);
@@ -1425,7 +1420,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R1> job, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.reduceAsync(mode, job, args, rdc, p);
@@ -1443,7 +1438,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R1> job, @Nullable GridOutClosure<T> pdc, int cnt,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.reduceAsync(mode, job, pdc, cnt, rdc, p);
@@ -1462,7 +1457,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     @Override public <R1, R2, T> GridFuture<R2> mapreduceAsync(
         @Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable Collection<? extends GridClosure<? super T, R1>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.mapreduceAsync(mapper, jobs, args, rdc, p);
@@ -1480,7 +1475,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2, T> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<GridOutClosure<R1>,
         GridRichNode> mapper, @Nullable GridClosure<? super T, R1> job, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.mapreduceAsync(mapper, job, args, rdc, p);
@@ -1498,7 +1493,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     /** {@inheritDoc} */
     @Override public <R1, R2, T> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<GridOutClosure<R1>,
         GridRichNode> mapper, @Nullable GridClosure<? super T, R1> job, @Nullable GridOutClosure<T> pdc, int cnt,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.mapreduceAsync(mapper, job, pdc, cnt, rdc, p);
@@ -1514,7 +1509,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mode, job, arg, p);
@@ -1530,7 +1525,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public <R, T> GridFuture<R> callAsync(GridClosureCallMode mode, @Nullable GridClosure<? super T, R> job,
-        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.callAsync(mode, job, arg, p);
@@ -1538,8 +1533,7 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> runAsync(@Nullable GridMapper<Runnable, GridRichNode> mapper,
-        @Nullable Collection<? extends Runnable> jobs, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable Collection<? extends Runnable> jobs, @Nullable GridPredicate<? super GridRichNode>... p) {
         assert g != null;
 
         return g.runAsync(mapper, jobs, p);

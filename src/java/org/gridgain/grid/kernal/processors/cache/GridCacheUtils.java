@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -52,7 +52,7 @@ public abstract class GridCacheUtils {
     /** {@link GridCacheReturn}-to-value conversion. */
     private static final GridClosure RET2VAL =
         new GridClosure<GridCacheReturn, Object>() {
-            @Override public Object apply(GridCacheReturn ret) {
+            @Nullable @Override public Object apply(GridCacheReturn ret) {
                 return ret.value();
             }
 
@@ -75,11 +75,18 @@ public abstract class GridCacheUtils {
 
     /** Partition to state transformer. */
     private static final GridClosure PART2STATE =
-        new GridClosure<GridDhtLocalPartition, GridDhtPartitionState>() {
+        new C1<GridDhtLocalPartition, GridDhtPartitionState>() {
             @Override public GridDhtPartitionState apply(GridDhtLocalPartition p) {
                 return p.state();
             }
         };
+
+    /** Not evicted partitions. */
+    private static final GridPredicate PART_NOT_EVICTED = new P1<GridDhtLocalPartition>() {
+        @Override public boolean apply(GridDhtLocalPartition p) {
+            return p.state() != GridDhtPartitionState.EVICTED;
+        }
+    };
 
     /** */
     private static final GridClosure<Integer, GridCacheVersion[]> VER_ARR_FACTORY =
@@ -712,6 +719,14 @@ public abstract class GridCacheUtils {
     @SuppressWarnings({"unchecked"})
     public static <K, V> GridClosure<GridDhtLocalPartition<K, V>, GridDhtPartitionState> part2state() {
         return (GridClosure<GridDhtLocalPartition<K, V>, GridDhtPartitionState>)PART2STATE;
+    }
+
+    /**
+     * @return Not evicted partitions.
+     */
+    @SuppressWarnings( {"unchecked"})
+    public static <K, V> GridPredicate<GridDhtLocalPartition<K, V>> notEvicted() {
+        return PART_NOT_EVICTED;
     }
 
     /**

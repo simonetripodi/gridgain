@@ -25,7 +25,7 @@ import java.util.*;
  * Deployment manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi> {
     /** Local deployment storage. */
@@ -325,7 +325,11 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
 
                 if (p2pExc != null) {
                     for (String rsrc : p2pExc) {
-                        if (rsrc.equals(meta.alias()) || rsrc.equals(meta.className())) {
+                        // Remove star (*) at the end.
+                        if (rsrc.endsWith("*"))
+                            rsrc = rsrc.substring(0, rsrc.length() - 1);
+
+                        if (meta.alias().startsWith(rsrc) || meta.className().startsWith(rsrc)) {
                             if (log.isDebugEnabled())
                                 log.debug("Will not reuse local deployment because resource is excluded [meta=" +
                                     meta + ']');

@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Future for exchanging partition maps.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
@@ -40,7 +40,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
     private final boolean dummy;
 
     /** */
-    private GridDhtPartitionTopology<K, V> top;
+    private final GridDhtPartitionTopology<K, V> top;
 
     /** Discovery event. */
     private volatile GridDiscoveryEvent discoEvt;
@@ -50,18 +50,18 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
     private final Collection<UUID> rcvdIds = new GridConcurrentHashSet<UUID>();
 
     /** Remote nodes. */
-    private Collection<GridRichNode> rmtNodes;
+    private volatile Collection<GridRichNode> rmtNodes;
 
     /** Remote nodes. */
     @GridToStringInclude
-    private Collection<UUID> rmtIds;
+    private volatile Collection<UUID> rmtIds;
 
     /** Oldest node. */
     @GridToStringExclude
-    private volatile GridNode oldestNode;
+    private final AtomicReference<GridNode> oldestNode = new AtomicReference<GridNode>();
 
     /** ExchangeFuture id. */
-    private GridDhtPartitionExchangeId exchId;
+    private final GridDhtPartitionExchangeId exchId;
 
     /** Init flag. */
     @GridToStringInclude
@@ -80,7 +80,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
     private volatile GridTimeoutObject timeoutObj;
 
     /** Cache context. */
-    private GridCacheContext<K, V> cctx;
+    private final GridCacheContext<K, V> cctx;
 
     /** Busy lock to prevent activities from accessing exchanger while it's stopping. */
     private ReadWriteLock busyLock;
@@ -94,6 +94,21 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
     /** */
     private GridFutureAdapter<Boolean> initFut;
+
+    /**
+     * Messages received on non-coordinator are stored in case if this node
+     * becomes coordinator.
+     */
+    private final Map<UUID, GridDhtPartitionsSingleMessage<K, V>> msgs =
+        new ConcurrentHashMap<UUID, GridDhtPartitionsSingleMessage<K, V>>();
+
+    /** */
+    @SuppressWarnings( {"FieldCanBeLocal", "UnusedDeclaration"})
+    @GridToStringInclude
+    private volatile GridFuture<?> partReleaseFut;
+
+    /** */
+    private final Object mux = new Object();
 
     /** Logger. */
     private GridLogger log;
@@ -109,7 +124,11 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
         super(cctx.kernalContext());
         dummy = true;
 
+        top = null;
+        exchId = null;
+
         this.discoEvt = discoEvt;
+        this.cctx = cctx;
 
         syncNotify(true);
 
@@ -142,18 +161,12 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
         GridRichNode loc = cctx.localNode();
 
-        // In case of join, only wait for nodes with smaller or equal version
-        // to the joining node.
-        Collection<GridRichNode> allNodes = new LinkedList<GridRichNode>(
-            exchId.isJoined() ? CU.allNodes(cctx, exchId.order()) : CU.allNodes(cctx));
+        // Grab all nodes with order of equal or less than last joined node.
+        Collection<GridRichNode> allNodes = new LinkedList<GridRichNode>(CU.allNodes(cctx, exchId.lastJoinOrder()));
 
-        oldestNode = F.isEmpty(allNodes) ? loc : CU.oldest(allNodes);
+        oldestNode.set(F.isEmpty(allNodes) ? loc : CU.oldest(allNodes));
 
         assert oldestNode != null;
-
-        rmtNodes = F.view(allNodes, F.remoteNodes(loc.id()));
-
-        rmtIds = new HashSet<UUID>(F.viewReadOnly(rmtNodes, F.node2id()));
 
         initFut = new GridFutureAdapter<Boolean>(ctx, true);
 
@@ -171,6 +184,10 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
         assert false;
 
         dummy = true;
+
+        top = null;
+        exchId = null;
+        cctx = null;
     }
 
     /**
@@ -178,6 +195,32 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      */
     boolean dummy() {
         return dummy;
+    }
+
+    /**
+     * Rechecks topology.
+     */
+    void initTopology() {
+        // Grab all nodes with order of equal or less than last joined node.
+        Collection<GridRichNode> allNodes = new LinkedList<GridRichNode>(CU.allNodes(cctx, exchId.lastJoinOrder()));
+
+        rmtNodes = new ConcurrentLinkedQueue<GridRichNode>(F.view(allNodes, F.remoteNodes(cctx.nodeId())));
+
+        rmtIds = Collections.unmodifiableSet(new HashSet<UUID>(F.nodeIds(rmtNodes)));
+
+        for (Map.Entry<UUID, GridDhtPartitionsSingleMessage<K, V>> m :
+            new HashMap<UUID, GridDhtPartitionsSingleMessage<K, V>>(msgs).entrySet()) {
+            // If received any messages, process them.
+            onReceive(m.getKey(), m.getValue());
+        }
+
+        // If this is the oldest node.
+        if (oldestNode.get().id().equals(cctx.nodeId()))
+            if (allReceived() && ready.get() && replied.compareAndSet(false, true)) {
+                spreadPartitions(top.partitionMap(true));
+
+                onDone();
+            }
     }
 
     /**
@@ -219,7 +262,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      * @return Oldest node.
      */
     GridNode oldestNode() {
-        return oldestNode;
+        return oldestNode.get();
     }
 
     /**
@@ -310,8 +353,11 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                 assert discoEvt != null;
 
+                // Must initialize topology after we get discovery event.
+                initTopology();
+
                 // Update before waiting for locks.
-                top.updateJoinVersion(exchId);
+                top.updateJoinOrder(exchId);
 
                 // Only wait in case of join event. If a node leaves,
                 // then transactions handled by it will be either remapped
@@ -330,7 +376,17 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                     Set<Integer> parts = cctx.primaryPartitions(node, null);
 
-                    cctx.partitionReleaseFuture(parts, exchId.nodeId()).get();
+                    GridFuture<?> partReleaseFut = cctx.partitionReleaseFuture(parts, exchId.nodeId());
+
+                    this.partReleaseFut = partReleaseFut;
+
+                    U.debug(log, "BEGINNING TO WAIT ON PART RELEASE FUTURE [partReleaseFut=" + partReleaseFut + ", " +
+                        ", exchId=" + exchId + ']');
+
+                    partReleaseFut.get();
+
+                    U.debug(log, "FINISHED WAITING ON PART RELEASE FUTURE [partReleaseFut=" + partReleaseFut + ", " +
+                        ", exchId=" + exchId + ']');
                 }
 
                 top.beforeExchange(exchId);
@@ -362,7 +418,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                 log.debug("Initialized future: " + this);
 
             // If this node is not oldest.
-            if (!oldestNode.id().equals(cctx.nodeId()))
+            if (!oldestNode.get().id().equals(cctx.nodeId()))
                 sendPartitions();
             else if (allReceived() && replied.compareAndSet(false, true)) {
                 if (spreadPartitions(top.partitionMap(true)))
@@ -412,7 +468,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      *
      */
     private void sendPartitions() {
-        GridNode oldestNode = this.oldestNode;
+        GridNode oldestNode = this.oldestNode.get();
 
         try {
             sendLocalPartitions(oldestNode, exchId);
@@ -443,8 +499,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
         catch (GridException e) {
             scheduleRecheck();
 
-            U.error(log, "Failed to send full partition map to nodes (will retry after timeout) [nodes=" + rmtIds +
-                ", exchangeId=" + exchId + ']', e);
+            U.error(log, "Failed to send full partition map to nodes (will retry after timeout) [nodes=" +
+                F.nodeId8s(rmtNodes) + ", exchangeId=" + exchId + ']', e);
 
             return false;
         }
@@ -474,6 +530,10 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      * @return {@code True} if all replies are received.
      */
     private boolean allReceived() {
+        Collection<UUID> rmtIds = this.rmtIds;
+
+        assert rmtIds != null;
+
         return rcvdIds.containsAll(rmtIds);
     }
 
@@ -494,32 +554,52 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             try {
                 GridNode n = cctx.node(nodeId);
 
-                if (n != null)
+                if (n != null && oldestNode.get().id().equals(cctx.nodeId()))
                     sendAllPartitions(F.asList(n), exchId, top.partitionMap(true));
             }
             catch (GridException e) {
                 scheduleRecheck();
 
-                U.error(log, "Failed to send full partition map to nodes (will retry after timeout) [nodes=" + rmtIds +
+                U.error(log, "Failed to send full partition map to node (will retry after timeout) [node=" + nodeId +
                     ", exchangeId=" + exchId + ']', e);
             }
         }
         else {
             initFut.listenAsync(new CI1<GridFuture<Boolean>>() {
                 @Override public void apply(GridFuture<Boolean> t) {
-                    rcvdIds.add(nodeId);
+                    AtomicReference<GridNode> oldestRef = oldestNode;
 
-                    top.update(exchId, msg.partitions());
+                    GridNode loc = cctx.localNode();
 
-                    // If got all replies, and initialization finished, and reply has not been sent yet.
-                    if (allReceived() && ready.get() && replied.compareAndSet(false, true)) {
-                        spreadPartitions(top.partitionMap(true));
+                    boolean match = true;
 
-                        onDone();
+                    // Check if oldest node has changed.
+                    if (!oldestRef.get().equals(loc)) {
+                        match = false;
+
+                        synchronized (mux) {
+                            // Double check.
+                            if (!oldestRef.get().equals(loc))
+                                msgs.put(nodeId, msg);
+                            else
+                                match = true;
+                        }
                     }
-                    else if (log.isDebugEnabled())
-                        log.debug("Exchange future full map is not sent [allReceived=" + allReceived() + ", ready=" + ready +
-                            ", replied=" + replied.get() + ", init=" + init.get() + ", fut=" + this + ']');
+
+                    if (match) {
+                        if (rcvdIds.add(nodeId))
+                            top.update(exchId, msg.partitions());
+
+                        // If got all replies, and initialization finished, and reply has not been sent yet.
+                        if (allReceived() && ready.get() && replied.compareAndSet(false, true)) {
+                            spreadPartitions(top.partitionMap(true));
+
+                            onDone();
+                        }
+                        else if (log.isDebugEnabled())
+                            log.debug("Exchange future full map is not sent [allReceived=" + allReceived() + ", ready=" +
+                                ready + ", replied=" + replied.get() + ", init=" + init.get() + ", fut=" + this + ']');
+                    }
                 }
             });
         }
@@ -539,9 +619,9 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
             return;
         }
 
-        if (!nodeId.equals(oldestNode.id())) {
+        if (!nodeId.equals(oldestNode.get().id())) {
             if (log.isDebugEnabled())
-                log.debug("Received full partition map from unexpected node [oldest=" + oldestNode.id() +
+                log.debug("Received full partition map from unexpected node [oldest=" + oldestNode.get().id() +
                     ", unexpectedNodeId=" + nodeId + ']');
 
             return;
@@ -582,27 +662,70 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                         return;
 
                     try {
-                        if (oldestNode.id().equals(nodeId)) {
+                        // Pretend to have received message from this node.
+                        rcvdIds.add(nodeId);
+
+                        Collection<UUID> rmtIds = GridDhtPartitionsExchangeFuture.this.rmtIds;
+
+                        assert rmtIds != null;
+
+                        AtomicReference<GridNode> oldestNode = GridDhtPartitionsExchangeFuture.this.oldestNode;
+
+                        GridNode oldest = oldestNode.get();
+
+                        if (oldest.id().equals(nodeId)) {
                             if (log.isDebugEnabled())
                                 log.debug("Oldest node left or failed on partition exchange " +
                                     "(will restart exchange process)) [cacheName=" + cctx.namex() +
-                                    ", oldestNodeId=" + oldestNode.id() + ", exchangeId=" + exchId + ']');
+                                    ", oldestNodeId=" + oldest.id() + ", exchangeId=" + exchId + ']');
 
-                            oldestNode = CU.oldest(CU.allNodes(cctx));
+                            boolean set = false;
 
-                            // Pretend to have received message from this node.
-                            rcvdIds.add(nodeId);
+                            GridNode newOldest = CU.oldest(CU.allNodes(cctx));
 
-                            // Reassign oldest node and resend.
-                            recheck();
+                            // If local node is now oldest.
+                            if (newOldest.id().equals(cctx.nodeId())) {
+                                synchronized (mux) {
+                                    if (oldestNode.compareAndSet(oldest, newOldest)) {
+                                        // If local node is just joining.
+                                        if (exchId.nodeId().equals(cctx.nodeId())) {
+                                            try {
+                                                top.beforeExchange(exchId);
+                                            }
+                                            catch (GridException e) {
+                                                onDone(e);
+
+                                                return;
+                                            }
+                                        }
+
+                                        set = true;
+                                    }
+                                }
+                            }
+
+                            if (set) {
+                                for (Map.Entry<UUID, GridDhtPartitionsSingleMessage<K, V>> m :
+                                    new HashMap<UUID, GridDhtPartitionsSingleMessage<K, V>>(msgs).entrySet()) {
+                                    // If received any messages, process them.
+                                    onReceive(m.getKey(), m.getValue());
+                                }
+                            }
+
+                            if (set)
+                                // Reassign oldest node and resend.
+                                recheck();
                         }
                         else if (rmtIds.contains(nodeId)) {
                             if (log.isDebugEnabled())
                                 log.debug("Remote node left of failed during partition exchange (will ignore) " +
                                     "[rmtNode=" + nodeId + ", exchangeId=" + exchId + ']');
 
-                            // Pretend to have received message from this node.
-                            rcvdIds.add(nodeId);
+                            assert rmtNodes != null;
+
+                            for (Iterator<GridRichNode> it = rmtNodes.iterator(); it.hasNext();)
+                                if (it.next().id().equals(nodeId))
+                                    it.remove();
 
                             if (allReceived() && ready.get() && replied.compareAndSet(false, true))
                                 if (spreadPartitions(top.partitionMap(true)))
@@ -625,7 +748,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
      */
     private void recheck() {
         // If this is the oldest node.
-        if (oldestNode.id().equals(cctx.nodeId())) {
+        if (oldestNode.get().id().equals(cctx.nodeId())) {
             Collection<UUID> remaining = remaining();
 
             if (!remaining.isEmpty()) {
@@ -697,8 +820,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                                 ", dummy=" + dummy + ", exchId=" +  exchId + ", rcvdIds=" + F.id8s(rcvdIds) +
                                 ", rmtIds=" + F.id8s(rmtIds) + ", init=" + init +  ", initFut=" + initFut.isDone() +
                                 ", ready=" + ready + ", replied=" + replied + ", added=" + added +
-                                ", oldest=" + U.id8(oldestNode.id()) + ", oldestOrder=" + oldestNode.order() +
-                                ", evtLatch=" + evtLatch.getCount() + ']',
+                                ", oldest=" + U.id8(oldestNode.get().id()) + ", oldestOrder=" +
+                                oldestNode.get().order() + ", evtLatch=" + evtLatch.getCount() + ']',
                             "Retrying preload partition exchange due to timeout.");
 
                         recheck();
@@ -745,8 +868,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(GridDhtPartitionsExchangeFuture.class, this,
-            "oldest", oldestNode == null ? "null" : oldestNode.id(),
-            "oldestOrder", oldestNode == null ? "null" : oldestNode.order(),
+            "oldest", oldestNode == null ? "null" : oldestNode.get().id(),
+            "oldestOrder", oldestNode == null ? "null" : oldestNode.get().order(),
             "evtLatch", evtLatch == null ? "null" : evtLatch.getCount(),
             "super", super.toString());
     }

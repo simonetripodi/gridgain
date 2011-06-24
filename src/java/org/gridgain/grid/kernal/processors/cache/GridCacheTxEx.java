@@ -21,13 +21,18 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     /**
      * @return {@code True} if transaction is empty.
      */
     public boolean empty();
+
+    /**
+     * @return {@code True} if could mark was set.
+     */
+    public boolean markFinalizing();
 
     /**
      * @param part Invalid partition.

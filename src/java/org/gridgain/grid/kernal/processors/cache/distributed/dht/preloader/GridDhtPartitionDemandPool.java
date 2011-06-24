@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -990,7 +990,12 @@ public class GridDhtPartitionDemandPool<K, V> {
                                     worker() + ']');
 
                             exchFut.init();
+
+                            U.debug(log, "BEGINNING TO WAIT FOR EXCHANGE FUT: " + exchFut);
+
                             exchFut.get();
+
+                            U.debug(log, "FINISHED WAITING FOR EXCHANGE FUT: " + exchFut);
 
                             watch.step("EXCHANGE_FUTURE_DONE");
 

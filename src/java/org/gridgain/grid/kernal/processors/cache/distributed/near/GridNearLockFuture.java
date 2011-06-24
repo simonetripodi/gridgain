@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -264,12 +264,13 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
     /**
      * Adds entry to future.
      *
+     * @param topVer Topology version.
      * @param entry Entry to add.
      * @param dhtNodeId DHT node ID.
      * @return Lock candidate.
      * @throws GridCacheEntryRemovedException If entry was removed.
      */
-    @Nullable private GridCacheMvccCandidate<K> addEntry(GridNearCacheEntry<K, V> entry, UUID dhtNodeId)
+    @Nullable private GridCacheMvccCandidate<K> addEntry(long topVer, GridNearCacheEntry<K, V> entry, UUID dhtNodeId)
         throws GridCacheEntryRemovedException {
         // Check if lock acquisition is timed out.
         if (timedOut)
@@ -279,14 +280,15 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
 
         // If remap.
         if (c != null) {
-            // If remapping, then we need to recheck locks in case if any node left.
-            cctx.mvcc().recheckPendingLocks();
+            c.topologyVersion(topVer);
 
             return c;
         }
 
         // Add local lock first, as it may throw GridCacheEntryRemovedException.
         c = entry.addNearLocal(dhtNodeId, threadId, lockVer, timeout, !inTx(), ec(), inTx());
+
+        c.topologyVersion(topVer);
 
         synchronized (mux) {
             entries.add(entry);
@@ -649,18 +651,21 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
      */
     private void map(Iterable<? extends K> keys, Map<GridRichNode, Collection<K>> mapped) {
         try {
-            Collection<GridRichNode> nodes = CU.allNodes(cctx);
-
-            ConcurrentMap<GridRichNode, Collection<K>> mappings =
-                new ConcurrentHashMap<GridRichNode, Collection<K>>(nodes.size());
-
-            Map<GridRichNode, T2<GridNearLockRequest<K, V>, Collection<K>>> reqMap =
-                new HashMap<GridRichNode, T2<GridNearLockRequest<K, V>, Collection<K>>>(nodes.size());
-
             // Make sure topology does not change during mapping procedure.
             cctx.topology().readLock();
 
+            Map<GridRichNode, T2<GridNearLockRequest<K, V>, Collection<K>>> reqMap;
+
             try {
+                long topVer = cctx.topology().lastJoinOrder();
+
+                Collection<GridRichNode> nodes = CU.allNodes(cctx, topVer);
+
+                ConcurrentMap<GridRichNode, Collection<K>> mappings =
+                    new ConcurrentHashMap<GridRichNode, Collection<K>>(nodes.size());
+
+                reqMap = new HashMap<GridRichNode, T2<GridNearLockRequest<K, V>, Collection<K>>>(nodes.size());
+
                 // Assign keys to primary nodes.
                 for (K key : keys)
                     map(key, mappings, nodes, mapped);
@@ -708,7 +713,7 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                                 }
 
                                 // Removed exception may be thrown here.
-                                GridCacheMvccCandidate<K> cand = addEntry(entry, node.id());
+                                GridCacheMvccCandidate<K> cand = addEntry(topVer, entry, node.id());
 
                                 if (cand != null) {
                                     if (req == null) {
@@ -760,6 +765,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
             finally {
                 cctx.topology().readUnlock();
             }
+
+            cctx.mvcc().recheckPendingLocks();
 
             for (Map.Entry<GridRichNode, T2<GridNearLockRequest<K, V>, Collection<K>>> e : reqMap.entrySet()) {
                 GridNearLockRequest<K, V> req = e.getValue().get1();
@@ -913,8 +920,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
      * @param nodes Nodes.
      * @param mapped Previously mapped.
      */
-    private void map(K key, ConcurrentMap<GridRichNode, Collection<K>> mappings, Collection<GridRichNode> nodes,
-        Map<GridRichNode, Collection<K>> mapped) {
+    private void map(K key, ConcurrentMap<GridRichNode, Collection<K>> mappings,
+        Collection<GridRichNode> nodes, Map<GridRichNode, Collection<K>> mapped) {
         GridRichNode primary = CU.primary0(cctx.affinity(key, nodes));
 
         Collection<K> keys = mapped.get(primary);

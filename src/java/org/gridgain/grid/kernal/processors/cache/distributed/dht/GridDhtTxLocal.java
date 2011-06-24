@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implements GridCacheMappedVersion {
     /** */
@@ -378,8 +378,6 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      */
     void addDhtMapping(Map<GridNode, List<GridDhtCacheEntry<K, V>>> mappings) {
         addMapping(mappings, dhtMap);
-
-        cctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -387,8 +385,6 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      */
     void addNearMapping(Map<GridNode, List<GridDhtCacheEntry<K, V>>> mappings) {
         addMapping(mappings, nearMap);
-
-        cctx.tm().recheckFinishTransactions();
     }
 
     /**

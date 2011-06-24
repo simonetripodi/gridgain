@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
@@ -204,10 +204,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      projection will be candidates for load balancing.
      * @param <T> Type of the return value.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public <T> GridOutClosure<GridFuture<T>> gridify(GridClosureCallMode mode, Callable<T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is
@@ -223,10 +222,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param p Optional set of filtering predicates. If none provided - all nodes from this
      *      projection will be candidates for load balancing.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridOutClosure<GridFuture<?>> gridify(GridClosureCallMode mode, Runnable r,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
      /**
       * Curries given closure into distribution version of it. When resulting closure is
@@ -244,10 +242,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
       * @param <E> Type of the free variable.
       * @param <T> Type of the return value.
       * @return Distributed version of the given closure.
-      * @throws GridException Thrown in case of any errors.
      */
     public <E, T> GridClosure<E, GridFuture<T>> gridify(GridClosureCallMode mode, GridClosure<E, T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is
@@ -266,10 +263,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <E2> Type of the second free variable.
      * @param <T> Type of the return value.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E1, E2, T> GridClosure2<E1, E2, GridFuture<T>> gridify(GridClosureCallMode mode, GridClosure2<E1, E2, T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is
@@ -289,11 +285,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <E3> Type of the third free variable.
      * @param <T> Type of the return value.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E1, E2, E3, T> GridClosure3<E1, E2, E3, GridFuture<T>> gridify(GridClosureCallMode mode,
-        GridClosure3<E1, E2, E3, T> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        GridClosure3<E1, E2, E3, T> c, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is
@@ -310,10 +304,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      projection will be candidates for load balancing.
      * @param <E> Type of the free variable.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E> GridClosure<E, GridFuture<?>> gridify(GridClosureCallMode mode, GridInClosure<E> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is
@@ -331,10 +324,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <E1> Type of the first free variable.
      * @param <E2> Type of the second free variable.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E1, E2> GridClosure2<E1, E2, GridFuture<?>> gridify(GridClosureCallMode mode, GridInClosure2<E1, E2> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given closure into distribution version of it. When resulting closure is
@@ -353,11 +345,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <E2> Type of the second free variable.
      * @param <E3> Type of the third free variable.
      * @return Distributed version of the given closure.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E1, E2, E3> GridClosure3<E1, E2, E3, GridFuture<?>> gridify(GridClosureCallMode mode,
-        GridInClosure3<E1, E2, E3> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        GridInClosure3<E1, E2, E3> c, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given predicate into distribution version of it. When resulting closure
@@ -373,10 +363,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param p Optional set of filtering predicates. If none provided - all nodes from this
      *      projection will be candidates for load balancing.
      * @return Distributed version of the given predicate.
-     * @throws GridException Thrown in case of any errors.
      */
     public GridOutClosure<GridFuture<Boolean>> gridify(GridClosureCallMode mode, GridAbsPredicate c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given predicate into distribution version of it. When resulting closure
@@ -393,10 +382,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      projection will be candidates for load balancing.
      * @param <E> Type of the free variable.
      * @return Distributed version of the given predicate.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E> GridClosure<E, GridFuture<Boolean>> gridify(GridClosureCallMode mode, GridPredicate<E> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given predicate into distribution version of it. When resulting closure
@@ -414,10 +402,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <E1> Type of the first free variable.
      * @param <E2> Type of the second free variable.
      * @return Distributed version of the given predicate.
-     * @throws GridException Thrown in case of any errors.
      */
-    public <E1, E2> GridClosure2<E1, E2, GridFuture<Boolean>> gridify(GridClosureCallMode mode, GridPredicate2<E1, E2> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+    public <E1, E2> GridClosure2<E1, E2, GridFuture<Boolean>> gridify(GridClosureCallMode mode,
+        GridPredicate2<E1, E2> c, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Curries given predicate into distribution version of it. When resulting closure
@@ -436,11 +423,9 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <E2> Type of the second free variable.
      * @param <E3> Type of the third free variable.
      * @return Distributed version of the given predicate.
-     * @throws GridException Thrown in case of any errors.
      */
     public <E1, E2, E3> GridClosure3<E1, E2, E3, GridFuture<Boolean>> gridify(GridClosureCallMode mode,
-        GridPredicate3<E1, E2, E3> c,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        GridPredicate3<E1, E2, E3> c, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Gets predicate that defines a subset of nodes for this projection at the time of the call.
@@ -1131,16 +1116,11 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Return type of the final reduced value.
      * @return Reduced value future from executing closures on this projection.  if this method is
      *      no-op, future with {@code null} value is returned.
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #withResultClosure(GridClosure2X)
      */
     public <R1, R2, T extends Callable<R1>> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<T, GridRichNode> mapper,
         @Nullable Collection<T> jobs, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Gets collection of grid nodes for given node IDs out of this projection.
@@ -1574,11 +1554,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param p Optional set of filtering predicates. All predicates must evaluate to {@code true} for a
      *      node to be included. If none provided - all nodes in this projection will be used for topology.
      * @return Non-cancellable future of this execution.
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -1587,8 +1562,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public GridFuture<?> runAsync(@Nullable GridMapper<Runnable, GridRichNode> mapper,
-        @Nullable Collection<? extends Runnable> jobs, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException;
+        @Nullable Collection<? extends Runnable> jobs, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Executes given closure on this projection.
@@ -1672,11 +1646,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param p Optional set of predicates. All predicates must evaluate to {@code true} for a node to be
      *      included. If none provided - all nodes in this projection will be used in topology.
      * @return Non-cancellable future of this execution.
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see PN
      * @see #run(GridClosureCallMode, Runnable, GridPredicate[])
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
@@ -1687,7 +1656,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Runnable job,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Executes given closures on this projection.
@@ -1771,16 +1740,11 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param p Optional set of predicates. All predicates must evaluate to {@code true} for a node to be
      *      included. If none provided - all nodes in this projection will be used in topology.
      * @return Non-cancellable future of this execution.
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see PN
      * @see #run(GridClosureCallMode, Collection, GridPredicate[])
      */
     public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Collection<? extends Runnable> jobs,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Executes given closure on this projection.
@@ -1873,11 +1837,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      (when call mode is not {@link GridClosureCallMode#UNICAST}) - all results will be received but
      *      only first one will be returned (and all other will be discarded). Such non-unicast executions
      *      make sense primarily for side-effects only closures (i.e. closures that have no return value).
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see PN
      * @see #call(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
@@ -1887,7 +1846,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public <R> GridFuture<R> callAsync(GridClosureCallMode mode, @Nullable Callable<R> job,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Executes given closures on this projection.
@@ -1974,11 +1933,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      included. If none provided - all nodes in this projection will be used.
      * @param <R> Type of the closure return value.
      * @return Future collection of closure results. Order is undefined.
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see PN
      * @see #call(GridClosureCallMode, Collection, GridPredicate[])
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
@@ -1989,8 +1943,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public <R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
-        @Nullable Collection<? extends Callable<R>> jobs, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException;
+        @Nullable Collection<? extends Callable<R>> jobs, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Executes given jobs on this projection.
@@ -2084,11 +2037,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Type of the reduced value.
      * @return Future value produced by reducing closure.  if this method is no-op, future with {@code null}
      *      value is returned.
-     * @throws GridException Thrown in case of any error.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see PN
      * @see #reduce(GridClosureCallMode, Collection, GridReducer, GridPredicate[])
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
@@ -2100,7 +2048,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R1, R2> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends Callable<R1>> jobs, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Sends given message to the nodes in this projection.
@@ -2249,17 +2197,12 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      included. If none provided - all nodes in this projection will be used.
      * @param timeout Maximum time to wait for result, {@code 0} to wait forever.
      * @return Collection of grid events returned from specified nodes.
-     * @throws GridException If query failed to execute.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #remoteEvents(GridPredicate, long, GridPredicate[])
      * @see PE
      * @see PN
      */
     public GridFuture<List<GridEvent>> remoteEventsAsync(GridPredicate<? super GridEvent> pe, long timeout,
-        @Nullable GridPredicate<? super GridRichNode>... pn) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... pn);
 
     /**
      * Convenient utility listening method for messages from the nodes in this projection.
@@ -2311,11 +2254,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      If none provided - this method is no-op.
      * @param <T> Type of the message.
      * @return Future for this distributed operation.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see GridListenActor
      * @see #listen(GridPredicate2[])
      * @see #remoteListenAsync(GridPredicate, GridPredicate2[])
@@ -2323,7 +2261,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #send(Collection, GridPredicate[])
      */
     public <T> GridFuture<?> remoteListenAsync(@Nullable GridNode node,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException;
+        @Nullable GridPredicate2<UUID, ? super T>... p);
 
     /**
      * Registers given message listeners on <b>all nodes defined by this projection</b> to listen for
@@ -2348,17 +2286,12 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      If none provided - this method is no-op.
      * @param <T> Type of the message.
      * @return Future for this distributed operation.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see GridListenActor
      * @see #listen(GridPredicate2[])
      * @see #remoteListenAsync(GridPredicate, GridPredicate2[])
      */
     public <T> GridFuture<?> remoteListenAsync(@Nullable Collection<? extends GridNode> nodes,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException;
+        @Nullable GridPredicate2<UUID, ? super T>... p);
 
     /**
      * Registers given message listeners on <b>all nodes defined by this projection</b> to listen for
@@ -2383,17 +2316,12 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      If none provided - this method is no-op.
      * @param <T> Type of the message.
      * @return Future for this distributed operation.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see GridListenActor
      * @see #listen(GridPredicate2[])
      * @see #remoteListenAsync(Collection, GridPredicate2[])
      */
     public <T> GridFuture<?> remoteListenAsync(@Nullable GridPredicate<? super GridRichNode> pn,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException;
+        @Nullable GridPredicate2<UUID, ? super T>... p);
 
     /**
      * Creates new {@link ExecutorService} which will execute all submitted
@@ -2471,11 +2399,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      provided - all nodes in this projection will be included.
      * @param <R> Type of job result.
      * @return Future of job results collection.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2485,7 +2408,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R> GridFuture<Collection<R>> callAsync(@Nullable GridMapper<Callable<R>, GridRichNode> mapper,
         @Nullable Collection<? extends Callable<R>> jobs,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs given collection of jobs taking argument and producing result on this
@@ -2540,11 +2463,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <T> Type of job argument.
      * @param <R> Type of job result.
      * @return Future of job results collection.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2554,7 +2472,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridClosure<? super T, R>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument and producing result on this projection with given
@@ -2614,11 +2532,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <T> Type of job argument.
      * @param <R> Type of job result.
      * @return Future of job results collection.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2628,7 +2541,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R> job, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument and producing result on this projection with given
@@ -2691,11 +2604,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <T> Type of job argument.
      * @param <R> Type of job result.
      * @return Future of job results collection.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2705,7 +2613,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R> job, @Nullable GridOutClosure<T> pdc, int cnt,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs given collection of jobs taking argument on this projection with given
@@ -2753,11 +2661,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      provided - all nodes in this projection will be included.
      * @param <T> Type of job argument.
      * @return Future for jobs' execution.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2767,8 +2670,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <T> GridFuture<?> runAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridInClosure<? super T>> jobs,
-        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException;
+        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument on this projection with given collection of arguments
@@ -2826,11 +2728,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      provided - all nodes in this projection will be included.
      * @param <T> Type of job argument.
      * @return Future for job execution.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2839,8 +2736,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException;
+        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument on this projection with given producer of arguments
@@ -2896,11 +2792,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      provided - all nodes in this projection will be included.
      * @param <T> Type of job argument.
      * @return Future for job execution.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2909,8 +2800,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridPredicate<? super GridRichNode>... p)
-        throws GridException;
+        @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs given collection of jobs taking argument and producing result on this
@@ -2975,11 +2865,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Type of reduced result.
      * @param <T> Type of job argument.
      * @return Future of reduced result. if this method is no-op, future with {@code null} value is returned.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -2989,7 +2874,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridClosure<? super T, R1>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument and producing result on this projection with given
@@ -3059,11 +2944,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Type of reduced result.
      * @param <T> Type of job argument.
      * @return Future of reduced result. if this method is no-op, future with {@code null} value is returned.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3073,7 +2953,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode, @Nullable GridClosure<? super T, R1> job,
         @Nullable Collection<? extends T> args, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument and producing result on this projection with given
@@ -3145,7 +3025,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Type of reduced result.
      * @param <T> Type of job argument.
      * @return Future of reduced result. if this method is no-op, future with {@code null} value is returned.
-     * @throws GridException Thrown in case of any failure.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3155,7 +3034,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode, @Nullable GridClosure<? super T, R1> job,
         @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs given collection of jobs taking argument and producing result on this
@@ -3223,11 +3102,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <T> Type of job argument.
      * @return Future of reduced result. if this method is no-op, future with {@code null} value
      *      is returned.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3238,7 +3112,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
     public <R1, R2, T> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable Collection<? extends GridClosure<? super T, R1>> jobs,
         @Nullable Collection<? extends T> args, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument and producing result on this projection with given
@@ -3312,11 +3186,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Type of reduced result.
      * @param <T> Type of job argument.
      * @return Future of reduced result. if this method is no-op, future with {@code null} value is returned.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3326,7 +3195,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R1, R2, T> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable GridClosure<? super T, R1> job, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job taking argument and producing result on this projection with given
@@ -3400,11 +3269,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @param <R2> Type of reduced result.
      * @param <T> Type of job argument.
      * @return Future of reduced result. if this method is no-op, future with {@code null} value is returned.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3414,7 +3278,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     public <R1, R2, T> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable GridClosure<? super T, R1> job, @Nullable GridOutClosure<T> pdc, int cnt,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job that doesn't produce any result with given argument on this projection
@@ -3457,11 +3321,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      provided - all nodes in this projection will be included.
      * @param <T> Type of job argument.
      * @return Future for job execution.
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3470,7 +3329,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * Runs job producing result with given argument on this projection using given
@@ -3526,11 +3385,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      (when call mode is not {@link GridClosureCallMode#UNICAST}) - all results will be received but
      *      only first one will be returned (and all other will be discarded). Such non-unicast executions
      *      make sense primarily for side-effects only closures (i.e. closures that have no return value).
-     * @throws GridException Thrown in case of any failure.
-     * @throws GridEmptyProjectionException Thrown in case when this projection is empty.
-     *      Note that in case of dynamic projection this method will take a snapshot of all the
-     *      nodes at the time of this call, apply all filtering predicates, if any, and if the
-     *      resulting collection of nodes is empty - the exception will be thrown.
      * @see #callAsync(GridClosureCallMode, Callable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
@@ -3539,7 +3393,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @see #withTopologySpi(String)
      */
     public <R, T> GridFuture<R> callAsync(GridClosureCallMode mode, @Nullable GridClosure<? super T, R> job,
-        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>... p);
 
     /**
      * This method provides ability to detect which cache keys are mapped to which nodes

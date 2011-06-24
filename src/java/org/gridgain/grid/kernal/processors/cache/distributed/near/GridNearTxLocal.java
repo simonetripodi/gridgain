@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
     /** Future. */
@@ -197,8 +197,6 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
         if (log.isDebugEnabled())
             log.debug("Added mappings to transaction [locId=" + cctx.nodeId() + ", mappings=" + keyMap +
                 ", tx=" + this + ']');
-
-        cctx.tm().recheckFinishTransactions();
     }
 
     /**
@@ -211,8 +209,6 @@ class GridNearTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> {
             if (log.isDebugEnabled())
                 log.debug("Added mappings to transaction [locId=" + cctx.nodeId() + ", mappings=" + mappings +
                     ", tx=" + this + ']');
-
-            cctx.tm().recheckFinishTransactions();
         }
     }
 

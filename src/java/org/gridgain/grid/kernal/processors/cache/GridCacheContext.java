@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -1420,29 +1420,17 @@ public class GridCacheContext<K, V> implements Externalizable {
      * Waits for partition locks and transactions release.
      *
      * @param parts Partitions.
-     * @param exclIds Exclude IDs.
+     * @param exclId Exclude ID.
      * @return {@code true} if waiting was successful.
      */
     @SuppressWarnings({"unchecked"})
-    public GridFuture<?> partitionReleaseFuture(Collection<Integer> parts, UUID... exclIds) {
+    public GridFuture<?> partitionReleaseFuture(Collection<Integer> parts, UUID exclId) {
         assert parts != null;
 
-        if (parts.isEmpty())
+        if (parts.isEmpty() || !isDht())
             return new GridFinishedFuture<Object>(kernalContext());
 
-        GridCompoundIdentityFuture fut = new GridCompoundIdentityFuture(kernalContext());
-
-        fut.add(tm().finishPartitions(parts, exclIds));
-        fut.add(mvcc().finishPartitions(parts, exclIds));
-
-        if (isDht()) {
-            fut.add(dht().near().context().tm().finishPartitions(parts, exclIds));
-            fut.add(dht().near().context().mvcc().finishPartitions(parts, exclIds));
-        }
-
-        fut.markInitialized();
-
-        return fut;
+        return dht().near().context().mvcc().finishPartitions(parts, exclId);
     }
 
     /**

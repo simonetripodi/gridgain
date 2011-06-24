@@ -30,7 +30,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Managed transaction adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     implements GridCacheTxEx<K, V>, Externalizable {
@@ -109,6 +109,9 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
     /** Done marker. */
     protected final AtomicBoolean isDone = new AtomicBoolean(false);
+
+    /** */
+    private AtomicBoolean finalizing = new AtomicBoolean();
 
     /** */
     private Set<Integer> invalidParts = new GridLeanSet<Integer>();
@@ -237,6 +240,13 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         assert false;
 
         return null;
+    }
+
+    /**
+     * @return {@code True} if marked.
+     */
+    @Override public boolean markFinalizing() {
+        return finalizing.compareAndSet(false, true);
     }
 
     /**

@@ -44,7 +44,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -357,7 +357,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                  * 3. GridCacheDeploymentManager
                  * 4. GridCacheEventManager
                  * 5. GridCacheQueryManager (note, that we start it for DHT cache though).
-                 * 6. GridCacheDgcManager (TODO: CODE: need to expand DGC to work for near and partitioned caches).
+                 * 6. GridCacheDgcManager
                  * ===============================================
                  */
                 mvccMgr = new GridCacheMvccManager();

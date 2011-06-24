@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Cache query index. Manages full life-cycle of query index database (h2).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public class GridCacheQueryIndex<K, V> {
@@ -1106,7 +1106,7 @@ public class GridCacheQueryIndex<K, V> {
                     fullTabName + '.' + KEY_CLS_LDR_FIELD_NAME + ',' +
                     fullTabName + '.' + VERSION_FIELD_NAME + ',' +
                     fullTabName + '.' + VALUE_FIELD_NAME +
-                    " FROM " + func + "('" + qry.clause() + "', 0, 0) FT," + fullTabName +
+                    " FROM " + func + "('" + qry.clause() + "', " + Integer.MAX_VALUE + ", 0) FT," + fullTabName +
                     " WHERE FT.table='" + tabName + "' AND " + fullTabName + '.' + KEY_FIELD_NAME + "=FT.KEYS[0]";
 
                 stmt = conn.createStatement();

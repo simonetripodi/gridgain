@@ -28,7 +28,7 @@ import static org.gridgain.grid.GridEventType.EVT_CLOUD_RESOURCE_REMOVED;
  * Cloud state message.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 class GridCloudMessage implements Externalizable {
     /** Command execution event message. */

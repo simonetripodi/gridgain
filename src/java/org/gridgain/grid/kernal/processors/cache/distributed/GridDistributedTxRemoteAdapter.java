@@ -29,7 +29,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction created by system implicitly on remote nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxRemoteEx<K, V> {
@@ -696,7 +696,10 @@ public class GridDistributedTxRemoteAdapter<K, V> extends GridCacheTxAdapter<K, 
 
             setRollbackOnly();
 
-            throw new GridException("Invalid transaction state for commit [state=" + state + ", tx=" + this + ']');
+            if (!isSystemInvalidate())
+                throw new GridException("Invalid transaction state for commit [state=" + state + ", tx=" + this + ']');
+
+            rollback();
         }
 
         commitIfLocked();

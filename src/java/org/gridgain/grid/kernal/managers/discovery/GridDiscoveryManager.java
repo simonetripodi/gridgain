@@ -38,7 +38,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * Discovery SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     /** System line separator. */
@@ -112,6 +112,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
 
     /** {@inheritDoc} */
     @Override public void start() throws GridException {
+        isLocDaemon = ctx.isDaemon();
+
         segChkEnabled = !F.isEmpty(ctx.config().getSegmentationResolvers());
 
         if (segChkEnabled) {
@@ -204,16 +206,14 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
 
         checkAttributes();
 
+        locNode = getSpi().getLocalNode();
+
         if (segChkEnabled && ctx.config().getSegmentCheckFrequency() > 0) {
             // Start network segmentation check worker.
             segChkThread = new GridThread(ctx.gridName(), "disco-net-seg-chk-worker", segChkWrk);
 
             segChkThread.start();
         }
-
-        locNode = getSpi().getLocalNode();
-
-        isLocDaemon = isDaemon(locNode);
 
         if (!isLocDaemon)
             ackTopology();
@@ -325,6 +325,8 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
      * Logs grid size for license compliance.
      */
     private void ackTopology() {
+        assert !isLocDaemon;
+
         Collection<GridNode> rmtNodes = remoteNodes();
 
         GridNode locNode = getSpi().getLocalNode();
@@ -344,11 +346,11 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         int totalCpus = ctx.grid().cpus();
 
         if (log.isQuiet())
-            U.quiet(PREFIX + " [" +
+            U.quiet(U.bright(PREFIX + " [" +
                 "nodes=" + (rmtNodes.size() + 1) +
                 ", CPUs=" + totalCpus +
                 ", hash=0x" + Long.toHexString(hash).toUpperCase() +
-                ']');
+                ']'));
         else if (log.isDebugEnabled()) {
             String dbg = "";
 
@@ -711,7 +713,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         private final BlockingDeque<GridTuple2<Integer, GridNode>> evts =
             new LinkedBlockingDeque<GridTuple2<Integer, GridNode>>();
 
-        // Ignore events if network segment is incorrect.
+        /* Ignore events if network segment is incorrect. */
         private boolean ignore;
 
         /** Node segmented event fired flag. */
@@ -875,8 +877,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
                             }
                             else if (log.isDebugEnabled())
                                 log.debug("Added new node to topology: " + node);
-                        else
-                            if (log.isDebugEnabled())
+                        else if (log.isDebugEnabled())
                                 log.debug("Added new daemon node to topology: " + node);
 
                         break;
@@ -901,8 +902,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
                             }
                             else if (log.isDebugEnabled())
                                 log.debug("Node left topology: " + node);
-                        else
-                            if (log.isDebugEnabled())
+                        else if (log.isDebugEnabled())
                                 log.debug("Daemon node left topology: " + node);
 
                         break;
@@ -924,14 +924,15 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
                             }
                             else if (log.isDebugEnabled())
                                 log.debug("Node FAILED: " + node);
-                        else
-                            if (log.isDebugEnabled())
+                        else if (log.isDebugEnabled())
                                 log.debug("Daemon node FAILED: " + node);
 
                         break;
                     }
 
                     case EVT_NODE_SEGMENTED: {
+                        assert F.eqNodes(locNode, node);
+
                         if (ignore || nodeSegFired) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Ignored node disconnected event [type=EVT_NODE_DISCONNECTED, " +
@@ -947,7 +948,10 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
 
                         onSegmentation();
 
-                        U.warn(log, "Local node SEGMENTED: " + node);
+                        if (!isLocDaemon)
+                            U.warn(log, "Local node SEGMENTED: " + node);
+                        else if (log.isDebugEnabled())
+                            log.debug("Local node SEGMENTED: " + node);
 
                         break;
                     }
@@ -958,12 +962,18 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
                         // Refresh local node.
                         locNode = getSpi().getLocalNode();
 
-                        if (log.isQuiet())
-                            U.quiet("Local node RECONNECTED [" + quietNode(node) + ']');
-                        else if (log.isInfoEnabled())
-                            log.info("Local node RECONNECTED: " + node);
+                        assert F.eqNodes(locNode, node);
 
-                        ackTopology();
+                        if (!isLocDaemon) {
+                            if (log.isQuiet())
+                                U.quiet("Local node RECONNECTED [" + quietNode(node) + ']');
+                            else if (log.isInfoEnabled())
+                                log.info("Local node RECONNECTED: " + node);
+
+                            ackTopology();
+                        }
+                        else if (log.isDebugEnabled())
+                            log.debug("Local node RECONNECTED: " + node);
 
                         break;
                     }

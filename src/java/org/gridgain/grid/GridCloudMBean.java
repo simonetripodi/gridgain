@@ -18,7 +18,7 @@ import java.util.*;
  * This interface defines JMX view on {@link GridCloud}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @GridMBeanDescription("MBean that provides access to cloud descriptor.")
 public interface GridCloudMBean {

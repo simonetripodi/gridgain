@@ -17,7 +17,7 @@ import org.gridgain.grid.kernal.processors.cache.*;
  * Community manager of data structures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public final class GridCacheCommunityDataStructuresManager<K, V> extends GridCacheDataStructuresManager<K, V> {
     /** Error message. */

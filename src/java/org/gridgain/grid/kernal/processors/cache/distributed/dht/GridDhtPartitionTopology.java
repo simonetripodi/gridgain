@@ -20,7 +20,7 @@ import java.util.*;
  * DHT partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 @GridToStringExclude
 public interface GridDhtPartitionTopology<K, V> {
@@ -39,7 +39,14 @@ public interface GridDhtPartitionTopology<K, V> {
      *
      * @param exchId Exchange ID.
      */
-    public void updateJoinVersion(GridDhtPartitionExchangeId exchId);
+    public void updateJoinOrder(GridDhtPartitionExchangeId exchId);
+
+    /**
+     * Order of the node that joined last.
+     *
+     * @return Last joined order.
+     */
+    public long lastJoinOrder();
 
     /**
      * Pre-initializes this topology.
@@ -108,12 +115,6 @@ public interface GridDhtPartitionTopology<K, V> {
     public List<GridNode> moving(int p);
 
     /**
-     * @param p Partition.
-     * @return Owners and moving nodes for partition.
-     */
-    public List<GridNode> ownersAndMoving(int p);
-
-    /**
      * @param onlyActive If {@code true}, then only {@code active} partitions will be returned.
      * @return Node IDs mapped to partitions.
      */
@@ -144,11 +145,6 @@ public interface GridDhtPartitionTopology<K, V> {
      */
     @Nullable public GridDhtPartitionMap update(@Nullable GridDhtPartitionExchangeId exchId,
         GridDhtPartitionMap parts);
-
-    /**
-     * @param nodeId Node ID to remove mappings for.
-     */
-    public void remove(UUID nodeId);
 
     /**
      * @param part Partition to own.

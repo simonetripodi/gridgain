@@ -28,7 +28,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** */
@@ -133,7 +133,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
         try {
             if (nodes().isEmpty())
-                throw emptyProjection();
+                throw U.makeException();
 
             return new GridProjectionMetricsImpl(this);
         }
@@ -144,18 +144,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <T> GridOutClosure<GridFuture<T>> gridify(final GridClosureCallMode mode, final Callable<T> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new COX<GridFuture<T>>() {
+            return U.withMeta(new CO<GridFuture<T>>() {
                 {
                     peerDeployLike(U.peerDeployAware(c));
                 }
 
-                @Override public GridFuture<T> applyx() throws GridException {
+                @Override public GridFuture<T> apply() {
                     return callAsync(mode, c, p);
                 }
             }, c);
@@ -167,18 +167,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridOutClosure<GridFuture<?>> gridify(final GridClosureCallMode mode, final Runnable r,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(r, "r");
 
         guard();
 
         try {
-            return U.withMeta(new COX<GridFuture<?>>() {
+            return U.withMeta(new CO<GridFuture<?>>() {
                 {
                     peerDeployLike(U.peerDeployAware(r));
                 }
 
-                @Override public GridFuture<?> applyx() throws GridException {
+                @Override public GridFuture<?> apply() {
                     return runAsync(mode, r, p);
                 }
             }, r);
@@ -190,19 +190,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <E, T> GridClosure<E, GridFuture<T>> gridify(final GridClosureCallMode mode,
-        final GridClosure<E, T> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        final GridClosure<E, T> c, @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX1<E, GridFuture<T>>() {
+            return U.withMeta(new C1<E, GridFuture<T>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<T> applyx(E e) throws GridException {
+                @Override public GridFuture<T> apply(E e) {
                     return callAsync(mode, c.curry(e), p);
                 }
             }, c);
@@ -214,19 +213,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <E1, E2, T> GridClosure2<E1, E2, GridFuture<T>> gridify(final GridClosureCallMode mode,
-        final GridClosure2<E1, E2, T> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        final GridClosure2<E1, E2, T> c, @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX2<E1, E2, GridFuture<T>>() {
+            return U.withMeta(new C2<E1, E2, GridFuture<T>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<T> applyx(E1 e1, E2 e2) throws GridException {
+                @Override public GridFuture<T> apply(E1 e1, E2 e2) {
                     return callAsync(mode, c.curry(e1, e2), p);
                 }
             }, c);
@@ -239,19 +237,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <E1, E2, E3, T> GridClosure3<E1, E2, E3, GridFuture<T>> gridify(
         final GridClosureCallMode mode, final GridClosure3<E1, E2, E3, T> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX3<E1, E2, E3, GridFuture<T>>() {
+            return U.withMeta(new C3<E1, E2, E3, GridFuture<T>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<T> applyx(E1 e1, E2 e2, E3 e3) throws GridException {
+                @Override public GridFuture<T> apply(E1 e1, E2 e2, E3 e3) {
                     return callAsync(mode, c.curry(e1, e2, e3), p);
                 }
             }, c);
@@ -264,18 +261,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <E> GridClosure<E, GridFuture<?>> gridify(final GridClosureCallMode mode,
         final GridInClosure<E> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX1<E, GridFuture<?>>() {
+            return U.withMeta(new C1<E, GridFuture<?>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<?> applyx(E e) throws GridException {
+                @Override public GridFuture<?> apply(E e) {
                     return runAsync(mode, c.curry(e), p);
                 }
             }, c);
@@ -287,19 +284,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <E1, E2> GridClosure2<E1, E2, GridFuture<?>> gridify(final GridClosureCallMode mode,
-        final GridInClosure2<E1, E2> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        final GridInClosure2<E1, E2> c, @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX2<E1, E2, GridFuture<?>>() {
+            return U.withMeta(new C2<E1, E2, GridFuture<?>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<?> applyx(E1 e1, E2 e2) throws GridException {
+                @Override public GridFuture<?> apply(E1 e1, E2 e2) {
                     return runAsync(mode, c.curry(e1, e2), p);
                 }
             }, c);
@@ -311,19 +307,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <E1, E2, E3> GridClosure3<E1, E2, E3, GridFuture<?>> gridify(final GridClosureCallMode mode,
-        final GridInClosure3<E1, E2, E3> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        final GridInClosure3<E1, E2, E3> c, @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX3<E1, E2, E3, GridFuture<?>>() {
+            return U.withMeta(new C3<E1, E2, E3, GridFuture<?>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<?> applyx(E1 e1, E2 e2, E3 e3) throws GridException {
+                @Override public GridFuture<?> apply(E1 e1, E2 e2, E3 e3) {
                     return runAsync(mode, c.curry(e1, e2, e3), p);
                 }
             }, c);
@@ -335,19 +330,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridOutClosure<GridFuture<Boolean>> gridify(final GridClosureCallMode mode,
-        final GridAbsPredicate c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        final GridAbsPredicate c, @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new COX<GridFuture<Boolean>>() {
+            return U.withMeta(new CO<GridFuture<Boolean>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<Boolean> applyx() throws GridException {
+                @Override public GridFuture<Boolean> apply() {
                     return callAsync(mode, F.as(c), p);
                 }
             }, c);
@@ -359,19 +353,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <E> GridClosure<E, GridFuture<Boolean>> gridify(final GridClosureCallMode mode,
-        final GridPredicate<E> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        final GridPredicate<E> c, @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX1<E, GridFuture<Boolean>>() {
+            return U.withMeta(new C1<E, GridFuture<Boolean>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<Boolean> applyx(E e) throws GridException {
+                @Override public GridFuture<Boolean> apply(E e) {
                     return callAsync(mode, F.as(c.curry(e)), p);
                 }
             }, c);
@@ -384,18 +377,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <E1, E2> GridClosure2<E1, E2, GridFuture<Boolean>> gridify(
         final GridClosureCallMode mode, final GridPredicate2<E1, E2> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p) throws GridException {
+        @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX2<E1, E2, GridFuture<Boolean>>() {
+            return U.withMeta(new C2<E1, E2, GridFuture<Boolean>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<Boolean> applyx(E1 e1, E2 e2) throws GridException {
+                @Override public GridFuture<Boolean> apply(E1 e1, E2 e2) {
                     return callAsync(mode, F.as(c.curry(e1, e2)), p);
                 }
             }, c);
@@ -408,19 +401,18 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <E1, E2, E3> GridClosure3<E1, E2, E3, GridFuture<Boolean>> gridify(
         final GridClosureCallMode mode, final GridPredicate3<E1, E2, E3> c,
-        @Nullable final GridPredicate<? super GridRichNode>... p)
-        throws GridException {
+        @Nullable final GridPredicate<? super GridRichNode>... p) {
         A.notNull(c, "c");
 
         guard();
 
         try {
-            return U.withMeta(new CX3<E1, E2, E3, GridFuture<Boolean>>() {
+            return U.withMeta(new C3<E1, E2, E3, GridFuture<Boolean>>() {
                 {
                     peerDeployLike(c);
                 }
 
-                @Override public GridFuture<Boolean> applyx(E1 e1, E2 e2, E3 e3) throws GridException {
+                @Override public GridFuture<Boolean> apply(E1 e1, E2 e2, E3 e3) {
                     return callAsync(mode, F.as(c.curry(e1, e2, e3)), p);
                 }
             }, c);
@@ -768,7 +760,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         if (n != null)
             return n;
         else
-            throw emptyProjection();
+            throw U.makeException();
     }
 
     /** {@inheritDoc} */
@@ -778,7 +770,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         if (n != null)
             return n;
         else
-            throw emptyProjection();
+            throw U.makeException();
     }
 
     /** {@inheritDoc} */
@@ -788,7 +780,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         if (n != null)
             return n;
         else
-            throw emptyProjection();
+            throw U.makeException();
     }
 
     /** {@inheritDoc} */
@@ -1165,16 +1157,11 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <R1, R2, T extends Callable<R1>> GridFuture<R2> mapreduceAsync(@Nullable GridMapper<T,
         GridRichNode> mapper, @Nullable Collection<T> jobs, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mapper, jobs, rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mapper, jobs, rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1226,17 +1213,11 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> runAsync(@Nullable GridMapper<Runnable, GridRichNode> mapper,
-        @Nullable Collection<? extends Runnable> jobs, @Nullable GridPredicate<? super GridRichNode>[] p)
-        throws GridException {
+        @Nullable Collection<? extends Runnable> jobs, @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().runAsync(mapper, jobs, snapshot);
+            return ctx.closure().runAsync(mapper, jobs, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1251,16 +1232,11 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Runnable job,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().runAsync(mode, job, snapshot);
+            return ctx.closure().runAsync(mode, job, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1275,29 +1251,15 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable Collection<? extends Runnable> jobs,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().runAsync(mode, jobs, snapshot);
+            return ctx.closure().runAsync(mode, jobs, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
         }
-    }
-
-    /**
-     * Creates appropriate empty projection exception.
-     *
-     * @return Empty projection exception.
-     */
-    private GridEmptyProjectionException emptyProjection() {
-        return new GridEmptyProjectionException("Topology projection is empty.");
     }
 
     /** {@inheritDoc} */
@@ -1411,18 +1373,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <R> GridFuture<R> callAsync(GridClosureCallMode mode, @Nullable Callable<R> job,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().callAsync(mode, job, snapshot);
+            return ctx.closure().callAsync(mode, job, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1437,19 +1394,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
-        @Nullable Collection<? extends Callable<R>> jobs,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable Collection<? extends Callable<R>> jobs, @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().callAsync(mode, jobs, snapshot);
+            return ctx.closure().callAsync(mode, jobs, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1464,19 +1415,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <R1, R2> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
-        @Nullable Collection<? extends Callable<R1>> jobs,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable Collection<? extends Callable<R1>> jobs, @Nullable GridReducer<R1, R2> rdc,
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mode, jobs, rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mode, jobs, rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1493,7 +1439,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                 Collection<GridRichNode> snapshot = nodes(p);
 
                 if (snapshot.isEmpty())
-                    throw emptyProjection();
+                    throw U.makeException();
 
                 ctx.io().sendUserMessage(snapshot, msg);
             }
@@ -1515,7 +1461,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                 Collection<GridRichNode> snapshot = nodes(p);
 
                 if (snapshot.isEmpty())
-                    throw emptyProjection();
+                    throw U.makeException();
 
                 for (Object msg : msgs)
                     ctx.io().sendUserMessage(snapshot, msg);
@@ -1604,18 +1550,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public GridFuture<List<GridEvent>> remoteEventsAsync(GridPredicate<? super GridEvent> pe, long timeout,
-        @Nullable GridPredicate<? super GridRichNode>[] pn) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] pn) {
         A.notNull(pe, "pe");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, pn);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.event().remoteEventsAsync(pe, snapshot, timeout);
+            return ctx.event().remoteEventsAsync(pe, F.retain(nodes(), true, pn), timeout);
         }
         finally {
             unguard();
@@ -1655,17 +1596,11 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <R> GridFuture<Collection<R>> callAsync(@Nullable GridMapper<Callable<R>, GridRichNode> mapper,
-        @Nullable Collection<? extends Callable<R>> jobs,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable Collection<? extends Callable<R>> jobs, @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().callAsync(mapper, jobs, snapshot);
+            return ctx.closure().callAsync(mapper, jobs, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1682,18 +1617,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridClosure<? super T, R>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().callAsync(mode, F.curry(jobs, args), snapshot);
+            return ctx.closure().callAsync(mode, F.curry(jobs, args), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1710,18 +1640,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R> job, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().callAsync(mode, F.curry(job, args), snapshot);
+            return ctx.closure().callAsync(mode, F.curry(job, args), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1738,19 +1663,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <T, R> GridFuture<Collection<R>> callAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R> job, @Nullable GridOutClosure<T> pdc, int cnt,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
         A.ensure(cnt > 0, "cnt > 0");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().callAsync(mode, F.curry(cnt, job, pdc), snapshot);
+            return ctx.closure().callAsync(mode, F.curry(cnt, job, pdc), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1768,18 +1688,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridInClosure<? super T>> jobs, @Nullable Collection<? extends T> args,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().runAsync(mode, F.curry0(jobs, args), snapshot);
+            return ctx.closure().runAsync(mode, F.curry0(jobs, args), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1795,19 +1710,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>[] p)
-        throws GridException {
+        @Nullable Collection<? extends T> args, @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().runAsync(mode, F.curry(job, args), snapshot);
+            return ctx.closure().runAsync(mode, F.curry(job, args), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1823,20 +1732,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridPredicate<? super GridRichNode>[] p)
-        throws GridException {
+        @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
         A.ensure(cnt > 0, "cnt > 0");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().runAsync(mode, F.curry(cnt, job, pdc), snapshot);
+            return ctx.closure().runAsync(mode, F.curry(cnt, job, pdc), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1855,18 +1758,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     @Override public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable Collection<? extends GridClosure<? super T, R1>> jobs, @Nullable Collection<? extends T> args,
         @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mode, F.curry(jobs, args), rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mode, F.curry(jobs, args), rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1883,19 +1781,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     /** {@inheritDoc} */
     @Override public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R1> job, @Nullable Collection<? extends T> args,
-        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>[] p)
-        throws GridException {
+        @Nullable GridReducer<R1, R2> rdc, @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mode, F.curry(job, args), rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mode, F.curry(job, args), rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1913,19 +1805,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     @Override public <R1, R2, T> GridFuture<R2> reduceAsync(GridClosureCallMode mode,
         @Nullable GridClosure<? super T, R1> job,
         @Nullable GridOutClosure<T> pdc, int cnt, @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
         A.ensure(cnt > 0, "cnt > 0");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mode, F.curry(cnt, job, pdc), rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mode, F.curry(cnt, job, pdc), rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1945,16 +1832,11 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         @Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable Collection<? extends GridClosure<? super T, R1>> jobs, @Nullable Collection<? extends T> args,
         @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mapper, F.curry(jobs, args), rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mapper, F.curry(jobs, args), rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1974,16 +1856,11 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         @Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable GridClosure<? super T, R1> job, @Nullable Collection<? extends T> args,
         @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mapper, F.curry(job, args), rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mapper, F.curry(job, args), rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -2003,18 +1880,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         @Nullable GridMapper<GridOutClosure<R1>, GridRichNode> mapper,
         @Nullable GridClosure<? super T, R1> job, @Nullable GridOutClosure<T> pdc, int cnt,
         @Nullable GridReducer<R1, R2> rdc,
-        @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.ensure(cnt > 0, "cnt > 0");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
-            return ctx.closure().forkjoinAsync(mapper, F.curry(cnt, job, pdc), rdc, snapshot);
+            return ctx.closure().forkjoinAsync(mapper, F.curry(cnt, job, pdc), rdc, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -2029,19 +1901,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> runAsync(GridClosureCallMode mode, @Nullable GridInClosure<? super T> job,
-        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
             return job == null ? new GridFinishedFuture<T>(ctx) : ctx.closure().runAsync(mode, job.curry(arg),
-                snapshot);
+                F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -2056,19 +1923,14 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <R, T> GridFuture<R> callAsync(GridClosureCallMode mode, @Nullable GridClosure<? super T, R> job,
-        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>[] p) throws GridException {
+        @Nullable T arg, @Nullable GridPredicate<? super GridRichNode>[] p) {
         A.notNull(mode, "mode", job, "job");
 
         guard();
 
         try {
-            Collection<GridRichNode> snapshot = F.retain(nodes(), true, p);
-
-            if (snapshot.isEmpty())
-                throw emptyProjection();
-
             return job == null ? new GridFinishedFuture<R>(ctx) : ctx.closure().callAsync(mode, job.curry(arg),
-                snapshot);
+                F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -2116,7 +1978,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> remoteListenAsync(@Nullable Collection<? extends GridNode> nodes,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException {
+        @Nullable GridPredicate2<UUID, ? super T>... p) {
         if (!F.isEmpty(nodes) && !F.isEmpty(p)) {
             guard();
 
@@ -2134,13 +1996,13 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> remoteListenAsync(@Nullable GridNode node,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException {
+        @Nullable GridPredicate2<UUID, ? super T>... p) {
         return remoteListenAsync(node == null ? null : Collections.singleton(node), p);
     }
 
     /** {@inheritDoc} */
     @Override public <T> GridFuture<?> remoteListenAsync(@Nullable GridPredicate<? super GridRichNode> pn,
-        @Nullable GridPredicate2<UUID, ? super T>... p) throws GridException {
+        @Nullable GridPredicate2<UUID, ? super T>... p) {
         return remoteListenAsync(nodes(pn), p);
     }
 

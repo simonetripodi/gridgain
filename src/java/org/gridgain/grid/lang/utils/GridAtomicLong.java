@@ -18,9 +18,25 @@ import java.util.concurrent.atomic.*;
  * also addes greater than and less than atomic set operations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.22062011
+ * @version 3.1.1c.24062011
  */
 public class GridAtomicLong extends AtomicLong {
+    /**
+     * Creates a new AtomicLong with initial value {@code 0}.
+     */
+    public GridAtomicLong() {
+        // No-op.
+    }
+
+    /**
+     * Creates a new AtomicLong with the given initial value.
+     *
+     * @param initVal the initial value
+     */
+    public GridAtomicLong(long initVal) {
+        super(initVal);
+    }
+
     /**
      * Atomically updates value only if {@code check} value is greater
      * than current value.
@@ -97,6 +113,102 @@ public class GridAtomicLong extends AtomicLong {
             long cur = get();
 
             if (check <= cur) {
+                if (compareAndSet(cur, update))
+                    return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    /**
+     * Sets value only if it is greater than current one.
+     *
+     * @param update Value to set.
+     * @return {@code True} if value was set.
+     */
+    public boolean setIfGreater(long update) {
+        while (true) {
+            long cur = get();
+
+            if (update > cur) {
+                if (compareAndSet(cur, update))
+                    return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    /**
+     * Sets value only if it is greater than or equals to current one.
+     *
+     * @param update Value to set.
+     * @return {@code True} if value was set.
+     */
+    public boolean setIfGreaterEquals(long update) {
+        while (true) {
+            long cur = get();
+
+            if (update >= cur) {
+                if (compareAndSet(cur, update))
+                    return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    /**
+     * Sets value only if it is less than current one.
+     *
+     * @param update Value to set.
+     * @return {@code True} if value was set.
+     */
+    public boolean setIfLess(long update) {
+        while (true) {
+            long cur = get();
+
+            if (update < cur) {
+                if (compareAndSet(cur, update))
+                    return true;
+            }
+            else
+                return false;
+        }
+    }
+
+    /**
+     * Sets value only if it is less than or equals to current one.
+     *
+     * @param update Value to set.
+     * @return {@code True} if value was set.
+     */
+    public boolean setIfLessEquals(long update) {
+        while (true) {
+            long cur = get();
+
+            if (update <= cur) {
+                if (compareAndSet(cur, update))
+                    return true;
+            }
+            else
+                return false;
+        }
+    }
+
+
+    /**
+     * Sets value only if it is not equals to current one.
+     *
+     * @param update Value to set.
+     * @return {@code True} if value was set.
+     */
+    public boolean setIfNotEquals(long update) {
+        while (true) {
+            long cur = get();
+
+            if (update != cur) {
                 if (compareAndSet(cur, update))
                     return true;
             }
