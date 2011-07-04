@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -78,8 +78,8 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     @Override protected void init() {
         map.setEntryFactory(new GridCacheMapEntryFactory<K, V>() {
             /** {@inheritDoc} */
-            @Override public GridCacheMapEntry<K, V> create(GridCacheContext<K, V> ctx, K key, int hash, V val,
-                GridCacheMapEntry<K, V> next, long ttl) {
+            @Override public GridCacheMapEntry<K, V> create(GridCacheContext<K, V> ctx, long topVer, K key, int hash,
+                V val, GridCacheMapEntry<K, V> next, long ttl) {
                 // Can't hold any locks here - this method is invoked when
                 // holding write-lock on the whole cache map.
                 return new GridNearCacheEntry<K, V>(ctx, key, hash, val, next, ttl);
@@ -516,7 +516,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
      * @throws GridDistributedLockCancelledException If lock has been cancelled.
      */
     @SuppressWarnings({"RedundantTypeArguments"})
-    @Nullable public GridNearTxRemote<K, V> startRemoteTx(UUID nodeId, GridDhtTxFinishRequest<K, V> req)
+    @Nullable public GridNearTxRemote<K, V> startRemoteTxForFinish(UUID nodeId, GridDhtTxFinishRequest<K, V> req)
         throws GridException, GridDistributedLockCancelledException {
         GridNearTxRemote<K, V> tx = null;
 
@@ -537,7 +537,10 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                             tx = ctx.tm().tx(req.version());
 
                             if (tx != null) {
-                                tx.addWrite(txEntry.key(), txEntry.keyBytes());
+                                if (tx.markFinalizing())
+                                    tx.addWrite(txEntry.key(), txEntry.keyBytes());
+                                else
+                                    return null;
                             }
                             else {
                                 tx = new GridNearTxRemote<K, V>(
@@ -564,6 +567,9 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                                 if (tx == null || !ctx.tm().onStarted(tx))
                                     throw new GridCacheTxRollbackException("Failed to acquire lock " +
                                         "(transaction has been completed): " + req.version());
+
+                                if (!tx.markFinalizing())
+                                    return null;
                             }
 
                             // Add remote candidate before reordering.

@@ -32,7 +32,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
  * This class defines a checkpoint manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "deprecation"})
 public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi> {
@@ -86,6 +86,15 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
 
         if (log.isDebugEnabled())
             log.debug(stopInfo());
+    }
+
+    /**
+     * @return Session IDs.
+     */
+    public Collection<UUID> sessionIds() {
+        synchronized (mux) {
+            return new ArrayList<UUID>(keyMap.keySet());
+        }
     }
 
     /**

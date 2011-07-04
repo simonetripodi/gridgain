@@ -27,7 +27,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Partitioned cache entry public API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V> {
     /**
@@ -39,16 +39,16 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
 
     /**
      * @param nearPrj Parent projection or {@code null} if entry belongs to default cache.
-     * @param nearCtx Near cache context.
+     * @param ctx Near cache context.
      * @param key key.
      * @param cached Cached entry (either from near or dht cache map).
      */
     @SuppressWarnings({"TypeMayBeWeakened"})
-    public GridPartitionedCacheEntryImpl(GridCacheProjectionImpl<K, V> nearPrj, GridCacheContext<K, V> nearCtx, K key,
+    public GridPartitionedCacheEntryImpl(GridCacheProjectionImpl<K, V> nearPrj, GridCacheContext<K, V> ctx, K key,
         @Nullable GridCacheEntryEx<K, V> cached) {
-        super(nearPrj, nearCtx, key, cached);
+        super(nearPrj, ctx, key, cached);
 
-        assert !ctx.isDht();
+        assert !this.ctx.isDht();
     }
 
     /**
@@ -201,21 +201,6 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
     }
 
     /** {@inheritDoc} */
-    @Override public void timeToLive(long ttl) {
-        super.timeToLive(ttl);
-
-        GridCacheEntryEx<K, V> dhtEntry = dht().peekEx(key);
-
-        if (dhtEntry != null)
-            try {
-                dhtEntry.ttl(ttl);
-            }
-            catch (GridCacheEntryRemovedException ignored) {
-                // No-op.
-            }
-    }
-
-    /** {@inheritDoc} */
     @Override protected GridCacheEntryEx<K, V> entryEx() {
         try {
             return ctx.belongs(key, ctx.localNode()) ? dht().entryEx(key) : ctx.near().entryEx(key);
@@ -226,26 +211,13 @@ public class GridPartitionedCacheEntryImpl<K, V> extends GridCacheEntryImpl<K, V
     }
 
     /** {@inheritDoc} */
-    @Override public GridCacheMetrics metrics() {
-        while (true)
-            try {
-                GridCacheEntryEx<K, V> nearEntry = ctx.near().peekEx(key);
-
-                GridCacheMetrics m = null;
-
-                if (nearEntry != null)
-                    m = nearEntry.metrics();
-
-                GridCacheEntryEx<K, V> dhtEntry = dht().peekEx(key);
-
-                if (dhtEntry != null)
-                    m = m != null ? GridCacheMetricsAdapter.merge(m, dhtEntry.metrics()) : dhtEntry.metrics();
-
-                return m != null ? m : new GridCacheMetricsAdapter();
-            }
-            catch (GridCacheEntryRemovedException ignored) {
-                // Do it again.
-            }
+    @Override protected GridCacheEntryEx<K, V> peekEx() {
+        try {
+            return ctx.belongs(key, ctx.localNode()) ? dht().peekEx(key) : ctx.near().peekEx(key);
+        }
+        catch (GridDhtInvalidPartitionException ignore) {
+            return ctx.near().peekEx(key);
+        }
     }
 
     /** {@inheritDoc} */

@@ -33,10 +33,26 @@ import org.gridgain.grid.util.tostring.*;
  * becomes unavailable while future is held externally by the user.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @GridToStringExclude
 public interface GridKernalGateway {
+    /**
+     * Performs light-weight check on the kernal state at the moment of this call.
+     * <p>
+     * This method should only be used when the kernal state should be checked just once
+     * at the beginning of the method and the fact that <b>kernal state can change in the middle
+     * of such method's execution</b> should not matter.
+     * <p>
+     * For example, when a method returns a constant value its implementation doesn't depend
+     * on the kernal being valid throughout its execution. In such case it is enough to check
+     * the kernal's state just once at the beginning of this method to provide consistent behavior
+     * of the API without incurring overhead of <code>lock-based</code> guard methods.
+     *
+     * @throws IllegalStateException Thrown in case when no kernal calls are allowed.
+     */
+    public void lightCheck() throws IllegalStateException;
+
     /**
      * Should be called on entering every kernal related call
      * <b>originated directly or indirectly via public API</b>.
@@ -45,6 +61,7 @@ public interface GridKernalGateway {
      * can enter the call without blocking.
      *
      * @throws IllegalStateException Thrown in case when no kernal calls are allowed.
+     * @see #readUnlock()
      */
     public void readLock() throws IllegalStateException;
 
@@ -68,6 +85,8 @@ public interface GridKernalGateway {
      * <p>
      * This method essentially releases the internal read-lock acquired previously
      * by {@link #readLock()} method.
+     *
+     * @see #readLock()
      */
     public void readUnlock();
 

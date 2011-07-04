@@ -37,7 +37,7 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * Cache eviction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     /** */
@@ -88,11 +88,11 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
         if (cfg.getMaxEvictionOverflowRatio() < 0)
             throw new GridException("Configuration parameter 'maxEvictionOverflowRatio' cannot be negative.");
 
-        syncEvict = cfg.getCacheMode() != LOCAL && !cctx.isNear() && (cfg.isBackupEvictSynchronized() ||
-            (cfg.getCacheMode() == PARTITIONED && cfg.isNearEvictSynchronized()));
+        syncEvict = cfg.getCacheMode() != LOCAL && !cctx.isNear() && (cfg.isEvictBackupSynchronized() ||
+            (cfg.getCacheMode() == PARTITIONED && cfg.isEvictNearSynchronized()));
 
         if (syncEvict) {
-            if (cfg.getStore() == null && !cfg.isBackupEvictSynchronized())
+            if (cfg.getStore() == null && !cfg.isEvictBackupSynchronized())
                 log.warning("Backups evictions are not synchronized with primary node which " +
                     "may cause data inconsistency (either change isBackupEvictSynchronized " +
                     "configuration property or configure persistent GridCacheStore)");
@@ -118,7 +118,7 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     @Override protected void stop0(boolean cancel, boolean wait) {
         super.stop0(cancel, wait);
 
-        busyLock.stop();
+        busyLock.block();
 
         if (log.isDebugEnabled())
             log.debug("Eviction manager stopped on node: " + cctx.nodeId());
@@ -199,8 +199,6 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                                         GridTuple2<K, Boolean> t = fut.get();
 
                                         if (!t.get2()) {
-                                            U.debug("Rejected key (1): " + t.get1());
-
                                             res.addRejected(t.get1());
                                         }
                                     }
@@ -208,8 +206,6 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                                 catch (GridException e) {
                                     log.error("Failed to evict keys from eviction request (all will be rejected)" +
                                         " [req=" + req + ", localNode=" + cctx.nodeId() + ']', e);
-
-                                    U.debug("All keys will be rejected.");
 
                                     for (K key : req.keys().keySet())
                                         res.addRejected(key);
@@ -459,9 +455,9 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
         if (entry.key() instanceof GridCacheInternal)
             return false;
 
-        if (!cctx.isSwapEnabled() && cctx.config().isBackupEvictSynchronized())
+        if (!cctx.isSwapEnabled() && cctx.config().isEvictBackupSynchronized())
             // Entry cannot be evicted on backup node if swap is disabled.
-            if (!entry.wrap(false).primary())
+            if (entry.wrap(false).backup())
                 return false;
 
         if (!syncEvict || cctx.isSwapEnabled()) {
@@ -899,8 +895,8 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
                 GridCacheConfigurationAdapter cfg = cctx.config();
 
                 Collection<GridRichNode> nodes = F.concat(true,
-                    cfg.isBackupEvictSynchronized() ? tup.get1() : Collections.<GridRichNode>emptySet(),
-                    cfg.isNearEvictSynchronized() ? tup.get2() : Collections.<GridRichNode>emptySet());
+                    cfg.isEvictBackupSynchronized() ? tup.get1() : Collections.<GridRichNode>emptySet(),
+                    cfg.isEvictNearSynchronized() ? tup.get2() : Collections.<GridRichNode>emptySet());
 
                 if (!nodes.isEmpty()) {
                     entries.put(info.entry().key(), info);

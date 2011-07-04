@@ -21,7 +21,7 @@ import java.util.concurrent.*;
  * Cache entry wrapper.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheEntryWrapper<K, V> implements GridCacheEntry<K, V> {
     /** Wrapped entry. */
@@ -151,6 +151,11 @@ public class GridCacheEntryWrapper<K, V> implements GridCacheEntry<K, V> {
     /** {@inheritDoc} */
     @Override public boolean primary() {
         return e.primary();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean backup() {
+        return e.backup();
     }
 
     /** {@inheritDoc} */

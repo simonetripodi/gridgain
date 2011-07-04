@@ -24,7 +24,7 @@ import java.util.*;
  * Near cache lock response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V> {
     /** Collection of versions that are pending and less than lock version. */
@@ -38,9 +38,6 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     @GridToStringInclude
     private GridCacheVersion[] dhtVers;
 
-    /** Invalid partitions. */
-    private Collection<Integer> invalidParts;
-
     /**
      * Empty constructor (required by {@link Externalizable}).
      */
@@ -53,11 +50,9 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
      * @param futId Future ID.
      * @param miniId Mini future ID.
      * @param cnt Count.
-     * @param invalidParts Invalid partitions.
      * @param err Error.
      */
-    public GridNearLockResponse(GridCacheVersion lockVer, GridUuid futId, GridUuid miniId, int cnt,
-        Collection<Integer> invalidParts, Throwable err) {
+    public GridNearLockResponse(GridCacheVersion lockVer, GridUuid futId, GridUuid miniId, int cnt, Throwable err) {
         super(lockVer, futId, cnt, err);
 
         assert miniId != null;
@@ -65,8 +60,6 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
         this.miniId = miniId;
 
         dhtVers = new GridCacheVersion[cnt];
-
-        this.invalidParts = invalidParts;
     }
 
     /**
@@ -103,13 +96,6 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
     }
 
     /**
-     * @return Invalid partitions.
-     */
-    public Collection<Integer> invalidPartitions() {
-        return invalidParts;
-    }
-
-    /**
      * @param val Value.
      * @param valBytes Value bytes (possibly {@code null}).
      * @param dhtVer DHT version.
@@ -133,7 +119,6 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
 
         U.writeCollection(out, pending);
         U.writeArray(out, dhtVers);
-        U.writeIntCollection(out, invalidParts);
 
         assert miniId != null;
 
@@ -148,7 +133,6 @@ public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V
 
         pending = U.readSet(in);
         dhtVers = U.readArray(in, CU.versionArrayFactory());
-        invalidParts = U.readIntSet(in);
         miniId = U.readGridUuid(in);
 
         assert miniId != null;

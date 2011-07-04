@@ -26,7 +26,7 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * information is maintained by attaching ordering metadata to cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheLruEvictionPolicyMBean {

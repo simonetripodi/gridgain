@@ -30,7 +30,7 @@ import java.util.concurrent.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V>>
     implements GridCacheFuture<Map<K, V>> {
@@ -211,7 +211,7 @@ public class GridNearGetFuture<K, V> extends GridCompoundIdentityFuture<Map<K, V
 
             // If this is the primary or backup node for the keys.
             if (n.isLocal()) {
-                final GridDhtFuture<K, Collection<GridCacheEntryInfo<K, V>>> fut =
+                final GridDhtFuture<Collection<GridCacheEntryInfo<K, V>>> fut =
                     dht().getDhtAsync(n.id(), -1, mappedKeys, reload, filters);
 
                 final Collection<Integer> invalidParts = fut.invalidPartitions();

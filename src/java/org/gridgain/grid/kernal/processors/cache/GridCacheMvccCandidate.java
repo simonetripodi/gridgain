@@ -23,7 +23,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheMvccCandidate.M
  * Lock candidate.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<GridCacheMvccCandidate<K>> {
     /** Locking node ID. */
@@ -479,7 +479,13 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
 
     /** {@inheritDoc} */
     @Override public int compareTo(GridCacheMvccCandidate<K> o) {
-        return ver.compareTo(o.ver);
+        int c = ver.compareTo(o.ver);
+
+        // This is done, so compare and equals methods will be consistent.
+        if (c == 0)
+            return key().equals(o.key()) ? 0 : timestamp < o.timestamp ? -1 : 1;
+
+        return c;
     }
 
     /** {@inheritDoc} */
@@ -493,13 +499,9 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
 
         GridCacheMvccCandidate<K> other = (GridCacheMvccCandidate<K>)o;
 
-        K k1 = key();
-        K k2 = other.key();
+        assert key() != null && other.key() != null : "Key is null [this=" + this + ", other=" + o + ']';
 
-        if (k1 != null && k2 != null)
-            return ver.equals(other.ver) && k1.equals(k2);
-
-        return ver.equals(other.ver);
+        return ver.equals(other.ver) && key().equals(other.key());
     }
 
     /** {@inheritDoc} */

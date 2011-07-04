@@ -33,10 +33,10 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
-    implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<K, Boolean>, GridCacheMappedVersion {
+    implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<Boolean>, GridCacheMappedVersion {
     /** Cache registry. */
     @GridToStringExclude
     private GridCacheContext<K, V> cctx;
@@ -119,7 +119,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     }
 
     /**
-     * @param cctx Registry.
+     * @param cctx Cache context.
      * @param nearNodeId Near node ID.
      * @param nearLockVer Near lock version.
      * @param cnt Number of keys to lock.

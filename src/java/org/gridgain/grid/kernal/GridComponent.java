@@ -12,24 +12,24 @@ package org.gridgain.grid.kernal;
 import org.gridgain.grid.*;
 
 /**
- * Interface for all main internal GridGain components (managers, processor and controllers).
+ * Interface for all main internal GridGain components (managers, processors, and controllers).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridComponent {
     /**
-     * Starts grid processor.
+     * Starts grid component.
      *
      * @throws GridException Throws in case of any errors.
      */
     public void start() throws GridException;
 
     /**
-     * Stops grid processor.
+     * Stops grid component.
      *
      * @param cancel If {@code true}, then all ongoing tasks or jobs for relevant
-     *      processors need to be cancelled.
+     *      components need to be cancelled.
      * @param wait Flag indicating whether to wait for task completion.
      * @throws GridException Thrown in case of any errors.
      */

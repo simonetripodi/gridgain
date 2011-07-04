@@ -9,8 +9,9 @@
 
 package org.gridgain.grid.util.tostring;
 
-import org.gridgain.grid.gridify.*;
+import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.internal.*;
+
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -52,7 +53,7 @@ import java.util.concurrent.locks.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridToStringBuilder {
     /** */
@@ -460,14 +461,14 @@ public class GridToStringBuilder {
             }
 
             // No other option here.
-            throw new GridifyRuntimeException(e);
+            throw new GridRuntimeException(e);
         }
     }
 
     /**
-     * @param cls TODO
+     * @param cls Class.
      * @param <T> Type of the object.
-     * @return TODO
+     * @return Descriptor for the class.
      */
     @SuppressWarnings({"TooBroadScope"})
     private static <T> GridToStringClassDescriptor getClassDescriptor(Class<T> cls) {

@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -1031,7 +1031,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
      * @return Entry or <tt>null</tt>.
      */
     @Nullable public GridCacheEntryEx<K, V> peekEx(K key) {
-        return entry0(key, false);
+        return entry0(key, -1, false);
     }
 
     /**
@@ -1040,7 +1040,20 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
      * @return Entry or <tt>null</tt>.
      */
     public GridCacheEntryEx<K, V> entryEx(K key) {
-        GridCacheEntryEx<K, V> e = entry0(key, true);
+        GridCacheEntryEx<K, V> e = entry0(key, -1, true);
+
+        assert e != null;
+
+        return e;
+    }
+
+    /**
+     * @param topVer Topology version.
+     * @param key Entry key.
+     * @return Entry or <tt>null</tt>.
+     */
+    public GridCacheEntryEx<K, V> entryEx(K key, long topVer) {
+        GridCacheEntryEx<K, V> e = entry0(key, topVer, true);
 
         assert e != null;
 
@@ -1050,11 +1063,12 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     /**
      *
      * @param key Entry key.
+     * @param topVer Topology version at the time of creation.
      * @param create Flag to create entry if it does not exist.
      * @return Entry or <tt>null</tt>.
      */
     @SuppressWarnings({"TooBroadScope"})
-    @Nullable private GridCacheEntryEx<K, V> entry0(K key, boolean create) {
+    @Nullable private GridCacheEntryEx<K, V> entry0(K key, long topVer, boolean create) {
         GridCacheEntryEx<K, V> entry = null;
 
         readLock();
@@ -1084,7 +1098,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 boolean created = false;
 
                 if (entry == null && create) {
-                    entry = map.putEntry(key, null, ctx.config().getDefaultTimeToLive());
+                    entry = map.putEntry(topVer, key, null, ctx.config().getDefaultTimeToLive());
 
                     created = true;
                 }
@@ -3739,8 +3753,8 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
-    @Override public void dgc(int suspectLockTimeout, boolean global) {
-        ctx.dgc().dgc(suspectLockTimeout, global);
+    @Override public void dgc(int suspectLockTimeout, boolean global, boolean removeLocks) {
+        ctx.dgc().dgc(suspectLockTimeout, global, removeLocks);
     }
 
     /**

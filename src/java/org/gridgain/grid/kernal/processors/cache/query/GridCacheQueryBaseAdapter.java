@@ -34,7 +34,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Query adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareAdapter implements
     GridCacheQueryBase<K, V> {
@@ -99,10 +99,10 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
     /** */
     private volatile boolean keepAll = true;
 
-    /** */
+    /** False by default. */
     private volatile boolean incBackups;
 
-    /** */
+    /** False by default. */
     private volatile boolean dedup;
 
     /** */
@@ -158,7 +158,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
 
         log = cacheCtx.logger(getClass());
 
-        qryLog = cacheCtx.kernalContext().config().getGridLogger().getLogger(DFLT_QUERY_LOGGER_NAME);
+        qryLog = cacheCtx.logger(DFLT_QUERY_LOGGER_NAME);
 
         clone = prjFlags.contains(CLONE);
 
@@ -283,7 +283,7 @@ public abstract class GridCacheQueryBaseAdapter<K, V> extends GridMetadataAwareA
         synchronized (mux) {
             checkSealed();
 
-            this.timeout = timeout <= 0 ? DFLT_TIMEOUT : timeout;
+            this.timeout = timeout <= 0 ? Long.MAX_VALUE : timeout;
         }
     }
 

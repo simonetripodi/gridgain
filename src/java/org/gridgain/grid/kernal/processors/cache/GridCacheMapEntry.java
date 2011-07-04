@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -276,7 +276,6 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
         // Asynchronous execution (we don't check filter here).
         cctx.closures().runLocalSafe(new GPR() {
-                /** {@inheritDoc} */
                 @SuppressWarnings({"unchecked"})
                 @Override public void run() {
                     if (log.isDebugEnabled())
@@ -357,7 +356,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         boolean updateMetrics, GridPredicate<? super GridCacheEntry<K, V>>[] filter)
         throws GridException, GridCacheEntryRemovedException, GridCacheFilterFailedException {
         // Disable read-through if there is no store.
-        if (cctx.config().getStore() == null)
+        if (readThrough && !cctx.isStoreEnabled())
             readThrough = false;
 
         GridCacheMvccCandidate<K> owner = null;
@@ -456,7 +455,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
                     // Mark this entry as refreshing, so other threads won't schedule
                     // asynchronous refresh while this one is in progress.
-                    if (asyncRefresh && readThrough)
+                    if (asyncRefresh || readThrough)
                         isRefreshing = true;
                 }
             }
@@ -464,7 +463,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
             if (evt && expired)
                 cctx.events().addEvent(partition(), key, tx, owner, EVT_CACHE_OBJECT_EXPIRED, null, expiredVal);
 
-            if (asyncRefresh && readThrough) {
+            if (asyncRefresh && !readThrough && cctx.isStoreEnabled()) {
                 assert ret != null;
 
                 refreshAhead(tx, key, startVer);
@@ -622,7 +621,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                 if (tx != null && tx.ec() && tx.commitVersion().compareTo(ver) < 0)
                     return new T2<Boolean, V>(true, this.val);
 
-                // Load and remove from swap if is new.
+                // Load and remove from swap if it is new.
                 if (isNew())
                     unswap();
 
@@ -987,7 +986,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
         synchronized (mux) {
             this.val = val;
-            this.valBytes = valBytes;
+            this.valBytes = isStoreValueBytes() ? valBytes : null;
             this.ttl = ttl;
             this.expireTime = expireTime;
             this.ver = ver;
@@ -995,6 +994,13 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
             if (metrics != null)
                 this.metrics = metrics;
         }
+    }
+
+    /**
+     * @return {@code true} If value bytes should be stored.
+     */
+    protected boolean isStoreValueBytes() {
+        return cctx.config().isStoreValueBytes();
     }
 
     /**
@@ -1686,7 +1692,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                     checkObsolete();
 
                     if (this.val == val)
-                        this.valBytes = valBytes;
+                        this.valBytes = isStoreValueBytes() ? valBytes : null;
                 }
             }
         }

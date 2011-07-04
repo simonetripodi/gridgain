@@ -39,7 +39,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Class that takes care about entries preloading in replicated cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** */
@@ -64,6 +64,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
 
     /** Future for waiting for start signal requests. */
+    @GridToStringInclude
     private final StartFuture startFut = new StartFuture(cctx.kernalContext());
 
     /** Ids of nodes to wait start signal responses from. */
@@ -73,7 +74,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     private final AtomicBoolean finished = new AtomicBoolean(false);
 
     /** Latch to wait for the end of preloading on. */
-    private final CountDownLatch latch = new CountDownLatch(1);
+    private final GridFutureAdapter<?> syncPreloadFut;
 
     /** {node id, partition, mod} -> session */
     private final ConcurrentMap<GridTuple3<UUID, Integer, Integer>, Session> ses =
@@ -93,6 +94,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     public GridReplicatedPreloader(GridCacheContext<K, V> ctx) {
         super(ctx);
+
+        syncPreloadFut = new GridFutureAdapter(ctx.kernalContext());
     }
 
     /**
@@ -143,14 +146,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
         sendInitialPreloadRequests();
 
-        if (cctx.config().getPreloadMode() == SYNC) {
-            try {
-                latch.await();
-            }
-            catch (InterruptedException e) {
-                U.error(log, "Preload latch was interrupted.", e);
-            }
-        }
+        if (cctx.config().getPreloadMode() == SYNC)
+            syncPreloadFut.get();
     }
 
     /**
@@ -230,7 +227,9 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
         switch (evt.type()) {
             case EVT_NODE_JOINED: {
-                onNodeJoined(evt.eventNodeId());
+                GridNodeShadow n = evt.shadow();
+
+                onNodeJoined(n.id(), n.order());
 
                 break;
             }
@@ -249,10 +248,11 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     }
 
     /**
+     * @param topVer Topology version
      * @param nodeId Joined node id.
      */
     @SuppressWarnings({"unchecked"})
-    private void onNodeJoined(final UUID nodeId) {
+    private void onNodeJoined(final UUID nodeId, long topVer) {
         if (log.isDebugEnabled())
             log.debug("Node joined [nodeId=" + nodeId + ", local=" + cctx.nodeId() + "]");
 
@@ -263,7 +263,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
         final Set<Integer> parts = partitions(node);
 
-        cctx.partitionReleaseFuture(parts, nodeId).listenAsync(
+        cctx.partitionReleaseFuture(parts, topVer).listenAsync(
             new CI1<GridFuture<?>>() {
                 @Override public void apply(GridFuture<?> fut) {
                     try {
@@ -563,7 +563,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     private void finish() {
         finished.set(true);
 
-        latch.countDown();
+        syncPreloadFut.onDone();
 
         cctx.events().addPreloadEvent(-1, EVT_CACHE_PRELOAD_STOPPED, cctx.discovery().shadow(cctx.localNode()),
             EVT_NODE_JOINED, cctx.localNode().metrics().getNodeStartTime());
@@ -708,7 +708,12 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
     /** {@inheritDoc} */
     @Override public GridFuture<?> startFuture() {
-        return startFut;
+        return cctx.config().getPreloadMode() != SYNC ? startFut : syncPreloadFut;
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return S.toString(GridReplicatedPreloader.class, this);
     }
 
     /**

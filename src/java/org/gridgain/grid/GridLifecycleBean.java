@@ -27,7 +27,9 @@ import org.gridgain.grid.resources.*;
  * <li>
  *   {@link GridLifecycleEventType#AFTER_GRID_START} invoked right after grid
  *   has started. At this point, if you injected a grid instance via
- *   {@link GridInstanceResource} annotation, you can start using it.
+ *   {@link GridInstanceResource} annotation, you can start using it. Note that
+ *   you should not be using {@link GridFactory} to get grid instance from
+ *   lifecycle bean.
  * </li>
  * <li>
  *   {@link GridLifecycleEventType#BEFORE_GRID_STOP} invoked right before grid
@@ -92,7 +94,7 @@ import org.gridgain.grid.resources.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridLifecycleBean {
     /**

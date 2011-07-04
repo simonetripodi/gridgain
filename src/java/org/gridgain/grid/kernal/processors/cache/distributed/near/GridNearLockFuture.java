@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -88,6 +88,12 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
     /** Transaction. */
     @GridToStringExclude
     private GridNearTxLocal<K, V> tx;
+
+    /** Left nodes. */
+    private Collection<GridRichNode> leftNodes = new GridConcurrentHashSet<GridRichNode>();
+
+    /** */
+    private AtomicLong topVer = new AtomicLong(-1);
 
     /** Mutex. */
     private final Object mux = new Object();
@@ -288,7 +294,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
         // Add local lock first, as it may throw GridCacheEntryRemovedException.
         c = entry.addNearLocal(dhtNodeId, threadId, lockVer, timeout, !inTx(), ec(), inTx());
 
-        c.topologyVersion(topVer);
+        if (c != null)
+            c.topologyVersion(topVer);
 
         synchronized (mux) {
             entries.add(entry);
@@ -657,9 +664,18 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
             Map<GridRichNode, T2<GridNearLockRequest<K, V>, Collection<K>>> reqMap;
 
             try {
-                long topVer = cctx.topology().lastJoinOrder();
+                long topVer;
 
-                Collection<GridRichNode> nodes = CU.allNodes(cctx, topVer);
+                if (tx != null)
+                    topVer = tx.topologyVersion(cctx.topology().lastJoinOrder());
+                else {
+                    // Make sure that topology version is initialized once.
+                    this.topVer.compareAndSet(-1, cctx.topology().lastJoinOrder());
+
+                    topVer = this.topVer.get();
+                }
+
+                Collection<GridRichNode> nodes = F.view(CU.allNodes(cctx, topVer), F.notIn(leftNodes));
 
                 ConcurrentMap<GridRichNode, Collection<K>> mappings =
                     new ConcurrentHashMap<GridRichNode, Collection<K>>(nodes.size());
@@ -717,8 +733,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
 
                                 if (cand != null) {
                                     if (req == null) {
-                                        req = new GridNearLockRequest<K, V>(cctx.nodeId(), threadId, futId, lockVer,
-                                            inTx(), implicitTx(), read, isolation(), isInvalidate(), timeout,
+                                        req = new GridNearLockRequest<K, V>(topVer, cctx.nodeId(), threadId, futId,
+                                            lockVer, inTx(), implicitTx(), read, isolation(), isInvalidate(), timeout,
                                             syncCommit(), syncRollback(), mappedKeys.size());
 
                                         reqMap.put(node,
@@ -782,7 +798,7 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                     if (log.isDebugEnabled())
                         log.debug("Before locally locking near request: " + req);
 
-                    GridDhtFuture<K, GridNearLockResponse<K, V>> fut = dht().lockAllAsync(cctx.localNode(), req,
+                    GridFuture<GridNearLockResponse<K, V>> fut = dht().lockAllAsync(cctx.localNode(), req,
                         mappedKeys, filter);
 
                     // Add new future.
@@ -815,29 +831,6 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                                 if (log.isDebugEnabled())
                                     log.debug("Acquired lock for local DHT mapping [locId=" + cctx.nodeId() +
                                         ", mappedKeys=" + mappedKeys + ", fut=" + GridNearLockFuture.this + ']');
-
-                                Collection<Integer> invalidParts = res.invalidPartitions();
-
-                                // Remap invalid partitions.
-                                if (!F.isEmpty(invalidParts)) {
-                                    Collection<K> remaps = new LinkedList<K>();
-
-                                    for (Iterator<K> it = mappedKeys.iterator(); it.hasNext();) {
-                                        K key = it.next();
-
-                                        if (invalidParts.contains(cctx.partition(key))) {
-                                            remaps.add(key);
-
-                                            it.remove();
-
-                                            if (tx != null)
-                                                tx.removeMapping(node.id(), key);
-                                        }
-                                    }
-
-                                    // Remap.
-                                    map(remaps, Collections.<GridRichNode, Collection<K>>emptyMap());
-                                }
 
                                 try {
                                     int i = 0;
@@ -1053,7 +1046,12 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                     ", mini=" + this + ']', e);
         }
 
+        /**
+         * @param e Node left exception.
+         */
         void onResult(GridTopologyException e) {
+            leftNodes.add(node);
+
             if (isDone())
                 return;
 
@@ -1090,29 +1088,6 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                     return;
                 }
 
-                Collection<Integer> invalidParts = res.invalidPartitions();
-
-                // Remap invalid partitions.
-                if (!F.isEmpty(invalidParts)) {
-                    Collection<K> remaps = new LinkedList<K>();
-
-                    for (Iterator<K> it = keys.iterator(); it.hasNext();) {
-                        K key = it.next();
-
-                        if (invalidParts.contains(cctx.partition(key))) {
-                            remaps.add(key);
-
-                            it.remove();
-
-                            if (tx != null)
-                                tx.removeMapping(node.id(), key);
-                        }
-                    }
-
-                    // Remap.
-                    map(remaps, Collections.<GridRichNode, Collection<K>>emptyMap());
-                }
-
                 int i = 0;
 
                 for (K k : keys) {
@@ -1129,7 +1104,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
 
                             // Lock is held at this point, so we can set the
                             // returned value if any.
-                            entry.resetFromPrimary(res.value(i), res.valueBytes(i), lockVer, res.dhtVersion(i), node.id());
+                            entry.resetFromPrimary(res.value(i), res.valueBytes(i), lockVer, res.dhtVersion(i),
+                                node.id());
 
                             entry.doneRemote(lockVer, tx == null ? lockVer : tx.minVersion(), res.pending(),
                                 res.committedVersions(), res.rolledbackVersions());

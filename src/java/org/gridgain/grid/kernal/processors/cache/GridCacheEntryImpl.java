@@ -28,7 +28,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Entry wrapper that never obscures obsolete entries from user.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externalizable {
     /** Cache context. */
@@ -85,10 +85,22 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
      * @return Cache entry.
      */
     public GridCacheEntryEx<K, V> unwrap() {
+        GridCacheEntryEx<K, V> unwrap = unwrap(true);
+
+        assert unwrap != null;
+
+        return unwrap;
+    }
+
+    /**
+     * @param create Flag to create entry if it does not exist.
+     * @return Cache entry.
+     */
+    @Nullable public GridCacheEntryEx<K, V> unwrap(boolean create) {
         GridCacheEntryEx<K, V> cached = this.cached;
 
         if (cached == null)
-            this.cached = cached = entryEx();
+            this.cached = cached = create ? entryEx() : peekEx();
 
         return cached;
     }
@@ -96,6 +108,11 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
     /** {@inheritDoc} */
     protected GridCacheEntryEx<K, V> entryEx() {
         return ctx.cache().entryEx(key);
+    }
+
+    /** {@inheritDoc} */
+    @Nullable protected GridCacheEntryEx<K, V> peekEx() {
+        return ctx.cache().peekEx(key);
     }
 
     /**
@@ -171,6 +188,13 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
     @Override public boolean primary() {
         return ctx.config().getCacheMode() != PARTITIONED ||
             ctx.nodeId().equals(CU.primary(ctx.affinity(key, CU.allNodes(ctx))).id());
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean backup() {
+        return ctx.config().getCacheMode() == PARTITIONED &&
+            F.viewReadOnly(CU.backups(ctx.affinity(key, CU.allNodes(ctx))), F.node2id()).
+                contains(ctx.nodeId());
     }
 
     /** {@inheritDoc} */
@@ -264,7 +288,9 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
         try {
             while (true)
                 try {
-                    return ctx.cloneOnFlag(unwrap().peek0(false, mode, filter, tx));
+                    GridCacheEntryEx<K, V> e = unwrap(true); // TODO: GG-2011
+
+                    return e != null ? ctx.cloneOnFlag(e.peek0(false, mode, filter, tx)) : null;
                 }
                 catch (GridCacheEntryRemovedException ignore) {
                     reset();

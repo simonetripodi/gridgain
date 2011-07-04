@@ -27,10 +27,10 @@ import java.util.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collection<GridCacheEntryInfo<K, V>>>
-    implements GridDhtFuture<K, Collection<GridCacheEntryInfo<K, V>>> {
+    implements GridDhtFuture<Collection<GridCacheEntryInfo<K, V>>> {
     /** Message ID. */
     private long msgId;
 
@@ -166,7 +166,7 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
      * @param keys Keys.
      */
     private void map(final Collection<? extends K> keys) {
-        GridDhtFuture<K, Object> fut = ctx.dht().dhtPreloader().request(keys);
+        GridDhtFuture<Object> fut = ctx.dht().dhtPreloader().request(keys);
 
         if (fut.invalidPartitions() != null)
             retries.addAll(fut.invalidPartitions());

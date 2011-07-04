@@ -18,20 +18,20 @@ import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
+import org.gridgain.grid.util.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
-import java.util.concurrent.locks.*;
 
-import static org.gridgain.grid.cache.GridCachePeekMode.*;
 import static org.gridgain.grid.cache.GridCacheMode.*;
+import static org.gridgain.grid.cache.GridCachePeekMode.*;
 import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
 
 /**
  * Query and index manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V> {
@@ -51,7 +51,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
     private GridCacheQueryIndex<K, V> idx;
 
     /** Busy lock. */
-    private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
+    protected final GridBusyLock busyLock = new GridBusyLock();
 
     /** Queries metrics bounded cache. */
     private final Map<GridCacheQueryMetricsKey, GridCacheQueryMetricsAdapter> metrics =
@@ -81,29 +81,13 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
         }
         finally {
             // Acquire write lock so that any new activity could not be started.
-            busyLock.writeLock().lock();
+            busyLock.block();
 
             idx.stop();
         }
 
         if (log.isDebugEnabled())
             log.debug("Stopped cache query manager.");
-    }
-
-    /**
-     * Enters to busy state.
-     *
-     * @return {@code true} if entered to busy state.
-     */
-    protected boolean enterBusy() {
-        return busyLock.readLock().tryLock();
-    }
-
-    /**
-     * Release read lock for queries execution.
-     */
-    protected void leaveBusy() {
-        busyLock.readLock().unlock();
     }
 
     /**
@@ -142,7 +126,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
         assert key != null;
         assert val != null;
 
-        if (!enterBusy()) {
+        if (!busyLock.enterBusy()) {
             if (log.isDebugEnabled())
                 log.debug("Received store request while stopping or after shutdown (will ignore).");
 
@@ -153,7 +137,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
             idx.store(key, keyBytes, val, ver);
         }
         finally {
-            leaveBusy();
+            busyLock.leaveBusy();
         }
     }
 
@@ -166,7 +150,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
     public boolean remove(K key, @Nullable byte[] keyBytes) throws GridException {
         assert key != null;
 
-        if (!enterBusy()) {
+        if (!busyLock.enterBusy()) {
             if (log.isDebugEnabled())
                 log.debug("Received remove request while stopping or after shutdown (will ignore).");
 
@@ -177,7 +161,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
             return idx.remove(key, keyBytes);
         }
         finally {
-            leaveBusy();
+            busyLock.leaveBusy();
         }
     }
 
@@ -187,7 +171,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      * @param ldr Class loader to undeploy.
      */
     public void onUndeploy(ClassLoader ldr) {
-        if (!enterBusy()) {
+        if (!busyLock.enterBusy()) {
             if (log.isDebugEnabled())
                 log.debug("Received onUndeploy() request while stopping or after shutdown (will ignore).");
 
@@ -198,7 +182,7 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
             idx.onUndeploy(ldr);
         }
         finally {
-            leaveBusy();
+            busyLock.leaveBusy();
         }
     }
 

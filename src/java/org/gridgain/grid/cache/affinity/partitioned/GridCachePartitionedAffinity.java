@@ -18,6 +18,7 @@ import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.stopwatch.*;
 import org.jetbrains.annotations.*;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -47,7 +48,7 @@ import static org.gridgain.grid.GridEventType.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
     /** Default number of partitions. */
@@ -359,25 +360,46 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
 
             addIfAbsent(nodes);
 
-            Collection<UUID> nodeIds = F.viewReadOnly(nodes, F.node2id());
+            Collection<UUID> nodeIds = F.nodeIds(nodes);
+
+            final Map<UUID, GridRichNode> lookup = new GridLeanMap<UUID, GridRichNode>(nodes.size());
+
+            // Store nodes in map for fast lookup.
+            for (GridRichNode n : nodes)
+                lookup.put(n.id(), n);
+
+            Collection<UUID> ids;
 
             if (backupFilter != null) {
                 UUID primaryId = nodeHash.node(part, primaryIdFilter, F.contains(nodeIds));
 
                 Collection<UUID> backupIds = nodeHash.nodes(part, backups, backupIdFilter, F.contains(nodeIds));
 
-                if (F.isEmpty(backupIds))
-                    return grid.nodes(F.asList(primaryId));
+                if (F.isEmpty(backupIds)) {
+                    GridRichNode n = lookup.get(primaryId);
 
-                return grid.nodes(F.concat(false, primaryId, backupIds));
+                    assert n != null;
+
+                    return Collections.singletonList(n);
+                }
+
+                ids = F.concat(false, primaryId, backupIds);
             }
             else {
-                Collection <UUID> ids;
                 if (!exclNeighbors || nodes.size() == 1) {
                     ids = nodeHash.nodes(part, backups + 1, nodeIds);
 
-                    if (ids.size() == 1)
-                        return Collections.singletonList(grid.node(ids.iterator().next()));
+                    if (ids.size() == 1) {
+                        UUID id = F.first(ids);
+
+                        assert id != null : "Node ID cannot be null in affinity node ID collection: " + ids;
+
+                        GridRichNode n = lookup.get(id);
+
+                        assert n != null;
+
+                        return Collections.singletonList(n);
+                    }
                 }
                 else {
                     ids = new ArrayList<UUID>(1 + backups);
@@ -389,11 +411,14 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
                     for (int i = 0; i < size; i++) {
                         UUID id = nodeHash.node(part, F.contains(nodeIds), new P1<UUID>() {
                             @Override public boolean apply(UUID id) {
-                                GridRichNode n = grid.node(id);
+                                GridRichNode n = lookup.get(id);
+
+                                assert n != null;
+
+                                Collection<UUID> neighbors = F.nodeIds(n.neighbors().nodes());
 
                                 // Dead nodes get handled by cache logic.
-                                return n == null || !F.containsAny(ids0, F.nodeIds(n.neighbors().nodes()));
-
+                                return !ids0.contains(n.id()) && !F.containsAny(ids0, neighbors);
                             }
                         });
 
@@ -404,25 +429,19 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
                             break;
                     }
                 }
-
-                Map<UUID, GridRichNode> lookup = new GridLeanMap<UUID, GridRichNode>(nodes.size());
-
-                // Store nodes in map for fast lookup.
-                for (GridRichNode n : nodes)
-                    lookup.put(n.id(), n);
-
-                Collection<GridRichNode> ret = new ArrayList<GridRichNode>(1 + backups);
-
-                for (UUID id : ids) {
-                    GridRichNode n = lookup.get(id);
-
-                    assert n != null;
-
-                    ret.add(n);
-                }
-
-                return ret;
             }
+
+            Collection<GridRichNode> ret = new ArrayList<GridRichNode>(1 + backups);
+
+            for (UUID id : ids) {
+                GridRichNode n = lookup.get(id);
+
+                assert n != null;
+
+                ret.add(n);
+            }
+
+            return ret;
         }
         finally {
             watch.stop();
@@ -526,7 +545,7 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
      * @param n Node to add.
      */
     private void addIfAbsent(GridNode n) {
-        if (!addedNodes.contains(n.id()))
+        if (n != null && !addedNodes.contains(n.id()))
             add(n);
     }
 

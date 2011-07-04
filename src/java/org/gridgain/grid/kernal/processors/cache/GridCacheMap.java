@@ -27,7 +27,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Underlying map used by distributed cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"ObjectEquality"})
 public class GridCacheMap<K, V> {
@@ -420,7 +420,7 @@ public class GridCacheMap<K, V> {
      *      also indicate that the HashMap previously associated
      *      {@code null} with the specified key.
      */
-    @Nullable public V put(K key, V val, long ttl) {
+    @Nullable private V put(K key, V val, long ttl) {
         assert key != null;
 
         int hash = hash(key.hashCode());
@@ -439,19 +439,22 @@ public class GridCacheMap<K, V> {
             }
         }
 
-        addEntry(hash, key, val, i, ttl);
+        // This method does not need topology version because
+        // it is only called from putAll(..) which is never
+        // called on DHT cache.
+        addEntry(-1, hash, key, val, i, ttl);
 
         return null;
     }
 
     /**
-     *
+     * @param topVer Topology version.
      * @param key Key.
      * @param val Value.
      * @param ttl Time to live.
      * @return Cache entry for corresponding key-value pair.
      */
-    public GridCacheMapEntry<K, V> putEntry(K key, @Nullable V val, long ttl) {
+    public GridCacheMapEntry<K, V> putEntry(long topVer, K key, @Nullable V val, long ttl) {
         assert key != null;
 
         int hash = hash(key.hashCode());
@@ -468,7 +471,7 @@ public class GridCacheMap<K, V> {
             }
         }
 
-        return addEntry(hash, key, val, i, ttl);
+        return addEntry(topVer, hash, key, val, i, ttl);
     }
 
     /**
@@ -680,6 +683,7 @@ public class GridCacheMap<K, V> {
      * the specified bucket.  It is the responsibility of this
      * method to resize the table if appropriate.
      *
+     * @param topVer Topology version
      * @param hash Hash.
      * @param key Key.
      * @param val Value.
@@ -687,12 +691,12 @@ public class GridCacheMap<K, V> {
      * @param idx Bucket index.
      * @return Added entry.
      */
-    private GridCacheMapEntry<K, V> addEntry(int hash, K key, V val, int idx, long ttl) {
+    private GridCacheMapEntry<K, V> addEntry(long topVer, int hash, K key, V val, int idx, long ttl) {
         Bucket<K, V> b = table[idx];
 
         GridCacheMapEntry<K, V> prev = b == null ? null : b.entry();
 
-        GridCacheMapEntry<K, V> e = factory.create(ctx, key, hash, val, prev, ttl);
+        GridCacheMapEntry<K, V> e = factory.create(ctx, topVer, key, hash, val, prev, ttl);
 
         // Create bucket after creating entry, so we don't end up with empty
         // bucket in case if there is exception.

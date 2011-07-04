@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Cache proxy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externalizable {
     /** Context. */
@@ -3200,11 +3200,11 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
-    @Override public void dgc(int suspectLockTimeout, boolean global) {
+    @Override public void dgc(int suspectLockTimeout, boolean global, boolean removeLocks) {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
         try {
-            cache.dgc(suspectLockTimeout, global);
+            cache.dgc(suspectLockTimeout, global, removeLocks);
         }
         finally {
             gate.leave(prev);

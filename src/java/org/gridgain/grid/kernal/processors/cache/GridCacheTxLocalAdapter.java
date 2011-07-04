@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Transaction adapter for cache transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K, V>
     implements GridCacheTxLocalEx<K, V> {
@@ -899,7 +899,7 @@ public abstract class GridCacheTxLocalAdapter<K, V> extends GridCacheTxAdapter<K
 
                 GridCacheStore store = cctx.config().getStore();
 
-                if (isSingleUpdate() || isBatchUpdate())
+                if (store != null && (isSingleUpdate() || isBatchUpdate()))
                     store.txEnd(cctx.namex(), this, false);
             }
             catch (Error e) {

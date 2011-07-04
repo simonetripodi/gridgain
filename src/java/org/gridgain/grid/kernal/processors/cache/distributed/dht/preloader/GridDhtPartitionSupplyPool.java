@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Thread pool for supplying partitions to demanding nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtPartitionSupplyPool<K, V> {
     /** */
@@ -227,7 +227,7 @@ public class GridDhtPartitionSupplyPool<K, V> {
 
                 try {
                     for (Integer part : d.partitions()) {
-                        GridDhtLocalPartition<K, V> loc = top.localPartition(part,  false);
+                        GridDhtLocalPartition<K, V> loc = top.localPartition(part, -1, false);
 
                         if (loc == null || loc.state() != OWNING || !loc.reserve()) {
                             // Reply with partition of "-1" to let sender know that

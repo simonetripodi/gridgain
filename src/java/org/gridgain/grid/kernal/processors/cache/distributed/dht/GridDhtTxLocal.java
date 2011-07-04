@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Replicated user transaction.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implements GridCacheMappedVersion {
     /** */
@@ -470,20 +470,7 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
 
     /** {@inheritDoc} */
     @Override public void addInvalidPartition(int part) {
-        super.addInvalidPartition(part);
-
-        for (Iterator<GridCacheTxEntry<K, V>> it = txMap.values().iterator(); it.hasNext();) {
-            GridCacheTxEntry<K, V> e = it.next();
-
-            GridCacheEntryEx<K, V> cached = e.cached();
-
-            if (cached != null) {
-                if (cached.partition() == part)
-                    it.remove();
-            }
-            else if (cctx.partition(e.key()) == part)
-                it.remove();
-        }
+        assert false : "DHT transaction encountered invalid partition [part=" + part + ", tx=" + this + ']';
     }
 
 
@@ -597,8 +584,8 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
      * @return Lock future.
      */
     @SuppressWarnings( {"IfMayBeConditional"})
-    public GridFuture<GridCacheReturn<V>> lockAllAsync(Collection<? extends K> keys, long msgId, boolean implicit,
-        final boolean read) {
+    public GridFuture<GridCacheReturn<V>> lockAllAsync(Collection<? extends K> keys, long msgId,
+        boolean implicit, final boolean read) {
         try {
             checkValid(CU.<K, V>empty());
         }
@@ -625,38 +612,28 @@ public class GridDhtTxLocal<K, V> extends GridCacheTxLocalAdapter<K, V> implemen
                 if (key == null)
                     continue;
 
-                try {
-                    GridCacheTxEntry<K, V> txEntry = entry(key);
+                GridCacheTxEntry<K, V> txEntry = entry(key);
 
-                    // First time access.
-                    if (txEntry == null) {
-                        GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(key);
+                // First time access.
+                if (txEntry == null) {
+                    GridDhtCacheEntry<K, V> cached = cctx.dht().entryExx(key);
 
-                        cached.unswap();
+                    cached.unswap();
 
-                        txEntry = addEntry(NOOP, opId, null, cached, CU.<K, V>empty());
+                    txEntry = addEntry(NOOP, opId, null, cached, CU.<K, V>empty());
 
-                        txEntry.cached(cached, txEntry.keyBytes());
+                    txEntry.cached(cached, txEntry.keyBytes());
 
-                        GridFuture<Boolean> f = addReader(msgId, cached, txEntry);
+                    GridFuture<Boolean> f = addReader(msgId, cached, txEntry);
 
-                        if (f != null) {
-                            if (txFut == null)
-                                txFut = new GridCompoundFuture<Boolean, Boolean>(cctx.kernalContext(), CU.boolReducer());
+                    if (f != null) {
+                        if (txFut == null)
+                            txFut = new GridCompoundFuture<Boolean, Boolean>(cctx.kernalContext(), CU.boolReducer());
 
-                            txFut.add(f);
-                        }
-                    }
-                    else {
-                        if (skipped == null)
-                            skipped = new GridLeanSet<K>();
-
-                        skipped.add(key);
+                        txFut.add(f);
                     }
                 }
-                catch (GridDhtInvalidPartitionException e) {
-                    addInvalidPartition(e.partition());
-
+                else {
                     if (skipped == null)
                         skipped = new GridLeanSet<K>();
 

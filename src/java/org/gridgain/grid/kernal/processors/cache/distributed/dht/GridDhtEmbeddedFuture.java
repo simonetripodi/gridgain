@@ -23,9 +23,9 @@ import java.util.*;
  * Embedded DHT future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
-public class GridDhtEmbeddedFuture<K, A, B> extends GridEmbeddedFuture<A, B> implements GridDhtFuture<K, A> {
+public class GridDhtEmbeddedFuture<A, B> extends GridEmbeddedFuture<A, B> implements GridDhtFuture<A> {
     /** Retries. */
     @GridToStringInclude
     private Collection<Integer> invalidParts;

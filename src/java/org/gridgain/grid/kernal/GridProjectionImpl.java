@@ -18,7 +18,7 @@ import java.util.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridProjectionImpl extends GridProjectionAdapter implements Externalizable {
     /** Type alias. */
@@ -186,6 +186,8 @@ public class GridProjectionImpl extends GridProjectionAdapter implements Externa
 
     /** {@inheritDoc} */
     @Override public boolean dynamic() {
+        lightCheck();
+
         return dynamic;
     }
 

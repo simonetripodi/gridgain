@@ -50,6 +50,7 @@ public class GridDhtPartitionExchangeId implements Comparable<GridDhtPartitionEx
         assert order > 0;
         assert timestamp > 0;
         assert evt == EVT_NODE_LEFT || evt == EVT_NODE_FAILED || evt == EVT_NODE_JOINED;
+        assert evt != EVT_NODE_JOINED || lastJoinOrder == order;
 
         this.nodeId = nodeId;
         this.evt = evt;

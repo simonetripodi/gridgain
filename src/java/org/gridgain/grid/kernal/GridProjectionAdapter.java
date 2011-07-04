@@ -28,10 +28,10 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
-    /** */
+    /** Empty rich node predicate array. */
     private static final GridPredicate<GridRichNode>[] EMPTY_PN = new PN[] {};
 
     /** */
@@ -94,6 +94,15 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         assert ctx != null;
 
         ctx.gateway().readUnlock();
+    }
+
+    /**
+     * <tt>ctx.gateway().lightCheck()</tt>
+     */
+    protected void lightCheck() {
+        assert ctx != null;
+
+        ctx.gateway().lightCheck();
     }
 
     /**
@@ -457,7 +466,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                 c.addAll(p.nodes());
 
             // New static projection.
-            return new GridProjectionImpl(this, ctx, c);
+            return newProjection(c);
         }
         else
             // New dynamic projection.
@@ -505,7 +514,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                 U.warn(log, "Creating projection with daemon node. Likely a misuse.");
 
             // Maintain dynamic/static static of the projection.
-            return !dynamic() ? new GridProjectionImpl(this, ctx, F.retain(nodes(), true, nodes)) :
+            return !dynamic() ? newProjection(F.retain(nodes(), true, nodes)) :
                 new GridProjectionImpl(this, ctx, F.and(predicate(),
                     new GridNodePredicate<GridRichNode>(F.nodeIds(nodes))));
         }
@@ -526,8 +535,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
             else {
                 GridPair<Collection<GridRichNode>> pair = F.split(nodes(), p);
 
-                return F.<GridProjection>pair(new GridProjectionImpl(this, ctx, pair.get1()),
-                    new GridProjectionImpl(this, ctx, pair.get2()));
+                return F.pair(newProjection(pair.get1()), newProjection(pair.get2()));
             }
         }
         finally {
@@ -572,9 +580,8 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                 U.warn(log, "Creating projection with daemon node. Likely a misuse.");
 
             // Maintain dynamic/static static of the projection.
-            return !dynamic() ? new GridProjectionImpl(this, ctx, F.retain(nodes(), true, F.<GridNode>nodeForNodeIds(ids))) :
-                new GridProjectionImpl(this, ctx, F.and(predicate(),
-                    new GridNodePredicate<GridRichNode>(ids)));
+            return !dynamic() ? newProjection(F.retain(nodes(), true, F.<GridNode>nodeForNodeIds(ids))) :
+                new GridProjectionImpl(this, ctx, F.and(predicate(), new GridNodePredicate<GridRichNode>(ids)));
         }
         finally {
             unguard();
@@ -602,7 +609,7 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                     c.retainAll(p.nodes());
 
                 // New static projection.
-                return new GridProjectionImpl(this, ctx, c);
+                return newProjection(c);
             }
             else
                 // New dynamic projection.
@@ -695,15 +702,29 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
                 Collection<GridProjection> neighborhood = new ArrayList<GridProjection>(map.size());
 
                 for (Collection<GridRichNode> neighbors : map.values())
-                    // Single element projection gets short circuit to its single rich node.
-                    neighborhood.add(neighbors.size() == 1 ? F.first(neighbors) :
-                        new GridProjectionImpl(this, ctx, neighbors));
+                    neighborhood.add(newProjection(neighbors));
 
                 return neighborhood;
             }
         }
         finally {
             unguard();
+        }
+    }
+
+    /**
+     * Utility method that creates new grid projection with necessary short0circuit logic.
+     *
+     * @param nodes Nodes to create projection with.
+     * @return Newly created projection.
+     */
+    protected GridProjection newProjection(Collection<GridRichNode> nodes) {
+        assert nodes != null;
+
+        switch (nodes.size()) {
+            case 0: return new GridProjectionImpl(this, ctx, Collections.<GridRichNode>emptyList());
+            case 1: return F.first(nodes);
+            default: return new GridProjectionImpl(this, ctx, nodes);
         }
     }
 

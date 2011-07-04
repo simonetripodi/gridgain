@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -219,7 +219,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                         assert exchId.isJoined();
 
                         try {
-                            GridDhtLocalPartition<K, V> locPart = localPartition(p, true);
+                            GridDhtLocalPartition<K, V> locPart = localPartition(p, lastJoinVer, true);
 
                             assert locPart != null;
 
@@ -246,7 +246,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                                 try {
                                     // This will make sure that all non-existing partitions
                                     // will be created in MOVING state.
-                                    GridDhtLocalPartition<K, V> locPart = localPartition(p, true);
+                                    GridDhtLocalPartition<K, V> locPart = localPartition(p, lastJoinVer, true);
 
                                     updateLocal(p, loc.id(), locPart.state(), updateSeq);
                                 }
@@ -257,7 +257,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                                 }
                             }
                             else {
-                                GridDhtLocalPartition<K, V> locPart = localPartition(p, false);
+                                GridDhtLocalPartition<K, V> locPart = localPartition(p, -1, false);
 
                                 if (locPart != null) {
                                     GridDhtPartitionState state = locPart.state();
@@ -278,7 +278,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                         // so local map will be sent correctly during exchange.
                         else if (cctx.belongs(p, loc, allNodes)) {
                             try {
-                                localPartition(p, true);
+                                localPartition(p, lastJoinVer, true);
                             }
                             catch (GridDhtInvalidPartitionException e) {
                                 if (log.isDebugEnabled())
@@ -293,7 +293,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                 // If preloader is disabled, then we simply clear out
                 // the partitions this node is not responsible for.
                 for (int p = 0; p < num; p++) {
-                    GridDhtLocalPartition<K, V> locPart = localPartition(p, false);
+                    GridDhtLocalPartition<K, V> locPart = localPartition(p, -1, false);
 
                     boolean belongs = cctx.belongs(p, loc, allNodes);
 
@@ -315,7 +315,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                     else if (belongs) {
                         try {
                             // Pre-create partitions.
-                            localPartition(p, true);
+                            localPartition(p, lastJoinVer, true);
                         }
                         catch (GridDhtInvalidPartitionException e) {
                             if (log.isDebugEnabled())
@@ -366,7 +366,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
             for (int p = 0; p < num; p++) {
                 if (cctx.belongs(p, loc, allNodes)) {
-                    GridDhtLocalPartition<K, V> locPart = localPartition(p, false);
+                    GridDhtLocalPartition<K, V> locPart = localPartition(p, -1, false);
 
                     // This partition will be created during next topology event,
                     // which obviously has not happened at this point.
@@ -414,10 +414,10 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
-    @Override @Nullable public GridDhtLocalPartition<K, V> localPartition(int p, boolean create)
+    @Override @Nullable public GridDhtLocalPartition<K, V> localPartition(int p, long topVer, boolean create)
         throws GridDhtInvalidPartitionException {
         while (true) {
-            boolean belongs = cctx.belongs(p, cctx.localNode());
+            boolean belongs = cctx.belongs(p, topVer, cctx.localNode());
 
             GridDhtLocalPartition<K, V> loc = locParts.get(p);
 
@@ -427,15 +427,17 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                 if (!create)
                     return null;
 
-                if (!belongs)
-                    throw new GridDhtInvalidPartitionException(p, "Adding entry to evicted partition: " + p);
+                if (!belongs && topVer < 0)
+                    throw new GridDhtInvalidPartitionException(p, "Adding entry to evicted partition [part=" + p +
+                        ", topVer=" + topVer + ", lastJoinVer=" + lastJoinVer + ']');
 
                 continue;
             }
 
             if (loc == null && create) {
-                if (!belongs)
-                    throw new GridDhtInvalidPartitionException(p, "Creating partition which does not belong: " + p);
+                if (!belongs && topVer < 0)
+                    throw new GridDhtInvalidPartitionException(p, "Creating partition which does not belong [part=" +
+                        p + ", topVer=" + topVer + ", lastJoinVer=" + lastJoinVer + ']');
 
                 GridDhtLocalPartition<K, V> old = locParts.putIfAbsent(p,
                     loc = new GridDhtLocalPartition<K, V>(cctx, p));
@@ -452,7 +454,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
     /** {@inheritDoc} */
     @Override public GridDhtLocalPartition<K, V> localPartition(K key, boolean create) {
-        return localPartition(cctx.partition(key), create);
+        return localPartition(cctx.partition(key), -1, create);
     }
 
     /** {@inheritDoc} */
@@ -461,7 +463,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
-    @Override public GridDhtLocalPartition<K, V> onAdded(GridDhtCacheEntry<K, V> e) {
+    @Override public GridDhtLocalPartition<K, V> onAdded(long topVer, GridDhtCacheEntry<K, V> e) {
         /*
          * Make sure not to acquire any locks here as this method
          * may be called from sensitive synchronization blocks.
@@ -470,7 +472,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
         int p = cctx.partition(e.key());
 
-        GridDhtLocalPartition<K, V> loc = localPartition(p, true);
+        GridDhtLocalPartition<K, V> loc = localPartition(p, topVer, true);
 
         assert loc != null;
 
@@ -513,7 +515,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
     /** {@inheritDoc} */
     @Override public List<GridNode> nodes(int p) {
-        Collection<UUID> affIds = F.viewReadOnly(cctx.affinity(p, CU.allNodes(cctx)), F.node2id());
+        Collection<UUID> affIds = F.viewReadOnly(cctx.affinity(p, CU.allNodes(cctx, lastJoinVer)), F.node2id());
 
         lock.readLock().lock();
 
@@ -809,8 +811,6 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
                 if (!affNodes.contains(cctx.localNode())) {
                     Collection<UUID> nodeIds = F.view(part2node.get(p), withState(p, OWNING));
 
-                    for (UUID id : nodeIds)
-                        assert id != null;
                     // If all affinity nodes are owners, then evict partition from local node.
                     if (nodeIds.containsAll(F.nodeIds(affNodes))) {
                         part.rent();

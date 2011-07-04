@@ -69,7 +69,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1440,7 +1440,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.24062011
+     * @version 3.1.1c.03072011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -4580,7 +4580,7 @@ public abstract class GridUtils {
      */
     public static String toShortString(GridNode n) {
         return "GridNode [id=" + n.id() + ", intAddr=" + n.internalAddresses() + ", extAddr=" +
-            n.externalAddresses() + ']';
+            n.externalAddresses() + ", daemon=" + ("true".equalsIgnoreCase(n.<String>attribute(ATTR_DAEMON))) + ']';
     }
 
     /**
@@ -5323,7 +5323,7 @@ public abstract class GridUtils {
      * @param str Original string.
      * @return Escaped string (if supported).
      */
-    public static String bright(@Nullable String str) {
+    @Nullable public static String bright(@Nullable String str) {
         if (F.isEmpty(str))
             return str;
 
@@ -5343,7 +5343,7 @@ public abstract class GridUtils {
      * @param str Original string.
      * @return Escaped string (if supported).
      */
-    public static String dim(@Nullable String str) {
+    @Nullable public static String dim(@Nullable String str) {
         if (F.isEmpty(str))
             return str;
 
@@ -5358,5 +5358,12 @@ public abstract class GridUtils {
      */
     private static boolean isAnsiEscape() {
         return System.getProperty("GRIDGAIN_SCRIPT") != null && (isUnix() || isLinux() || isMacOs());
+    }
+
+    /**
+     * @return {@code line.separator} system property.
+     */
+    public static String newLine() {
+        return NL;
     }
 }

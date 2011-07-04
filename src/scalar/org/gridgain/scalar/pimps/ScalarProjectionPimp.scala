@@ -22,7 +22,7 @@ import scalaz._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 object ScalarProjectionPimp {
     /**
@@ -62,7 +62,7 @@ object ScalarProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
     with Iterable[GridRichNode]
@@ -211,9 +211,8 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
         @Nullable p: NodeFilter*): Seq[R] = {
         assert(dflt != null)
 
-        try {
+        try
             call$(mode, s, p: _*)
-        }
         catch {
             case _: GridEmptyProjectionException => dflt()
         }
@@ -267,9 +266,8 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
         @Nullable p: NodeFilter*): Seq[R] = {
         assert(dflt != null)
 
-        try {
+        try
             call$(mode, Seq(s), p: _*)
-        }
         catch {
             case _: GridEmptyProjectionException => dflt()
         }
@@ -603,9 +601,8 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
         dflt: () => R2, @Nullable p: NodeFilter*): R2 = {
         assert(dflt != null)
 
-        try {
+        try
             reduceAsync$(mode, s, r, p: _*).get
-        }
         catch {
             case _: GridEmptyProjectionException => dflt()
         }
@@ -689,9 +686,8 @@ class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
         @Nullable s: Seq[Call[R1]], @Nullable r: Seq[R1] => R2, dflt: () => R2, @Nullable p: NodeFilter*): R2 = {
         assert(dflt != null)
 
-        try {
+        try
             mapreduce$(m, s, r, p: _*)
-        }
         catch {
             case _: GridEmptyProjectionException => dflt()
         }

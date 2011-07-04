@@ -39,12 +39,14 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridRichNode extends GridProjection, GridNode, Comparable<GridRichNode>,
     GridTypedProduct<GridRichNode> {
     /**
      * Gets the projection on all nodes that reside on the same physical computer as this node.
+     * This node is <b>excluded</b>. Note that this method returns an empty projection when this node
+     * is the only node on its host.
      * <p>
      * Detection of the same physical computer is based on comparing set of network interface MACs.
      * If two nodes have the same set of MACs, GridGain considers these nodes running on the same
@@ -57,13 +59,50 @@ public interface GridRichNode extends GridProjection, GridNode, Comparable<GridR
      * in reduced performance comparing to a no-neighboring split.
      *
      * @return Project containing all nodes that reside on the same physical computer as this
-     *      node (including it). This method never returns {@code null}.
-     * @see GridProjection#neighborhood()
+     *      node (excluding this node). This method never returns {@code null} but may return an
+     *      empty projection.
+     * @see #neighborhood()
+     * @see #neighborsAndMe()
      */
     public GridProjection neighbors();
 
     /**
-     * Gets the original grid node wrapped by this rich interface.
+     * Gets the projection on all nodes that reside on the same physical computer as this node.
+     * This node is <b>included</b>. Note that this method will never returns an empty projection.
+     * <p>
+     * Detection of the same physical computer is based on comparing set of network interface MACs.
+     * If two nodes have the same set of MACs, GridGain considers these nodes running on the same
+     * physical computer. Note that this same logic is used in license management.
+     * <p>
+     * Knowing your neighbors can be very important when performing a dynamic split since nodes on the
+     * same computer will often bypass network when communicating with each other leading to much better
+     * performance for certain use cases. Conversely, one would like to avoid loading the nodes
+     * from the same physical computer with tasks as these nodes share CPU and memory between them resulting
+     * in reduced performance comparing to a no-neighboring split.
+     *
+     * @return Project containing all nodes that reside on the same physical computer as this
+     *      node (including this node). This method never returns {@code null} or an
+     *      empty projection.
+     * @see #neighborhood()
+     * @see #neighbors()
+     */
+    public GridProjection neighborsAndMe();
+
+    /**
+     * Gets projection of all other nodes in the grid excluding this node.
+     * This method returns an empty projection when this is the only node in the topology.
+     *
+     * @param p Optional filtering predicate. Only nodes that evaluate to <code>true</code>
+     *      or all given predicate will be included into resulting projection.
+     * @return Projection of all other nodes in the grid excluding this node. This method never
+     *      returns {@code null} but returns an empty projection when this is the only node in
+     *      the topology.
+     */
+    public GridProjection others(@Nullable GridPredicate<? super GridRichNode>... p);
+
+    /**
+     * Gets the original grid node wrapped by this rich interface. This should almost never
+     * be used in application code and exist only for internal purposes.
      *
      * @return Original grid node.
      */
@@ -87,6 +126,8 @@ public interface GridRichNode extends GridProjection, GridNode, Comparable<GridR
      * is build on GridGain and needs to participate in the topology but should be
      * excluded from "normal" topology so that it won't participate in task execution
      * or data grid.
+     * <p>
+     * Application code should never use daemon nodes.
      *  
      * @return {@code True} if this node is a daemon, {@code false} otherwise.
      */

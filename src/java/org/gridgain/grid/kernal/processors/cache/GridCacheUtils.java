@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -863,7 +863,7 @@ public abstract class GridCacheUtils {
      * @return Remote nodes on which cache with the same name is started.
      */
     public static Collection<GridRichNode> remoteNodes(final GridCacheContext ctx) {
-        return GridFunc.viewReadOnly(ctx.discovery().remoteNodes(), ctx.rich().richNode(), new P1<GridNode>() {
+        return F.viewReadOnly(ctx.discovery().remoteNodes(), ctx.rich().richNode(), new P1<GridNode>() {
             @Override public boolean apply(GridNode node) {
                 return cacheNode(ctx, node);
             }
@@ -1099,7 +1099,7 @@ public abstract class GridCacheUtils {
     public static GridRichNode primary0(Iterable<GridRichNode> nodes) {
         GridRichNode n = F.first(nodes);
 
-        assert n != null;
+        assert n != null : "Primary node is null for nodes: " + nodes;
 
         return n;
     }

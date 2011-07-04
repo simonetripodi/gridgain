@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
@@ -47,18 +47,20 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
 
     /**
      * @param ctx Cache context.
+     * @param topVer Topology version at the time of creation (if negative, then latest topology is assumed).
      * @param key Cache key.
      * @param hash Key hash value.
      * @param val Entry value.
      * @param next Next entry in the linked list.
      * @param ttl Time to live.
      */
-    public GridDhtCacheEntry(GridCacheContext<K, V> ctx, K key, int hash, V val, GridCacheMapEntry<K, V> next,
+    public GridDhtCacheEntry(GridCacheContext<K, V> ctx, long topVer, K key, int hash, V val,
+        GridCacheMapEntry<K, V> next,
         long ttl) {
         super(ctx, key, hash, val, next, ttl);
 
         // Record this entry with partition.
-        locPart = ctx.dht().topology().onAdded(this);
+        locPart = ctx.dht().topology().onAdded(topVer, this);
     }
 
     /** {@inheritDoc} */

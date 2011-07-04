@@ -21,9 +21,24 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
+    /**
+     * @return Last recorded topology version.
+     */
+    public long topologyVersion();
+
+    /**
+     * Attempts to set topology version and returns the current value.
+     * If topology version was previously set, then it's value will
+     * be returned (but not updated).
+     *
+     * @param topVer Topology version.
+     * @return Recorded topology version.
+     */
+    public long topologyVersion(long topVer);
+
     /**
      * @return {@code True} if transaction is empty.
      */

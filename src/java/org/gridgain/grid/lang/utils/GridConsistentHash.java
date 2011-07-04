@@ -28,7 +28,7 @@ import java.util.concurrent.locks.*;
  * <a href="http://weblogs.java.net/blog/tomwhite/archive/2007/11/consistent_hash.html">Tom White's Blog</a>.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridConsistentHash<N> implements Serializable {
     /**
@@ -247,8 +247,8 @@ public class GridConsistentHash<N> implements Serializable {
     /** Read/write lock. */
     private final ReadWriteLock rw = new ReentrantReadWriteLock();
 
-    /** Number of distinct nodes in the hash. */
-    private int nodeCnt;
+    /** Disctinct nodes in the hash. */
+    private Collection<N> nodes = new HashSet<N>();
 
     /**
      * Constructs consistent hash using empty affinity seed and {@code MD5} hasher function.
@@ -325,7 +325,7 @@ public class GridConsistentHash<N> implements Serializable {
         if (node == null) {
             return false;
         }
-        
+
         long seed = affSeed.hashCode() * 31 + hash(node);
 
         rw.writeLock().lock();
@@ -341,7 +341,7 @@ public class GridConsistentHash<N> implements Serializable {
 
                     added = true;
                 }
-                    
+
                 for (int i = 1; i <= replicas; i++) {
                     seed = seed * affSeed.hashCode() + i;
 
@@ -355,7 +355,7 @@ public class GridConsistentHash<N> implements Serializable {
                 }
 
                 if (added) {
-                    nodeCnt++;
+                    nodes.add(node);
                 }
 
                 return added;
@@ -382,7 +382,7 @@ public class GridConsistentHash<N> implements Serializable {
         assert nodes != null;
 
         Collection<N> rmv = new LinkedList<N>();
-        
+
         rw.writeLock().lock();
 
         try {
@@ -395,7 +395,7 @@ public class GridConsistentHash<N> implements Serializable {
                     if (!rmv.contains(n)) {
                         rmv.add(n);
 
-                        nodeCnt--;
+                        nodes.remove(n);
                     }
                 }
             }
@@ -433,7 +433,7 @@ public class GridConsistentHash<N> implements Serializable {
             }
 
             if (rmv) {
-                nodeCnt--;
+                nodes.remove(node);
 
                 return true;
             }
@@ -468,7 +468,7 @@ public class GridConsistentHash<N> implements Serializable {
         rw.readLock().lock();
 
         try {
-            return nodeCnt;
+            return nodes.size();
         }
         finally {
             rw.readLock().unlock();
@@ -509,7 +509,7 @@ public class GridConsistentHash<N> implements Serializable {
         rw.readLock().lock();
 
         try {
-            return new HashSet<N>(circle.values());
+            return new HashSet<N>(nodes);
         }
         finally {
             rw.readLock().unlock();
@@ -603,9 +603,8 @@ public class GridConsistentHash<N> implements Serializable {
         rw.readLock().lock();
 
         try {
-            if (circle.isEmpty()) {
+            if (circle.isEmpty())
                 return null;
-            }
 
             SortedMap<Integer, N> tailMap = circle.tailMap(hash);
 
@@ -614,26 +613,43 @@ public class GridConsistentHash<N> implements Serializable {
             // Move clock-wise starting from selected position.
             int idx = 0;
 
+            Set<N> failed = null;
+
             for (N n : tailMap.values()) {
-                if (apply(p, n)) {
+                if (apply(p, n))
                     return n;
+                else {
+                    if (failed == null)
+                        failed = new GridLeanSet<N>();
+
+                    failed.add(n);
+
+                    if (failed.size() == nodes.size())
+                        return null;
                 }
 
-                if (++idx >= size) {
+
+                if (++idx >= size)
                     break;
-                }
             }
 
             if (idx < size) {
                 // Wrap around moving clock-wise.
                 for (N n : circle.values()) {
-                    if (apply(p, n)) {
+                    if (apply(p, n))
                         return n;
+                    else {
+                        if (failed == null)
+                            failed = new GridLeanSet<N>();
+
+                        failed.add(n);
+
+                        if (failed.size() == nodes.size())
+                            return null;
                     }
 
-                    if (++idx >= size) {
+                    if (++idx >= size)
                         break;
-                    }
                 }
             }
 
@@ -685,7 +701,7 @@ public class GridConsistentHash<N> implements Serializable {
     public List<N> nodes(@Nullable Object key, int cnt, @Nullable final Collection<N> inc,
         @Nullable final Collection<N> exc) {
         A.ensure(cnt >= 0, "cnt >= 0");
-        
+
         if (cnt == 0) {
             return Collections.emptyList();
         }
@@ -740,26 +756,46 @@ public class GridConsistentHash<N> implements Serializable {
             // Move clock-wise starting from selected position.
             int idx = 0;
 
+            Set<N> failed = null;
+
             for (N n : tailMap.values()) {
-                if (!ret.contains(n) && apply(p, n)) {
-                    ret.add(n);
+                if (!ret.contains(n)) {
+                    if (apply(p, n))
+                        ret.add(n);
+                    else {
+                        if (failed == null)
+                            failed = new GridLeanSet<N>();
+
+                        failed.add(n);
+
+                        if (failed.size() + ret.size() == nodes.size())
+                            return ret;
+                    }
                 }
 
-                if (++idx >= size || ret.size() == cnt) {
+                if (++idx >= size || ret.size() == cnt)
                     break;
-                }
             }
 
             if (idx < size && ret.size() < cnt) {
                 // Wrap around moving clock-wise.
                 for (N n : circle.values()) {
-                    if (!ret.contains(n) && apply(p, n)) {
-                        ret.add(n);
+                    if (!ret.contains(n)) {
+                        if (apply(p, n))
+                            ret.add(n);
+                        else {
+                            if (failed == null)
+                                failed = new GridLeanSet<N>();
+
+                            failed.add(n);
+
+                            if (failed.size() + ret.size() == nodes.size())
+                                return ret;
+                        }
                     }
 
-                    if (++idx >= size || ret.size() == cnt) {
+                    if (++idx >= size || ret.size() == cnt)
                         break;
-                    }
                 }
             }
 
@@ -807,7 +843,7 @@ public class GridConsistentHash<N> implements Serializable {
         }
 
         assert nodes != null;
-        
+
         N n = node(key);
 
         return n != null && nodes.contains(n);
@@ -843,7 +879,7 @@ public class GridConsistentHash<N> implements Serializable {
         }
 
         assert nodes != null;
-        
+
         return nodes.containsAll(nodes(key, cnt));
     }
 

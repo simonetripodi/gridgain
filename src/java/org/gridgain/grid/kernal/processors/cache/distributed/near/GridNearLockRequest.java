@@ -26,9 +26,12 @@ import java.util.*;
  * Near cache lock request.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridNearLockRequest<K, V> extends GridDistributedLockRequest<K, V> {
+    /** Topology version. */
+    private long topVer;
+
     /** Mini future ID. */
     private GridUuid miniId;
 
@@ -59,6 +62,7 @@ public class GridNearLockRequest<K, V> extends GridDistributedLockRequest<K, V> 
     }
 
     /**
+     * @param topVer Topology version.
      * @param nodeId Node ID.
      * @param threadId Thread ID.
      * @param futId Future ID.
@@ -73,16 +77,26 @@ public class GridNearLockRequest<K, V> extends GridDistributedLockRequest<K, V> 
      * @param syncRollback Synchronous rollback flag.
      * @param keyCnt Number of keys.
      */
-    public GridNearLockRequest(UUID nodeId, long threadId, GridUuid futId, GridCacheVersion lockVer,
+    public GridNearLockRequest(long topVer, UUID nodeId, long threadId, GridUuid futId, GridCacheVersion lockVer,
         boolean isInTx, boolean implicitTx, boolean isRead, GridCacheTxIsolation isolation, boolean isInvalidate,
         long timeout, boolean syncCommit, boolean syncRollback, int keyCnt) {
         super(nodeId, threadId, futId, lockVer, isInTx, isRead, isolation, isInvalidate, timeout, keyCnt);
 
+        assert topVer > 0;
+
+        this.topVer = topVer;
         this.implicitTx = implicitTx;
         this.syncCommit = syncCommit;
         this.syncRollback = syncRollback;
 
         dhtVers = new GridCacheVersion[keyCnt];
+    }
+
+    /**
+     * @return Topology version.
+     */
+    public long topologyVersion() {
+        return topVer;
     }
 
     /**
@@ -186,6 +200,7 @@ public class GridNearLockRequest<K, V> extends GridDistributedLockRequest<K, V> 
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
 
+        out.writeLong(topVer);
         out.writeBoolean(implicitTx);
         out.writeBoolean(syncCommit);
         out.writeBoolean(syncRollback);
@@ -202,6 +217,7 @@ public class GridNearLockRequest<K, V> extends GridDistributedLockRequest<K, V> 
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
+        topVer = in.readLong();
         implicitTx = in.readBoolean();
         syncCommit = in.readBoolean();
         syncRollback = in.readBoolean();

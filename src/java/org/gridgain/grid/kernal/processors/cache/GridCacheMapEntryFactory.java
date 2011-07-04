@@ -13,11 +13,11 @@ package org.gridgain.grid.kernal.processors.cache;
  * Factory for cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridCacheMapEntryFactory<K, V> {
     /**
-     * @param reg Cache registry.
+     * @param ctx Cache registry.
      * @param key Cache key.
      * @param hash Key hash value.
      * @param val Entry value.
@@ -25,6 +25,6 @@ public interface GridCacheMapEntryFactory<K, V> {
      * @param ttl Time to live.
      * @return New cache entry.
      */
-    public GridCacheMapEntry<K, V> create(GridCacheContext<K, V> reg, K key, int hash, V val,
+    public GridCacheMapEntry<K, V> create(GridCacheContext<K, V> ctx, long topVer, K key, int hash, V val,
         GridCacheMapEntry<K, V> next, long ttl);
 }

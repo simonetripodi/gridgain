@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -449,6 +449,21 @@ public class GridCacheContext<K, V> implements Externalizable {
      */
     public boolean belongs(int part, GridRichNode node) {
         return belongs(part, node, CU.allNodes(this));
+    }
+
+    /**
+     * @param part Partition number to check.
+     * @param topVer Topology version.
+     * @param node Node.
+     * @return {@code true} if given partition belongs to specified node.
+     */
+    public boolean belongs(int part, long topVer, GridRichNode node) {
+        assert topVer != 0;
+
+        if (topVer < 0)
+            return belongs(part, node);
+
+        return belongs(part, node, CU.allNodes(this, topVer));
     }
 
     /**
@@ -961,14 +976,6 @@ public class GridCacheContext<K, V> implements Externalizable {
     }
 
     /**
-     * @param key Key.
-     * @return Nodes for the key.
-     */
-    public Collection<GridRichNode> allNodes(K key) {
-        return cacheCfg.getAffinity().nodes(partition(key), CU.allNodes(this));
-    }
-
-    /**
      * @param keys keys.
      * @return Nodes for the keys.
      */
@@ -1420,17 +1427,17 @@ public class GridCacheContext<K, V> implements Externalizable {
      * Waits for partition locks and transactions release.
      *
      * @param parts Partitions.
-     * @param exclId Exclude ID.
+     * @param topVer Topology version.
      * @return {@code true} if waiting was successful.
      */
     @SuppressWarnings({"unchecked"})
-    public GridFuture<?> partitionReleaseFuture(Collection<Integer> parts, UUID exclId) {
+    public GridFuture<?> partitionReleaseFuture(Collection<Integer> parts, long topVer) {
         assert parts != null;
 
         if (parts.isEmpty() || !isDht())
             return new GridFinishedFuture<Object>(kernalContext());
 
-        return dht().near().context().mvcc().finishPartitions(parts, exclId);
+        return dht().near().context().mvcc().finishPartitions(parts, topVer);
     }
 
     /**

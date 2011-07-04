@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Future for exchanging partition maps.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
@@ -287,6 +287,13 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
     }
 
     /**
+     * @return Last join order.
+     */
+    long lastJoinOrder() {
+        return exchId.lastJoinOrder();
+    }
+
+    /**
      * @return Discovery event type.
      */
     int event() {
@@ -363,6 +370,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                 // then transactions handled by it will be either remapped
                 // or invalidated.
                 if (exchId.isJoined()) {
+                    assert exchId.order() == exchId.lastJoinOrder() : "Order does not match join order: " + exchId;
+
                     GridNode node = cctx.node(exchId.nodeId());
 
                     if (node == null) {
@@ -376,17 +385,18 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                     Set<Integer> parts = cctx.primaryPartitions(node, null);
 
-                    GridFuture<?> partReleaseFut = cctx.partitionReleaseFuture(parts, exchId.nodeId());
+                    GridFuture<?> partReleaseFut = cctx.partitionReleaseFuture(parts, exchId.order());
 
+                    // Assign to class variable so it will be included into toString() method.
                     this.partReleaseFut = partReleaseFut;
 
-                    U.debug(log, "BEGINNING TO WAIT ON PART RELEASE FUTURE [partReleaseFut=" + partReleaseFut + ", " +
-                        ", exchId=" + exchId + ']');
+                    if (log.isDebugEnabled())
+                        log.debug("Before waiting for partition release future: " + this);
 
                     partReleaseFut.get();
 
-                    U.debug(log, "FINISHED WAITING ON PART RELEASE FUTURE [partReleaseFut=" + partReleaseFut + ", " +
-                        ", exchId=" + exchId + ']');
+                    if (log.isDebugEnabled())
+                        log.debug("After waiting for partition release future: " + this);
                 }
 
                 top.beforeExchange(exchId);
@@ -571,6 +581,8 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                     GridNode loc = cctx.localNode();
 
+                    msgs.put(nodeId, msg);
+
                     boolean match = true;
 
                     // Check if oldest node has changed.
@@ -579,9 +591,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
 
                         synchronized (mux) {
                             // Double check.
-                            if (!oldestRef.get().equals(loc))
-                                msgs.put(nodeId, msg);
-                            else
+                            if (oldestRef.get().equals(loc))
                                 match = true;
                         }
                     }

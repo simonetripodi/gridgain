@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Cache query index. Manages full life-cycle of query index database (h2).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public class GridCacheQueryIndex<K, V> {
@@ -81,7 +81,7 @@ public class GridCacheQueryIndex<K, V> {
     private final GridLogger log;
 
     /** Busy lock. */
-    private final ReadWriteLock busyLock = new ReentrantReadWriteLock();
+    private final GridBusyLock busyLock = new GridBusyLock();
 
     /** {@code True} if db schema is already created. */
     private final AtomicBoolean schemaCreated = new AtomicBoolean();
@@ -153,7 +153,7 @@ public class GridCacheQueryIndex<K, V> {
         }
 
         @Nullable @Override protected ConnectionWrapper initialValue() {
-            if (!enterBusy())
+            if (!busyLock.enterBusy())
                 return null;
 
             Connection c = null;
@@ -177,7 +177,7 @@ public class GridCacheQueryIndex<K, V> {
                 return null;
             }
             finally {
-                leaveBusy();
+                busyLock.leaveBusy();
             }
         }
     };
@@ -221,27 +221,6 @@ public class GridCacheQueryIndex<K, V> {
         this.cctx = cctx;
 
         log = cctx.logger(getClass());
-    }
-
-    /**
-     * Enters to busy state.
-     *
-     * @return {@code true} if entered to busy state.
-     */
-    protected boolean enterBusy() {
-        boolean entered = busyLock.readLock().tryLock();
-
-        if (!entered && log.isDebugEnabled())
-            log.debug("Failed to enter to busy state since query index is stopping.");
-
-        return entered;
-    }
-
-    /**
-     * Release read lock for queries execution.
-     */
-    protected void leaveBusy() {
-        busyLock.readLock().unlock();
     }
 
     /**
@@ -343,12 +322,13 @@ public class GridCacheQueryIndex<K, V> {
     /**
      *
      */
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"}) void stop() {
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
+    void stop() {
         if (log.isDebugEnabled())
             log.debug("Stopping cache query index...");
 
         // Acquire busy lock so that any new activity could not be started.
-        busyLock.writeLock().lock();
+        busyLock.block();
 
         U.interrupt(analyzeThread);
 
@@ -367,8 +347,27 @@ public class GridCacheQueryIndex<K, V> {
                 }
 
             if (wasIdx) {
+                for (SqlStatementCache cache : stmtCaches)
+                    cache.close(log);
+
+                stmtCaches.clear();
+
                 try {
                     Connection conn = connectionForThread(false);
+
+                    try {
+                        FullText.dropAll(conn);
+                    }
+                    catch (SQLException e) {
+                        U.error(log, "Failed to drop H2 fulltext indexes.", e);
+                    }
+
+                    try {
+                        FullTextLucene.dropAll(conn);
+                    }
+                    catch (SQLException e) {
+                        U.error(log, "Failed to drop H2 lucene indexes.", e);
+                    }
 
                     if (conn != null) {
                         Statement stmt = null;
@@ -376,7 +375,8 @@ public class GridCacheQueryIndex<K, V> {
                         try {
                             stmt = conn.createStatement();
 
-                            stmt.execute("shutdown");
+                            stmt.execute("DROP ALL OBJECTS DELETE FILES");
+                            stmt.execute("SHUTDOWN");
                         }
                         catch (SQLException e) {
                             U.error(log, "Failed to shutdown database.", e);
@@ -389,11 +389,6 @@ public class GridCacheQueryIndex<K, V> {
                 catch (GridException e) {
                     U.error(log, "Failed to receive connection to shutdown database.", e);
                 }
-
-                for (SqlStatementCache cache : stmtCaches)
-                    cache.close(log);
-
-                stmtCaches.clear();
 
                 for (Connection conn : conns)
                     U.close(conn, log);
@@ -411,6 +406,20 @@ public class GridCacheQueryIndex<K, V> {
 
         if (log.isDebugEnabled())
             log.debug("Cache query index stopped [grid=" + cctx.gridName() + "]");
+    }
+
+    /**
+     *
+     */
+    private void cleanupIndex() {
+        if (cctx.config().isIndexCleanup() && folder != null && folder.exists()) {
+            if (U.delete(folder)) {
+                if (log.isDebugEnabled())
+                    log.debug("Deleted cache query index folder: " + folder);
+            }
+            else
+                U.warn(log, "Failed to delete cache query index folder: " + folder);
+        }
     }
 
     /**
@@ -543,20 +552,6 @@ public class GridCacheQueryIndex<K, V> {
                 "system property (either set GRIDGAIN_HOME or define temporary directory system property).");
 
         return tmpDir;
-    }
-
-    /**
-     *
-     */
-    private void cleanupIndex() {
-        if (cctx.config().isIndexCleanup() && folder != null && folder.exists()) {
-            if (U.delete(folder)) {
-                if (log.isDebugEnabled())
-                    log.debug("Deleted cache query index folder: " + folder);
-            }
-            else
-                U.warn(log, "Failed to delete cache query index folder: " + folder);
-        }
     }
 
     /**
@@ -2608,7 +2603,7 @@ public class GridCacheQueryIndex<K, V> {
             while (!isCancelled()) {
                 Thread.sleep(cctx.config().getIndexAnalyzeFrequency());
 
-                if (!enterBusy())
+                if (!busyLock.enterBusy())
                     return;
 
                 try {
@@ -2620,7 +2615,7 @@ public class GridCacheQueryIndex<K, V> {
                     return;
                 }
                 finally {
-                    leaveBusy();
+                    busyLock.leaveBusy();
                 }
             }
         }

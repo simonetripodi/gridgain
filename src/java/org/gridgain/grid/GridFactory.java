@@ -132,7 +132,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridFactory {
     /**
@@ -375,7 +375,7 @@ public class GridFactory {
             grid = name == null ? dfltGrid : grids.get(name);
         }
 
-        if (grid != null) {
+        if (grid != null && grid.getState() == STARTED) {
             grid.stop(cancel, wait);
 
             boolean fireEvt;
@@ -1118,6 +1118,8 @@ public class GridFactory {
                     throw new GridException("Grid instance with this name has already been started: " + name);
 
                 grid = new GridNamedInstance(name);
+
+                grids.put(name, grid);
             }
 
             single = (grids.size() == 1 && dfltGrid == null) || (grids.isEmpty() && dfltGrid != null);
@@ -1126,35 +1128,21 @@ public class GridFactory {
         try {
             grid.start(cfg, single, ctx);
 
-            if (name != null) {
-                synchronized (mux) {
-                    if (grids.containsKey(name)) {
-                        // Attempt to stop this instance if another one
-                        // was already started with the same name before.
-                        grid.stop(true, false);
-
-                        throw new GridException("Grid instance with this name has already been started: " + name);
-                    }
-
-                    assert grid.getState() == STARTED;
-
-                    grids.put(name, grid);
-                }
-            }
+            assert grid.getState() == STARTED;
 
             notifyStateChange(name, STARTED);
         }
         finally {
-            if (grid.getState() != STARTED)
+            if (grid.getState() != STARTED) {
                 synchronized (mux) {
-                    grids.remove(name);
+                    if (name == null)
+                        dfltGrid = null;
+                    else
+                        grids.remove(name);
 
                     grid = null;
-
-                    if (name == null) {
-                        dfltGrid = null;
-                    }
                 }
+            }
         }
 
         if (grid == null)
@@ -1179,7 +1167,7 @@ public class GridFactory {
      */
     @Deprecated
     public static Grid getGrid() throws IllegalStateException {
-        return grid((String)null);
+        return grid();
     }
 
     /**
@@ -1207,17 +1195,7 @@ public class GridFactory {
      */
     @Deprecated
     public static List<Grid> getAllGrids() {
-        synchronized (mux) {
-            List<Grid> allGrids = new ArrayList<Grid>(grids.size() + (dfltGrid == null ? 0 : 1));
-
-            if (dfltGrid != null)
-                allGrids.add(dfltGrid.getGrid());
-
-            for (GridNamedInstance grid : grids.values())
-                allGrids.add(grid.getGrid());
-
-            return allGrids;
-        }
+        return allGrids();
     }
 
     /**
@@ -1229,16 +1207,12 @@ public class GridFactory {
         synchronized (mux) {
             List<Grid> allGrids = new ArrayList<Grid>(grids.size() + (dfltGrid == null ? 0 : 1));
 
-            if (dfltGrid != null)
+            if (dfltGrid != null && dfltGrid.getState() == STARTED)
                 allGrids.add(dfltGrid.getGrid());
 
             for (GridNamedInstance grid : grids.values()) {
-                if (grid != null) {
-                    Grid g = grid.getGrid();
-
-                    if (g != null)
-                        allGrids.add(g);
-                }
+                if (grid.getState() == STARTED)
+                    allGrids.add(grid.getGrid());
             }
 
             return allGrids;
@@ -1261,16 +1235,7 @@ public class GridFactory {
      */
     @Deprecated
     public static Grid getGrid(UUID localNodeId) throws IllegalStateException {
-        A.notNull(localNodeId, "localNodeId");
-
-        synchronized (mux) {
-            for (GridNamedInstance grid : grids.values())
-                if (grid.getGrid().getLocalNodeId().equals(localNodeId))
-                    return grid.getGrid();
-        }
-
-        throw new IllegalStateException("Grid instance with given local node ID was not properly " +
-            "started or was stopped: " + localNodeId);
+        return grid(localNodeId);
     }
 
     /**
@@ -1289,11 +1254,12 @@ public class GridFactory {
         A.notNull(localNodeId, "localNodeId");
 
         synchronized (mux) {
-            if (dfltGrid != null && dfltGrid.getGrid().getLocalNodeId().equals(localNodeId))
+            if (dfltGrid != null && dfltGrid.getState() == GridFactoryState.STARTED &&
+                dfltGrid.getGrid().getLocalNodeId().equals(localNodeId))
                 return dfltGrid.getGrid();
 
             for (GridNamedInstance grid : grids.values())
-                if (grid.getGrid().getLocalNodeId().equals(localNodeId))
+                if (grid.getState() == STARTED && grid.getGrid().getLocalNodeId().equals(localNodeId))
                     return grid.getGrid();
         }
 
@@ -1321,16 +1287,7 @@ public class GridFactory {
      */
     @Deprecated
     public static Grid getGrid(@Nullable String name) throws IllegalStateException {
-        GridNamedInstance grid;
-
-        synchronized (mux) {
-            grid = name == null ? dfltGrid : grids.get(name);
-        }
-
-        if (grid == null)
-            throw new IllegalStateException("Grid instance was not properly started or was already stopped: " + name);
-
-        return grid.getGrid();
+        return grid(name);
     }
 
     /**
@@ -1356,7 +1313,7 @@ public class GridFactory {
             grid = name == null ? dfltGrid : grids.get(name);
         }
 
-        if (grid == null)
+        if (grid == null || grid.getState() != STARTED)
             throw new IllegalStateException("Grid instance was not properly started or was already stopped: " + name);
 
         return grid.getGrid();
@@ -1420,7 +1377,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.24062011
+     * @version 3.1.1c.03072011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -2015,9 +1972,16 @@ public class GridFactory {
             }
 
             try {
+                grid.startListener(new CA() {
+                    @Override public void apply() {
+                        state = STARTED;
+                    }
+                });
+
                 grid.start(myCfg);
 
-                state = STARTED;
+                // State should have been changed in listener.
+                assert state == STARTED;
 
                 if (log.isDebugEnabled())
                     log.debug("Grid factory started ok.");
@@ -2327,7 +2291,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.24062011
+         * @version 3.1.1c.03072011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

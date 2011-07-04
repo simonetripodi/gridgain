@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridFunc {
     /** */
@@ -1717,9 +1717,8 @@ public class GridFunc {
             return ret;
         }
         else {
-            if (isEmpty(c)) {
+            if (isEmpty(c))
                 return Collections.singletonList(t);
-            }
 
             assert c != null;
 
@@ -1881,24 +1880,18 @@ public class GridFunc {
         if (!copy) {
             res = c;
 
-            if (!isEmpty(p) && !isAlwaysFalse(p)) {
-                for (Iterator<T> iter = res.iterator(); iter.hasNext();) {
-                    if (isAll(iter.next(), p)) {
+            if (!isEmpty(p) && !isAlwaysFalse(p))
+                for (Iterator<T> iter = res.iterator(); iter.hasNext();)
+                    if (isAll(iter.next(), p))
                         iter.remove();
-                    }
-                }
-            }
         }
         else {
             res = new LinkedList<T>();
 
-            if (!isAlwaysTrue(p)) {
-                for (T t : c) {
-                    if (isEmpty(p) || !isAll(t, p)) {
+            if (!isAlwaysTrue(p))
+                for (T t : c)
+                    if (isEmpty(p) || !isAll(t, p))
                         res.add(t);
-                    }
-                }
-            }
         }
 
         return res;
@@ -5811,7 +5804,7 @@ public class GridFunc {
      * @param to Collection to copy to.
      * @param from Array to copy from.
      * @param <T> Type of the free variable for the predicate and type of the collection elements.
-     * @return Filtered collection. Note that no new collection will be created.
+     * @return Collection to copy to.
      */
     public static <T> Collection<T> copy(Collection<T> to, T... from) {
         A.notNull(to, "to", from, "from");
@@ -5829,7 +5822,7 @@ public class GridFunc {
      * @param from Collection to copy from.
      * @param p Optional set of predicates to use for filtration.
      * @param <T> Type of the free variable for the predicate and type of the collection elements.
-     * @return Filtered collection. Note that no new collection will be created.
+     * @return Collection to copy to.
      */
     public static <T> Collection<T> copy(Collection<T> to, Iterable<? extends T> from,
         @Nullable GridPredicate<? super T>... p) {
@@ -5857,7 +5850,7 @@ public class GridFunc {
      * @param p Optional predicates to use for transformation.
      * @param <X> Type of the free variable for the closure and type of the collection elements.
      * @param <Y> Type of the closure's return value.
-     * @return Transformed newly created collection.
+     * @return Destination collection.
      */
     public static <X, Y> Collection<Y> transform(Collection<Y> to, Iterable<? extends X> from,
         GridClosure<? super X, Y> f, @Nullable GridPredicate<? super X>... p) {

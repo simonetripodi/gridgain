@@ -16,13 +16,14 @@ import org.gridgain.grid.util.tostring.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.kernal.GridKernalState.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @GridToStringExclude
 public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
@@ -48,20 +49,73 @@ public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
     /**
      * {@inheritDoc}
      */
+    @Override public void lightCheck() throws IllegalStateException {
+        if (state != STARTED)
+            throw illegalState();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased", "BusyWait"})
     @Override public void readLock() throws IllegalStateException {
-        // Lock ignoring interruption.
-        rwLock.readLock().lock();
+        boolean interrupted = false;
+
+        while (true) {
+            try {
+                rwLock.readLock().lockInterruptibly();
+
+                break;
+            }
+            catch (InterruptedException ignore) {
+                // Preserve interrupt status & ignore.
+                // Note that interrupted flag is cleared.
+                interrupted = true;
+            }
+        }
+
+        if (interrupted)
+            // Reset interrupted status.
+            Thread.currentThread().interrupt();
 
         if (state != STARTED) {
-            // Unlock already acquired lock.
+            // Unlock just acquired lock.
             rwLock.readLock().unlock();
 
-            throw new IllegalStateException("Grid is in invalid state to perform this operation. " +
-                "It either not started yet or has already being or have stopped [gridName=" + gridName +
-                ", state=" + state + ']');
+            throw illegalState();
         }
 
         enterThreadLocals();
+    }
+
+    /** {@inheritDoc} */
+    @SuppressWarnings({"BusyWait"})
+    @Override public void writeLock() {
+        enterThreadLocals();
+
+        // Busy wait is intentional.
+        while (true)
+            try {
+                if (rwLock.writeLock().tryLock(200, TimeUnit.MILLISECONDS))
+                    break;
+                else
+                    Thread.sleep(200);
+            }
+            catch (InterruptedException ignore) {
+                // Preserve interrupt status & ignore.
+                Thread.currentThread().interrupt();
+            }
+    }
+
+    /**
+     * Creates new illegal state exception.
+     *
+     * @return Newly created exception.
+     */
+    private IllegalStateException illegalState() {
+        return new IllegalStateException("Grid is in invalid state to perform this operation. " +
+            "It either not started yet or has already being or have stopped [gridName=" + gridName +
+            ", state=" + state + ']');
     }
 
     /**
@@ -85,14 +139,6 @@ public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
         leaveThreadLocals();
 
         rwLock.readLock().unlock();
-    }
-
-    /** {@inheritDoc} */
-    @Override public void writeLock() {
-        enterThreadLocals();
-
-        // Lock ignoring interruption.
-        rwLock.writeLock().lock();
     }
 
     /** {@inheritDoc} */

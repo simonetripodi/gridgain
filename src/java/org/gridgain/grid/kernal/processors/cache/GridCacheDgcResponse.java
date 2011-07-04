@@ -23,7 +23,7 @@ import java.util.*;
  * DGC response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 class GridCacheDgcResponse<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** */
@@ -34,6 +34,9 @@ class GridCacheDgcResponse<K, V> extends GridCacheMessage<K, V> implements GridC
     /** */
     @GridToStringExclude
     private byte[] mapBytes;
+
+    /** */
+    private boolean removeLocks;
 
     /**
      * Constructor.
@@ -86,11 +89,28 @@ class GridCacheDgcResponse<K, V> extends GridCacheMessage<K, V> implements GridC
         return Collections.unmodifiableMap(map);
     }
 
+
+    /**
+     * @return Remove locks flag for this DGC iteration.
+     */
+    public boolean removeLocks() {
+        return removeLocks;
+    }
+
+    /**
+     * @param removeLocks Remove locks flag for this DGC iteration.
+     */
+    public void removeLocks(boolean removeLocks) {
+        this.removeLocks = removeLocks;
+    }
+
     /** {@inheritDoc} */
     @Override public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         super.readExternal(in);
 
         mapBytes = U.readByteArray(in);
+
+        removeLocks = in.readBoolean();
     }
 
     /** {@inheritDoc} */
@@ -98,6 +118,8 @@ class GridCacheDgcResponse<K, V> extends GridCacheMessage<K, V> implements GridC
         super.writeExternal(out);
 
         U.writeByteArray(out, mapBytes);
+
+        out.writeBoolean(removeLocks);
     }
 
     /** {@inheritDoc} */

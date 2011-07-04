@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -549,6 +549,7 @@ public class GridDhtPartitionDemandPool<K, V> {
 
         /**
          * @param node Node to demand from.
+         * @param lastJoinOrder Last join order.
          * @param d Demand message.
          * @param exchFut Exchange future.
          * @return Missed partitions.
@@ -556,7 +557,7 @@ public class GridDhtPartitionDemandPool<K, V> {
          * @throws GridTopologyException If node left.
          * @throws GridException If failed to send message.
          */
-        private Set<Integer> demandFromNode(GridNode node, GridDhtPartitionDemandMessage<K, V> d,
+        private Set<Integer> demandFromNode(GridNode node, long lastJoinOrder,  GridDhtPartitionDemandMessage<K, V> d,
             GridDhtPartitionsExchangeFuture<K, V> exchFut) throws InterruptedException, GridException {
             GridRichNode loc = cctx.localNode();
 
@@ -676,8 +677,8 @@ public class GridDhtPartitionDemandPool<K, V> {
                         for (Map.Entry<Integer, Collection<GridCacheEntryInfo<K, V>>> e : supply.infos().entrySet()) {
                             int p = e.getKey();
 
-                            if (cctx.belongs(p, loc)) {
-                                GridDhtLocalPartition<K, V> part = top.localPartition(p, true);
+                            if (cctx.belongs(p, lastJoinOrder, loc)) {
+                                GridDhtLocalPartition<K, V> part = top.localPartition(p, lastJoinOrder, true);
 
                                 assert part != null;
 
@@ -742,7 +743,13 @@ public class GridDhtPartitionDemandPool<K, V> {
                         }
 
                         remaining.removeAll(s.supply().missed());
-                        missed.addAll(s.supply().missed());
+
+                        // Only request partitions based on latest topology version.
+                        missed.addAll(F.view(s.supply().missed(), new P1<Integer>() {
+                            @Override public boolean apply(Integer p) {
+                                return cctx.belongs(p, cctx.localNode());
+                            }
+                        }));
 
                         if (remaining.isEmpty())
                             break; // While.
@@ -830,7 +837,7 @@ public class GridDhtPartitionDemandPool<K, V> {
                                     continue; // For.
 
                                 try {
-                                    Set<Integer> set = demandFromNode(node, d, exchFut);
+                                    Set<Integer> set = demandFromNode(node, assigns.lastJoinOrder(), d, exchFut);
 
                                     if (!set.isEmpty()) {
                                         if (log.isDebugEnabled())
@@ -891,27 +898,38 @@ public class GridDhtPartitionDemandPool<K, V> {
      */
     private class Assignments extends ConcurrentHashMap<GridNode, GridDhtPartitionDemandMessage<K, V>> {
         /** Exchange future. */
+        @GridToStringExclude
         private final GridDhtPartitionsExchangeFuture<K, V> exchFut;
+
+        /** Last join order. */
+        private final long lastJoinOrder;
 
         /**
          * @param exchFut Exchange future.
+         * @param lastJoinOrder Last join order.
          */
-        Assignments(GridDhtPartitionsExchangeFuture<K, V> exchFut) {
+        Assignments(GridDhtPartitionsExchangeFuture<K, V> exchFut, long lastJoinOrder) {
             assert exchFut != null;
+            assert lastJoinOrder > 0;
 
             this.exchFut = exchFut;
+            this.lastJoinOrder = lastJoinOrder;
         }
 
         /**
          * @return Exchange future.
          */
-        public GridDhtPartitionsExchangeFuture<K, V> exchangeFuture() {
+        GridDhtPartitionsExchangeFuture<K, V> exchangeFuture() {
             return exchFut;
+        }
+
+        long lastJoinOrder() {
+            return lastJoinOrder;
         }
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(Assignments.class, this);
+            return S.toString(Assignments.class, this, "exchId", exchFut.exchangeId(), "super", super.toString());
         }
     }
 
@@ -985,17 +1003,13 @@ public class GridDhtPartitionDemandPool<K, V> {
                             break;
 
                         if (!dummyExchange(exchFut)) {
-                            if (log.isDebugEnabled())
-                                log.debug("After waiting for exchange future [exchFut=" + exchFut + ", worker=" +
-                                    worker() + ']');
-
                             exchFut.init();
-
-                            U.debug(log, "BEGINNING TO WAIT FOR EXCHANGE FUT: " + exchFut);
 
                             exchFut.get();
 
-                            U.debug(log, "FINISHED WAITING FOR EXCHANGE FUT: " + exchFut);
+                            if (log.isDebugEnabled())
+                                log.debug("After waiting for exchange future [exchFut=" + exchFut + ", worker=" +
+                                    worker() + ']');
 
                             watch.step("EXCHANGE_FUTURE_DONE");
 
@@ -1049,20 +1063,20 @@ public class GridDhtPartitionDemandPool<K, V> {
         private Assignments assign(GridDhtPartitionsExchangeFuture<K, V> exchFut) {
             // No assignments for disabled preloader.
             if (!cctx.preloadEnabled())
-                return new Assignments(exchFut);
+                return new Assignments(exchFut, top.lastJoinOrder());
 
             int partCnt = cctx.partitions();
 
             GridRichNode loc = cctx.localNode();
 
-            Collection<GridRichNode> allNodes = CU.allNodes(cctx);
+            Assignments assigns = new Assignments(exchFut, top.lastJoinOrder());
 
-            Assignments assigns = new Assignments(exchFut);
+            Collection<GridRichNode> allNodes = CU.allNodes(cctx, assigns.lastJoinOrder());
 
             for (int p = 0; p < partCnt && !isCancelled() && futQ.isEmpty(); p++) {
                 // If partition belongs to local node.
                 if (cctx.belongs(p, loc, allNodes)) {
-                    GridDhtLocalPartition<K, V> part = top.localPartition(p, true);
+                    GridDhtLocalPartition<K, V> part = top.localPartition(p, assigns.lastJoinOrder(), true);
 
                     assert part != null;
                     assert part.id() == p;
@@ -1076,8 +1090,12 @@ public class GridDhtPartitionDemandPool<K, V> {
 
                     Collection<GridNode> picked = pickedOwners(p);
 
-                    if (picked.isEmpty())
+                    if (picked.isEmpty()) {
                         top.own(part);
+
+                        if (log.isDebugEnabled())
+                            log.debug("Owning partition as there are no other owners: " + part);
+                    }
                     else {
                         GridNode n = F.first(picked);
 

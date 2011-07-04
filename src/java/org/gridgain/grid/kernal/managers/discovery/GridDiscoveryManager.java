@@ -24,7 +24,6 @@ import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.worker.*;
 import org.jetbrains.annotations.*;
-
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -38,7 +37,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * Discovery SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     /** System line separator. */
@@ -92,7 +91,10 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     private volatile Thread reconThread;
 
     /** Interrupt reconnect thread flag. */
-    private final AtomicBoolean interruptReconThread = new AtomicBoolean();
+    private final AtomicBoolean intReconThread = new AtomicBoolean();
+
+    /** */
+    private AtomicReference<DiscoCache> discoCache = new AtomicReference<DiscoCache>();
 
     /**
      * @param ctx Context.
@@ -198,6 +200,9 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
 
         getSpi().setListener(new GridDiscoverySpiListener() {
             @Override public void onDiscovery(int type, GridNode node) {
+                if (type != EVT_NODE_METRICS_UPDATED)
+                    discoCache.set(null);
+
                 discoWrk.addEvent(type, node);
             }
         });
@@ -280,7 +285,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         String locEnt = locNode.attribute(ATTR_ENT_EDITION);
         String locBuildVer = locNode.attribute(ATTR_BUILD_VER);
 
-        for (GridNode n : getSpi().getRemoteNodes()) {
+        for (GridNode n : discoCache().remoteNodes()) {
             String rmtEnt = n.attribute(ATTR_ENT_EDITION);
             String rmtBuildVer = n.attribute(ATTR_BUILD_VER);
 
@@ -416,7 +421,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         segGuard.set(true);
 
         // First set this flag, then interrupt thread.
-        interruptReconThread.set(true);
+        intReconThread.set(true);
 
         U.interrupt(reconThread);
         U.join(reconThread, log);
@@ -603,24 +608,40 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     }
 
     /**
+     * Gets discovery collection cache from SPI safely guarding against "floating" collections.
+     *
+     * @return Discovery collection cache.
+     */
+    public DiscoCache discoCache() {
+        DiscoCache cur;
+
+        while ((cur = discoCache.get()) == null)
+            // Wrap the SPI collection to avoid possible floating collection.
+            if (discoCache.compareAndSet(null, cur = new DiscoCache(localNode(), getSpi().getRemoteNodes())))
+                return cur;
+
+        return cur;
+    }
+
+    /**
      * @return All non-daemon remote nodes in topology.
      */
     public Collection<GridNode> remoteNodes() {
-        return F.view(getSpi().getRemoteNodes(), daemonFilter);
+        return discoCache().remoteNodes();
     }
 
     /**
      * @return All non-daemon nodes in topology.
      */
     public Collection<GridNode> allNodes() {
-        return F.view(F.concat(false, localNode(), getSpi().getRemoteNodes()), daemonFilter);
+        return discoCache().allNodes();
     }
 
     /**
      * @return All daemon nodes in topology.
      */
     public Collection<GridNode> daemonNodes() {
-        return F.view(F.concat(false, localNode(), getSpi().getRemoteNodes()), F.not(daemonFilter));
+        return discoCache().daemonNodes();
     }
 
     /**
@@ -1002,8 +1023,10 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
                         getSpi().disconnect();
                     }
                     catch (GridSpiException e) {
-                        log.error("Failed to disconnect discovery SPI.", e);
+                        U.error(log, "Failed to disconnect discovery SPI.", e);
                     }
+
+                    discoCache.set(null);
                 }
 
                 switch (segPlc) {
@@ -1035,7 +1058,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
             reconThread = new Thread(
                 new Runnable() {
                     @Override public void run() {
-                        if (interruptReconThread.get())
+                        if (intReconThread.get())
                             return;
 
                         U.warn(log, "Will try to reconnect discovery SPI to topology " +
@@ -1103,6 +1126,66 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         /** {@inheritDoc} */
         @Override public String toString() {
             return S.toString(DiscoveryWorker.class, this);
+        }
+    }
+
+    /**
+     * Cache for discovery collections.
+     */
+    private static class DiscoCache {
+        /** Remote nodes. */
+        private final List<GridNode> rmtNodes;
+
+        /** All nodes. */
+        private final List<GridNode> allNodes;
+
+        /** Daemon nodes. */
+        private final List<GridNode> daemonNodes;
+
+        /**
+         * @param loc Local node.
+         * @param rmts Remote nodes.
+         */
+        private DiscoCache(GridNode loc, Collection<GridNode> rmts) {
+            rmtNodes = Collections.unmodifiableList(new ArrayList<GridNode>(F.view(rmts, daemonFilter)));
+
+            List<GridNode> all = new ArrayList<GridNode>(rmtNodes.size() + 1);
+
+            if (!isDaemon(loc))
+                all.add(loc);
+
+            all.addAll(rmtNodes);
+
+            allNodes = Collections.unmodifiableList(all);
+
+            daemonNodes = Collections.unmodifiableList(new ArrayList<GridNode>(
+                F.view(F.concat(false, loc, rmts), F.not(daemonFilter))));
+        }
+
+        /**
+         * @return Remote nodes.
+         */
+        Collection<GridNode> remoteNodes() {
+            return rmtNodes;
+        }
+
+        /**
+         * @return All nodes.
+         */
+        Collection<GridNode> allNodes() {
+            return allNodes;
+        }
+
+        /**
+         * @return Daemon nodes.
+         */
+        Collection<GridNode> daemonNodes() {
+            return daemonNodes;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(DiscoCache.class, this, "allNodesWithDaemons", U.toShortString(allNodes));
         }
     }
 }

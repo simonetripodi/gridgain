@@ -12,6 +12,8 @@ package org.gridgain.examples.deployment.direct;
 import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.*;
 
+import java.util.*;
+
 /**
  * Demonstrates how to explicitly deploy a task. Note that
  * it is very rare when you would need such functionality as tasks are
@@ -27,7 +29,7 @@ import org.gridgain.grid.typedef.*;
  * in system classpath, so even in this case the deployment step is unnecessary.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public final class GridDeploymentExample {
     /** Name of the deployed task. */
@@ -49,16 +51,9 @@ public final class GridDeploymentExample {
      * @throws GridException If example execution failed.
      */
     public static void main(String[] args) throws GridException {
-        if (args.length == 0) {
-            G.start();
-        }
-        else {
-            G.start(args[0]);
-        }
+        Grid grid = args.length == 0 ? G.start() : G.start(args[0]);
 
         try {
-            Grid grid = G.grid();
-
             // This task will be deployed on local node and then peer-loaded
             // onto remote nodes on demand. For this example this task is
             // available on the classpath, however in real life that may not
@@ -67,13 +62,16 @@ public final class GridDeploymentExample {
             // method passing your task name as first parameter.
             grid.deployTask(GridDeploymentExampleTask.class);
 
-            for (Class<? extends GridTask<?, ?>> taskCls : grid.localTasks().values()) {
-                X.println(">>> Found locally deployed task: " + taskCls);
-            }
+            for (Map.Entry<String, Class<? extends GridTask<?, ?>>> e : grid.localTasks().entrySet())
+                X.println(">>> Found locally deployed task [alias=" + e.getKey() + ", taskCls=" + e.getValue());
 
-            // Execute the task passing name as a parameter. The system will find
+            // Execute the task passing its name as a parameter. The system will find
             // the deployed task by its name and execute it.
             grid.execute(TASK_NAME, null).get();
+
+            // Execute the task passing class name as a parameter. The system will find
+            // the deployed task by its class name and execute it.
+//            grid.execute(GridDeploymentExampleTask.class.getName(), null).get();
 
             // Undeploy task
             grid.undeployTask(TASK_NAME);
@@ -85,7 +83,7 @@ public final class GridDeploymentExample {
                 ">>>");
         }
         finally {
-            G.stop(true);
+            G.stopAll(true);
         }
     }
 }

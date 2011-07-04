@@ -15,7 +15,7 @@ import org.gridgain.grid.*;
  * This exception can be thrown from classes in package {@link org.gridgain.grid.util.mail}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridMailException extends GridException {
     /**

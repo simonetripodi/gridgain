@@ -23,7 +23,7 @@ import java.util.*;
  * This class is also optimized for evaluation of large number of nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  * @param <T> Type of the predicate.
  */
 public class GridNodePredicate<T extends GridNode> extends GridPredicate<T> implements Iterable<UUID> {
@@ -77,7 +77,8 @@ public class GridNodePredicate<T extends GridNode> extends GridPredicate<T> impl
      * Creates node predicate that evaluates to {@code true} for all
      * provided nodes. Implementation will make a defensive copy.
      *
-     * @param nodes Optional grid nodes. If none provided - predicate will always return {@code false}.
+     * @param nodes Optional grid nodes. If none provided - predicate
+     *      will always return {@code false}.
      */
     public GridNodePredicate(@Nullable GridRichNode... nodes) {
         if (!F.isEmpty(nodes)) {
@@ -97,7 +98,7 @@ public class GridNodePredicate<T extends GridNode> extends GridPredicate<T> impl
      */
     private void dedup() {
         assert ids != null;
-        
+
         Set<UUID> set = new GridLeanSet<UUID>();
 
         set.addAll(Arrays.asList(ids));
@@ -123,32 +124,29 @@ public class GridNodePredicate<T extends GridNode> extends GridPredicate<T> impl
     }
 
     /** {@inheritDoc} */
-    @Override public boolean apply(GridNode e) {
-        assert e != null;
-        
-        return !F.isEmpty(ids) && Arrays.binarySearch(ids, e.getId()) >= 0;
+    @Override public boolean apply(GridNode n) {
+        assert n != null;
+
+        return !F.isEmpty(ids) && Arrays.binarySearch(ids, n.id()) >= 0;
     }
 
     /** {@inheritDoc} */
     @Override public int hashCode() {
         // Allow for multiple hash calculations to avoid
         // synchronization cost. Note that array of IDs don't change.
-        if (hash == Integer.MIN_VALUE && !F.isEmpty(ids)) {
+        if (hash == Integer.MIN_VALUE && !F.isEmpty(ids))
             hash = Arrays.hashCode(ids);
-        }
 
         return hash;
     }
 
     /** {@inheritDoc} */
     @Override public boolean equals(Object o) {
-        if (this == o) {
+        if (this == o)
             return true;
-        }
 
-        if (!(o instanceof GridNodePredicate)) {
+        if (!(o instanceof GridNodePredicate))
             return false;
-        }
 
         GridNodePredicate it = (GridNodePredicate)o;
 

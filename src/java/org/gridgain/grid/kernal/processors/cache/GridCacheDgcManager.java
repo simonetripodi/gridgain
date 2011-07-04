@@ -11,8 +11,9 @@ package org.gridgain.grid.kernal.processors.cache;
 
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
-import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
+import org.gridgain.grid.kernal.processors.cache.distributed.near.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.logger.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.thread.*;
 import org.gridgain.grid.typedef.*;
@@ -24,15 +25,16 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static org.gridgain.grid.GridClosureCallMode.*;
+import static org.gridgain.grid.cache.GridCacheConfiguration.*;
 
 /**
  * Distributed Garbage Collector for cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
-    /** GC thread. */
+    /** DGC thread. */
     private GridThread gcThread;
 
     /** Request worker thread. */
@@ -53,13 +55,16 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     /** DGC suspect lock timeout. */
     private int dgcSuspectLockTimeout;
 
+    /** Trace log. */
+    private GridLogger traceLog;
+
     /** */
     private CI2<UUID, GridCacheDgcRequest<K, V>> reqHandler = new CI2<UUID, GridCacheDgcRequest<K, V>>() {
         @Override public void apply(UUID nodeId, GridCacheDgcRequest<K, V> req) {
             if (log.isDebugEnabled())
                 log.debug("Received DGC request [rmtNodeId=" + nodeId + ", req=" + req + ']');
 
-            reqWorker.addDgcRequest(nodeId, req);
+            reqWorker.addDgcRequest(F.t(nodeId, req));
         }
     };
 
@@ -79,6 +84,8 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
             // No-op for local cache.
             return;
 
+        traceLog = log.getLogger(DGC_TRACE_LOGGER_NAME);
+
         dgcFreq = cctx.config().getDgcFrequency();
 
         A.ensure(dgcFreq >= 0, "dgcFreq cannot be negative");
@@ -87,18 +94,13 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
         A.ensure(dgcSuspectLockTimeout >= 0, "dgcSuspiciousLockTimeout cannot be negative");
 
-        if (dgcFreq > 0) {
-            if (log.isDebugEnabled())
-                log.debug(
-                    "Locks older than " + dgcSuspectLockTimeout + " ms. " +
-                    "will be implicitly removed in case they are not present on lock owner nodes. " +
-                    "To change this behavior please configure 'dgcFrequency' and 'dgcSuspectLockTimeout' " +
-                    "cache configuration properties."
-                );
-
-            gcThread = new GridThread(new GcWorker());
-
-            gcThread.start();
+        if (dgcFreq > 0 && log.isDebugEnabled()) {
+            log.debug(
+                "Locks older than " + dgcSuspectLockTimeout + " ms. " +
+                "will be implicitly removed in case they are not present on lock owner nodes. " +
+                "To change this behavior please configure 'dgcFrequency' and 'dgcSuspectLockTimeout' " +
+                "cache configuration properties."
+            );
         }
 
         reqThread = new GridThread(reqWorker = new RequestWorker());
@@ -115,6 +117,17 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         if (log.isDebugEnabled())
             log.debug("Started DGC manager " +
                 "[dgcFreq=" + dgcFreq + ", suspectLockTimeout=" + dgcSuspectLockTimeout + ']');
+    }
+
+    /** {@inheritDoc} */
+    @Override protected void onKernalStart0() throws GridException {
+        if (dgcFreq > 0) {
+            // Start thread here since discovery may not start within DGC frequency and
+            // thread cannot be started in start0() method.
+            gcThread = new GridThread(new DgcWorker());
+
+            gcThread.start();
+        }
     }
 
     /** {@inheritDoc} */
@@ -146,40 +159,17 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * Runs DGC procedure locally on demand using
-     * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
-     * <p>
-     * Method blocks current thread until locks are examined and all DGC requests are sent
-     * to remote nodes.
-     */
-    public void dgc() {
-        dgc(dgcSuspectLockTimeout, false);
-    }
-
-    /**
      * Runs DGC procedure on demand using
      * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
      * <p>
      * Method blocks current thread until locks are examined and all DGC requests are sent
-     * to remote nodes and (if {@code global} is {@code true}) all nodes having this cache
-     * get signal to start GC procedure.
-     *
-     * @param global If {@code true} then GC procedure will start on all nodes having this cache.
-     */
-    public void dgc(boolean global) {
-        dgc(dgcSuspectLockTimeout, global);
-    }
-
-    /**
-     * Runs DGC procedure locally on demand using provided parameter to identify suspect locks.
-     * <p>
-     * Method blocks current thread until locks are examined and all DGC requests are sent
      * to remote nodes.
-     *
-     * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
+     * <p>
+     * DGC does not remove locks if {@link GridCacheConfiguration#isDgcRemoveLocks()}
+     * is set to {@code false}.
      */
-    public void dgc(int suspectLockTimeout) {
-        dgc(suspectLockTimeout, false);
+    public void dgc() {
+        dgc(dgcSuspectLockTimeout, true, cctx.config().isDgcRemoveLocks());
     }
 
     /**
@@ -187,12 +177,13 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
      * <p>
      * Method blocks current thread until locks are examined and all DGC requests are sent
      * to remote nodes and (if {@code global} is {@code true}) all nodes having this cache
-     * get signal to start GC procedure.
+     * get signal to start DGC procedure.
      *
      * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
-     * @param global If {@code true} then GC procedure will start on all nodes having this cache.
+     * @param global If {@code true} then DGC procedure will start on all nodes having this cache.
+     * @param rmvLocks If {@code false} then DGC does not remove locks, just report them to log.
      */
-    public void dgc(int suspectLockTimeout, boolean global) {
+    public void dgc(int suspectLockTimeout, boolean global, boolean rmvLocks) {
         A.ensure(suspectLockTimeout >= 0, "suspectLockTimeout cannot be negative");
 
         if (log.isDebugEnabled())
@@ -200,32 +191,69 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
         Map<UUID, GridCacheDgcRequest<K, V>> map = new HashMap<UUID, GridCacheDgcRequest<K, V>>();
 
-        long threshold = System.currentTimeMillis() - suspectLockTimeout;
+        final long threshold = System.currentTimeMillis() - suspectLockTimeout;
 
-        for (GridCacheMvccCandidate<K> lock : cctx.mvcc().remoteCandidates()) {
-            if (lock.timestamp() < threshold) {
-                GridCacheDgcRequest<K, V> req = F.addIfAbsent(map, lock.nodeId(),
-                    new GridCacheDgcRequest<K, V>());
-
-                assert req != null;
-
-                req.addCandidate(lock.key(), lock.version());
+        Collection<GridCacheMvccCandidate<K>> suspectLocks = F.view(
+            cctx.mvcc().remoteCandidates(),
+            new P1<GridCacheMvccCandidate<K>>() {
+                @Override public boolean apply(GridCacheMvccCandidate<K> lock) {
+                    return lock.timestamp() < threshold;
+                }
             }
+        );
+
+        if (traceLog.isDebugEnabled() && !suspectLocks.isEmpty()) {
+            traceLog.debug("Beginning to check on DHT suspect locks [" + U.newLine() +
+                "\t DHT suspect locks: " + suspectLocks + "," + U.newLine() +
+                "\t DHT active transactions: " + cctx.tm().txs() + U.newLine() +
+                "\t DHT active local locks: " + cctx.mvcc().localCandidates() + U.newLine() +
+                "\t DHT active remote locks: " + cctx.mvcc().remoteCandidates() + U.newLine() +
+                "]");
+        }
+
+        for (GridCacheMvccCandidate<K> lock : suspectLocks) {
+            GridCacheDgcRequest<K, V> req = F.addIfAbsent(map, lock.nodeId(), new GridCacheDgcRequest<K, V>());
+
+            assert req != null;
+
+            req.removeLocks(rmvLocks);
+
+            req.addCandidate(lock.key(), lock.version());
         }
 
         if (cctx.isDht()) {
-            // Adding near entries to message.
-            for (GridCacheMvccCandidate<K> lock :
-                ((GridDhtCache<K, V>)cctx.cache()).near().context().mvcc().remoteCandidates()) {
-                // All candidates are remote, filter out local.
-                if (!cctx.localNode().id().equals(lock.nodeId()) && lock.timestamp() < threshold) {
-                    GridCacheDgcRequest<K, V> req = F.addIfAbsent(map, lock.nodeId(),
-                        new GridCacheDgcRequest<K, V>());
+            // Add near entries to message.
+            GridNearCache<K,V> nearCache = cctx.dht().near();
 
-                    assert req != null;
-
-                    req.addCandidate(lock.key(), lock.version());
+            Collection<GridCacheMvccCandidate<K>> nearSuspectLocks = F.view(
+                nearCache.context().mvcc().remoteCandidates(),
+                new P1<GridCacheMvccCandidate<K>>() {
+                    @Override public boolean apply(GridCacheMvccCandidate<K> lock) {
+                        return !cctx.localNode().id().equals(lock.nodeId()) && lock.timestamp() < threshold;
+                    }
                 }
+            );
+
+            if (traceLog.isDebugEnabled() && !nearSuspectLocks.isEmpty()) {
+                GridCacheContext<K, V> nearCtx = nearCache.context();
+
+                traceLog.debug("Beginning to check on near suspect locks [" + U.newLine() +
+                    "\t near suspect locks: " + nearSuspectLocks + "," + U.newLine() +
+                    "\t near active transactions: " + nearCtx.tm().txs() + U.newLine() +
+                    "\t near active local locks: " + nearCtx.mvcc().localCandidates() + U.newLine() +
+                    "\t near active remote locks: " + nearCtx.mvcc().remoteCandidates() + U.newLine() +
+                    "]");
+            }
+
+            for (GridCacheMvccCandidate<K> lock : nearSuspectLocks) {
+                // All candidates are remote, filter out local.
+                GridCacheDgcRequest<K, V> req = F.addIfAbsent(map, lock.nodeId(), new GridCacheDgcRequest<K, V>());
+
+                assert req != null;
+
+                req.removeLocks(rmvLocks);
+
+                req.addCandidate(lock.key(), lock.version());
             }
         }
 
@@ -251,7 +279,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         if (global && !nodes.isEmpty())
             cctx.closures().callAsync(
                 BROADCAST,
-                new DgcCallable(cctx.name(), suspectLockTimeout),
+                new DgcCallable(cctx.name(), suspectLockTimeout, cctx.config().isDgcRemoveLocks()),
                 nodes
             );
 
@@ -267,6 +295,8 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         assert req != null;
 
         GridCacheDgcResponse<K, V> res = new GridCacheDgcResponse<K, V>();
+
+        res.removeLocks(req.removeLocks());
 
         for (Map.Entry<K, Collection<GridCacheVersion>> entry : req.candidatesMap().entrySet()) {
             K key = entry.getKey();
@@ -301,13 +331,13 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * Worker that scans current locks and initiates GC requests if needed.
+     * Worker that scans current locks and initiates DGC requests if needed.
      */
-    private class GcWorker extends GridWorker {
+    private class DgcWorker extends GridWorker {
         /**
          * Constructor.
          */
-        private GcWorker() {
+        private DgcWorker() {
             super(cctx.gridName(), "cache-dgc-wrk", log);
         }
 
@@ -319,7 +349,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
             while (!isCancelled()) {
                 Thread.sleep(dgcFreq);
 
-                dgc(dgcSuspectLockTimeout);
+                dgc(dgcSuspectLockTimeout, false, cctx.config().isDgcRemoveLocks());
             }
         }
     }
@@ -330,7 +360,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * Worker that processes GC requests and sends responses back.
+     * Worker that processes DGC requests and sends responses back.
      */
     private class RequestWorker extends GridWorker {
         /** */
@@ -345,14 +375,12 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         }
 
         /**
-         * @param nodeId Node id.
-         * @param req Request.
+         * @param t Request tuple.
          */
-        void addDgcRequest(UUID nodeId, GridCacheDgcRequest<K, V> req) {
-            assert nodeId != null;
-            assert req != null;
+        void addDgcRequest(GridTuple2<UUID, GridCacheDgcRequest<K, V>> t) {
+            assert t != null;
 
-            queue.add(F.t(nodeId, req));
+            queue.add(t);
         }
 
         /** {@inheritDoc} */
@@ -365,6 +393,8 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
                 GridCacheDgcResponse<K, V> res = new GridCacheDgcResponse<K, V>();
 
+                res.removeLocks(req.removeLocks());
+
                 for (Map.Entry<K, Collection<GridCacheVersion>> entry : req.candidatesMap().entrySet()) {
                     K key = entry.getKey();
                     Collection<GridCacheVersion> vers = entry.getValue();
@@ -374,14 +404,75 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
 
                         try {
                             if (cached != null) {
-                                for (GridCacheVersion ver : vers)
-                                    if (!cached.hasLockCandidate(ver))
+                                for (GridCacheVersion ver : vers) {
+                                    if (!cached.hasLockCandidate(ver)) {
                                         res.addCandidate(key, ver, cctx.tm().rolledbackVersions(ver).contains(ver));
+
+                                        if (traceLog.isDebugEnabled()) {
+                                            String nearInfo = "";
+
+                                            if (cctx.isDht()) {
+                                                GridCacheContext<K, V> nearCtx = cctx.dht().near().context();
+
+                                                nearInfo =
+                                                    "\t near active transactions: " + nearCtx.tm().txs() +
+                                                    U.newLine() +
+                                                    "\t near active local locks: " + nearCtx.mvcc().localCandidates() +
+                                                    U.newLine() +
+                                                    "\t near active remote locks: " +
+                                                        nearCtx.mvcc().remoteCandidates() +
+                                                    U.newLine();
+                                            }
+
+                                            traceLog.debug("DHT Entry is not locked on local node, but locked on " +
+                                                "remote [entry=" + cached + ", ver=" + ver + ", rmtNodeId=" + senderId +
+                                                U.newLine() +
+                                                "\t DHT active transactions: " + cctx.tm().txs() +
+                                                U.newLine() +
+                                                "\t DHT active local locks: " + cctx.mvcc().localCandidates() +
+                                                U.newLine() +
+                                                "\t DHT active remote locks: " + cctx.mvcc().remoteCandidates() +
+                                                U.newLine() +
+                                                nearInfo +
+                                                ']');
+                                        }
+                                    }
+                                }
                             }
-                            else
+                            else {
                                 // Entry is removed, add all versions to response.
                                 for (GridCacheVersion ver : vers)
                                     res.addCandidate(key, ver, cctx.tm().rolledbackVersions(ver).contains(ver));
+
+                                if (traceLog.isDebugEnabled()) {
+                                    String nearInfo = "";
+
+                                    if (cctx.isDht()) {
+                                        GridCacheContext<K, V> nearCtx = cctx.dht().near().context();
+
+                                        nearInfo =
+                                            "\t near active transactions: " + nearCtx.tm().txs() +
+                                            U.newLine() +
+                                            "\t near active local locks: " + nearCtx.mvcc().localCandidates() +
+                                            U.newLine() +
+                                            "\t near active remote locks: " +
+                                                nearCtx.mvcc().remoteCandidates() +
+                                            U.newLine();
+                                    }
+
+                                    traceLog.debug("Entry has been removed on local node, but still locked on remote " +
+                                        "[key=" + key + ", vers=" + vers + ", rmtNodeId=" + senderId +
+                                        U.newLine() +
+                                        "\t DHT active transactions: " + cctx.tm().txs() +
+                                        U.newLine() +
+                                        "\t DHT active local locks: " + cctx.mvcc().localCandidates() +
+                                        U.newLine() +
+                                        "\t DHT active remote locks: " + cctx.mvcc().remoteCandidates() +
+                                        U.newLine() +
+                                        nearInfo +
+                                        ']');
+                                }
+                            }
 
                             break;
                         }
@@ -399,7 +490,7 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
-     * Worker that processes GC responses.
+     * Worker that processes DGC responses.
      */
     private class ResponseWorker extends GridWorker {
         /** */
@@ -442,22 +533,85 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
                         GridCacheTxEx<K, V> tx = cctx.tm().<GridCacheTxEx<K, V>>tx(t.get1());
 
                         if (tx != null && t.get2() != null && t.get2()) {
-                            cctx.tm().rollbackTx(tx);
+                            if (res.removeLocks()) {
+                                cctx.tm().rollbackTx(tx);
 
-                            rolledbackTxCnt++;
+                                if (traceLog.isDebugEnabled())
+                                    traceLog.debug("DHT transaction has been rolled back: " + tx);
+
+                                rolledbackTxCnt++;
+                            }
+                            else if (traceLog.isDebugEnabled())
+                                traceLog.debug("DGC has not rolled back DHT transaction due to user configuration: " +
+                                    tx);
                         }
                         else if (tx != null) {
-                            cctx.tm().salvageTx(tx);
+                            if (res.removeLocks()) {
+                                cctx.tm().salvageTx(tx);
 
-                            salvagedTxCnt++;
+                                if (traceLog.isDebugEnabled())
+                                    traceLog.debug("DHT transaction has been salvaged: " + tx);
+
+                                salvagedTxCnt++;
+                            }
+                            else if (traceLog.isDebugEnabled())
+                                traceLog.debug("DGC has not salvaged DHT transaction due to user configuration: " + tx);
                         }
                         else {
                             Collection<GridCacheVersion> col =
-                                F.addIfAbsent(nonTx, e.getKey(), new ArrayList<GridCacheVersion>());
+                                F.addIfAbsent(nonTx, e.getKey(), new LinkedHashSet<GridCacheVersion>());
 
                             assert col != null;
 
                             col.add(t.get1());
+                        }
+                    }
+                }
+
+                if (cctx.isDht()) {
+                    // Process near cache.
+                    for (Map.Entry<K, Collection<GridTuple2<GridCacheVersion, Boolean>>> e :
+                        res.candidatesMap().entrySet()) {
+                        GridCacheTxManager<K, V> nearTm = cctx.dht().near().context().tm();
+
+                        for (GridTuple2<GridCacheVersion, Boolean> t : e.getValue()) {
+                            GridCacheTxEx<K, V> tx = nearTm.<GridCacheTxEx<K, V>>tx(t.get1());
+
+                            if (tx != null && t.get2() != null && t.get2()) {
+                                if (res.removeLocks()) {
+                                    nearTm.rollbackTx(tx);
+
+                                    if (traceLog.isDebugEnabled())
+                                        traceLog.debug("Near transaction has been rolled back: " + tx);
+
+                                    rolledbackTxCnt++;
+                                }
+                                else if (traceLog.isDebugEnabled()) {
+                                    traceLog.debug("DGC has not rolled back near transaction due to user " +
+                                        "configuration: " + tx);
+                                }
+                            }
+                            else if (tx != null) {
+                                if (res.removeLocks()) {
+                                    nearTm.salvageTx(tx);
+
+                                    if (traceLog.isDebugEnabled())
+                                        traceLog.debug("Near transaction has been salvaged: " + tx);
+
+                                    salvagedTxCnt++;
+                                }
+                                else if (traceLog.isDebugEnabled())
+                                    traceLog.debug("DGC has not salvaged near transaction due to user configuration: " +
+                                        tx);
+                            }
+                            else {
+                                Collection<GridCacheVersion> col =
+                                    F.addIfAbsent(nonTx, e.getKey(), new LinkedHashSet<GridCacheVersion>());
+
+                                assert col != null;
+
+                                col.add(t.get1());
+                            }
                         }
                     }
                 }
@@ -469,7 +623,16 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
                         while (true) {
                             GridCacheEntryEx<K, V> cached = cctx.cache().peekEx(e.getKey());
 
-                            if (cached != null)
+                            if (cached != null) {
+                                if (!res.removeLocks()) {
+                                    if (traceLog.isDebugEnabled()) {
+                                        traceLog.debug("DGC has not removed locks on DHT entry due to user " +
+                                            "configuration [entry=" + cached + ", vers=" + e.getValue() + ']');
+                                    }
+
+                                    break; // While loop.
+                                }
+
                                 try {
                                     // Invalidate before removing lock.
                                     try {
@@ -490,16 +653,63 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
                                     if (log.isDebugEnabled())
                                         log.debug("Attempted to remove lock on obsolete entry (will retry).");
                                 }
+                            }
                             else
                                 break;
                         }
                     }
+
+                    if (cctx.isDht()) {
+                        for (Map.Entry<K, Collection<GridCacheVersion>> e : nonTx.entrySet()) {
+                            GridCacheVersion newVer = cctx.dht().near().context().versions().next();
+
+                            while (true) {
+                                GridCacheEntryEx<K, V> cached = cctx.dht().near().peekEx(e.getKey());
+
+                                if (cached != null) {
+                                    if (!res.removeLocks()) {
+                                        if (traceLog.isDebugEnabled()) {
+                                            traceLog.debug("DGC has not removed locks on near entry due to user " +
+                                                "configuration [entry=" + cached + ", vers=" + e.getValue() + ']');
+                                        }
+
+                                        break; // While loop.
+                                    }
+
+                                    try {
+                                        // Invalidate before removing lock.
+                                        try {
+                                            cached.invalidate(null, newVer);
+                                        }
+                                        catch (GridException ex) {
+                                            U.error(log, "Failed to invalidate entry: " + cached, ex);
+                                        }
+
+                                        for (GridCacheVersion ver : e.getValue()) {
+                                            if (cached.removeLock(ver))
+                                                rmvLockCnt++;
+                                        }
+
+                                        break; // While loop.
+                                    }
+                                    catch (GridCacheEntryRemovedException ignored) {
+                                        if (log.isDebugEnabled())
+                                            log.debug("Attempted to remove lock on obsolete entry (will retry).");
+                                    }
+                                }
+                                else
+                                    break;
+                            }
+                        }
+                    }
                 }
 
-                if (salvagedTxCnt != 0 || rolledbackTxCnt != 0 || rmvLockCnt != 0)
+                if (salvagedTxCnt != 0 || rolledbackTxCnt != 0 || rmvLockCnt != 0) {
                     U.warn(log, "DGCed suspicious transactions and locks " +
-                        "[rmtNodeId=" + tup.get1() + ", salvagedTxCnt=" + salvagedTxCnt + ", rolledbackTxCnt=" + rolledbackTxCnt +
+                        "[rmtNodeId=" + tup.get1() + ", salvagedTxCnt=" + salvagedTxCnt +
+                        ", rolledbackTxCnt=" + rolledbackTxCnt +
                         ", rmvLockCnt=" + rmvLockCnt + ']');
+                }
             }
         }
     }
@@ -515,21 +725,26 @@ public class GridCacheDgcManager<K, V> extends GridCacheManager<K, V> {
         private final int suspectLockTimeout;
 
         /** */
+        private final boolean removeLocks;
+
+        /** */
         @GridInstanceResource
         private Grid grid;
 
         /**
          * @param cacheName Cache name.
          * @param suspectLockTimeout Suspect lock timeout.
+         * @param removeLocks Remove locks flag.
          */
-        private DgcCallable(String cacheName, int suspectLockTimeout) {
+        private DgcCallable(String cacheName, int suspectLockTimeout, boolean removeLocks) {
             this.cacheName = cacheName;
             this.suspectLockTimeout = suspectLockTimeout;
+            this.removeLocks = removeLocks;
         }
 
         /** {@inheritDoc} */
         @Nullable @Override public Object call() throws Exception {
-            grid.cache(cacheName).dgc(suspectLockTimeout, false);
+            grid.cache(cacheName).dgc(suspectLockTimeout, false, removeLocks);
 
             return null;
         }

@@ -29,7 +29,7 @@ import java.util.*;
  *
  * @param <R> Result type.
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAdapter<Collection<R>>
     implements GridCacheQueryFuture<R>, GridTimeoutObject {
@@ -337,10 +337,10 @@ public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAda
                 }
             }
             else {
-                for (Object obj : data)
-                    locRdc.collect(obj);
-
                 synchronized (mux) {
+                    for (Object obj : data)
+                        locRdc.collect(obj);
+
                     if (finished && onLastPage(nodeId)) {
                         clear();
 

@@ -24,10 +24,10 @@ import java.util.concurrent.locks.*;
  * and the whole grid kernal cannot be stopped while it's in progress. Once
  * the activity is done, the thread should leave "busy" state calling method
  * {@link #leaveBusy()}. The manager itself, when stopping, should call method
- * {@link #stop} that blocks till all activities leave "busy" state.
+ * {@link #block} that blocks till all activities leave "busy" state.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @GridToStringExclude
 public class GridBusyLock {
@@ -55,7 +55,7 @@ public class GridBusyLock {
      * further entering to "busy" state.
      */
     @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
-    public void stop() {
+    public void block() {
         lock.writeLock().lock();
     }
 }

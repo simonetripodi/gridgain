@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
@@ -68,6 +68,7 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @return Collection of projections where each projection represents all nodes (in this projection)
      *      from a single physical computer. Result collection can be empty if this projection is empty.
      * @see GridRichNode#neighbors()
+     * @see GridRichNode#neighborsAndMe()
      */
     public Collection<GridProjection> neighborhood();
 

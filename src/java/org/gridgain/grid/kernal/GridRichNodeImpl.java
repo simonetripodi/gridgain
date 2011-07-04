@@ -26,7 +26,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichNode, Externalizable {
     /** */
@@ -102,11 +102,15 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
 
     /** {@inheritDoc} */
     @Override public int arity() {
+        lightCheck();
+
         return 1;
     }
 
     /** {@inheritDoc} */
     @Override public GridRichNode part(int n) {
+        lightCheck();
+
         switch (n) {
             case 0: return this;
 
@@ -137,24 +141,69 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     }
 
     /** {@inheritDoc} */
+    @Override public GridProjection others(@Nullable GridPredicate<? super GridRichNode>... p) {
+        guard();
+
+        try {
+            return newProjection(
+                F.retain(
+                    F.<GridNode, GridRichNode>viewReadOnly(
+                        ctx.discovery().nodes(),
+                        ctx.rich().richNode(),
+                        new P1<GridNode>() {
+                            @Override public boolean apply(GridNode n) {
+                                return !n.id().equals(id());
+                            }
+                        }
+                    ),
+                    false,
+                    p
+                )
+            );
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public GridProjection neighbors() {
         guard();
 
         try {
-            Collection<GridRichNode> neighbors = new ArrayList<GridRichNode>(2);
-
-            neighbors.add(this);
+            Collection<GridRichNode> neighbors = new ArrayList<GridRichNode>(1);
 
             String macs = attribute(ATTR_MACS);
 
             assert macs != null;
 
-            for (GridNode n : ctx.discovery().remoteNodes())
+            for (GridNode n : others())
                 if (n.attribute(ATTR_MACS).equals(macs))
                     neighbors.add(ctx.rich().rich(n));
 
-            // Single element projection gets short circuit to its single rich node.
-            return neighbors.size() == 1 ? this : new GridProjectionImpl(this, ctx, neighbors);
+            return newProjection(neighbors);
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridProjection neighborsAndMe() {
+        guard();
+
+        try {
+            Collection<GridRichNode> neighbors = new ArrayList<GridRichNode>(1);
+
+            String macs = attribute(ATTR_MACS);
+
+            assert macs != null;
+
+            for (GridNode n : ctx.discovery().nodes())
+                if (n.attribute(ATTR_MACS).equals(macs))
+                    neighbors.add(ctx.rich().rich(n));
+
+            return newProjection(neighbors);
         }
         finally {
             unguard();
@@ -163,56 +212,78 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
 
     /** {@inheritDoc} */
     @Override public int cpus() {
+        lightCheck();
+
         return metrics().getTotalCpus();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<GridProjection> neighborhood() {
+        lightCheck();
+
         return Collections.<GridProjection>singleton(this);
     }
 
     /** {@inheritDoc} */
     @Override public GridRichNode youngest() {
+        lightCheck();
+
         return this;
     }
 
     /** {@inheritDoc} */
     @Override public GridRichNode oldest() {
+        lightCheck();
+
         return this;
     }
 
     /** {@inheritDoc} */
     @Override public int hosts() {
+        lightCheck();
+
         return 1;
     }
 
     /** {@inheritDoc} */
     @Override public boolean hasRemoteNodes() {
+        lightCheck();
+
         return false;
     }
 
     /** {@inheritDoc} */
     @Override public Collection<GridRichNode> remoteNodes(@Nullable GridPredicate<? super GridRichNode>[] p) {
+        lightCheck();
+
         return Collections.emptyList();
     }
 
     /** {@inheritDoc} */
     @Override public GridProjection remoteProjection(@Nullable GridPredicate<? super GridRichNode>[] p) {
+        lightCheck();
+
         return new GridProjectionImpl(this, ctx, Collections.<GridRichNode>emptyList());
     }
 
     /** {@inheritDoc} */
     @Override public boolean hasLocalNode() {
+        lightCheck();
+
         return true;
     }
 
     /** {@inheritDoc} */
     @Override public GridNode originalNode() {
+        lightCheck();
+
         return node;
     }
 
     /** {@inheritDoc} */
     @Override public boolean isDaemon() {
+        lightCheck();
+
         return daemon;
     }
 
@@ -252,6 +323,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
 
     /** {@inheritDoc} */
     @Override public String id8() {
+        lightCheck();
+
         return U.id8(id());
     }
 
@@ -274,43 +347,59 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
 
     /** {@inheritDoc} */
     @Override public <V> V addMeta(String name, V val) {
+        lightCheck();
+
         return node.addMeta(name, val);
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("RedundantTypeArguments")
     @Override public <V> V meta(String name) {
+        lightCheck();
+
         return node.<V>meta(name);
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("RedundantTypeArguments")
     @Override public <V> V removeMeta(String name) {
+        lightCheck();
+
         return node.<V>removeMeta(name);
     }
 
     /** {@inheritDoc} */
     @Override public <V> Map<String, V> allMeta() {
+        lightCheck();
+
         return node.allMeta();
     }
 
     /** {@inheritDoc} */
     @Override public boolean hasMeta(String name) {
+        lightCheck();
+
         return node.hasMeta(name);
     }
 
     /** {@inheritDoc} */
     @Override public boolean hasMeta(String name, Object val) {
+        lightCheck();
+
         return node.hasMeta(name, val);
     }
 
     /** {@inheritDoc} */
     @Override public <V> V addMetaIfAbsent(String name, V val) {
+        lightCheck();
+
         return node.addMetaIfAbsent(name, val);
     }
 
     /** {@inheritDoc} */
     @Override public <V> V addMetaIfAbsent(String name, Callable<V> c) {
+        lightCheck();
+
         return node.addMetaIfAbsent(name, c);
     }
 
@@ -321,17 +410,23 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
 
     /** {@inheritDoc} */
     @Override public void copyMeta(GridMetadataAware from) {
+        lightCheck();
+
         node.copyMeta(from);
     }
 
     /** {@inheritDoc} */
     @Override public void copyMeta(Map<String, ?> data) {
+        lightCheck();
+
         node.copyMeta(data);
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("deprecation")
     @Override public UUID id() {
+        lightCheck();
+
         return node.id();
     }
 
@@ -339,6 +434,8 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     @SuppressWarnings({"unchecked"})
     @Override public <T> T nodeLocalPut(Object key, @Nullable Object val) throws GridException {
         A.notNull(key, "key", val, "val");
+
+        lightCheck();
 
         return isLocal ? (T)ctx.grid().nodeLocal().put(key, val) : this.<T>nodeLocalPutAsync(key, val).get();
     }
@@ -552,7 +649,14 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Override public <T> T nodeLocalGet(Object key) throws GridException {
-        return isLocal ? (T)ctx.grid().nodeLocal().get(key) : this.<T>nodeLocalGetAsync(key).get();
+        guard();
+
+        try {
+            return isLocal ? (T)ctx.grid().nodeLocal().get(key) : this.<T>nodeLocalGetAsync(key).get();
+        }
+        finally {
+            unguard();
+        }
     }
 
     /**
@@ -715,11 +819,15 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     /** {@inheritDoc} */
     @Deprecated
     @Override public UUID getId() {
+        lightCheck();
+
         return node.id();
     }
 
     /** {@inheritDoc} */
     @Override public long order() {
+        lightCheck();
+
         return node.order();
     }
 
@@ -727,44 +835,60 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     @SuppressWarnings("RedundantTypeArguments")
     @Deprecated
     @Override public <T> T getAttribute(String name) {
+        lightCheck();
+
         return this.<T>attribute(name);
     }
 
     /** {@inheritDoc} */
     @Deprecated
     @Override public GridNodeMetrics getMetrics() {
+        lightCheck();
+
         return metrics();
     }
 
     /** {@inheritDoc} */
     @Deprecated
     @Override public Map<String, Object> getAttributes() {
+        lightCheck();
+
         return attributes();
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("RedundantTypeArguments")
     @Override public <T> T attribute(String name) {
+        lightCheck();
+
         return node.<T>attribute(name);
     }
 
     /** {@inheritDoc} */
     @Override public GridNodeMetrics metrics() {
+        lightCheck();
+
         return node.metrics();
     }
 
     /** {@inheritDoc} */
     @Override public Map<String, Object> attributes() {
+        lightCheck();
+
         return node.attributes();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<String> internalAddresses() {
+        lightCheck();
+
         return node.internalAddresses();
     }
 
     /** {@inheritDoc} */
     @Override public Collection<String> externalAddresses() {
+        lightCheck();
+
         return node.externalAddresses();
     }
 
@@ -772,11 +896,15 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     @SuppressWarnings("deprecation")
     @Deprecated
     @Override public String getPhysicalAddress() {
+        lightCheck();
+
         return node.getPhysicalAddress();
     }
 
     /** {@inheritDoc} */
     @Override public boolean dynamic() {
+        lightCheck();
+
         return false;
     }
 

@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -269,6 +269,9 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                 if (log.isDebugEnabled())
                     log.debug("Added transaction version mapping [from=" + from + ", to=" + tx.xidVersion() +
                         ", tx=" + tx + ']');
+
+                // TODO
+//                U.debug(log, "Added transaction version mapping [nearVer=" + from + ", dhtVer=" + tx.xidVersion() + ']');
             }
         }
         else {

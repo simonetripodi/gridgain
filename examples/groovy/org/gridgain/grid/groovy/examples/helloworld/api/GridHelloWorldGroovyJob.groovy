@@ -21,7 +21,7 @@ import org.gridgain.grid.resources.*
  * word.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 class GridHelloWorldGroovyJob extends GridJobAdapter {
     /** Grid logger. */
@@ -41,7 +41,7 @@ class GridHelloWorldGroovyJob extends GridJobAdapter {
     @Override public Serializable execute() {
         def arg = getArgument()
 
-        if (log.isInfoEnabled() == true) {
+        if (log.isInfoEnabled()) {
             log.info(">>>");
             log.info(">>> Printing '" + arg + "' on this node from grid job.");
             log.info(">>>");

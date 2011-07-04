@@ -62,7 +62,7 @@ import java.util.*;
  * To do that, {@link GridSystemProperties#GG_NO_DISCO_ORDER} must be provided at startup.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  * @param <K> Cache key type.
  * @param <V> Cache value type.
  */
@@ -509,11 +509,14 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
     public boolean removeCountDownLatch(String name) throws GridException;
 
     /**
-     * Runs DGC procedure locally on demand using
+     * Runs DGC procedure on demand using
      * {@link GridCacheConfiguration#getDgcSuspectLockTimeout()} to identify suspect locks.
      * <p>
      * Method blocks current thread until locks are examined and all DGC requests are sent
      * to remote nodes.
+     * <p>
+     * DGC does not remove locks if {@link GridCacheConfiguration#isDgcRemoveLocks()}
+     * is set to {@code false}.
      */
     public void dgc();
 
@@ -521,11 +524,12 @@ public interface GridCache<K, V> extends GridCacheProjection<K, V> {
      * Runs DGC procedure on demand using provided parameter to identify suspect locks.
      * <p>
      * Method blocks current thread until locks are examined and all DGC requests are sent
-     * to remote nodes and (if {@code global} is {@code true}) all nodes having this cache
-     * get signal to start GC procedure.
+     * to remote nodes and (if {@code global} is {@code true}) all nodes running this cache
+     * will get signal to start GC procedure.
      *
      * @param suspectLockTimeout Custom suspect lock timeout (should be greater than or equal to 0).
      * @param global If {@code true} then GC procedure will start on all nodes having this cache.
+     * @param removeLocks If {@code false} then DGC does not remove locks, just report them to log.
      */
-    public void dgc(int suspectLockTimeout, boolean global);
+    public void dgc(int suspectLockTimeout, boolean global, boolean removeLocks);
 }

@@ -28,7 +28,7 @@ import static org.gridgain.grid.GridEventType.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
@@ -142,7 +142,7 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
 
             if (!F.eq(this.dhtVer, dhtVer)) {
                 this.val = val;
-                this.valBytes = valBytes;
+                this.valBytes = isStoreValueBytes() ? valBytes : null;
                 this.ver = ver;
                 this.dhtVer = dhtVer;
 
@@ -180,7 +180,7 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
                 if (this.dhtVer == null) {
                     if (!markObsolete(dhtVer, true)) {
                         this.val = val;
-                        this.valBytes = valBytes;
+                        this.valBytes = isStoreValueBytes() ? valBytes : null;
                         this.expireTime = expireTime;
                         this.ttl = ttl;
                         this.primaryNodeId = primaryNodeId;
@@ -473,7 +473,7 @@ public class GridNearCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
      * @return New candidate.
      * @throws GridCacheEntryRemovedException If entry has been removed.
      */
-    public GridCacheMvccCandidate<K> addNearLocal(@Nullable UUID dhtNodeId, long threadId, GridCacheVersion ver,
+    @Nullable public GridCacheMvccCandidate<K> addNearLocal(@Nullable UUID dhtNodeId, long threadId, GridCacheVersion ver,
         long timeout, boolean reenter, boolean ec, boolean tx) throws GridCacheEntryRemovedException {
         try {
             GridCacheMvccCandidate<K> prev;

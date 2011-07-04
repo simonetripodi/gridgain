@@ -8,7 +8,7 @@ import org.gridgain.grid.util.mbean.*;
  * about cache checkpoint SPI.
  * 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 @GridMBeanDescription("MBean provides information about cache checkpoint SPI.")
 public interface GridCacheCheckpointSpiMBean extends GridSpiManagementMBean {

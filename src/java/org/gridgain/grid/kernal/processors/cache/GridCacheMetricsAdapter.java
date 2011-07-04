@@ -16,13 +16,11 @@ import org.gridgain.grid.util.tostring.*;
 import java.io.*;
 import java.util.concurrent.atomic.*;
 
-import static java.lang.Math.*;
-
 /**
  * Adapter for cache metrics.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable {
     /** Create time. */
@@ -175,28 +173,6 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
             m.writes(),
             m.hits(),
             m.misses()
-        );
-    }
-
-    /**
-     * Create a copy of this metrics merged with the given metrics.
-     *
-     * @param m1 1st metrics.
-     * @param m2 2nd metrics.
-     * @return Copy of given metrics.
-     */
-    public static GridCacheMetricsAdapter merge(GridCacheMetrics m1, GridCacheMetrics m2) {
-        assert m1 != null;
-        assert m2 != null;
-
-        return new GridCacheMetricsAdapter(
-            min(m1.createTime(), m2.createTime()),
-            max(m1.readTime(), m2.readTime()),
-            m1.writeTime() + m2.writeTime(),
-            m1.reads() + m2.reads(),
-            m1.writes() + m2.writes(),
-            m1.hits() + m2.hits(),
-            m1.misses() + m2.misses()
         );
     }
 

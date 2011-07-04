@@ -30,7 +30,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Managed transaction adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     implements GridCacheTxEx<K, V>, Externalizable {
@@ -129,6 +129,8 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
     /** */
     private List<GridInClosure<GridCacheTxEx<K, V>>> finishLsnrs;
+
+    private AtomicLong topVer = new AtomicLong(-1);
 
     /** Mutex. */
     private final Object mux = new Object();
@@ -242,11 +244,32 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         return null;
     }
 
+    @Override public long topologyVersion() {
+        return topVer.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long topologyVersion(long topVer) {
+        this.topVer.compareAndSet(-1, topVer);
+
+        return this.topVer.get();
+    }
+
     /**
      * @return {@code True} if marked.
      */
     @Override public boolean markFinalizing() {
-        return finalizing.compareAndSet(false, true);
+        if (finalizing.compareAndSet(false, true)) {
+            if (log.isDebugEnabled())
+                log.debug("Marked transaction as finalized: " + this);
+
+            return true;
+        }
+
+        if (log.isDebugEnabled())
+            log.debug("Transaction was not marked finalized: " + this);
+
+        return false;
     }
 
     /**
@@ -785,7 +808,7 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
         if (primaryOnly) {
             GridRichNode primary = F.first(affNodes);
 
-            assert primary != null;
+            assert primary != null : "Primary node is null for affinity nodes: " + affNodes;
 
             return primary.isLocal();
         }

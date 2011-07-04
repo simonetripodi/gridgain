@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -54,10 +54,10 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     private GridCacheEvictionPolicy nearEvictPolicy;
 
     /** Flag indicating whether eviction is synchronized with backup nodes. */
-    private boolean backupEvictSynchronized;
+    private boolean evictBackupSynchronized = DFLT_EVICT_BACKUP_SYNCHRONIZED;
 
     /** Flag indicating whether eviction is synchronized with near nodes. */
-    private boolean nearEvictSynchronized;
+    private boolean evictNearSynchronized = DFLT_EVICT_NEAR_SYNCHRONIZED;
 
     /** Maximum eviction overflow ratio. */
     private float maxEvictionOverflowRatio = DFLT_MAX_EVICTION_OVERFLOW_RATIO;
@@ -81,7 +81,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     private int nearStartSize = DFLT_NEAR_START_SIZE;
 
     /** Near cache flag. */
-    private boolean nearEnabled = true;
+    private boolean nearEnabled = DFLT_NEAR_ENABLED;
 
     /** */
     private GridCacheStore<?, ?> store;
@@ -93,10 +93,13 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     private GridCacheMode cacheMode;
 
     /** Flag to enable transactional batch update. */
-    private boolean isTxBatchUpdate = true;
+    private boolean txBatchUpdate = DFLT_TX_BATCH_UPDATE;
 
     /** Flag indicating whether this is invalidation-based cache. */
-    private boolean invalidate;
+    private boolean invalidate = DFLT_INVALIDATE;
+
+    /** Flag indicating if cached values should be additionally stored in serialized form. */
+    private boolean storeValueBytes = DFLT_STORE_VALUE_BYTES;
 
     /** Refresh-ahead ratio. */
     private double refreshAheadRatio;
@@ -120,40 +123,43 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     private boolean idxFullClassName;
 
     /** Mark that all keys will be the same type to make possible to store them as native database type. */
-    private boolean idxFixedTyping = true;
+    private boolean idxFixedTyping = DFLT_IDX_FIXED_TYPING;
 
     /** Leave database after exit or not. */
-    private boolean idxCleanup = true;
+    private boolean idxCleanup = DFLT_IDX_CLEANUP;
 
     /** Use only memory for index database if true.*/
-    private boolean idxMemOnly;
+    private boolean idxMemOnly = DFLT_IDX_MEM_ONLY;
 
     /** Maximum memory used for delete and insert in bytes. 0 means no limit. */
     private int idxMaxOperationMem = DFLT_IDX_MAX_OPERATIONAL_MEM;
 
-    /** */
+    /** Query index db user. */
     private String idxUser;
 
-    /** */
+    /** Query index db password. */
     private String idxPswd;
 
-    /** */
+    /** Distributed garbage collection frequency. */
     private int dgcFreq = DFLT_DGC_FREQUENCY;
 
     /** */
     private int dgcSuspectLockTimeout = DFLT_DGC_SUSPECT_LOCK_TIMEOUT;
 
     /** */
-    private boolean syncCommit;
+    private boolean dgcRmvLocks = DFLT_DGC_REMOVE_LOCKS;
+
+    /** Synchronous commit. */
+    private boolean syncCommit = DFLT_SYNC_COMMIT;
+
+    /** Synchronous rollback. */
+    private boolean syncRollback = DFLT_SYNC_ROLLBACK;
 
     /** */
-    private boolean syncRollback;
+    private boolean swapEnabled = DFLT_SWAP_ENABLED;
 
     /** */
-    private boolean swapEnabled = true;
-
-    /** */
-    private boolean storeEnabled = true;
+    private boolean storeEnabled = DFLT_STORE_ENABLED;
 
     /** */
     private String idxH2Opt;
@@ -195,8 +201,10 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         dfltIsolation = cacheCfg.getDefaultTxIsolation();
         dfltLockTimeout = cacheCfg.getDefaultLockTimeout();
         dfltTxTimeout = cacheCfg.getDefaultTxTimeout();
-        evictPolicy = cacheCfg.getEvictionPolicy();
         dgcFreq = cacheCfg.getDgcFrequency();
+        dgcRmvLocks = cacheCfg.isDgcRemoveLocks();
+        dgcSuspectLockTimeout = cacheCfg.getDgcSuspectLockTimeout();
+        evictPolicy = cacheCfg.getEvictionPolicy();
         idxH2Opt = cacheCfg.getIndexH2Options();
         idxAnalyzeFreq = cacheCfg.getIndexAnalyzeFrequency();
         idxAnalyzeSampleSize = cacheCfg.getIndexAnalyzeSampleSize();
@@ -209,13 +217,14 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         idxPswd = cacheCfg.getIndexPassword();
         idxUser = cacheCfg.getIndexUsername();
         invalidate = cacheCfg.isInvalidate();
-        isTxBatchUpdate = cacheCfg.isBatchUpdateOnCommit();
+        storeValueBytes = cacheCfg.isStoreValueBytes();
+        txBatchUpdate = cacheCfg.isBatchUpdateOnCommit();
         name = cacheCfg.getName();
         nearStartSize = cacheCfg.getNearStartSize();
         nearEnabled = cacheCfg.isNearEnabled();
         nearEvictPolicy = cacheCfg.getNearEvictionPolicy();
-        backupEvictSynchronized = cacheCfg.isBackupEvictSynchronized();
-        nearEvictSynchronized = cacheCfg.isNearEvictSynchronized();
+        evictBackupSynchronized = cacheCfg.isEvictBackupSynchronized();
+        evictNearSynchronized = cacheCfg.isEvictNearSynchronized();
         maxEvictionOverflowRatio = cacheCfg.getMaxEvictionOverflowRatio();
         preloadMode = cacheCfg.getPreloadMode();
         preloadBatchSize = cacheCfg.getPreloadBatchSize();
@@ -293,32 +302,32 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     }
 
     /** {@inheritDoc} */
-    @Override public boolean isBackupEvictSynchronized() {
-        return backupEvictSynchronized;
+    @Override public boolean isEvictBackupSynchronized() {
+        return evictBackupSynchronized;
     }
 
     /**
      * Sets flag indicating whether eviction is synchronized with backup nodes
      * (or the rest of the nodes for replicated cache).
      *
-     * @param backupEvictSynchronized {@code true} if synchronized, {@code false} if not.
+     * @param evictBackupSynchronized {@code true} if synchronized, {@code false} if not.
      */
-    public void setBackupEvictSynchronized(boolean backupEvictSynchronized) {
-        this.backupEvictSynchronized = backupEvictSynchronized;
+    public void setEvictBackupSynchronized(boolean evictBackupSynchronized) {
+        this.evictBackupSynchronized = evictBackupSynchronized;
     }
 
     /**
      * Sets flag indicating whether eviction is synchronized with near nodes.
      *
-     * @param nearEvictSynchronized {@code true} if synchronized, {@code false} if not.
+     * @param evictNearSynchronized {@code true} if synchronized, {@code false} if not.
      */
-    public void setNearEvictSynchronized(boolean nearEvictSynchronized) {
-        this.nearEvictSynchronized = nearEvictSynchronized;
+    public void setEvictNearSynchronized(boolean evictNearSynchronized) {
+        this.evictNearSynchronized = evictNearSynchronized;
     }
 
     /** {@inheritDoc} */
-    @Override public boolean isNearEvictSynchronized() {
-        return nearEvictSynchronized;
+    @Override public boolean isEvictNearSynchronized() {
+        return evictNearSynchronized;
     }
 
     /** {@inheritDoc} */
@@ -454,7 +463,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
 
     /** {@inheritDoc} */
     @Override public boolean isBatchUpdateOnCommit() {
-        return isTxBatchUpdate;
+        return txBatchUpdate;
     }
 
     /**
@@ -466,7 +475,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
      *      individually as they occur (without waiting to the end of transaction).
      */
     public void setBatchUpdateOnCommit(boolean txBatchUpdate) {
-        isTxBatchUpdate = txBatchUpdate;
+        this.txBatchUpdate = txBatchUpdate;
     }
 
     /** {@inheritDoc} */
@@ -514,13 +523,29 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         this.invalidate = invalidate;
     }
 
+    /**
+     * Flag indicating if cached values should be additionally stored in serialized
+     * form. It's set to true by default.
+     *
+     * @param storeValueBytes {@code true} if cached values should be additionally
+     *      stored in serialized form, {@code false} otherwise.
+     */
+    public void setStoreValueBytes(boolean storeValueBytes) {
+        this.storeValueBytes = storeValueBytes;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isStoreValueBytes() {
+        return storeValueBytes;
+    }
+
     /** {@inheritDoc} */
     @Override public double getRefreshAheadRatio() {
         return refreshAheadRatio;
     }
 
     /**
-     * Sets refresh-ahead ration for this transaction. Values other than zero
+     * Sets refresh-ahead ratio for cache entries. Values other than zero
      * specify how soon entries will be auto-reloaded from persistent store prior to
      * expiration.
      *
@@ -782,6 +807,21 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
      */
     public void setDgcSuspectLockTimeout(int dgcSuspectLockTimeout) {
         this.dgcSuspectLockTimeout = dgcSuspectLockTimeout;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isDgcRemoveLocks() {
+        return dgcRmvLocks;
+    }
+
+    /**
+     * Sets DGC remove locks flag.
+     *
+     * @param dgcRmvLocks {@code True} to remove locks.
+     * @see #isDgcRemoveLocks()
+     */
+    public void setDgcRemoveLocks(boolean dgcRmvLocks) {
+        this.dgcRmvLocks = dgcRmvLocks;
     }
 
     /** {@inheritDoc} */

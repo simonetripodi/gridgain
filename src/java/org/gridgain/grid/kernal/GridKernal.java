@@ -86,14 +86,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
     private static final String VER = "3.1.1c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "24062011";
+    private static final String BUILD = "03072011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -178,6 +178,9 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     @SuppressWarnings("deprecation")
     private final Map<GridDiscoveryListener, GridLocalEventListener> discoLsnrs =
         new IdentityHashMap<GridDiscoveryListener, GridLocalEventListener>();
+
+    /** Closure to notify GridFactory on start. */
+    private GridAbsClosure startLsnr;
 
     /**
      * No-arg constructor is required by externalization.
@@ -740,6 +743,13 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             registerKernalMBean();
             registerLocalNodeMBean();
             registerExecutorMBeans();
+
+            // Notify GridFactory first.
+            GridAbsClosure startLsnr = this.startLsnr;
+
+            assert startLsnr != null;
+
+            startLsnr.apply();
 
             // Lifecycle bean notifications.
             notifyLifecycleBeans(GridLifecycleEventType.AFTER_GRID_START);
@@ -1487,7 +1497,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                     "/ (_ // __/ // _  / (_ // _ `/ // _ \\  _/_ <_ / / ",
                     "\\___//_/ /_/ \\_,_/\\___/ \\_,_/_//_//_/ /____(_)_/",
                     "",
-                    tag,
+                    U.bright(tag),
                     U.pad((tag.length() - ver.length()) / 2) + ver,
                     " " + COPYRIGHT,
                     "",
@@ -1863,7 +1873,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                 );
             }
             catch (GridException e) {
-                U.error(log, "Failed to send lifecyce email notification.", e);
+                U.error(log, "Failed to send lifecycle email notification.", e);
             }
         }
     }
@@ -2927,6 +2937,22 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     /** {@inheritDoc} */
     @Override public boolean dynamic() {
         return true;
+    }
+
+    /**
+     * @return Start listener.
+     */
+    public GridAbsClosure startListener() {
+        return startLsnr;
+    }
+
+    /**
+     * @param startLsnr Start listener.
+     */
+    public void startListener(GridAbsClosure startLsnr) {
+        assert startLsnr != null;
+
+        this.startLsnr = startLsnr;
     }
 
     /** {@inheritDoc} */

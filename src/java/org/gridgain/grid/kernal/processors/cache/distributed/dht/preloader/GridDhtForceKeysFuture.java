@@ -31,10 +31,10 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Force keys request future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Collection<K>>
-    implements GridDhtFuture<K, Collection<K>> {
+    implements GridDhtFuture<Collection<K>> {
     /** Wait for 1 second for topology to change. */
     private static final long REMAP_PAUSE = 1000;
 
@@ -261,7 +261,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
         }
 
         // Create partition.
-        GridDhtLocalPartition<K, V> locPart = top.localPartition(part, false);
+        GridDhtLocalPartition<K, V> locPart = top.localPartition(part, -1, false);
 
         if (locPart == null)
             invalidParts.add(part);
@@ -427,7 +427,7 @@ public class GridDhtForceKeysFuture<K, V> extends GridCompoundFuture<Object, Col
             for (GridCacheEntryInfo<K, V> info : res.forcedInfos()) {
                 int p = cctx.partition(info.key());
 
-                GridDhtLocalPartition<K, V> locPart = top.localPartition(p, false);
+                GridDhtLocalPartition<K, V> locPart = top.localPartition(p, -1, false);
 
                 if (locPart != null && locPart.state() == MOVING && locPart.reserve()) {
                     GridCacheEntryEx<K, V> entry = cctx.dht().entryEx(info.key());

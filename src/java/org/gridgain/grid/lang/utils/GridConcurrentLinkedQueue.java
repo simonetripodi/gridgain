@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.*;
  * {@link Collection#remove(Object)} was called which can lead to memory leaks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> implements Queue<E> {
     /** Dummy stamp holder. */
@@ -71,15 +71,13 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
         while (true) {
             Node<E> n = peekNode();
 
-            if (n == null) {
+            if (n == null)
                 return false;
-            }
 
             E cap = n.value();
 
-            if (cap == null) {
+            if (cap == null)
                 continue; // Try again.
-            }
 
             return cap == t;
         }
@@ -187,7 +185,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     public Node<E> addNode(Node<E> n) {
         A.notNull(n, "n");
 
-        while(true) {
+        while (true) {
             Node<E> t = tail.get();
 
             Node<E> s = t.next();
@@ -246,9 +244,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                     }
                     else {
                         // This is GC step to remove obsolete nodes.
-                        if (casHead(h, first)) {
+                        if (casHead(h, first))
                             decreaseEden();
-                        }
                     }
                 }
             }
@@ -264,15 +261,13 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
         while (true) {
             Node<E> n = peekNode();
 
-            if (n == null) {
+            if (n == null)
                 return null;
-            }
 
             E e = n.value();
 
-            if (e != null) {
+            if (e != null)
                 return e;
-            }
         }
     }
 
@@ -298,8 +293,6 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                 else if (casHead(h, first)) { // Move head pointer.
                     assert first != null;
 
-                    size.decrementAndGet();
-
                     E c = first.value();
 
                     if (c != null) {
@@ -323,6 +316,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
         return addNode(e) != null;
     }
 
+    /** {@inheritDoc} */
     @Override public boolean offer(E e) {
         return add(e);
     }
@@ -374,7 +368,13 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      *      if it was already cleared.
      */
     protected boolean removeNode(Node<E> n) {
-        return n.clear() != null;
+        if (n.clear() != null) {
+            size.decrementAndGet();
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -445,7 +445,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
 
             E x = nextItem;
 
-            Node<E> p = (nextNode == null)? peekNode() : nextNode.next();
+            Node<E> p = (nextNode == null) ? peekNode() : nextNode.next();
 
             while (true) {
                 if (p == null) {
@@ -476,24 +476,21 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
         }
 
         @Override public E next() {
-            if (nextNode == null) {
+            if (nextNode == null)
                 throw new NoSuchElementException();
-            }
 
             return advance();
         }
 
         /** {@inheritDoc} */
         @Override public void remove() {
-            if (readOnly) {
+            if (readOnly)
                 throw new UnsupportedOperationException();
-            }
 
             Node<E> last = lastNode;
 
-            if (last == null) {
+            if (last == null)
                 throw new IllegalStateException();
-            }
 
             // Future gc() or first() calls will remove it.
             last.clear();
@@ -585,13 +582,11 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
             while (true) {
                 boolean mark = isMarked();
 
-                if (compareAndSet(cur, next, mark, mark)) {
+                if (compareAndSet(cur, next, mark, mark))
                     return true;
-                }
 
-                if (mark == isMarked()) {
+                if (mark == isMarked())
                     return false;
-                }
             }
         }
 
@@ -617,6 +612,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
         }
 
         /** {@inheritDoc} */
-        @Override public String toString() { return S.toString(Node.class, this); }
+        @Override public String toString() {
+            return S.toString(Node.class, this);
+        }
     }
 }

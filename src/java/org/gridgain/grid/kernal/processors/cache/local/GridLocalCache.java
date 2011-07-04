@@ -24,7 +24,7 @@ import java.util.*;
  * Local cache implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridLocalCache<K, V> extends GridCacheAdapter<K, V> {
     /** */
@@ -55,9 +55,9 @@ public class GridLocalCache<K, V> extends GridCacheAdapter<K, V> {
     @Override protected void init() {
         map.setEntryFactory(new GridCacheMapEntryFactory<K, V>() {
             /** {@inheritDoc} */
-            @Override public GridCacheMapEntry<K, V> create(GridCacheContext<K, V> reg, K key, int hash, V val,
-                GridCacheMapEntry<K, V> next, long ttl) {
-                return new GridLocalCacheEntry<K, V>(reg, key, hash, val, next, ttl);
+            @Override public GridCacheMapEntry<K, V> create(GridCacheContext<K, V> ctx, long topVer, K key, int hash,
+                V val, GridCacheMapEntry<K, V> next, long ttl) {
+                return new GridLocalCacheEntry<K, V>(ctx, key, hash, val, next, ttl);
             }
         });
     }

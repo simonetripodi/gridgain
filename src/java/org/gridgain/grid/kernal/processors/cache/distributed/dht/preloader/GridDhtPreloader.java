@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * DHT cache preloader.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** Exchange history size. */
@@ -96,51 +96,43 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                         f.onNodeLeft(n.id());
                 }
 
-                // For joining nodes we ignore events for nodes with lesser
-                // order than the local node.
-                if (e.type() != EVT_NODE_JOINED || n.order() > loc.order()) {
-                    boolean set = lastJoinOrder.setIfGreater(n.order());
+                assert e.type() != EVT_NODE_JOINED || n.order() > loc.order();
 
-                    assert e.type() != EVT_NODE_JOINED || set;
+                boolean set = lastJoinOrder.setIfGreater(n.order());
 
-                    GridDhtPartitionExchangeId exchId = exchangeId(n.id(), n.order(), lastJoinOrder.get(), e.type(),
-                        e.timestamp());
+                assert e.type() != EVT_NODE_JOINED || set;
 
-                    GridDhtPartitionsExchangeFuture<K, V> exchFut = exchangeFuture(exchId, e);
+                GridDhtPartitionExchangeId exchId = exchangeId(n.id(), n.order(), lastJoinOrder.get(), e.type(),
+                    e.timestamp());
 
-                    // Start exchange process.
-                    pendingFuts.add(exchFut);
+                GridDhtPartitionsExchangeFuture<K, V> exchFut = exchangeFuture(exchId, e);
 
-                    // Event callback - without this callback future will never complete.
-                    exchFut.onEvent(exchId, e);
+                // Start exchange process.
+                pendingFuts.add(exchFut);
 
-                    if (log.isDebugEnabled())
-                        log.debug("Discovery event (will start exchange): " + exchId);
+                // Event callback - without this callback future will never complete.
+                exchFut.onEvent(exchId, e);
 
-                    locExchFut.listenAsync(new CI1<GridFuture<?>>() {
-                        @Override public void apply(GridFuture<?> t) {
-                            if (!enterBusy())
-                                return;
+                if (log.isDebugEnabled())
+                    log.debug("Discovery event (will start exchange): " + exchId);
 
-                            try {
-                                // Unwind in the order of discovery events.
-                                for (GridDhtPartitionsExchangeFuture<K, V> f = pendingFuts.poll(); f != null;
-                                    f = pendingFuts.poll()) {
-                                    U.debug(log, "Notifying demand pool [node=" + n.id() + ", fut=" + f + ']');
+                locExchFut.listenAsync(new CI1<GridFuture<?>>() {
+                    @Override public void apply(GridFuture<?> t) {
+                        if (!enterBusy())
+                            return;
 
-                                    demandPool.onDiscoveryEvent(n.id(), f);
-                                }
-                            }
-                            finally {
-                                leaveBusy();
+                        try {
+                            // Unwind in the order of discovery events.
+                            for (GridDhtPartitionsExchangeFuture<K, V> f = pendingFuts.poll(); f != null;
+                                f = pendingFuts.poll()) {
+                                demandPool.onDiscoveryEvent(n.id(), f);
                             }
                         }
-                    });
-                }
-                else
-                    if (log.isDebugEnabled())
-                        log.debug("Ignoring discovery event for joining node with lesser order than local one " +
-                            "[locOrder=" + loc.order() + ", joinNode=" + n + ']');
+                        finally {
+                            leaveBusy();
+                        }
+                    }
+                });
             }
             finally {
                 leaveBusy();
@@ -216,6 +208,8 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
         long startTime = loc.metrics().getStartTime();
 
         assert startTime > 0;
+
+        lastJoinOrder.setIfGreater(loc.order());
 
         GridDhtPartitionExchangeId exchId = exchangeId(loc.id(), loc.order(), loc.order(), EVT_NODE_JOINED,
             loc.metrics().getStartTime());
@@ -333,7 +327,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
             for (K k : msg.keys()) {
                 int p = cctx.partition(k);
 
-                GridDhtLocalPartition<K, V> locPart = top.localPartition(p, false);
+                GridDhtLocalPartition<K, V> locPart = top.localPartition(p, -1, false);
 
                 // If this node is no longer an owner.
                 if (locPart == null && !top.owners(p).contains(loc))
@@ -597,8 +591,8 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
      * @param keys Keys to request.
      * @return Future for request.
      */
-    @SuppressWarnings( {"RedundantCast", "unchecked"})
-    @Override public GridDhtFuture<K, Object> request(Collection<? extends K> keys) {
+    @SuppressWarnings( {"unchecked", "RedundantCast"})
+    @Override public GridDhtFuture<Object> request(Collection<? extends K> keys) {
         final GridDhtForceKeysFuture<K, V> fut = new GridDhtForceKeysFuture<K, V>(cctx, keys);
 
         forceKeyFuts.put(fut.futureId(), fut);
@@ -618,7 +612,7 @@ public class GridDhtPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
                 }
             });
 
-        return (GridDhtFuture<K, Object>)(GridDhtFuture<K, V>)fut;
+        return (GridDhtFuture)fut;
     }
 
     /**

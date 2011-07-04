@@ -34,11 +34,15 @@ import java.util.*;
  * default configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.24062011
+ * @version 3.1.1c.03072011
  */
 public interface GridCacheConfiguration {
     /** Default query log name. */
     public static final String DFLT_QUERY_LOGGER_NAME = "org.gridgain.cache.queries";
+
+    /** DGC tracing logger name. */
+    public static final String DGC_TRACE_LOGGER_NAME =
+        "org.gridgain.grid.kernal.processors.cache.GridCacheDgcManager.trace";
 
     /** Default atomic sequence reservation size. */
     public static final int DFLT_ATOMIC_SEQUENCE_RESERVE_SIZE = 1000;
@@ -79,11 +83,38 @@ public interface GridCacheConfiguration {
     /** Default near cache size to use with default near eviction policy. */
     public static final int DFLT_NEAR_SIZE = 10000;
 
+    /** Default value for 'nearEnabled' flag. */
+    public static final boolean DFLT_NEAR_ENABLED = true;
+
+    /** Default value for 'txBatchUpdate' flag. */
+    public static final boolean DFLT_TX_BATCH_UPDATE = true;
+
+    /** Default value for 'invalidate' flag that indicates if this is invalidation-based cache. */
+    public static final boolean DFLT_INVALIDATE = false;
+
+    /** Default value for 'storeValueBytes' flag indicating if value bytes should be stored. */
+    public static final boolean DFLT_STORE_VALUE_BYTES = true;
+
     /** Default preload mode for distributed cache. */
     public static final GridCachePreloadMode DFLT_PRELOAD_MODE = GridCachePreloadMode.ASYNC;
 
     /** Default preload batch size in bytes. */
     public static final int DFLT_PRELOAD_BATCH_SIZE = 102400;
+
+    /** Default value for 'idxFixedTyping' flag. */
+    public static final boolean DFLT_IDX_FIXED_TYPING = true;
+
+    /**
+     * Default value for 'idxFixedTyping' flag indicating if query index files
+     * should be removed on node stop.
+     */
+    public static final boolean DFLT_IDX_CLEANUP = true;
+
+    /**
+     * Default value for 'idxMemoryOnly' flag indicating if query index
+     * database should be in-memory.
+     */
+    public static final boolean DFLT_IDX_MEM_ONLY = false;
 
     /**
      * Default value for maximum memory used per single operation with query index
@@ -97,17 +128,38 @@ public interface GridCacheConfiguration {
     /** Default number samples used to run H2 "ANALYZE" command. */
     public static final int DFLT_IDX_ANALYZE_SAMPLE_SIZE = 10000;
 
-    /** Default garbage collection frequency. */
+    /** Default distributed garbage collection frequency. */
     public static final int DFLT_DGC_FREQUENCY = 10000;
 
     /** Default timeout for lock not to be considered as suspicious. */
     public static final int DFLT_DGC_SUSPECT_LOCK_TIMEOUT = 10000;
+
+    /** Default value for whether DGC should remove long running locks, or only report them. */
+    public static final boolean DFLT_DGC_REMOVE_LOCKS = true;
 
     /** Default index parent folder name. */
     public static final String DFLT_IDX_PARENT_FOLDER_NAME = "work/cache/indexes";
 
     /** Default maximum eviction queue ratio. */
     public static final float DFLT_MAX_EVICTION_OVERFLOW_RATIO = 10;
+
+    /** Default backup eviction synchronized flag. */
+    public static final boolean DFLT_EVICT_BACKUP_SYNCHRONIZED = false;
+
+    /** Default near nodes eviction synchronized flag. */
+    public static final boolean DFLT_EVICT_NEAR_SYNCHRONIZED = true;
+
+    /** Default value for 'synchronousCommit' flag. */
+    public static final boolean DFLT_SYNC_COMMIT = false;
+
+    /** Default value for 'synchronousRollback' flag. */
+    public static final boolean DFLT_SYNC_ROLLBACK = false;
+
+    /** Default value for 'swapEnabled' flag. */
+    public static final boolean DFLT_SWAP_ENABLED = true;
+
+    /** Default value for 'storeEnabled' flag. */
+    public static final boolean DFLT_STORE_ENABLED = true;
 
     /**
      * Cache name. If not provided or {@code null}, then this will be considered a default
@@ -170,7 +222,7 @@ public interface GridCacheConfiguration {
      * @return {@code true} If eviction is synchronized with backup nodes (or the
      *      rest of the nodes in case of replicated cache), {@code false} if not.
      */
-    public boolean isBackupEvictSynchronized();
+    public boolean isEvictBackupSynchronized();
 
     /**
      * Gets flag indicating whether eviction on primary node is synchronized with
@@ -184,12 +236,12 @@ public interface GridCacheConfiguration {
      * @return {@code true} If eviction is synchronized with near nodes in
      *      partitioned cache, {@code false} if not.
      */
-    public boolean isNearEvictSynchronized();
+    public boolean isEvictNearSynchronized();
 
     /**
      * This value denotes the maximum size of eviction queue in percents of cache
      * size in case of distributed cache (replicated and partitioned) and using
-     * synchronized eviction (that is if {@link #isBackupEvictSynchronized()} returns
+     * synchronized eviction (that is if {@link #isEvictBackupSynchronized()} returns
      * {@code true}).
      * <p>
      * That queue is used internally as a buffer to decrease network costs for
@@ -296,12 +348,21 @@ public interface GridCacheConfiguration {
     public boolean isInvalidate();
 
     /**
-     * Gets refresh-ahead ratio. If non-zero, then entry will be preloaded in the back-ground
-     * whenever it's accessed and this refresh ratio of it's total time-to-live has passed.
+     * Flag indicating if cached values should be additionally stored in serialized form.
+     * It's set to {@code true} by default.
+     *
+     * @return {@code true} if cached values should be additionally stored in
+     *      serialized form, {@code false} otherwise.
+     */
+    public boolean isStoreValueBytes();
+
+    /**
+     * Gets refresh-ahead ratio. If non-zero, then entry will be preloaded in the background
+     * whenever it's accessed and the refresh ratio of it's total time-to-live has passed.
      * This feature ensures that entries are always automatically re-cached whenever they are
      * nearing expiration.
      * <p>
-     * For example, if refresh ration is set to {@code 0.75} and entry's time-to-live is
+     * For example, if refresh ratio is set to {@code 0.75} and entry's time-to-live is
      * {@code 1} minute, then if this entry is accessed any time after {@code 45} seconds
      * (which is 0.75 of a minute), the cached value will be immediately returned, but
      * entry will be automatically reloaded from persistent store in the background.
@@ -482,6 +543,22 @@ public interface GridCacheConfiguration {
      * @return Distributed GC suspect lock timeout.
      */
     public int getDgcSuspectLockTimeout();
+
+    /**
+     * Gets system-wide flag indicating whether DGC manager should remove locks in question or only
+     * report them. Note, that this behavior could be overridden by specifically calling
+     * {@link GridCache#dgc(int, boolean, boolean)} method.
+     * <p>
+     * If {@code false} DGC manager will not release the locks that are not owned by any other node.
+     * This may be useful for debugging purposes. You may also enable DGC tracing by enabling DEBUG
+     * on {@link #DGC_TRACE_LOGGER_NAME} category.
+     * <p>
+     * If not provided, default value is {@link GridCacheConfiguration#DFLT_DGC_REMOVE_LOCKS}.
+     *
+     * @return {@code True} if DGC should remove locks.
+     * @see #DGC_TRACE_LOGGER_NAME
+     */
+    public boolean isDgcRemoveLocks();
 
     /**
      * Flag indicating whether GridGain should wait for commit replies from all nodes. By default
