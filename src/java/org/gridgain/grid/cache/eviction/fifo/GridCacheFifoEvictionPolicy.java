@@ -12,9 +12,13 @@ package org.gridgain.grid.cache.eviction.fifo;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.eviction.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.logger.*;
+import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.internal.*;
 
+import javax.management.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
 
@@ -25,15 +29,26 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * information is maintained by attaching ordering metadata to cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheFifoEvictionPolicyMBean {
+    /** MBean server. */
+    @GridMBeanServerResource
+    private MBeanServer jmx;
+
+    /** Logger. */
+    @GridLoggerResource
+    private GridLogger log;
+
+    /** Init flag. */
+    private AtomicBoolean init = new AtomicBoolean(false);
+
     /** Tag. */
     private final String meta = UUID.randomUUID().toString();
 
     /** Maximum size. */
-    private int max = -1;
+    private volatile int max = -1;
 
     /** LRU queue. */
     private final GridConcurrentLinkedQueue<GridCacheEntry<K, V>> queue =
@@ -71,7 +86,7 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
      *
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
-    public void setMaxSize(int max) {
+    @Override public void setMaxSize(int max) {
         A.ensure(max > 0, "max > 0");
 
         this.max = max;
@@ -87,6 +102,11 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
         return queue.eden();
     }
 
+    /** {@inheritDoc} */
+    @Override public void gc() {
+        queue.gc(0);
+    }
+
     /**
      * Gets read-only view on internal {@code FIFO} queue in proper order.
      *
@@ -96,21 +116,29 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
         return Collections.unmodifiableCollection(queue);
     }
 
+    /**
+     * @param entry Entry to get info from.
+     */
+    private void registerMbean(GridCacheEntry<K, V> entry) {
+        if (init.compareAndSet(false, true))
+            CU.registerEvictionMBean(log, jmx, this, GridCacheFifoEvictionPolicyMBean.class, entry);
+    }
+
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
-        if (!rmv) {
+        registerMbean(entry);
+
+        if (!rmv)
             touch(entry);
-        }
         else {
             Node<GridCacheEntry<K, V>> n = entry.meta(meta);
 
-            if (n != null) {
+            if (n != null)
                 queue.clearNode(n);
-            }
         }
 
         shrink();
-        
+
         queue.gc(max);
     }
 
@@ -123,9 +151,8 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
         if (n == null) {
             Node<GridCacheEntry<K, V>> old = entry.putMetaIfAbsent(meta, n = new Node<GridCacheEntry<K, V>>(entry));
 
-            if (old == null) {
+            if (old == null)
                 queue.addNode(n);
-            }
         }
     }
 
@@ -134,6 +161,8 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
      */
     private void shrink() {
         int i = 0;
+
+        int max = this.max;
 
         while (queue.size() > max && i++ < max) {
             Node<GridCacheEntry<K, V>> n = queue.peekNode();

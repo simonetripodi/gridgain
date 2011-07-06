@@ -37,7 +37,7 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * Cache eviction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     /** */
@@ -122,6 +122,20 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
 
         if (log.isDebugEnabled())
             log.debug("Eviction manager stopped on node: " + cctx.nodeId());
+    }
+
+    /**
+     * @return Current size of evict queue.
+     */
+    public int evictQueueSize() {
+        return evictQ.size();
+    }
+
+    /**
+     * @return Size of Eden space in evict queue.
+     */
+    public int evictQueueEdenSize() {
+        return evictQ.eden();
     }
 
     /**

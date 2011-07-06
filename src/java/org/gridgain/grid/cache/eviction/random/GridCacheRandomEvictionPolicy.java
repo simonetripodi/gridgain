@@ -11,7 +11,12 @@ package org.gridgain.grid.cache.eviction.random;
 
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.eviction.*;
+import org.gridgain.grid.logger.*;
+import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.internal.*;
+
+import javax.management.*;
+import java.util.concurrent.atomic.*;
 
 /**
  * Cache eviction policy which will select random cache entry for eviction if cache
@@ -23,12 +28,23 @@ import org.gridgain.grid.typedef.internal.*;
  * key has the same probability of being accessed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheRandomEvictionPolicyMBean {
+    /** MBean server. */
+    @GridMBeanServerResource
+    private MBeanServer jmx;
+
+    /** Logger. */
+    @GridLoggerResource
+    private GridLogger log;
+
+    /** Init flag. */
+    private AtomicBoolean init = new AtomicBoolean(false);
+
     /** Maximum size. */
-    private int max = -1;
+    private volatile int max = -1;
 
     /**
      * Constructs random eviction policy with all defaults.
@@ -62,14 +78,24 @@ public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPol
      *
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
-    public void setMaxSize(int max) {
+    @Override public void setMaxSize(int max) {
         A.ensure(max > 0, "max > 1");
 
         this.max = max;
     }
 
+    /**
+     * @param entry Entry to get info from.
+     */
+    private void registerMbean(GridCacheEntry<K, V> entry) {
+        if (init.compareAndSet(false, true))
+            CU.registerEvictionMBean(log, jmx, this, GridCacheRandomEvictionPolicyMBean.class, entry);
+    }
+
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
+        registerMbean(entry);
+
         GridCache<K, V> cache = entry.parent().cache();
 
         int size = cache.keySize();

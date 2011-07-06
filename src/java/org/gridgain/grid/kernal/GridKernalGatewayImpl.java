@@ -23,7 +23,7 @@ import static org.gridgain.grid.kernal.GridKernalState.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @GridToStringExclude
 public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
@@ -93,6 +93,8 @@ public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
     @Override public void writeLock() {
         enterThreadLocals();
 
+        boolean interrupted = false;
+
         // Busy wait is intentional.
         while (true)
             try {
@@ -103,8 +105,12 @@ public class GridKernalGatewayImpl implements GridKernalGateway, Serializable {
             }
             catch (InterruptedException ignore) {
                 // Preserve interrupt status & ignore.
-                Thread.currentThread().interrupt();
+                // Note that interrupted flag is cleared.
+                interrupted = true;
             }
+
+        if (interrupted)
+            Thread.currentThread().interrupt();
     }
 
     /**

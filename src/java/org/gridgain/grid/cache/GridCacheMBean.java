@@ -11,13 +11,11 @@ package org.gridgain.grid.cache;
 
 import org.gridgain.grid.util.mbean.*;
 
-import java.util.*;
-
 /**
  * This interface defines JMX view on {@link GridCache}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @GridMBeanDescription("MBean that provides access to cloud descriptor.")
 public interface GridCacheMBean {
@@ -43,7 +41,7 @@ public interface GridCacheMBean {
      * @return Number of entries that was swapped to disk.
      */
     @GridMBeanDescription("Number of entries that was swapped to disk.")
-    public long overflowSize();
+    public long getOverflowSize();
 
     /**
      * Returns number of non-{@code null} values in the cache.
@@ -51,7 +49,15 @@ public interface GridCacheMBean {
      * @return Number of non-{@code null} values in the cache.
      */
     @GridMBeanDescription("Number of non-null values in the cache.")
-    public int size();
+    public int getSize();
+
+    /**
+     * Gets number of keys in the cache, possibly with {@code null} values.
+     *
+     * @return Number of keys in the cache.
+     */
+    @GridMBeanDescription("Number of keys in the cache (possibly with null values).")
+    public int getKeySize();
 
     /**
      * Returns {@code true} if this cache is empty.
@@ -62,10 +68,130 @@ public interface GridCacheMBean {
     public boolean isEmpty();
 
     /**
-     * Set of cached keys.
+     * Gets current size of evict queue used to batch up evictions.
      *
-     * @return Set of formatted keys for this cache.
+     * @return Current size of evict queue.
      */
-    @GridMBeanDescription("Set of formatted keys for this cache.")
-    public Collection<String> keySetFormatted();
+    @GridMBeanDescription("Current size of evict queue.")
+    public int getDhtEvictQueueCurrentSize();
+
+    /**
+     * Gets current Eden size of evict queue used to batch up evictions.
+     *
+     * @return Current Eden size of evict queue.
+     */
+    @GridMBeanDescription("Current Eden size of evict queue.")
+    public int getDhtEvictQueueCurrentEdenSize();
+
+    /**
+     * Gets transaction per-thread map size.
+     *
+     * @return Thread map size.
+     */
+    @GridMBeanDescription("Transaction per-thread map size.")
+    public int getTxThreadMapSize();
+
+    /**
+     * Gets transaction per-Xid map size.
+     *
+     * @return Transaction per-Xid map size.
+     */
+    @GridMBeanDescription("Transaction per-Xid map size.")
+    public int getTxXidMapSize();
+
+    /**
+     * Gets committed transaction queue size.
+     *
+     * @return Committed transaction queue size.
+     */
+    @GridMBeanDescription("Transaction committed queue size.")
+    public int getTxCommitQueueSize();
+
+    /**
+     * Gets prepared transaction queue size.
+     *
+     * @return Prepared transaction queue size.
+     */
+    @GridMBeanDescription("Transaction prepared queue size.")
+    public int getTxPrepareQueueSize();
+
+    /**
+     * Gets start version counts map size.
+     *
+     * @return Start version counts map size.
+     */
+    @GridMBeanDescription("Transaction start version counts map size.")
+    public int getTxStartVersionCountsSize();
+
+    /**
+     * Gets number of cached committed transaction IDs.
+     *
+     * @return Number of cached committed transaction IDs.
+     */
+    @GridMBeanDescription("Transaction committed ID map size.")
+    public int getTxCommittedVersionsSize();
+
+    /**
+     * Gets number of cached rolled back transaction IDs.
+     *
+     * @return Number of cached rolled back transaction IDs.
+     */
+    @GridMBeanDescription("Transaction rolled back ID map size.")
+    public int getTxRolledbackVersionsSize();
+
+    /**
+     * Gets transaction DHT per-thread map size.
+     *
+     * @return DHT thread map size.
+     */
+    @GridMBeanDescription("Transaction DHT per-thread map size.")
+    public int getTxDhtThreadMapSize();
+
+    /**
+     * Gets transaction DHT per-Xid map size.
+     *
+     * @return Transaction DHT per-Xid map size.
+     */
+    @GridMBeanDescription("Transaction DHT per-Xid map size.")
+    public int getTxDhtXidMapSize();
+
+    /**
+     * Gets committed DHT transaction queue size.
+     *
+     * @return Committed DHT transaction queue size.
+     */
+    @GridMBeanDescription("Transaction DHT committed queue size.")
+    public int getTxDhtCommitQueueSize();
+
+    /**
+     * Gets prepared DHT transaction queue size.
+     *
+     * @return Prepared DHT transaction queue size.
+     */
+    @GridMBeanDescription("Transaction DHT prepared queue size.")
+    public int getTxDhtPrepareQueueSize();
+
+    /**
+     * Gets DHT start version counts map size.
+     *
+     * @return DHT start version counts map size.
+     */
+    @GridMBeanDescription("Transaction DHT start version counts map size.")
+    public int getTxDhtStartVersionCountsSize();
+
+    /**
+     * Gets number of cached committed DHT transaction IDs.
+     *
+     * @return Number of cached committed DHT transaction IDs.
+     */
+    @GridMBeanDescription("Transaction DHT committed ID map size.")
+    public int getTxDhtCommittedVersionsSize();
+
+    /**
+     * Gets number of cached rolled back DHT transaction IDs.
+     *
+     * @return Number of cached rolled back DHT transaction IDs.
+     */
+    @GridMBeanDescription("Transaction DHT rolled back ID map size.")
+    public int getTxDhtRolledbackVersionsSize();
 }

@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code LRU} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @GridMBeanDescription("MBean for LRU cache eviction policy.")
 public interface GridCacheLruEvictionPolicyMBean {
@@ -26,6 +26,14 @@ public interface GridCacheLruEvictionPolicyMBean {
      */
     @GridMBeanDescription("Maximum allowed cache size.")
     public int getMaxSize();
+
+    /**
+     * Sets maximum allowed cache size.
+     *
+     * @param max Maximum allowed cache size.
+     */
+    @GridMBeanDescription("Sets maximum allowed cache size.")
+    public void setMaxSize(int max);
 
     /**
      * Gets current {@code HIRS} queue size.
@@ -43,4 +51,10 @@ public interface GridCacheLruEvictionPolicyMBean {
      */
     @GridMBeanDescription("Current queue eden size.")
     public int getCurrentEdenSize();
+
+    /**
+     * Clear eden space of internal queue.
+     */
+    @GridMBeanDescription("Clears Eden space from internal queue.")
+    public void gc();
 }

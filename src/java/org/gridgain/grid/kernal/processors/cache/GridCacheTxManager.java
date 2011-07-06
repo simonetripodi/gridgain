@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -224,6 +224,55 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
+     * @return Thread map size.
+     */
+    public int threadMapSize() {
+        return threadMap.size();
+    }
+
+    /**
+     * @return ID map size.
+     */
+    public int idMapSize() {
+        return idMap.size();
+    }
+
+    /**
+     * @return Committed queue size.
+     */
+    public int commitQueueSize() {
+        return committedQ.size();
+    }
+
+    /**
+     * @return Prepare queue size.
+     */
+    public int prepareQueueSize() {
+        return prepareQ.size();
+    }
+
+    /**
+     * @return Start version counts.
+     */
+    public int startVersionCountsSize() {
+        return startVerCnts.size();
+    }
+
+    /**
+     * @return Committed versions size.
+     */
+    public int committedVersionsSize() {
+        return committedVers.size();
+    }
+
+    /**
+     * @return Rolled back versions size.
+     */
+    public int rolledbackVersionsSize() {
+        return rolledbackVers.size();
+    }
+
+    /**
      *
      * @param tx Transaction to check.
      * @return {@code True} if transaction has been committed or rolled back,
@@ -269,9 +318,6 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                 if (log.isDebugEnabled())
                     log.debug("Added transaction version mapping [from=" + from + ", to=" + tx.xidVersion() +
                         ", tx=" + tx + ']');
-
-                // TODO
-//                U.debug(log, "Added transaction version mapping [nearVer=" + from + ", dhtVer=" + tx.xidVersion() + ']');
             }
         }
         else {
@@ -435,7 +481,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
 
         tx = tx(Thread.currentThread().getId());
 
-        return tx != null && !tx.user() && tx.state() == ACTIVE ? tx : null;
+        return tx != null && tx.user() && tx.state() == ACTIVE ? tx : null;
     }
 
     /**
@@ -469,6 +515,14 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     @SuppressWarnings({"unchecked"})
     @Nullable public <T extends GridCacheTxEx<K, V>> T tx(GridCacheVersion txId) {
         return (T)idMap.get(txId);
+    }
+
+    /**
+     * @param txId Transaction ID.
+     * @return Transaction with given ID.
+     */
+    @Nullable public GridCacheTxEx<K, V> txx(GridCacheVersion txId) {
+        return idMap.get(txId);
     }
 
     /**

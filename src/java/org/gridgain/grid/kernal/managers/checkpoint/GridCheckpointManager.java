@@ -20,10 +20,12 @@ import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.checkpoint.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
+import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.kernal.GridTopic.*;
@@ -32,7 +34,7 @@ import static org.gridgain.grid.kernal.GridTopic.*;
  * This class defines a checkpoint manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter", "deprecation"})
 public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi> {
@@ -40,13 +42,10 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
     private final GridMessageListener lsnr = new CheckpointRequestListener();
 
     /** */
-    private final Map<UUID, Set<String>> keyMap = new HashMap<UUID, Set<String>>();
+    private final ConcurrentMap<UUID, CheckpointSet> keyMap = new ConcurrentHashMap<UUID, CheckpointSet>();
 
     /** Grid marshaller. */
     private final GridMarshaller marshaller;
-
-    /** */
-    private final Object mux = new Object();
 
     /**
      * @param ctx Grid kernal context.
@@ -92,9 +91,7 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
      * @return Session IDs.
      */
     public Collection<UUID> sessionIds() {
-        synchronized (mux) {
-            return new ArrayList<UUID>(keyMap.keySet());
-        }
+        return new ArrayList<UUID>(keyMap.keySet());
     }
 
     /**
@@ -144,15 +141,11 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
                     // Save it first to avoid getting null value on another node.
                     byte[] data = state == null ? null : U.marshal(marshaller, state).getArray();
 
-                    Set<String> keys;
+                    Set<String> keys = keyMap.get(ses.getId());
 
-                    synchronized (mux) {
-                        keys = keyMap.get(ses.getId());
-
-                        if (log.isDebugEnabled())
-                            log.debug("Resolved keys for session [keys=" + keys + ", ses=" + ses +
-                                ", keyMap=" + keyMap + ']');
-                    }
+                    if (log.isDebugEnabled())
+                        log.debug("Resolved keys for session [keys=" + keys + ", ses=" + ses +
+                            ", keyMap=" + keyMap + ']');
 
                     // Note: Check that keys exists because session may be invalidated during saving
                     // checkpoint from GridFuture.
@@ -160,9 +153,7 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
                         saved = getSpi(ses.getCheckpointSpi()).saveCheckpoint(key, data, timeout, override);
 
                         if (saved) {
-                            synchronized (keys) {
-                                keys.add(key);
-                            }
+                            keys.add(key);
 
                             if (ses.getJobId() != null) {
                                 GridNode node = ctx.discovery().node(ses.getTaskNodeId());
@@ -219,24 +210,19 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
      * @param key Checkpoint key.
      * @return Whether or not checkpoint was removed.
      */
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     public boolean removeCheckpoint(GridTaskSessionInternal ses, String key) {
         assert ses != null;
         assert key != null;
 
-        Set<String> keys;
-
-        synchronized (mux) {
-            keys = keyMap.get(ses.getId());
-        }
+        Set<String> keys = keyMap.get(ses.getId());
 
         boolean rmv = false;
 
         // Note: Check that keys exists because session may be invalidated during removing
         // checkpoint from GridFuture.
         if (keys != null) {
-            synchronized (keys) {
-                keys.remove(key);
-            }
+            keys.remove(key);
 
             rmv = getSpi(ses.getCheckpointSpi()).removeCheckpoint(key);
         }
@@ -278,17 +264,15 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
     /**
      * @param ses Task session.
      */
-    @SuppressWarnings( {"TypeMayBeWeakened"})
+    @SuppressWarnings({"TypeMayBeWeakened", "MismatchedQueryAndUpdateOfCollection"})
     public void onSessionStart(GridTaskSessionInternal ses) {
-        synchronized (mux) {
-            Set<String> keys = keyMap.get(ses.getId());
+        Set<String> keys = keyMap.get(ses.getId());
 
-            if (keys == null)
-                keyMap.put(ses.getId(), new HashSet<String>());
+        if (keys == null)
+            keyMap.putIfAbsent(ses.getId(), new CheckpointSet(ses.session()));
 
-            if (log.isDebugEnabled())
-                log.debug("Session started signal processed [ses=" + ses + ", keyMap=" + keyMap + ']');
-        }
+        if (log.isDebugEnabled())
+            log.debug("Session started signal processed [ses=" + ses + ", keyMap=" + keyMap + ']');
     }
 
     /**
@@ -298,44 +282,29 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
     public void onSessionEnd(GridTaskSessionInternal ses, boolean cleanup) {
         // If on task node.
         if (ses.getJobId() == null) {
-            Set<String> keys;
+            Set<String> keys = keyMap.remove(ses.getId());
 
-            synchronized (mux) {
-                keys = keyMap.remove(ses.getId());
-            }
-
-            if (keys != null) {
-                Set<String> copy;
-
-                synchronized (keys) {
-                    copy = new HashSet<String>(keys);
-                }
-
-                for (String key : copy)
+            if (keys != null)
+                for (String key : new HashSet<String>(keys))
                     getSpi(ses.getCheckpointSpi()).removeCheckpoint(key);
-            }
         }
         // If on job node.
-        else {
-            if (cleanup) {
-                Set<String> keys;
+        else if (cleanup) {
+            // Clean up memory.
+            CheckpointSet keys = keyMap.get(ses.getId());
 
-                // Clean up memory.
-                synchronized (mux) {
-                    keys = keyMap.remove(ses.getId());
-                }
-
-                if (keys != null) {
-                    Set<String> copy;
-
-                    synchronized (keys) {
-                        copy = new HashSet<String>(keys);
-                    }
-
-                    for (String key : copy)
-                        getSpi(ses.getCheckpointSpi()).removeCheckpoint(key);
-                }
+            // Make sure that we don't remove checkpoint set that
+            // was created by newly created session.
+            if (keys != null && keys.session() == ses.session()) {
+                if (!keyMap.remove(ses.getId(), keys))
+                    keys = null;
             }
+            else
+                keys = null;
+
+            if (keys != null)
+                for (String key : keys)
+                    getSpi(ses.getCheckpointSpi()).removeCheckpoint(key);
         }
     }
 
@@ -363,15 +332,37 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
 
     /** {@inheritDoc} */
     @Override public void printMemoryStats() {
-        int keyMapSize;
-
-        synchronized (mux) {
-            keyMapSize = keyMap.size();
-        }
-
         X.println(">>>");
         X.println(">>> Checkpoint manager memory stats [grid=" + ctx.gridName() + ']');
-        X.println(">>>  keyMap: " + keyMapSize);
+        X.println(">>>  keyMap: " + keyMap.size());
+    }
+
+    /**
+     * Checkpoint set.
+     */
+    private static class CheckpointSet extends GridConcurrentHashSet<String> {
+        /** Session. */
+        @GridToStringInclude
+        private final GridTaskSessionInternal ses;
+
+        /**
+         * @param ses Session.
+         */
+        private CheckpointSet(GridTaskSessionInternal ses) {
+            this.ses = ses;
+        }
+
+        /**
+         * @return Session.
+         */
+        GridTaskSessionInternal session() {
+            return ses;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String toString() {
+            return S.toString(CheckpointSet.class, this);
+        }
     }
 
     /** */
@@ -380,22 +371,17 @@ public class GridCheckpointManager extends GridManagerAdapter<GridCheckpointSpi>
          * @param nodeId ID of the node that sent this message.
          * @param msg Received message.
          */
+        @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
         @Override public void onMessage(UUID nodeId, Object msg) {
             GridCheckpointRequest req = (GridCheckpointRequest)msg;
 
             if (log.isDebugEnabled())
                 log.debug("Received checkpoint request: " + req);
 
-            Set<String> keys;
-
-            synchronized (mux) {
-                keys = keyMap.get(req.getSessionId());
-            }
+            Set<String> keys = keyMap.get(req.getSessionId());
 
             if (keys != null)
-                synchronized (keys) {
-                    keys.add(req.getKey());
-                }
+                keys.add(req.getKey());
             // Session is over, simply remove stored checkpoint.
             else
                 getSpi(req.getCheckpointSpi()).removeCheckpoint(req.getKey());

@@ -12,10 +12,14 @@ package org.gridgain.grid.cache.eviction.lru;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.eviction.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.logger.*;
+import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 
+import javax.management.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
 
@@ -26,16 +30,27 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * information is maintained by attaching ordering metadata to cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheLruEvictionPolicyMBean {
+    /** MBean server. */
+    @GridMBeanServerResource
+    private MBeanServer jmx;
+
+    /** Logger. */
+    @GridLoggerResource
+    private GridLogger log;
+
+    /** Init flag. */
+    private AtomicBoolean init = new AtomicBoolean(false);
+
     /** Tag. */
     @GridToStringExclude
     private final String meta = UUID.randomUUID().toString();
 
     /** Maximum size. */
-    private int max = -1;
+    private volatile int max = -1;
 
     /** LRU queue. */
     private final GridConcurrentLinkedQueue<GridCacheEntry<K, V>> queue =
@@ -73,7 +88,7 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
      *
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
-    public void setMaxSize(int max) {
+    @Override public void setMaxSize(int max) {
         A.ensure(max > 0, "max > 1");
 
         this.max = max;
@@ -89,6 +104,11 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
         return queue.eden();
     }
 
+    /** {@inheritDoc} */
+    @Override public void gc() {
+        queue.gc(0);
+    }
+
     /**
      * Gets read-only view on internal {@code 'LRU'} queue in proper order.
      *
@@ -98,8 +118,18 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
         return Collections.unmodifiableCollection(queue);
     }
 
+    /**
+     * @param entry Entry to get info from.
+     */
+    private void registerMbean(GridCacheEntry<K, V> entry) {
+        if (init.compareAndSet(false, true))
+            CU.registerEvictionMBean(log, jmx, this, GridCacheLruEvictionPolicyMBean.class, entry);
+    }
+
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
+        registerMbean(entry);
+
         if (!rmv) {
             touch(entry);
         }
@@ -112,7 +142,7 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
         }
 
         shrink();
-        
+
         queue.gc(max);
     }
 
@@ -150,6 +180,8 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
     private void shrink() {
         int i = 0;
 
+        int max = this.max;
+
         while (queue.size() > max && i++ < max) {
             Node<GridCacheEntry<K, V>> n = queue.peekNode();
 
@@ -159,7 +191,7 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
                 if (e != null) {
                     if (queue.clearNode(n)) {
                         if (!e.evict()) {
-                            // MOve to the beginning again.
+                            // Move to the beginning again.
                             touch(e);
                         }
                     }

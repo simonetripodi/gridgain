@@ -25,7 +25,7 @@ import static java.util.concurrent.TimeUnit.*;
  * Convenience future wrapper adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridFutureWrapper<A, B> extends GridMetadataAwareAdapter implements GridFuture<A> {
     /** Wrapped future. */

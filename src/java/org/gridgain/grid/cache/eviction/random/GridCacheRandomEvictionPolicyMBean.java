@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code random} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @GridMBeanDescription("MBean for random cache eviction policy.")
 public interface GridCacheRandomEvictionPolicyMBean {
@@ -26,4 +26,12 @@ public interface GridCacheRandomEvictionPolicyMBean {
      */
     @GridMBeanDescription("Maximum allowed cache size.")
     public int getMaxSize();
+
+    /**
+     * Sets maximum allowed cache size.
+     *
+     * @param max Maximum allowed cache size.
+     */
+    @GridMBeanDescription("Sets maximum allowed cache size.")
+    public void setMaxSize(int max);
 }

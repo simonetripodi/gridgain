@@ -44,7 +44,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -203,8 +203,9 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      */
     private void injectResources(GridCacheConfiguration cfg) throws GridException {
         injectResource(cfg.getEvictionPolicy());
+        injectResource(cfg.getNearEvictionPolicy());
         injectResource(cfg.getAffinity());
-        injectResource(cfg.<Object>getAffinityMapper());
+        injectResource(cfg.getAffinityMapper());
         injectResource(cfg.getTransactionManagerLookup());
         injectResource(cfg.getCloner());
         injectResource(cfg.getStore());
@@ -216,7 +217,10 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      */
     private void injectResource(Object rsrc) throws GridException {
         if (rsrc != null) {
-            ctx.resource().injectGeneric(rsrc);
+            if (rsrc instanceof NearEvictionPolicyWrapper)
+                ctx.resource().injectGeneric(((NearEvictionPolicyWrapper)rsrc).wrapped());
+            else
+                ctx.resource().injectGeneric(rsrc);
         }
     }
 
@@ -496,12 +500,10 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         for (GridCacheAdapter<?, ?> cache : caches.values())
             onKernalStart(cache);
 
-        for (GridCache<?, ?> proxy : proxies.values()) {
+        for (GridCacheAdapter<?, ?> cache : caches.values()) {
             try {
-                String name = proxy.name() == null ? "default" : proxy.name();
-
-                ObjectName mb = U.registerMBean(mBeanSrv, ctx.gridName(), "Cache", name,
-                    new GridCacheMBeanAdapter(proxy), GridCacheMBean.class);
+                ObjectName mb = U.registerCacheMBean(mBeanSrv, ctx.gridName(), cache.name(), "Cache",
+                    new GridCacheMBeanAdapter(cache.context()), GridCacheMBean.class);
 
                 cacheMBeans.add(mb);
 
@@ -801,6 +803,13 @@ public class GridCacheProcessor extends GridProcessorAdapter {
          */
         private NearEvictionPolicyWrapper(GridCacheEvictionPolicy<K, V> policy) {
             this.policy = policy;
+        }
+
+        /**
+         * @return Wrapped policy.
+         */
+        GridCacheEvictionPolicy<K, V> wrapped() {
+            return policy;
         }
 
         /** {@inheritDoc} */

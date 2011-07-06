@@ -13,12 +13,16 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.eviction.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
+import org.gridgain.grid.logger.*;
+import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
 
+import javax.management.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.cache.eviction.lirs.GridCacheLirsEvictionPolicy.State.*;
 import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
@@ -39,11 +43,22 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * algorithm by Sone Jiang and Xiaodong Zhang.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
 public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheLirsEvictionPolicyMBean {
+    /** MBean server. */
+    @GridMBeanServerResource
+    private MBeanServer jmx;
+
+    /** Logger. */
+    @GridLoggerResource
+    private GridLogger log;
+
+    /** Init flag. */
+    private AtomicBoolean init = new AtomicBoolean(false);
+
     /** Lock count. */
     private static final int LOCK_CNT = 64;
 
@@ -72,7 +87,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
     /** Maximum stack size. */
     @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
-    private int max = -1;
+    private volatile int max = -1;
 
     /** Ratio of {@code HIRS} (High Inter-reference Recency Set). */
     private double queueRatio = DFLT_QUEUE_SIZE_RATIO;
@@ -130,7 +145,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
      *
      * @param max Maximum allowed size of cached entries.
      */
-    public void setMaxSize(int max) {
+    @Override public void setMaxSize(int max) {
         A.ensure(max > 0, "max > 0");
 
         this.max = max;
@@ -188,6 +203,12 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         return queue.eden();
     }
 
+    /** {@inheritDoc} */
+    @Override public void gc() {
+        stack.gc(0);
+        queue.gc(0);
+    }
+
     /**
      * Gets read-only view on main internal stack for {@code LIRS} implementation.
      *
@@ -207,8 +228,18 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         return queue.entries();
     }
 
+    /**
+     * @param entry Entry to get info from.
+     */
+    private void registerMbean(GridCacheEntry<K, V> entry) {
+        if (init.compareAndSet(false, true))
+            CU.registerEvictionMBean(log, jmx, this, GridCacheLirsEvictionPolicyMBean.class, entry);
+    }
+
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
+        registerMbean(entry);
+
         if (!rmv)
             touch(entry);
         else {

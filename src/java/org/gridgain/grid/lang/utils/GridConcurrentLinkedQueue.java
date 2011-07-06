@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.*;
  * {@link Collection#remove(Object)} was called which can lead to memory leaks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> implements Queue<E> {
     /** Dummy stamp holder. */
@@ -89,7 +89,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * that all empty nodes that exceed {@code maxEden} counter will be
      * cleared.
      *
-     * @param maxEden Maximum number of void nodes in this LIRS collection.
+     * @param maxEden Maximum number of void nodes in this collection.
      */
     public void gc(int maxEden) {
         if (eden.get() >= maxEden && compacting.compareAndSet(false, true)) {
@@ -229,24 +229,20 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
 
             if (h == head.get()) {
                 if (h == t) {
-                    if (first == null) {
+                    if (first == null)
                         return null;
-                    }
-                    else {
+                    else
                         casTail(t, first);
-                    }
                 }
                 else {
                     assert first != null;
 
-                    if (!first.cleared()) {
+                    if (!first.cleared())
                         return first;
-                    }
-                    else {
+                    else
                         // This is GC step to remove obsolete nodes.
                         if (casHead(h, first))
                             decreaseEden();
-                    }
                 }
             }
         }
@@ -283,12 +279,10 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
 
             if (h == head.get()) {
                 if (h == t) {
-                    if (first == null) {
+                    if (first == null)
                         return null;
-                    }
-                    else {
+                    else
                         casTail(t, first);
-                    }
                 }
                 else if (casHead(h, first)) { // Move head pointer.
                     assert first != null;
@@ -297,12 +291,16 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
 
                     if (c != null) {
                         if (removeNode(first)) {
+                            assert first.cleared();
+
                             // We just cleared a node, so bring the counter back.
                             decreaseEden();
 
                             return c;
                         }
                     }
+                    else
+                        assert first.cleared();
 
                     // We encountered cleared node.
                     decreaseEden();

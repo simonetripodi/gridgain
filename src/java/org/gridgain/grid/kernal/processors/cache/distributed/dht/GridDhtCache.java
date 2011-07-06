@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -495,6 +495,13 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
         }
         else
             tx = ctx.tm().tx(dhtVer);
+
+        if (tx == null && !req.explicitLock()) {
+            U.warn(log, "Received finish request for completed transaction (the message may be too late " +
+                "and transaction could have been DGCed by now) [commit=" + req.commit() + ", xid=" + req.xid() + ']');
+
+            return null;
+        }
 
         try {
             if (req.commit()) {
@@ -1059,7 +1066,7 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
      * @param nodeId Node ID.
      * @param req Request.
      */
-    private void processNearTxFinishRequest(final UUID nodeId, final GridNearTxFinishRequest<K, V> req) {
+    private void processNearTxFinishRequest(UUID nodeId, GridNearTxFinishRequest<K, V> req) {
         if (log.isDebugEnabled())
             log.debug("Processing near tx finish request [nodeId=" + nodeId + ", req=" + req + "]");
 
@@ -1067,17 +1074,7 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
         if (f != null)
             // Only for error logging.
-            f.listenAsync(new CI1<GridFuture<?>>() {
-                @Override public void apply(GridFuture<?> f) {
-                    try {
-                        f.get();
-                    }
-                    catch (GridException e) {
-                        U.error(log, "Failed to process finish request from near node [nodeId=" + nodeId +
-                            ", req=" + req + ']', e);
-                    }
-                }
-            });
+            f.listenAsync(CU.errorLogger(log));
     }
 
     /**

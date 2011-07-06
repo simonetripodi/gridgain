@@ -37,7 +37,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * Discovery SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     /** System line separator. */
@@ -201,7 +201,7 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         getSpi().setListener(new GridDiscoverySpiListener() {
             @Override public void onDiscovery(int type, GridNode node) {
                 if (type != EVT_NODE_METRICS_UPDATED)
-                    discoCache.set(null);
+                    discoCache.set(new DiscoCache(localNode(), getSpi().getRemoteNodes()));
 
                 discoWrk.addEvent(type, node);
             }
@@ -334,12 +334,9 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
 
         Collection<GridNode> rmtNodes = remoteNodes();
 
-        GridNode locNode = getSpi().getLocalNode();
+        GridNode locNode = localNode();
 
-        Collection<GridNode> allNodes = new ArrayList<GridNode>(rmtNodes.size() + 1);
-
-        allNodes.addAll(rmtNodes);
-        allNodes.add(locNode);
+        Collection<GridNode> allNodes = allNodes();
 
         long hash = topologyHash(allNodes);
 

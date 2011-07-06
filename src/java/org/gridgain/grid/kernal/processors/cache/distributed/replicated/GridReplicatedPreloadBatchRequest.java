@@ -21,7 +21,7 @@ import java.util.*;
  * Preload batch message that carries some number of entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridReplicatedPreloadBatchRequest<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Partition. */

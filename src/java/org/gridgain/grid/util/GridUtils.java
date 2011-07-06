@@ -69,7 +69,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1440,7 +1440,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -3009,6 +3009,33 @@ public abstract class GridUtils {
     }
 
     /**
+     * Constructs JMX object name with given properties.
+     * Map with ordered {@code groups} used for proper object name construction.
+     *
+     * @param gridName Grid name.
+     * @param cacheName Name of the cache.
+     * @param name Name of mbean.
+     * @return JMX object name.
+     * @throws MalformedObjectNameException Thrown in case of any errors.
+     */
+    public static ObjectName makeCacheMBeanName(@Nullable String gridName, @Nullable String cacheName, String name)
+        throws MalformedObjectNameException {
+        SB sb = new SB(JMX_DOMAIN + ':');
+
+        if (gridName != null && gridName.length() > 0)
+            sb.a("grid=").a(gridName).a(',');
+
+        if (cacheName == null)
+            cacheName = "defaultCache";
+
+        sb.a("group=").a(cacheName).a(',');
+
+        sb.a("name=").a(name);
+
+        return new ObjectName(sb.toString());
+    }
+
+    /**
      * Registers MBean with the server.
      *
      * @param <T> Type of mbean.
@@ -3032,6 +3059,56 @@ public abstract class GridUtils {
         mbean.getMBeanInfo();
 
         return mbeanSrv.registerMBean(mbean, makeMBeanName(gridName, grp, name)).getObjectName();
+    }
+
+    /**
+     * Registers MBean with the server.
+     *
+     * @param <T> Type of mbean.
+     * @param mbeanSrv MBean server.
+     * @param name MBean object name.
+     * @param impl MBean implementation.
+     * @param itf MBean interface.
+     * @return JMX object name.
+     * @throws JMException If MBean creation failed.
+     */
+    public static <T> ObjectName registerMBean(MBeanServer mbeanSrv, ObjectName name, T impl, Class<T> itf)
+        throws JMException {
+        assert mbeanSrv != null;
+        assert name != null;
+        assert itf != null;
+
+        DynamicMBean mbean = new GridStandardMBean(impl, itf);
+
+        mbean.getMBeanInfo();
+
+        return mbeanSrv.registerMBean(mbean, name).getObjectName();
+    }
+
+    /**
+     * Registers MBean with the server.
+     *
+     * @param <T> Type of mbean.
+     * @param mbeanSrv MBean server.
+     * @param gridName Grid name.
+     * @param cacheName Name of the cache.
+     * @param name Name of mbean.
+     * @param impl MBean implementation.
+     * @param itf MBean interface.
+     * @return JMX object name.
+     * @throws JMException If MBean creation failed.
+     */
+    public static <T> ObjectName registerCacheMBean(MBeanServer mbeanSrv, @Nullable String gridName,
+        @Nullable String cacheName, String name, T impl, Class<T> itf) throws JMException {
+        assert mbeanSrv != null;
+        assert name != null;
+        assert itf != null;
+
+        DynamicMBean mbean = new GridStandardMBean(impl, itf);
+
+        mbean.getMBeanInfo();
+
+        return mbeanSrv.registerMBean(mbean, makeCacheMBeanName(gridName, cacheName, name)).getObjectName();
     }
 
     /**

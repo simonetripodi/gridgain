@@ -132,7 +132,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridFactory {
     /**
@@ -1207,12 +1207,18 @@ public class GridFactory {
         synchronized (mux) {
             List<Grid> allGrids = new ArrayList<Grid>(grids.size() + (dfltGrid == null ? 0 : 1));
 
-            if (dfltGrid != null && dfltGrid.getState() == STARTED)
-                allGrids.add(dfltGrid.getGrid());
+            if (dfltGrid != null) {
+                Grid g = dfltGrid.getGrid();
+
+                if (g != null)
+                    allGrids.add(g);
+            }
 
             for (GridNamedInstance grid : grids.values()) {
-                if (grid.getState() == STARTED)
-                    allGrids.add(grid.getGrid());
+                Grid g = grid.getGrid();
+
+                if (g != null)
+                    allGrids.add(g);
             }
 
             return allGrids;
@@ -1254,13 +1260,19 @@ public class GridFactory {
         A.notNull(localNodeId, "localNodeId");
 
         synchronized (mux) {
-            if (dfltGrid != null && dfltGrid.getState() == GridFactoryState.STARTED &&
-                dfltGrid.getGrid().getLocalNodeId().equals(localNodeId))
-                return dfltGrid.getGrid();
+            if (dfltGrid != null) {
+                GridKernal g = dfltGrid.getGrid();
 
-            for (GridNamedInstance grid : grids.values())
-                if (grid.getState() == STARTED && grid.getGrid().getLocalNodeId().equals(localNodeId))
-                    return grid.getGrid();
+                if(g != null && g.getLocalNodeId().equals(localNodeId))
+                    return g;
+            }
+
+            for (GridNamedInstance grid : grids.values()) {
+                GridKernal g = grid.getGrid();
+
+                if (g != null && g.getLocalNodeId().equals(localNodeId))
+                    return g;
+            }
         }
 
         throw new IllegalStateException("Grid instance with given local node ID was not properly " +
@@ -1313,10 +1325,12 @@ public class GridFactory {
             grid = name == null ? dfltGrid : grids.get(name);
         }
 
-        if (grid == null || grid.getState() != STARTED)
+        Grid res;
+
+        if (grid == null || (res = grid.getGrid()) == null)
             throw new IllegalStateException("Grid instance was not properly started or was already stopped: " + name);
 
-        return grid.getGrid();
+        return res;
     }
 
     /**
@@ -1377,7 +1391,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1972,16 +1986,9 @@ public class GridFactory {
             }
 
             try {
-                grid.startListener(new CA() {
-                    @Override public void apply() {
-                        state = STARTED;
-                    }
-                });
-
                 grid.start(myCfg);
 
-                // State should have been changed in listener.
-                assert state == STARTED;
+                state = STARTED;
 
                 if (log.isDebugEnabled())
                     log.debug("Grid factory started ok.");
@@ -2291,7 +2298,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.03072011
+         * @version 3.1.1c.06072011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

@@ -27,7 +27,7 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * There are no configuration parameters.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public class GridTcpDiscoveryVmTopologyStore implements GridTcpDiscoveryTopologyStore {
     /** Map to store nodes. */

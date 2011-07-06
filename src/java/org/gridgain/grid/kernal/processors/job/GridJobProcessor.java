@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Responsible for all grid job execution and communication.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 @SuppressWarnings({"deprecation"})
 public class GridJobProcessor extends GridProcessorAdapter {
@@ -751,9 +751,14 @@ public class GridJobProcessor extends GridProcessorAdapter {
 
         /** {@inheritDoc} */
         @Override public void onJobFinished(GridJobWorker worker) {
+            boolean cleanup = worker.isSystemCanceled();
+
             // If last job for the task on this node.
-            if (ctx.session().removeSession(worker.getSession().getId()))
+            if (ctx.session().removeSession(worker.getSession().getId())) {
                 worker.getSession().onClosed();
+
+                cleanup = true;
+            }
 
             // Unregister session request listener for this jobs.
             ctx.io().removeMessageListener(worker.getJobTopic());
@@ -762,7 +767,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
             ctx.io().removeMessageId(worker.getTaskTopic());
 
             // Unregister checkpoints.
-            ctx.checkpoint().onSessionEnd(worker.getSession(), worker.isSystemCanceled());
+            ctx.checkpoint().onSessionEnd(worker.getSession(), cleanup);
 
             // Unregister from timeout notifications.
             ctx.timeout().removeTimeoutObject(worker);
@@ -915,7 +920,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Handles job execution requests.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private class JobExecutionListener implements GridMessageListener {
         @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
@@ -1256,7 +1261,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private class JobDiscoveryListener implements GridLocalEventListener {
         /**

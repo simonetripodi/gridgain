@@ -25,7 +25,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * cache configuration, e.g. {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 public final class GridCacheAtomicReferenceExample {
     /** Cache name. */

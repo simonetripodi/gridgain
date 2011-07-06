@@ -19,14 +19,14 @@ import org.gridgain.grid.typedef.internal._
  * Provides `ASCII`-based table with minimal styling support.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 class ScalarTextTable {
     /**
      * Cell style.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private sealed case class Style(
         var leftPad: Int = 1, // >= 0
@@ -48,7 +48,7 @@ class ScalarTextTable {
      * Cell style.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private object Style {
         /**
@@ -83,7 +83,7 @@ class ScalarTextTable {
      * Cell holder.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private sealed case class Cell(style: Style, lines: Seq[String]) {
         assert(style != null)
@@ -109,7 +109,7 @@ class ScalarTextTable {
      * Margin holder.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.03072011
+     * @version 3.1.1c.06072011
      */
     private sealed case class Margin(
         top: Int = 0,
@@ -515,7 +515,7 @@ class ScalarTextTable {
  * Static context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 object ScalarTextTable {
     /**

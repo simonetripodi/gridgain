@@ -13,16 +13,14 @@ package org.gridgain.scalar.pimps
 
 import org.gridgain.grid._
 import org.gridgain.grid.lang._
-import org.gridgain.scalar._
-import scalar._
-import org.jetbrains.annotations.Nullable
 import scalaz._
+import org.jetbrains.annotations._
 
 /**
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 object ScalarProjectionPimp {
     /**
@@ -62,7 +60,7 @@ object ScalarProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  */
 class ScalarProjectionPimp[A <: GridProjection] extends PimpedType[A]
     with Iterable[GridRichNode]

@@ -145,14 +145,14 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.03072011
+ * @version 3.1.1c.06072011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.03072011")
+    version = "3.1.1c.06072011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
 @GridDiscoverySpiReconnectSupport(true)
@@ -326,9 +326,11 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     /** If non-shared IP finder is used this flag shows whether IP finder contains local address. */
     private boolean ipFinderHasLocAddr;
 
-    /** Join requests results (for handling concurrent starts). */
-    private final Map<InetSocketAddress, Integer> joinReqRess =
-        new ConcurrentHashMap<InetSocketAddress, Integer>();
+    /** Addresses that do not respond during join requests send (for resolving concurrent start). */
+    private final Collection<InetSocketAddress> notResAddrs = new GridConcurrentHashSet<InetSocketAddress>();
+
+    /** Addresses that incoming join requests send were send from (for resolving concurrent start). */
+    private final Collection<InetSocketAddress> fromAddrs = new GridConcurrentHashSet<InetSocketAddress>();
 
     /** Topology version (if topology store is used). */
     private final AtomicLong topVer = new AtomicLong();
@@ -712,7 +714,9 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             spiState = DISCONNECTED;
         }
 
-        joinReqRess.clear();
+        // Clear addresses collections.
+        fromAddrs.clear();
+        notResAddrs.clear();
 
         msgWorker = new MessageWorker();
 
@@ -1107,14 +1111,6 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                 locNode.order(1);
 
-                // Alter flag here and fire event here, since it has not been done in msgWorker.
-                if (recon)
-                    // Node has reconnected and it is the first.
-                    notifyDiscovery(EVT_NODE_RECONNECTED, locNode);
-                else
-                    // This is initial start, node is the first.
-                    recon = true;
-
                 if (topStore != null) {
                     topVer.compareAndSet(0, 1);
 
@@ -1137,6 +1133,14 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                     mux.notifyAll();
                 }
+
+                // Alter flag here and fire event here, since it has not been done in msgWorker.
+                if (recon)
+                    // Node has reconnected and it is the first.
+                    notifyDiscovery(EVT_NODE_RECONNECTED, locNode);
+                else
+                    // This is initial start, node is the first.
+                    recon = true;
 
                 break;
             }
@@ -1200,13 +1204,13 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
             boolean retry = false;
 
-            for (InetSocketAddress addr : shuffled)
+            for (InetSocketAddress addr : shuffled) {
                 try {
                     Integer res = sendMessageDirectly(joinReq, addr, true);
 
                     assert res != null;
 
-                    joinReqRess.remove(addr);
+                    notResAddrs.remove(addr);
 
                     switch (res) {
                         case RES_WAIT:
@@ -1225,6 +1229,9 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                             // Concurrent startup, try next node.
                             assert res == RES_CONTINUE_JOIN : "Unexpected response to join request: " + res;
 
+                            if (!fromAddrs.contains(addr))
+                                retry = true;
+
                             break;
                     }
                 }
@@ -1232,8 +1239,9 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                     if (log.isDebugEnabled())
                         log.debug("Failed to send join request message: " + e.getMessage());
 
-                    joinReqRess.put(addr, 0);
+                    notResAddrs.add(addr);
                 }
+            }
 
             if (retry) {
                 if (log.isDebugEnabled())
@@ -1354,7 +1362,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
         GridDiscoverySpiListener lsnr = this.lsnr;
 
-        if (lsnr != null && node.visible())
+        if (lsnr != null && node.visible() && spiStateCopy() == CONNECTED)
             lsnr.onDiscovery(type, node);
     }
 
@@ -2748,15 +2756,14 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                         log.debug("Received OK status response from coordinator: " + msg);
                 }
                 else if (msg.status() == STATUS_RECONNECT) {
-                    U.warn(log, "Received reconnect request from coordinator (will reconnect to grid): " + msg);
+                    U.warn(log, "Node is out of topology (probably, due to short-time network problems).");
 
                     notifyDiscovery(EVT_NODE_SEGMENTED, locNode);
 
                     return;
                 }
-                else
-                    if (log.isDebugEnabled())
-                        log.debug("Status value was not updated in status response: " + msg);
+                else if (log.isDebugEnabled())
+                    log.debug("Status value was not updated in status response: " + msg);
 
                 // Discard the message.
                 return;
@@ -3449,6 +3456,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
         /**
          * @param msg Join request message.
          */
+        @SuppressWarnings({"IfMayBeConditional"})
         private void processJoinRequestMessage(GridTcpDiscoveryJoinRequestMessage msg) {
             assert msg != null;
 
@@ -3457,7 +3465,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             if (msg.responded())
                 // Join request should be send to coordinator across the ring.
                 msgWorker.addMessage(msg);
-            else if (state == CONNECTED)
+            else if (state == CONNECTED) {
                 // Direct join request - socket should be closed after handling.
                 try {
                     marsh.marshal(RES_OK, sock.getOutputStream());
@@ -3478,6 +3486,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 finally {
                     U.closeQuiet(sock);
                 }
+            }
             else {
                 // Direct join request - socket should be closed after handling.
                 Integer res = null;
@@ -3485,14 +3494,24 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
                 try {
                     stats.onMessageProcessingStarted(msg);
 
-                    res = state == CONNECTING && joinReqRess.containsKey(msg.node().address()) ? RES_WAIT :
-                        (state == CONNECTING && locNodeId.compareTo(msg.creatorNodeId()) > 0) ?
-                            RES_CONTINUE_JOIN : RES_WAIT;
+                    if (state == CONNECTING) {
+                        if (notResAddrs.contains(msg.node().address()) || locNodeId.compareTo(msg.creatorNodeId()) < 0)
+                            // Remote node node has not responded to join request or loses UUID race.
+                            res = RES_WAIT;
+                        else
+                            // Remote node responded to join request and wins UUID race.
+                            res = RES_CONTINUE_JOIN;
+                    }
+                    else
+                        // Local node is stopping. Remote node should try next one.
+                        res = RES_WAIT;
 
                     marsh.marshal(res, sock.getOutputStream());
 
                     if (log.isDebugEnabled())
                         log.debug("Responded to join request message [msg=" + msg + ", res=" + res + ']');
+
+                    fromAddrs.add(msg.node().address());
 
                     stats.onMessageProcessingFinished(msg);
                 }
