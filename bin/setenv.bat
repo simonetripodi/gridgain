@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.06072011
+:: Version: 3.1.1c.11072011
 ::
 
 ::
@@ -88,6 +88,7 @@ set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\dom4j-1.6.1.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\antlr-2.7.6.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\jsch-0.1.44.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\jline.jar
+set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\groovypp-0.4.279_1.8.0.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\config\userversion
 
 :: Comment these jars if you do not wish to use Hyperic SIGAR licensed under GPL
@@ -125,13 +126,6 @@ set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\sigar.jar
 :: set AMQ_HOME=
 
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%AMQ_HOME%\apache-activemq-4.1.1.jar
-
-:: Uncomment if using Sun Messaging Queue 4
-:: SUNMQ_HOME must point to Sun Messaging Queue installation folder.
-:: set  SUNMQ_HOME=
-
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%SUNMQ_HOME%\mq\lib\imq.jar
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%SUNMQ_HOME%\mq\lib\jms.jar
 
 :: Uncomment if using JXInsight 4 and higher.
 :: JXINSIGHT_HOME must point to Sun Messaging Queue installation folder.

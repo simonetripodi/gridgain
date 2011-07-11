@@ -18,7 +18,7 @@ import java.util.*;
  * Ant task fixing known HTML issues for Javadoc.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridJavadocAntTask extends MatchingTask {
     /** I/O buffer size. */
@@ -73,13 +73,11 @@ public class GridJavadocAntTask extends MatchingTask {
 
     /** {@inheritDoc} */
     @Override public void execute() {
-        if (dir == null) {
+        if (dir == null)
             throw new BuildException("'dir' attribute must be specified.");
-        }
 
-        if (css == null) {
+        if (css == null)
             throw new BuildException("'css' attribute must be specified.");
-        }
 
         log("dir=" + dir, Project.MSG_DEBUG);
         log("css=" + css, Project.MSG_DEBUG);
@@ -143,19 +141,16 @@ public class GridJavadocAntTask extends MatchingTask {
 
                 ch = lexer.read();
 
-                if (ch == GridJavadocCharArrayLexReader.EOF) {
+                if (ch == GridJavadocCharArrayLexReader.EOF)
                     throw new IOException("Unexpected EOF: " + file);
-                }
 
                 // Instruction or comment.
                 if (ch == '!') {
-                    for (; ch != GridJavadocCharArrayLexReader.EOF && ch != '>'; ch = lexer.read()) {
+                    for (; ch != GridJavadocCharArrayLexReader.EOF && ch != '>'; ch = lexer.read())
                         tokBuf.append((char)ch);
-                    }
 
-                    if (ch == GridJavadocCharArrayLexReader.EOF) {
+                    if (ch == GridJavadocCharArrayLexReader.EOF)
                         throw new IOException("Unexpected EOF: " + file);
-                    }
 
                     assert ch == '>';
 
@@ -170,21 +165,18 @@ public class GridJavadocAntTask extends MatchingTask {
                 }
                 // Tag.
                 else {
-                    for (; ch != GridJavadocCharArrayLexReader.EOF && ch != '>'; ch = lexer.read()) {
+                    for (; ch != GridJavadocCharArrayLexReader.EOF && ch != '>'; ch = lexer.read())
                         tokBuf.append((char)ch);
-                    }
 
-                    if (ch == GridJavadocCharArrayLexReader.EOF) {
+                    if (ch == GridJavadocCharArrayLexReader.EOF)
                         throw new IOException("Unexpected EOF: " + file);
-                    }
 
                     assert ch == '>';
 
                     tokBuf.append('>');
 
-                    if (tokBuf.length() <= 2) {
+                    if (tokBuf.length() <= 2)
                         throw new IOException("Invalid HTML in [file=" + file + ", html=" + tokBuf + ']');
-                    }
 
                     String value = tokBuf.toString();
 
@@ -213,40 +205,41 @@ public class GridJavadocAntTask extends MatchingTask {
 
             switch (tok.type()) {
                 case TOKEN_COMM: {
-                    if ("<!-- ========= END OF TOP NAVBAR ========= -->".equals(val)) {
+                    if ("<!-- ========= END OF TOP NAVBAR ========= -->".equals(val))
                         inZone = true;
-                    }
-                    else if ("<!-- ======= START OF BOTTOM NAVBAR ====== -->".equals(val)) {
+                    else if ("<!-- ======= START OF BOTTOM NAVBAR ====== -->".equals(val) || // Javadoc
+                        "<!-- ========= END OF CLASS DATA ========= -->".equals(val)) // Groovydoc
                         inZone = false;
-                    }
 
                     break;
                 }
 
                 case TOKEN_OPEN_TAG: {
                     if (inZone) {
-                        if (val.startsWith("<TABLE")) {
-                            addCss = !val.contains("BORDER=\"0\"");
+                        String s = val.toUpperCase();
+
+                        if (s.startsWith("<TABLE")) {
+                            addCss = !(
+                                s.contains("BORDER=\"0\"") ||
+                                s.contains("BORDER=0") ||
+                                s.contains("BORDER='0'")
+                            );
 
                             stack.push(addCss);
 
-                            if (addCss) {
+                            if (addCss)
                                 tok.update("<TABLE CLASS=\"" + css + '\"' + val.substring(6));
-                            }
                         }
-                        else if (val.startsWith("<TD")) {
-                            if (addCss) {
+                        else if (s.startsWith("<TD")) {
+                            if (addCss)
                                 tok.update("<TD CLASS=\"" + css + '\"' + val.substring(3));
-                            }
                         }
-                        else if (val.startsWith("<TH")) {
-                            if (addCss) {
+                        else if (s.startsWith("<TH")) {
+                            if (addCss)
                                 tok.update("<TH CLASS=\"" + css + '\"' + val.substring(3));
-                            }
                         }
-                        else if (val.startsWith("<HR SIZE=\"4\" NOSHADE>")) {
+                        else if (val.startsWith("<HR SIZE=\"4\" NOSHADE>"))
                             tok.update("");
-                        }
                     }
 
                     tok.update(fixColors(tok.value()));
@@ -255,7 +248,7 @@ public class GridJavadocAntTask extends MatchingTask {
                 }
 
                 case TOKEN_CLOSE_TAG: {
-                    if ("</head>".equalsIgnoreCase(val)) {
+                    if ("</head>".equalsIgnoreCase(val))
                         tok.update(
                             "<link type='text/css' rel='stylesheet' href='http://www.gridgain.com/sh3.0/styles/shCore.css'/>\n" +
                             "<link type='text/css' rel='stylesheet' href='http://www.gridgain.com/sh3.0/styles/shThemeEclipse.css'/>\n" +
@@ -268,8 +261,7 @@ public class GridJavadocAntTask extends MatchingTask {
                             "<script type='text/javascript' src='http://www.gridgain.com/sh3.0/scripts/shBrushScala.js'></script>\n" +
                             "<script type='text/javascript' src='http://www.gridgain.com/sh3.0/scripts/shBrushGroovy.js'></script>\n" +
                             "</head>\n");
-                    }
-                    else if ("</body>".equalsIgnoreCase(val)) {
+                    else if ("</body>".equalsIgnoreCase(val))
                         tok.update(
                             "<!--FOOTER-->" +
                             "<script type='text/javascript'>" +
@@ -277,7 +269,6 @@ public class GridJavadocAntTask extends MatchingTask {
                                 "dp.SyntaxHighlighter.HighlightAll('code');" +
                             "</script>\n" +
                             "</body>\n");
-                    }
                     else if (inZone) {
                         if (val.startsWith("</TABLE")) {
                             stack.pop();
@@ -301,9 +292,8 @@ public class GridJavadocAntTask extends MatchingTask {
                     break;
                 }
 
-                default: {
+                default:
                     assert false;
-                }
             }
         }
 
@@ -353,9 +343,8 @@ public class GridJavadocAntTask extends MatchingTask {
                     break;
                 }
 
-                default: {
+                default:
                     assert false;
-                }
             }
         }
 

@@ -30,12 +30,13 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * information is maintained by attaching ordering metadata to cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheLruEvictionPolicyMBean {
     /** MBean server. */
     @GridMBeanServerResource
+    @GridToStringExclude
     private MBeanServer jmx;
 
     /** Logger. */
@@ -109,6 +110,31 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
         queue.gc(0);
     }
 
+    /** {@inheritDoc} */
+    @Override public long getAverageGcTime() {
+        return queue.averageGcTime();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getGcCalls() {
+        return queue.gcCalls();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getNodesGced() {
+        return queue.nodesGced();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getNodesCreated() {
+        return queue.nodesCreated();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String queueFormatted() {
+        return queue.toShortString();
+    }
+
     /**
      * Gets read-only view on internal {@code 'LRU'} queue in proper order.
      *
@@ -134,11 +160,10 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
             touch(entry);
         }
         else {
-            Node<GridCacheEntry<K, V>> n = entry.meta(meta);
+            Node<GridCacheEntry<K, V>> n = entry.removeMeta(meta);
 
-            if (n != null) {
+            if (n != null)
                 queue.clearNode(n);
-            }
         }
 
         shrink();
@@ -160,17 +185,25 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
 
                 return;
             }
-            else {
+            else
                 n = old;
+        }
+
+        if (!n.active()) {
+            Node<GridCacheEntry<K, V>> replace = new Node<GridCacheEntry<K, V>>(entry);
+
+            if (entry.replaceMeta(meta, n, replace)) {
+                queue.addNode(replace);
+
+                return;
             }
         }
 
         if (queue.clearNode(n)) {
             Node<GridCacheEntry<K, V>> add = new Node<GridCacheEntry<K, V>>(entry);
 
-            if (entry.replaceMeta(meta, n, add)) {
+            if (entry.replaceMeta(meta, n, add))
                 queue.addNode(add);
-            }
         }
     }
 
@@ -201,6 +234,10 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
     }
 
     /** {@inheritDoc} */
-    @Override public String toString() { return S.toString(GridCacheLruEvictionPolicy.class, this,
-        "size", getCurrentSize(), "eden", getCurrentEdenSize()); }
+    @Override public String toString() {
+        return S.toString(GridCacheLruEvictionPolicy.class, this,
+            "size", getCurrentSize(),
+            "eden", getCurrentEdenSize(),
+            "queue", queue.toShortString());
+    }
 }

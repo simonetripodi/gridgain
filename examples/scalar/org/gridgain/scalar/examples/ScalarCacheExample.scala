@@ -23,7 +23,7 @@ import collection.JavaConversions._
  * Demonstrates basic Data Grid (a.k.a cache) operations with Scalar.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 object ScalarCacheExample {
     /**
@@ -62,11 +62,19 @@ object ScalarCacheExample {
         // Remove couple of keys (if any).
         c -= (11, 22)
 
+        // Put one more value.
+        c += (3 -> 11)
+
         val gt10 = (e: GridCacheEntry[Int, Int]) => e.peek() > 10
 
-        // These should not pass due to predicate.
-        c += (5 -> 5, gt10)
-        c += (6 -> 4, gt10)
+        // These should pass the predicate.
+        // Note that the predicate checks current state of entry, not the new value.
+        c += (3 -> 9, gt10)
+
+        // These should not pass the predicate
+        // because value less then 10 was put on previous step.
+        c += (3 -> 8, gt10)
+        c += (3 -> 12, gt10)
 
         // Get with option...
         c.opt(44) match {

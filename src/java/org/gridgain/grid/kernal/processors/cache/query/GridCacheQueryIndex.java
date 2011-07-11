@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Cache query index. Manages full life-cycle of query index database (h2).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public class GridCacheQueryIndex<K, V> {
@@ -359,14 +359,14 @@ public class GridCacheQueryIndex<K, V> {
                         FullText.dropAll(conn);
                     }
                     catch (SQLException e) {
-                        U.error(log, "Failed to drop H2 fulltext indexes.", e);
+                        U.warn(log, "Failed to drop H2 fulltext indexes: " + e.getMessage());
                     }
 
                     try {
                         FullTextLucene.dropAll(conn);
                     }
                     catch (SQLException e) {
-                        U.error(log, "Failed to drop H2 lucene indexes.", e);
+                        U.warn(log, "Failed to drop H2 lucene indexes: " + e.getMessage());
                     }
 
                     if (conn != null) {

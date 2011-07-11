@@ -24,7 +24,7 @@ import java.util.concurrent.*;
  * Contains local cache of annotated methods and fields by classes for best performance.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridCacheAnnotationHelper<A extends Annotation> {
     /** Number of entries to keep in annotation cache. */

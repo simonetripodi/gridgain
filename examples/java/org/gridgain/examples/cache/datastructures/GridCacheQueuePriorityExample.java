@@ -28,7 +28,7 @@ import static org.gridgain.grid.cache.datastructures.GridCacheQueueType.*;
  * cache: {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridCacheQueuePriorityExample {
     /** Cache name. */
@@ -203,7 +203,7 @@ public class GridCacheQueuePriorityExample {
      * Queue item class with priority field.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.06072011
+     * @version 3.1.1c.11072011
      */
     private static class SampleItem implements Serializable {
         /** Priority field*/

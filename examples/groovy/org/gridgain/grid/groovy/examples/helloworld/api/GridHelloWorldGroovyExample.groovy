@@ -59,18 +59,18 @@ import org.gridgain.grid.*
  * uncomment the necessary classpath portions as you need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 class GridHelloWorldGroovyExample {
     /**
-     * Execute <tt>HelloWorld</tt> example grid-enabled with <tt>Gridify</tt> annotation.
+     * Execute <tt>HelloWorld</tt> example grid-enabled with <tt>GridTask</tt>.
      *
      * @param args Command line arguments, none required but if provided
      *      first one should point to the Spring XML configuration file. See
      *      <tt>"examples/config/"</tt> for configuration file examples.
      * @throws GridException If example execution failed.
      */
-    static main = {args ->
+    static void main(args) {
         if (args.size() == 0) {
             GridFactory.start();
         }

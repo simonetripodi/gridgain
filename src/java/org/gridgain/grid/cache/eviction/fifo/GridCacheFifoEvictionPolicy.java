@@ -15,6 +15,7 @@ import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.internal.*;
+import org.gridgain.grid.util.tostring.*;
 
 import javax.management.*;
 import java.util.*;
@@ -29,12 +30,13 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * information is maintained by attaching ordering metadata to cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheFifoEvictionPolicyMBean {
     /** MBean server. */
     @GridMBeanServerResource
+    @GridToStringExclude
     private MBeanServer jmx;
 
     /** Logger. */
@@ -107,6 +109,31 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
         queue.gc(0);
     }
 
+    /** {@inheritDoc} */
+    @Override public long getAverageGcTime() {
+        return queue.averageGcTime();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getNodesGced() {
+        return queue.nodesGced();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getNodesCreated() {
+        return queue.nodesCreated();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getGcCalls() {
+        return queue.gcCalls();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String queueFormatted() {
+        return queue.toShortString();
+    }
+
     /**
      * Gets read-only view on internal {@code FIFO} queue in proper order.
      *
@@ -151,8 +178,20 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
         if (n == null) {
             Node<GridCacheEntry<K, V>> old = entry.putMetaIfAbsent(meta, n = new Node<GridCacheEntry<K, V>>(entry));
 
-            if (old == null)
+            if (old == null) {
                 queue.addNode(n);
+
+                return;
+            }
+            else
+                n = old;
+        }
+
+        if (!n.active()) {
+            Node<GridCacheEntry<K, V>> replace = new Node<GridCacheEntry<K, V>>(entry);
+
+            if (entry.replaceMeta(meta, n, replace))
+                queue.addNode(replace);
         }
     }
 
@@ -173,12 +212,22 @@ public class GridCacheFifoEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 if (e != null) {
                     if (queue.clearNode(n)) {
                         if (!e.evict()) {
-                            // MOve to the beginning again.
+                            // Move to the beginning again.
                             touch(e);
                         }
                     }
                 }
             }
+            else
+                break;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return S.toString(GridCacheFifoEvictionPolicy.class, this,
+            "size", getCurrentSize(),
+            "eden", getCurrentEdenSize(),
+            "queue", queue.toShortString());
     }
 }

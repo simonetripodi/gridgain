@@ -25,7 +25,7 @@ import java.util.*;
  * directory.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 class GridUriDeploymentClassLoaderFactory {
     /** Libraries directory default value (value is {@code lib}). */
@@ -43,20 +43,15 @@ class GridUriDeploymentClassLoaderFactory {
         assert file != null;
         assert log != null;
 
-        assert file.isDirectory() == true;
+        assert file.isDirectory();
 
         List<URL> urls = new ArrayList<URL>();
 
-        URL mainUrl;
-
         try {
             String url = file.toURI().toURL().toString();
-            if ((url.length() > 0 && url.charAt(url.length() - 1) == '/') == false) {
-                mainUrl = new URL(url + '/');
-            }
-            else {
-                mainUrl = file.toURI().toURL();
-            }
+
+            URL mainUrl = url.length() > 0 && url.charAt(url.length() - 1) == '/' ?
+                file.toURI().toURL() : new URL(url + '/');
 
             urls.add(mainUrl);
 
@@ -64,7 +59,9 @@ class GridUriDeploymentClassLoaderFactory {
 
             if (libDir.exists()) {
                 File[] files = libDir.listFiles(new FilenameFilter() {
-                    @Override public boolean accept(File dir, String name) { return name.endsWith(".jar") == true; }
+                    @Override public boolean accept(File dir, String name) {
+                        return name.endsWith(".jar");
+                    }
                 });
 
                 if (files.length > 0) {
@@ -79,5 +76,12 @@ class GridUriDeploymentClassLoaderFactory {
         catch (MalformedURLException e) {
             throw new GridSpiException("Failed to create class loader for GAR file: " + file, e);
         }
+    }
+
+    /**
+     * Ensure singleton.
+     */
+    private GridUriDeploymentClassLoaderFactory() {
+        // No-op.
     }
 }

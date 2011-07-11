@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.06072011
+:: Version: 3.1.1c.11072011
 ::
 
 @echo off
@@ -51,9 +51,9 @@ set ANT_AUGMENTED_GGJAR=gridgain-3.1.1c.jar
 call "%GRIDGAIN_HOME%\bin\setenv.bat"
 
 ::
-:: Set GROOVY_LIBS for version 1.5.7
+:: Set GROOVY_LIBS for version 1.8.0
 ::
-set GROOVY_LIBS=%GROOVY_HOME%\embeddable\groovy-all-1.5.7.jar
+set GROOVY_LIBS=%GROOVY_HOME%\embeddable\groovy-all-1.8.0.jar
 
 set CP=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\%ANT_AUGMENTED_GGJAR%;%GROOVY_LIBS%
 

@@ -9,6 +9,7 @@
 
 package org.gridgain.grid.lang.utils;
 
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
 
 /**
  * Concurrent queue which fixes infinite growth of JDK
@@ -29,12 +31,9 @@ import java.util.concurrent.atomic.*;
  * {@link Collection#remove(Object)} was called which can lead to memory leaks.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> implements Queue<E> {
-    /** Dummy stamp holder. */
-    private static final boolean[] DUMMY = new boolean[1];
-
     /** List head. */
     @GridToStringExclude
     protected final AtomicReference<Node<E>> head = new AtomicReference<Node<E>>(new Node<E>());
@@ -53,6 +52,21 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     /** Counter of void nodes ready to be GC'ed. */
     private final AtomicInteger eden = new AtomicInteger(0);
 
+    /** Count of created nodes. */
+    private final AtomicLong createCnt = new AtomicLong(0);
+
+    /** Count of GC'ed nodes. */
+    private final AtomicLong gcCnt = new AtomicLong(0);
+
+    /** Lock. */
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    /** GC time. */
+    private volatile long avgGcTime;
+
+    /** GC calls. */
+    private volatile long gcCalls;
+
     /**
      * Gets count of cleared nodes that are stuck in the queue and should be removed.
      * To clear, call {@link #gc(int)} method.
@@ -61,6 +75,51 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      */
     public int eden() {
         return eden.get();
+    }
+
+    /**
+     * Gets time spent on GC'ing the queue.
+     *
+     * @return Time spent on GC'ing the queue.
+     */
+    public long averageGcTime() {
+        return avgGcTime;
+    }
+
+    /**
+     * Gets number of nodes GC'ed (discarded) by this queue.
+     *
+     * @return Number of nodes GC'ed (discarded) by this queue.
+     */
+    public long nodesGced() {
+        return gcCnt.get();
+    }
+
+    /**
+     * Gets number of nodes created by this queue.
+     *
+     * @return Number of nodes created by this queue.
+     */
+    public long nodesCreated() {
+        return createCnt.get();
+    }
+
+    /**
+     * Gets number of times GC has executed.
+     *
+     * @return Number of times GC has executed.
+     */
+    public long gcCalls() {
+        return gcCalls;
+    }
+
+    /**
+     * Gets internal read-write lock to control GC.
+     *
+     * @return Internal read-write lock to control GC.
+     */
+    protected ReadWriteLock lock() {
+        return lock;
     }
 
     /**
@@ -91,73 +150,121 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      *
      * @param maxEden Maximum number of void nodes in this collection.
      */
+    @SuppressWarnings( {"TooBroadScope"})
     public void gc(int maxEden) {
-        if (eden.get() >= maxEden && compacting.compareAndSet(false, true)) {
+        int evictCnt = eden.get() - maxEden;
+
+        if (evictCnt < maxEden)
+            return; // Nothing to evict.
+
+        if (compacting.compareAndSet(false, true)) {
+            long start = -1;
+            long calls = -1;
+
+            lock.writeLock().lock();
+
             try {
-                Node<E> prev, next = null;
+                start = System.currentTimeMillis();
 
-                // Find gap.
-                for (prev = head.get(); prev != null; prev = prev.next()) {
-                    next = prev.next();
+                calls = ++gcCalls;
 
-                    if (next == null || next.cleared())
-                        break;
-                }
+                for (Node<E> prev = head.get(); prev != null;) {
+                    Node<E> next = prev.next();
 
-                // Start shrinking.
-                while (prev != null && next != null) {
-                    Node<E> h = head.get();
-                    Node<E> t = tail.get();
+                    if (next == null)
+                        return; // Don't mess with tail pointer.
 
-                    Node<E> n = prev.next();
+                    assert !prev.removed() || prev == head.get();
 
-                    if (n == null)
-                        return;
+                    if (next.cleared()) {
+                        Node<E> h = head.get();
+                        Node<E> t = tail.get();
 
-                    next = n.next();
+                        Node<E> n = next.next();
 
-                    if (h == head.get()) {
+                        if (n == null)
+                            return; // Don't mess with tail pointer.
+
                         if (prev == h) {
-                            // Following logic is the same as clearing from head.
-                            if (h == t) {
-                                if (prev.cleared()) {
-                                    return;
-                                }
-                                else {
-                                    casTail(t, n);
-                                }
-                            }
-                            else {
-                                assert n != null;
+                            if (h == t)
+                                return; // Nothing to do if queue is empty.
 
-                                if (!n.cleared()) {
-                                    return;
-                                }
-                                else {
-                                    // This is GC step to remove obsolete nodes.
-                                    if (casHead(h, n)) {
-                                        prev = n;
+                            boolean b = casHead(h, next);
 
-                                        decreaseEden();
-                                    }
-                                }
-                            }
+                            assert b;
+
+                            if (gcNode(next))
+                                evictCnt--;
+
+                            prev = head.get();
                         }
                         else {
-                            // Once the first gap is over, we break.
-                            // (we check next for null to make sure we don't mess around with tail pointer).
-                            if (next == null || !n.cleared() || !prev.casNextIfNotCleared(n, next))
-                                break;
+                            boolean b = prev.casNext(next, n);
 
-                            decreaseEden();
+                            assert b;
+
+                            if (gcNode(next))
+                                evictCnt--;
                         }
+
+                        if (evictCnt == 0)
+                            return;
                     }
+                    else
+                        prev = next;
                 }
             }
             finally {
+                if (start > 0)
+                    avgGcTime = ((avgGcTime * (calls - 1) + (System.currentTimeMillis() - start)) / calls);
+
+                lock.writeLock().unlock();
+
                 compacting.set(false);
             }
         }
+    }
+
+    /**
+     * String representation of this queue, including cleared and removed nodes if
+     * they are still present.
+     *
+     * @return String representation of this queue.
+     */
+    public String toShortString() {
+        return "Queue [size=" + size() + ", eden=" + eden() + ", avgGcTime=" + averageGcTime() +
+            ", gcCalls=" + gcCalls + ", createCnt=" + createCnt + ", rmvCnt=" + gcCnt + ", head=" + head +
+            ", tail=" + tail + ']';
+    }
+
+    /**
+     * Prints full queue to standard out.
+     */
+    public void printFullQueue() {
+        X.println("Queue [size=" + size() + ", eden=" + eden() + ", avgGcTime=" + averageGcTime() + ", head=" + head +
+            ", tail=" + tail + ", nodes=[");
+
+        for (Node<E> n = head.get(); n != null; n = n.next())
+            X.println(n.toString());
+
+        X.println("]");
+    }
+
+    /**
+     * @param n Node to GC.
+     * @return {@code True} if node was GC'ed by this call.
+     */
+    private boolean gcNode(Node<E> n) {
+        assert !n.active();
+
+        if (n.remove()) {
+            eden.decrementAndGet();
+            gcCnt.incrementAndGet();
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -166,8 +273,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      */
     public boolean clearNode(Node<E> n) {
         if (n.clear() != null) {
-            increaseEden();
-
+            eden.incrementAndGet();
             size.decrementAndGet();
 
             return true;
@@ -185,25 +291,33 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     public Node<E> addNode(Node<E> n) {
         A.notNull(n, "n");
 
-        while (true) {
-            Node<E> t = tail.get();
+        createCnt.incrementAndGet();
 
-            Node<E> s = t.next();
+        lock.readLock().lock();
 
-            if (t == tail.get()) {
-                if (s == null) {
-                    if (t.casNext(s, n)) {
-                        casTail(t, n);
+        try {
+            while (true) {
+                Node<E> t = tail.get();
 
-                        size.incrementAndGet();
+                Node<E> s = t.next();
 
-                        return n;
+                if (t == tail.get()) {
+                    if (s == null) {
+                        if (t.casNext(s, n)) {
+                            casTail(t, n);
+
+                            size.incrementAndGet();
+
+                            return n;
+                        }
                     }
-                }
-                else {
-                    casTail(t, s);
+                    else
+                        casTail(t, s);
                 }
             }
+        }
+        finally {
+            lock.readLock().unlock();
         }
     }
 
@@ -221,30 +335,41 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * @return First node.
      */
     @Nullable public Node<E> peekNode() {
-        while (true) {
-            Node<E> h = head.get();
-            Node<E> t = tail.get();
+        lock.readLock().lock();
 
-            Node<E> first = h.next();
+        try {
+            while (true) {
+                Node<E> h = head.get();
+                Node<E> t = tail.get();
 
-            if (h == head.get()) {
-                if (h == t) {
-                    if (first == null)
-                        return null;
-                    else
-                        casTail(t, first);
-                }
-                else {
-                    assert first != null;
+                Node<E> first = h.next();
 
-                    if (!first.cleared())
-                        return first;
-                    else
-                        // This is GC step to remove obsolete nodes.
-                        if (casHead(h, first))
-                            decreaseEden();
+                if (h == head.get()) {
+                    if (h == t) {
+                        if (first == null)
+                            return null;
+                        else
+                            casTail(t, first);
+                    }
+                    else {
+                        assert first != null : "LRU queue [head=" + head + ", tail=" + tail + ", size=" + size()  +
+                            ", eden=" + eden() + ']';
+
+                        if (first.active())
+                            return first;
+                        else
+                            // This is GC step to remove obsolete nodes.
+                            if (casHead(h, first)) {
+                                gcNode(first);
+
+                                salvageNode(h);
+                            }
+                    }
                 }
             }
+        }
+        finally {
+            lock.readLock().unlock();
         }
     }
 
@@ -271,41 +396,50 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * @return Previous head of the queue.
      */
     @Override @Nullable public E poll() {
-        while (true) {
-            Node<E> h = head.get();
-            Node<E> t = tail.get();
+        lock.readLock().lock();
 
-            Node<E> first = h.next();
+        try {
+            while (true) {
+                Node<E> h = head.get();
+                Node<E> t = tail.get();
 
-            if (h == head.get()) {
-                if (h == t) {
-                    if (first == null)
-                        return null;
-                    else
-                        casTail(t, first);
-                }
-                else if (casHead(h, first)) { // Move head pointer.
-                    assert first != null;
+                Node<E> first = h.next();
 
-                    E c = first.value();
-
-                    if (c != null) {
-                        if (removeNode(first)) {
-                            assert first.cleared();
-
-                            // We just cleared a node, so bring the counter back.
-                            decreaseEden();
-
-                            return c;
-                        }
+                if (h == head.get()) {
+                    if (h == t) {
+                        if (first == null)
+                            return null;
+                        else
+                            casTail(t, first);
                     }
-                    else
-                        assert first.cleared();
+                    else if (casHead(h, first)) { // Move head pointer.
+                        assert first != null;
 
-                    // We encountered cleared node.
-                    decreaseEden();
+                        E c = first.value();
+
+                        if (c != null) {
+                            if (removeNode(first)) {
+                                assert !first.active();
+
+                                gcNode(first);
+
+                                salvageNode(h);
+
+                                return c;
+                            }
+                        }
+                        else
+                            assert !first.active();
+
+                        gcNode(first);
+
+                        salvageNode(h);
+                    }
                 }
             }
+        }
+        finally {
+            lock.readLock().unlock();
         }
     }
 
@@ -357,39 +491,16 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
     }
 
     /**
-     * Removes node from queue by calling {@link Node#clear()} on the
+     * Removes node from queue by calling {@link #clearNode(Node)} on the
      * passed in node. Child classes that override this method
-     * should always make sure to call {@link Node#clear()}.
+     * should always make sure to call {@link #clearNode(Node)}}.
      *
      * @param n Node to remove.
      * @return {@code True} if node was cleared by this method call, {@code false}
      *      if it was already cleared.
      */
     protected boolean removeNode(Node<E> n) {
-        if (n.clear() != null) {
-            size.decrementAndGet();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     *
-     */
-    private void increaseEden() {
-        eden.incrementAndGet();
-    }
-
-    /**
-     *
-     */
-    private void decreaseEden() {
-        int e = eden.decrementAndGet();
-
-        if (e < 0)
-            eden.compareAndSet(e, 0);
+        return clearNode(n);
     }
 
     /**
@@ -398,6 +509,8 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * @return {@code True} if value was set.
      */
     private boolean casTail(Node<E> old, Node<E> val) {
+        assert val != null : toShortString();
+
         return tail.compareAndSet(old, val);
     }
 
@@ -407,7 +520,21 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * @return {@code True} if value was set.
      */
     private boolean casHead(Node<E> old, Node<E> val) {
+        assert val != null : toShortString();
+
         return head.compareAndSet(old, val);
+    }
+
+    /**
+     * Attempts to clear and remove node and decrements eden if needed.
+     *
+     * @param n Node to unlink.
+     */
+    private void salvageNode(Node<E> n) {
+        assert n != null;
+
+        clearNode(n);
+        gcNode(n);
     }
 
     /**
@@ -491,7 +618,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
                 throw new IllegalStateException();
 
             // Future gc() or first() calls will remove it.
-            last.clear();
+            clearNode(last);
 
             lastNode = null;
         }
@@ -506,7 +633,7 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
      * {@link GridConcurrentLinkedQueue#gc(int)} explicitly.
      */
     @SuppressWarnings({"PublicInnerClass"})
-    public static class Node<E> extends AtomicMarkableReference<Node<E>> {
+    public static final class Node<E> extends AtomicStampedReference<Node<E>> {
         /** Entry. */
         @GridToStringInclude
         private volatile E e;
@@ -515,16 +642,20 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
          * Head constructor.
          */
         private Node() {
-            super(null, false);
+            super(null, 0);
 
             e = null;
+
+            boolean b = compareAndSet(null, null, 0, 2); // Mark removed right away.
+
+            assert b;
         }
 
         /**
          * @param e Capsule.
          */
         public Node(E e) {
-            super(null, false);
+            super(null, 0);
 
             A.notNull(e, "e");
 
@@ -535,14 +666,21 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
          * @return Entry.
          */
         @Nullable public E value() {
-            return e;
+            return !active() ? null : e;
+        }
+
+        /**
+         * @return {@code True} if node is active.
+         */
+        public boolean active() {
+            return getStamp() == 0;
         }
 
         /**
          * @return {@code True} if entry is cleared from node.
          */
         public boolean cleared() {
-            return isMarked();
+            return getStamp() == 1;
         }
 
         /**
@@ -550,12 +688,12 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
          *
          * @return Non-null value if cleared or {@code null} if was already clear.
          */
-        @Nullable private E clear() {
+        @Nullable E clear() {
             if (e != null) {
                 while (true) {
                     Node<E> next = next();
 
-                    if (compareAndSet(next, next, false, true)) {
+                    if (compareAndSet(next, next, 0, 1)) {
                         E ret = e;
 
                         e = null;
@@ -572,18 +710,25 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
         }
 
         /**
-         * @param cur Current value.
-         * @param next New value.
-         * @return {@code True} if set.
+         * @return {@code True} if node was removed.
          */
-        private boolean casNext(Node<E> cur, Node<E> next) {
-            while (true) {
-                boolean mark = isMarked();
+        boolean removed() {
+            return getStamp() == 2;
+        }
 
-                if (compareAndSet(cur, next, mark, mark))
+        /**
+         * @return {@code True} if node was {@code removed} by this call.
+         */
+        boolean remove() {
+            assert !active();
+
+            while (true) {
+                Node<E> next = next();
+
+                if (compareAndSet(next, next, 1, 2))
                     return true;
 
-                if (mark == isMarked())
+                if (next == next())
                     return false;
             }
         }
@@ -593,15 +738,26 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
          * @param next New value.
          * @return {@code True} if set.
          */
-        boolean casNextIfNotCleared(Node<E> cur, Node<E> next) {
-            return compareAndSet(cur, next, false, false);
+        boolean casNext(Node<E> cur, Node<E> next) {
+            assert next != null;
+            assert next != this;
+
+            while (true) {
+                int stamp = getStamp();
+
+                if (compareAndSet(cur, next, stamp, stamp))
+                    return true;
+
+                if (stamp == getStamp())
+                    return false;
+            }
         }
 
         /**
          * @return Next linked node.
          */
-        @Nullable private Node<E> next() {
-            return get(DUMMY);
+        @Nullable Node<E> next() {
+            return getReference();
         }
 
         /** {@inheritDoc} */
@@ -611,7 +767,10 @@ public class GridConcurrentLinkedQueue<E> extends GridSerializableCollection<E> 
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(Node.class, this);
+            return S.toString(Node.class, this,
+                "hash", System.identityHashCode(this),
+                "stamp", getStamp(),
+                "nextNull", (next() == null));
         }
     }
 }

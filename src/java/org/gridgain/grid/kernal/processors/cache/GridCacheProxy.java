@@ -15,7 +15,7 @@ import org.gridgain.grid.cache.*;
  * Cache proxy marker interface.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public interface GridCacheProxy<K, V> extends GridCache<K, V> {
     // No-op.

@@ -92,7 +92,7 @@ import java.util.concurrent.atomic.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  * @see GridCommunicationSpi
  */
 @SuppressWarnings("deprecation")
@@ -100,7 +100,7 @@ import java.util.concurrent.atomic.*;
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.06072011")
+    version = "3.1.1c.11072011")
 @GridSpiMultipleInstancesSupport(false)
 public class GridCoherenceCommunicationSpi extends GridSpiAdapter implements GridCommunicationSpi,
     GridCoherenceCommunicationSpiMBean {

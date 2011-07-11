@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.06072011
+# Version: 3.1.1c.11072011
 #
 
 #
@@ -64,9 +64,9 @@ fi
 . "${GRIDGAIN_HOME}"/bin/setenv.sh
 
 #
-# Set GROOVY_LIBS for version 1.5.7
+# Set GROOVY_LIBS for version 1.8.0
 #
-GROOVY_LIBS=${GROOVY_HOME}/embeddable/groovy-all-1.5.7.jar
+GROOVY_LIBS=${GROOVY_HOME}/embeddable/groovy-all-1.8.0.jar
 
 # OS specific support.
 SEPARATOR=":";

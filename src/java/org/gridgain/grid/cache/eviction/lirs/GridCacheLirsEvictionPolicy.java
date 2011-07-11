@@ -23,6 +23,7 @@ import org.jetbrains.annotations.*;
 import javax.management.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.cache.eviction.lirs.GridCacheLirsEvictionPolicy.State.*;
 import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
@@ -43,13 +44,14 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * algorithm by Sone Jiang and Xiaodong Zhang.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
 public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheLirsEvictionPolicyMBean {
     /** MBean server. */
     @GridMBeanServerResource
+    @GridToStringExclude
     private MBeanServer jmx;
 
     /** Logger. */
@@ -209,6 +211,56 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         queue.gc(0);
     }
 
+    /** {@inheritDoc} */
+    @Override public long getAverageQueueGcTime() {
+        return queue.averageGcTime();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getAverageStackGcTime() {
+        return stack.averageGcTime();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getQueueNodesGced() {
+        return queue.nodesGced();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getStackNodesGced() {
+        return stack.nodesGced();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getQueueNodesCreated() {
+        return queue.nodesCreated();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getStackNodesCreated() {
+        return stack.nodesCreated();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getQueueGcCalls() {
+        return queue.gcCalls();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getStackGcCalls() {
+        return stack.gcCalls();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String queueFormatted() {
+        return queue.toShortString();
+    }
+
+    /** {@inheritDoc} */
+    @Override public String stackFormatted() {
+        return stack.toShortString();
+    }
+
     /**
      * Gets read-only view on main internal stack for {@code LIRS} implementation.
      *
@@ -245,11 +297,39 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         else {
             Capsule c = entry.meta(meta);
 
-            if (c != null)
-                synchronized (c.lock()) {
-                    c.clear();
+            if (c != null) {
+                readLock();
+
+                try {
+                    synchronized (c.lock()) {
+                        c.clear();
+                    }
                 }
+                finally {
+                    readUnlock();
+                }
+            }
         }
+
+        stack.gc(max);
+        queue.gc(getMaxQueueSize());
+    }
+
+    /**
+     * Read locks both queues.
+     */
+    @SuppressWarnings( {"LockAcquiredButNotSafelyReleased"})
+    private void readLock() {
+        stack.readLock0().lock();
+        queue.readLock0().lock();
+    }
+
+    /**
+     * Read unlocks both queues.
+     */
+    private void readUnlock() {
+        queue.readLock0().unlock();
+        stack.readLock0().unlock();
     }
 
     /**
@@ -267,7 +347,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
     /**
      * @param entry Entry to touch.
      */
-    @SuppressWarnings({"SynchronizationOnLocalVariableOrMethodParameter"})
+    @SuppressWarnings( {"SynchronizationOnLocalVariableOrMethodParameter", "TooBroadScope"})
     private void touch(GridCacheEntry<K, V> entry) {
         Capsule c = entry.meta(meta);
 
@@ -279,86 +359,93 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
         State initState = stack.size() < getMaxStackSize() ? LIR : HIR_R;
 
-        synchronized (lock) {
-            boolean miss = false;
+        readLock();
 
-            if (c == null) {
-                Capsule old = entry.putMetaIfAbsent(meta, c = new Capsule(entry, initState, lock));
+        try {
+            synchronized (lock) {
+                boolean miss = false;
 
-                if (old != null)
-                    c = old;
-                else
-                    miss = true;
-            }
+                if (c == null) {
+                    Capsule old = entry.putMetaIfAbsent(meta, c = new Capsule(entry, initState, lock));
 
-            // Replace removed entry.
-            if (c.cleared())
-                entry.addMeta(meta, c = new Capsule(entry, initState, lock));
-
-            switch (c.state()) {
-                // Low inter-recency.
-                case LIR: {
-                    if (stack.isFirst(c))
-                        prune = true;
-
-                    c.addStackNode(LIR);
-
-                    break;
+                    if (old != null)
+                        c = old;
+                    else
+                        miss = true;
                 }
 
-                // High inter-recency resident.
-                case HIR_R: {
-                    if (c.inStack()) {
-                        // Add to stack.
+                // Replace removed entry.
+                if (c.cleared())
+                    entry.addMeta(meta, c = new Capsule(entry, initState, lock));
+
+                switch (c.state()) {
+                    // Low inter-recency.
+                    case LIR: {
+                        if (stack.isFirst(c))
+                            prune = true;
+
                         c.addStackNode(LIR);
 
-                        // Remove from queue.
-                        c.dequeue();
-
-                        // Demote LIR from stack head to HIR_R.
-                        demote = true;
-                        prune = true;
+                        break;
                     }
-                    else {
-                        // Add to the top of the stack.
-                        c.addStackNode(HIR_R);
 
-                        // Move to the end of the queue.
-                        c.addQueueNode(HIR_R);
+                    // High inter-recency resident.
+                    case HIR_R: {
+                        if (c.inStack()) {
+                            // Add to stack.
+                            c.addStackNode(LIR);
 
-                        if (miss && stack.full()) {
+                            // Remove from queue.
+                            c.dequeue();
+
+                            // Demote LIR from stack head to HIR_R.
                             demote = true;
                             prune = true;
                         }
+                        else {
+                            // Add to the top of the stack.
+                            c.addStackNode(HIR_R);
+
+                            // Move to the end of the queue.
+                            c.addQueueNode(HIR_R);
+
+                            if (miss && stack.full()) {
+                                demote = true;
+                                prune = true;
+                            }
+                        }
+
+
+                        break;
                     }
 
+                    // High inter-recency non-resident.
+                    case HIR_NR: {
+                        // Dequeue from head and change to HIR_NR.
+                        evict = true;
 
-                    break;
-                }
+                        if (c.inStack()) {
+                            c.addStackNode(LIR);
 
-                // High inter-recency non-resident.
-                case HIR_NR: {
-                    // Dequeue from head and change to HIR_NR.
-                    evict = true;
+                            demote = true;
+                            prune = true;
+                        }
+                        else {
+                            c.addStackNode(HIR_R);
+                            c.addQueueNode(HIR_R);
+                        }
 
-                    if (c.inStack()) {
-                        c.addStackNode(LIR);
-
-                        demote = true;
-                        prune = true;
+                        break;
                     }
-                    else {
-                        c.addStackNode(HIR_R);
-                        c.addQueueNode(HIR_R);
+
+                    default: {
+                        assert false;
                     }
-
-                    break;
-                }
-
-                default: {
-                    assert false;
                 }
             }
+        }
+        finally {
+            readUnlock();
         }
 
         if (evict) {
@@ -368,9 +455,16 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 if (cap == null)
                     break;
 
-                synchronized (cap.lock()) {
-                    if (cap.pollQueue())
-                        break;
+                readLock();
+
+                try {
+                    synchronized (cap.lock()) {
+                        if (cap.pollQueue())
+                            break;
+                    }
+                }
+                finally {
+                    readUnlock();
                 }
             }
         }
@@ -384,9 +478,16 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 Capsule cap = stack.prune();
 
                 if (cap != null && demote) {
-                    synchronized (cap.lock()) {
-                        if (!cap.demote())
-                            continue;
+                    readLock();
+
+                    try {
+                        synchronized (cap.lock()) {
+                            if (!cap.demote())
+                                continue;
+                        }
+                    }
+                    finally {
+                        readUnlock();
                     }
 
                     // Prune again.
@@ -398,15 +499,15 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 break;
             }
         }
-
-        stack.gc(max);
-        queue.gc(getMaxQueueSize());
     }
 
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(GridCacheLirsEvictionPolicy.class, this,
-            "maxStack", getMaxStackSize(), "maxQueue", getMaxQueueSize());
+            "maxStack", getMaxStackSize(),
+            "maxQueue", getMaxQueueSize(),
+            "stack", stack.toShortString(),
+            "queue", queue.toShortString());
     }
 
     /**
@@ -439,6 +540,13 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 }
             });
         }
+
+        /**
+         * @return Read lock.
+         */
+        Lock readLock0() {
+            return lock().readLock();
+        }
     }
 
     /**
@@ -455,19 +563,26 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 if (c == null)
                     return false;
 
-                synchronized (c.lock()) {
-                    if (c.state() == HIR_R) {
-                        c.state(HIR_NR);
+                readLock();
 
-                        if (!c.inStack()) {
-                            // It's OK to evict while holding lock on capsule.
-                            if (!c.entry().evict())
-                                // Add to the top again.
-                                c.addStackNode(LIR);
+                try {
+                    synchronized (c.lock()) {
+                        if (c.state() == HIR_R) {
+                            c.state(HIR_NR);
+
+                            if (!c.inStack()) {
+                                // It's OK to evict while holding lock on capsule.
+                                if (!c.entry().evict())
+                                    // Add to the top again.
+                                    c.addStackNode(LIR);
+                            }
+
+                            return true;
                         }
-
-                        return true;
                     }
+                }
+                finally {
+                    readUnlock();
                 }
             }
 
@@ -478,13 +593,15 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         @Override protected boolean removeNode(Node<Capsule> n) {
             Capsule c = n.value();
 
-            if (c != null)
+            if (c != null) {
+                // Don't acquire read-lock as it is acquired by the caller.
                 synchronized (c.lock()) {
                     if (c.dequeue())
                         return true;
                 }
+            }
 
-            return false;
+            return clearNode(n);
         }
 
         /**
@@ -496,7 +613,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(HirsQueue.class, this, "size", size(), "eden", eden());
+            return S.toString(HirsQueue.class, this, toShortString());
         }
     }
 
@@ -531,24 +648,31 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                         continue;
                     }
 
-                    synchronized (c.lock()) {
-                        if (c.state() == HIR_R) {
-                            c.unstack();
-                        }
-                        // If need to evict.
-                        else if (c.state() == HIR_NR) {
-                            if (c.unstack()) {
-                                // It's OK to evict while holding lock on capsule.
-                                if (!c.entry().evict())
-                                    // Add to the top again.
-                                    c.addStackNode(LIR);
+                    readLock();
+
+                    try {
+                        synchronized (c.lock()) {
+                            if (c.state() == HIR_R) {
+                                c.unstack();
+                            }
+                            // If need to evict.
+                            else if (c.state() == HIR_NR) {
+                                if (c.unstack()) {
+                                    // It's OK to evict while holding lock on capsule.
+                                    if (!c.entry().evict())
+                                        // Add to the top again.
+                                        c.addStackNode(LIR);
+                                }
+                            }
+                            else {
+                                ret = c;
+
+                                break;
                             }
                         }
-                        else {
-                            ret = c;
-
-                            break;
-                        }
+                    }
+                    finally {
+                        readUnlock();
                     }
                 }
             }
@@ -568,7 +692,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(LirsStack.class, this, "size", size(), "eden", eden());
+            return S.toString(LirsStack.class, this, toShortString());
         }
     }
 
@@ -669,7 +793,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         boolean inStack() {
             assertLock();
 
-            return stackNode != null && !stackNode.cleared();
+            return stackNode != null && stackNode.active();
         }
 
         /**
@@ -678,7 +802,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         boolean inQueue() {
             assertLock();
 
-            return queueNode != null && !queueNode.cleared();
+            return queueNode != null && queueNode.active();
         }
 
         /**
@@ -717,15 +841,18 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         boolean dequeue() {
             assertLock();
 
-            if (cleared())
+            if (cleared()) {
+                assert queueNode == null || queueNode.cleared();
+
                 return false;
+            }
 
             if (queueNode != null) {
-                queue.clearNode(queueNode);
+                boolean ret = queue.clearNode(queueNode);
 
                 queueNode = null;
 
-                return true;
+                return ret;
             }
 
             return false;

@@ -27,7 +27,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Underlying map used by distributed cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 @SuppressWarnings({"ObjectEquality"})
 public class GridCacheMap<K, V> {
@@ -807,6 +807,15 @@ public class GridCacheMap<K, V> {
         /** Next entry to return. */
         private GridCacheMapEntry<K, V> next;
 
+        /** Next value. */
+        private V nextVal;
+
+        /** Current value. */
+        private V curVal;
+
+        /** */
+        private boolean isVal;
+
         /** Current slot. */
         private int idx = -1;
 
@@ -833,12 +842,13 @@ public class GridCacheMap<K, V> {
          * Creates iterator.
          *
          * @param map Cache map.
+         * @param isVal {@code True} if value iterator.
          * @param filter Entry filter.
          */
         @SuppressWarnings({"unchecked"})
-        Iterator0(GridCacheMap<K, V> map,
-            GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        Iterator0(GridCacheMap<K, V> map, boolean isVal, GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
             this.filter = filter;
+            this.isVal = isVal;
 
             this.map = map;
 
@@ -873,6 +883,13 @@ public class GridCacheMap<K, V> {
                 }
 
                 if (next != null) {
+                    if (isVal) {
+                        nextVal = next.wrap(true).peek(CU.<K, V>empty());
+
+                        if (nextVal == null)
+                            continue;
+                    }
+
                     // Verify outside of read-lock.
                     if (next.visitable(NON_INTERNAL_ARR) && next.visitable(filter))
                         break; // While.
@@ -886,10 +903,18 @@ public class GridCacheMap<K, V> {
             return next != null;
         }
 
+        /**
+         * @return Next value.
+         */
+        public V currentValue() {
+            return curVal;
+        }
+
         /** {@inheritDoc} */
         @SuppressWarnings({"unchecked"})
         @Override public GridCacheEntryEx<K, V> next() {
             GridCacheMapEntry<K, V> e = next;
+            V v = nextVal;
 
             if (e == null)
                 throw new NoSuchElementException();
@@ -924,12 +949,20 @@ public class GridCacheMap<K, V> {
                     map.readUnlock();
                 }
 
+                if (isVal) {
+                    nextVal = next.wrap(true).peek(CU.<K, V>empty());
+
+                    if (nextVal == null)
+                        continue;
+                }
+
                 // Verify outside of read-lock.
                 if (next != null && (next.visitable(NON_INTERNAL_ARR) && next.visitable(filter)))
                     break; // While.
             }
 
             cur = e;
+            curVal = v;
 
             return cur;
         }
@@ -942,6 +975,7 @@ public class GridCacheMap<K, V> {
             GridCacheMapEntry<K, V> e = cur;
 
             cur = null;
+            curVal = null;
 
             try {
                 ctx.cache().remove(e.key(), CU.<K, V>empty());
@@ -1015,7 +1049,7 @@ public class GridCacheMap<K, V> {
             GridCacheContext<K, V> ctx,
             GridCacheProjectionImpl<K, V> prjPerCall,
             GridCacheFlag[] forcedFlags) {
-            it = new Iterator0<K, V>(map, filter);
+            it = new Iterator0<K, V>(map, false, filter);
 
             this.ctx = ctx;
             this.prjPerCall = prjPerCall;
@@ -1094,7 +1128,7 @@ public class GridCacheMap<K, V> {
             GridPredicate<? super GridCacheEntry<K, V>>[] filter,
             GridCacheContext<K, V> ctx,
             boolean clone) {
-            it = new Iterator0<K, V>(map, filter);
+            it = new Iterator0<K, V>(map, true, filter);
 
             this.ctx = ctx;
             this.clone = clone;
@@ -1107,7 +1141,10 @@ public class GridCacheMap<K, V> {
 
         /** {@inheritDoc} */
         @Nullable @Override public V next() {
-            V val = it.next().wrap(true).peek(CU.<K, V>empty());
+            it.next();
+
+            // Cached value.
+            V val = it.currentValue();
 
             try {
                 return clone ? ctx.cloneValue(val) : val;
@@ -1153,7 +1190,7 @@ public class GridCacheMap<K, V> {
          * @param filter Filter.
          */
         private KeyIterator(GridCacheMap<K, V> map, GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
-            it = new Iterator0<K, V>(map, filter);
+            it = new Iterator0<K, V>(map, false, filter);
         }
 
         /** {@inheritDoc} */
@@ -1422,7 +1459,7 @@ public class GridCacheMap<K, V> {
 
         /** {@inheritDoc} */
         @Override public Iterator<GridCacheEntryEx<K, V>> iterator() {
-            return new Iterator0<K, V>(map, filter);
+            return new Iterator0<K, V>(map, false, filter);
         }
 
         /**

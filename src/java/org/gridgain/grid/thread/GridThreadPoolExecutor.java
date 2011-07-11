@@ -17,7 +17,7 @@ import java.util.concurrent.*;
  * An {@link ExecutorService} that executes submitted tasks using pooled grid threads.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridThreadPoolExecutor extends ThreadPoolExecutor {
     /** Default core pool size (value is {@code 100}). */

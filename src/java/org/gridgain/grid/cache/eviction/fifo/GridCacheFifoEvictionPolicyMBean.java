@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code FIFO} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 @GridMBeanDescription("MBean for FIFO cache eviction policy.")
 public interface GridCacheFifoEvictionPolicyMBean {
@@ -36,9 +36,9 @@ public interface GridCacheFifoEvictionPolicyMBean {
     public void setMaxSize(int max);
 
     /**
-     * Gets current {@code HIRS} queue size.
+     * Gets current queue size.
      *
-     * @return Current {@code HIRS} queue size.
+     * @return Current queue size.
      */
     @GridMBeanDescription("Current FIFO queue size.")
     public int getCurrentSize();
@@ -57,4 +57,44 @@ public interface GridCacheFifoEvictionPolicyMBean {
      */
     @GridMBeanDescription("Clears Eden space from internal queue.")
     public void gc();
+
+    /**
+     * Gets average time spent on GC'ing queue.
+     *
+     * @return Average time spent on GC'ing queue.
+     */
+    @GridMBeanDescription("Average time spent on GC'ing queue.")
+    public long getAverageGcTime();
+
+    /**
+     * Gets number of queue nodes GC'ed by this policy.
+     *
+     * @return Number of queue nodes GC'ed by this policy.
+     */
+    @GridMBeanDescription("Number of queue nodes GC'ed.")
+    public long getNodesGced();
+
+    /**
+     * Gets number of queue nodes created by this policy.
+     *
+     * @return Number of queue nodes created by this policy.
+     */
+    @GridMBeanDescription("Number of queue nodes created.")
+    public long getNodesCreated();
+
+    /**
+     * Gets number of queue GC calls executed by this policy.
+     *
+     * @return Number of queue GC calls executed by this policy.
+     */
+    @GridMBeanDescription("Number of GC calls.")
+    public long getGcCalls();
+
+    /**
+     * Gets formatted representation of internal queue.
+     *
+     * @return Formatted representation of internal queue.
+     */
+    @GridMBeanDescription("Formatted representation of internal queue.")
+    public String queueFormatted();
 }

@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * This interface defines JMX view on {@link GridCache}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 @GridMBeanDescription("MBean that provides access to cloud descriptor.")
 public interface GridCacheMBean {
@@ -82,6 +82,12 @@ public interface GridCacheMBean {
      */
     @GridMBeanDescription("Current Eden size of evict queue.")
     public int getDhtEvictQueueCurrentEdenSize();
+
+    /**
+     * Prints DHT evict queue to console.
+     */
+    @GridMBeanDescription("Prints DHT evict queue to console.")
+    public void printDhtEvictQueue();
 
     /**
      * Gets transaction per-thread map size.

@@ -78,14 +78,14 @@ import static org.gridgain.grid.spi.collision.jobstealing.GridJobStealingCollisi
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  * @see GridFailoverSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.06072011")
+    version = "3.1.1c.11072011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridJobStealingFailoverSpi extends GridSpiAdapter implements GridFailoverSpi,
     GridJobStealingFailoverSpiMBean {

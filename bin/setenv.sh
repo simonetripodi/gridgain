@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.06072011
+# Version: 3.1.1c.11072011
 #
 
 #
@@ -101,6 +101,7 @@ GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/dom4j-1.6.1.ja
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/antlr-2.7.6.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/jsch-0.1.44.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/jline.jar
+GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/groovypp-0.4.279_1.8.0.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/config/userversion
 
 # Comment these jars if you do not wish to use Hyperic SIGAR licensed under GPL
@@ -132,19 +133,6 @@ GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/sigar.jar
 # If using JBoss AOP following libraries need to be downloaded separately
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/lib/jboss-aop-jdk50.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/lib/jboss-aspect-library-jdk50.jar
-
-# Uncomment if using ActiveMQ 4
-# AMQ_HOME must point to ActiveMQ installation folder.
-# AMQ_HOME=
-
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${AMQ_HOME}"/apache-activemq-4.1.1.jar
-
-# Uncomment if using Sun Messaging Queue 4
-# SUNMQ_HOME must point to Sun Messaging Queue installation folder.
-# SUNMQ_HOME=
-
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${SUNMQ_HOME}"/mq/lib/imq.jar
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${SUNMQ_HOME}"/mq/lib/jms.jar
 
 # Uncomment if using JXInsight 4 and higher.
 # JXINSIGHT_HOME must point to Sun Messaging Queue installation folder.

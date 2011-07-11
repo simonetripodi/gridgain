@@ -26,7 +26,7 @@ import scalaz._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 object ScalarCacheProjectionPimp {
     /**
@@ -66,7 +66,7 @@ object ScalarCacheProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedType[GridCacheProjection[K, V]]
     with Iterable[GridCacheEntry[K, V]] {
@@ -537,20 +537,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details..
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details..
+     * @return Collection of cache key-value pairs.
+     */
     def scan(grid: GridProjection, cls: Class[_ <: V], kp: KeyPred, vp: ValuePred): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
@@ -566,21 +566,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details..
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details..
+     * @return Collection of cache key-value pairs.
+     */
     def scan(grid: GridProjection, kp: KeyPred, vp: ValuePred)
         (implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(grid != null)
@@ -591,19 +591,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details..
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details..
+     * @return Collection of cache key-value pairs.
+     */
     def scan(cls: Class[_ <: V], kp: KeyPred, vp: ValuePred): Iterable[(K, V)] = {
         assert(cls != null)
         assert(kp != null)
@@ -613,20 +613,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details..
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details..
+     * @return Collection of cache key-value pairs.
+     */
     def scan(kp: KeyPred, vp: ValuePred)(implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(kp != null)
         assert(vp != null)
@@ -635,20 +635,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sql(grid: GridProjection, cls: Class[_ <: V], clause: String, args: Any*): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
@@ -665,21 +665,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sql(grid: GridProjection, clause: String, args: Any*)
         (implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(grid != null)
@@ -690,19 +690,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sql(cls: Class[_ <: V], clause: String, args: Any*): Iterable[(K, V)] = {
         assert(cls != null)
         assert(clause != null)
@@ -711,20 +711,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sql(clause: String, args: Any*)(implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(clause != null)
 
@@ -732,19 +732,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def lucene(grid: GridProjection, cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
@@ -754,20 +754,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def lucene(grid: GridProjection, clause: String)(implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(grid != null)
         assert(clause != null)
@@ -776,18 +776,18 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def lucene(cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
         assert(cls != null)
         assert(clause != null)
@@ -796,19 +796,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def lucene(clause: String)(implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(clause != null)
 
@@ -816,19 +816,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def h2Text(grid: GridProjection, cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
@@ -838,20 +838,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def h2Text(grid: GridProjection, clause: String)(implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(grid != null)
         assert(clause != null)
@@ -860,18 +860,18 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def h2Text(cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
         assert(cls != null)
         assert(clause != null)
@@ -880,19 +880,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @return Collection of cache key-value pairs.
+     */
     def h2Text(clause: String)(implicit m: Manifest[V]): Iterable[(K, V)] = {
         assert(clause != null)
 
@@ -900,21 +900,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def scanTransform[T](grid: GridProjection, cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
         trans: V => T): Iterable[(K, T)] = {
         assert(grid != null)
@@ -933,22 +933,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def scanTransform[T](grid: GridProjection, kp: KeyPred, vp: ValuePred,
         trans: V => T)(implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(grid != null)
@@ -960,20 +960,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def scanTransform[T](cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
         trans: V => T): Iterable[(K, T)] = {
         assert(cls != null)
@@ -985,21 +985,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SCAN` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def scanTransform[T](kp: KeyPred, vp: ValuePred, trans: V => T)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(kp != null)
@@ -1010,21 +1010,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sqlTransform[T](grid: GridProjection, cls: Class[_ <: V], clause: String,
         trans: V => T, args: Any*): Iterable[(K, T)] = {
         assert(grid != null)
@@ -1045,22 +1045,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sqlTransform[T](grid: GridProjection, clause: String, trans: V => T, args: Any*)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(grid != null)
@@ -1072,20 +1072,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sqlTransform[T](cls: Class[_ <: V], clause: String, trans: V => T,
         args: Any*): Iterable[(K, T)] = {
         assert(cls != null)
@@ -1097,21 +1097,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @param args Optional list of query arguments.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `SQL` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @param args Optional list of query arguments.
+     * @return Collection of cache key-value pairs.
+     */
     def sqlTransform[T](clause: String, trans: V => T, args: Any*)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(clause != null)
@@ -1122,20 +1122,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def luceneTransform[T](grid: GridProjection, cls: Class[_ <: V], clause: String,
         trans: V => T): Iterable[(K, T)] = {
         assert(grid != null)
@@ -1151,21 +1151,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def luceneTransform[T](grid: GridProjection, clause: String, trans: V => T)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(grid != null)
@@ -1176,19 +1176,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def luceneTransform[T](cls: Class[_ <: V], clause: String, trans: V => T): Iterable[(K, T)] = {
         assert(cls != null)
         assert(clause != null)
@@ -1198,20 +1198,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `LUCENE` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def luceneTransform[T](clause: String, trans: V => T)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(clause != null)
@@ -1221,20 +1221,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def h2TextTransform[T](grid: GridProjection, cls: Class[_ <: V], clause: String,
         trans: V => T): Iterable[(K, T)] = {
         assert(grid != null)
@@ -1250,21 +1250,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` transform query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` transform query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def h2TextTransform[T](grid: GridProjection, clause: String, trans: V => T)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(grid != null)
@@ -1275,19 +1275,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def h2TextTransform[T](cls: Class[_ <: V], clause: String, trans: V => T): Iterable[(K, T)] = {
         assert(cls != null)
         assert(clause != null)
@@ -1297,20 +1297,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` transform query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param trans Transform function that will be applied to each returned value.
-      * @return Collection of cache key-value pairs.
-      */
+     * Creates and executes ad-hoc `H2TEXT` transform query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param trans Transform function that will be applied to each returned value.
+     * @return Collection of cache key-value pairs.
+     */
     def h2TextTransform[T](clause: String, trans: V => T)
         (implicit m: Manifest[V]): Iterable[(K, T)] = {
         assert(clause != null)
@@ -1320,22 +1320,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def scanReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], kp: KeyPred,
         vp: ValuePred, rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(grid != null)
@@ -1356,23 +1356,23 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def scanReduce[R1, R2](grid: GridProjection, kp: KeyPred, vp: ValuePred,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2)(implicit m: Manifest[V]): R2 = {
         assert(grid != null)
@@ -1385,21 +1385,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def scanReduce[R1, R2](cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(cls != null)
@@ -1412,22 +1412,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def scanReduce[R1, R2](kp: KeyPred, vp: ValuePred, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2)(implicit m: Manifest[V]): R2 = {
         assert(kp != null)
@@ -1439,22 +1439,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @param args Optional list of query arguments.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @param args Optional list of query arguments.
+     * @return Reduced value.
+     */
     def sqlReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2, args: Any*): R2 = {
         assert(grid != null)
@@ -1477,23 +1477,23 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @param args Optional list of query arguments.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @param args Optional list of query arguments.
+     * @return Reduced value.
+     */
     def sqlReduce[R1, R2](grid: GridProjection, clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2, args: Any*)(implicit m: Manifest[V]): R2 = {
         assert(grid != null)
@@ -1506,21 +1506,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @param args Optional list of query arguments.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @param args Optional list of query arguments.
+     * @return Reduced value.
+     */
     def sqlReduce[R1, R2](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2, args: Any*): R2 = {
         assert(cls != null)
@@ -1533,22 +1533,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @param args Optional list of query arguments.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @param args Optional list of query arguments.
+     * @return Reduced value.
+     */
     def sqlReduce[R1, R2](clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2, args: Any*)(implicit m: Manifest[V]): R2 = {
         assert(clause != null)
@@ -1560,21 +1560,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def luceneReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(grid != null)
@@ -1592,22 +1592,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def luceneReduce[R1, R2](grid: GridProjection, clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2)(implicit m: Manifest[V]): R2 = {
         assert(grid != null)
@@ -1619,20 +1619,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def luceneReduce[R1, R2](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2): R2 = {
         assert(cls != null)
@@ -1644,21 +1644,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def luceneReduce[R1, R2](clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2)(implicit m: Manifest[V]): R2 = {
         assert(clause != null)
@@ -1669,21 +1669,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def h2TextReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(grid != null)
@@ -1701,24 +1701,24 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def h2TextReduce[R1, R2](grid: GridProjection, clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2)(implicit m: Manifest[V]): R2 = {
         assert(grid != null)
@@ -1730,20 +1730,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def h2TextReduce[R1, R2](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2): R2 = {
         assert(cls != null)
@@ -1755,23 +1755,23 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Reduced value.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Reduced value.
+     */
     def h2TextReduce[R1, R2](clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2)(implicit m: Manifest[V]): R2 = {
         assert(clause != null)
@@ -1782,21 +1782,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def scanReduce[R](grid: GridProjection, cls: Class[_ <: V], kp: KeyPred,
         vp: ValuePred, rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(grid != null)
@@ -1815,22 +1815,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def scanReduce[R](grid: GridProjection, kp: KeyPred, vp: ValuePred,
         rmtRdc: Iterable[(K, V)] => R)(implicit m: Manifest[V]): Iterable[R] = {
         assert(grid != null)
@@ -1842,20 +1842,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def scanReduce[R](cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(cls != null)
@@ -1867,22 +1867,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param kp Key filter. See `GridCacheQuery` for more details.
-      * @param vp Value filter. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param locRdc Reduce function that will be called on local node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SCAN` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param kp Key filter. See `GridCacheQuery` for more details.
+     * @param vp Value filter. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param locRdc Reduce function that will be called on local node.
+     * @return Collection of reduced values.
+     */
     def scanReduce[R](kp: KeyPred, vp: ValuePred, rmtRdc: Iterable[(K, V)] => R)
         (implicit m: Manifest[V]): Iterable[R] = {
         assert(kp != null)
@@ -1893,21 +1893,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param args Optional list of query arguments.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param args Optional list of query arguments.
+     * @return Collection of reduced values.
+     */
     def sqlReduce[R](grid: GridProjection, cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R, args: Any*): Iterable[R] = {
         assert(grid != null)
@@ -1928,22 +1928,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param args Optional list of query arguments.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param args Optional list of query arguments.
+     * @return Collection of reduced values.
+     */
     def sqlReduce[R](grid: GridProjection, clause: String, rmtRdc: Iterable[(K, V)] => R,
         args: Any*)(implicit m: Manifest[V]): Iterable[R] = {
         assert(grid != null)
@@ -1955,20 +1955,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param args Optional list of query arguments.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param args Optional list of query arguments.
+     * @return Collection of reduced values.
+     */
     def sqlReduce[R](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R,
         args: Any*): Iterable[R] = {
         assert(cls != null)
@@ -1980,21 +1980,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query SQL clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @param args Optional list of query arguments.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `SQL` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query SQL clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @param args Optional list of query arguments.
+     * @return Collection of reduced values.
+     */
     def sqlReduce[R](clause: String, rmtRdc: Iterable[(K, V)] => R,
         args: Any*)(implicit m: Manifest[V]): Iterable[R] = {
         assert(clause != null)
@@ -2005,20 +2005,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def luceneReduce[R](grid: GridProjection, cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(grid != null)
@@ -2034,21 +2034,21 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def luceneReduce[R](grid: GridProjection, clause: String, rmtRdc: Iterable[(K, V)] => R)
         (implicit m: Manifest[V]): Iterable[R] = {
         assert(grid != null)
@@ -2059,19 +2059,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def luceneReduce[R](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(cls != null)
         assert(clause != null)
@@ -2081,20 +2081,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `LUCENE` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def luceneReduce[R](clause: String, rmtRdc: Iterable[(K, V)] => R)
         (implicit m: Manifest[V]): Iterable[R] = {
         assert(clause != null)
@@ -2104,20 +2104,20 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def h2TextReduce[R](grid: GridProjection, cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(grid != null)
@@ -2133,23 +2133,23 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param grid Grid projection on which this query will be executed.
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on given projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param grid Grid projection on which this query will be executed.
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def h2TextReduce[R](grid: GridProjection, clause: String, rmtRdc: Iterable[(K, V)] => R)
         (implicit m: Manifest[V]): Iterable[R] = {
         assert(grid != null)
@@ -2160,19 +2160,19 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def h2TextReduce[R](cls: Class[_ <: V], clause: String,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(cls != null)
@@ -2183,22 +2183,22 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
     }
 
     /**
-      * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
-      *
-      * Note that if query is executed more than once (potentially with different
-      * arguments) it is more performant to create query via standard mechanism
-      * and execute it multiple times with different arguments. The analogy is
-      * similar to JDBC `PreparedStatement`.
-      *
-      * Note that query value class will be taken implicitly as exact type `V` of this
-      * cache projection.
-      *
-      * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
-      *     query needs to know the exact type it should operate on.
-      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
-      * @param rmtRdc Reduce function that will be called on each remote node.
-      * @return Collection of reduced values.
-      */
+     * Creates and executes ad-hoc `H2TEXT` reduce query on global projection returning its result.
+     *
+     * Note that if query is executed more than once (potentially with different
+     * arguments) it is more performant to create query via standard mechanism
+     * and execute it multiple times with different arguments. The analogy is
+     * similar to JDBC `PreparedStatement`.
+     *
+     * Note that query value class will be taken implicitly as exact type `V` of this
+     * cache projection.
+     *
+     * @param cls Query values class. Since cache can, in general, contain values of any subtype of `V`
+     *     query needs to know the exact type it should operate on.
+     * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
+     * @param rmtRdc Reduce function that will be called on each remote node.
+     * @return Collection of reduced values.
+     */
     def h2TextReduce[R](clause: String, rmtRdc: Iterable[(K, V)] => R)
         (implicit m: Manifest[V]): Iterable[R] = {
         assert(clause != null)

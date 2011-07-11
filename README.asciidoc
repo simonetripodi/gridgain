@@ -9,18 +9,18 @@ Nikita Ivanov <nivanov@gridgain.com>
 
 image::http://www.gridgain.com/images/faces.gif[]
 
-GridGain is a *Java* and *Scala* based software middleware that enables development
+GridGain is a JVM-based based software middleware that enables development
 of high performance distributed application that scale up on any managed infrastructure: 
 from a single laptop, to cluster and grids, to public and private clouds. 
 
 GridGain - Community Edition
 ----------------------------
 GridGain allows anyone easily develop, scale and manage compute and data intensive 
-JVM based applications. GridGain provides three major areas of functionality: 
+JVM based applications using Java, Scala or Groovy++. GridGain provides two major
+areas of functionality:
 
 - *Compute Grids*
 - *In-Memory Data Grids*
-- *Cloud Auto-Scaling*
 
 On top of that it provides the multitude of surrounding technologies many of 
 which are frequently used by our clients on their own. 
@@ -63,11 +63,11 @@ We suggest to start with HelloWorld examples located at
 +examples/java/org/gridgain/examples/helloworld+ folder. Getting started is easier with 
 documentation on our http://bit.ly/bywKFk[Wiki]
 
-Javadoc & Scaladoc
+API Documentation
 ------------------
 We spend significant amount of time on writing and maintaining Javadoc and Scaladoc for our 
-product. All documentation is shipped with it and you can find it under +javadoc+ and 
-+scaladoc+ sub-folder respectively. 
+product. All documentation is shipped with it and you can find it under +javadoc+, +groovydoc+,
+and +scaladoc+ sub-folder respectively.
 
 You can also find latest released Javadoc online: http://www.gridgain.com/javadoc30C/index.html
 
@@ -82,7 +82,7 @@ Support & Documentation
 GridGain comes with several support and documentation resources:
 
 . Community http://jive.gridgain.org[Support Forum]
-. Working draft of http://www.gridgain.com/book/book.html["Pragmatic Cloud Computing with GridGain using Java and Scala"] book
+. Working draft of http://www.gridgain.com/book/book.html["High Performance Cloud Computing with GridGain"] book
 . GridGain http://wiki.gridgain.org[Wiki]
 . Video http://gridgain.com/screencasts.html[screencast]
 . Online newspaper http://paper.li/gridgain/1299724823[GridGain Daily]

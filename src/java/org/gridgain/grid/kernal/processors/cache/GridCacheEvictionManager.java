@@ -37,12 +37,9 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * Cache eviction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
-    /** */
-    private static final int EVICT_QUEUE_MAX_EDEN_SIZE = 50;
-
     /** Synchronized evictions. */
     private boolean syncEvict;
 
@@ -136,6 +133,13 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
      */
     public int evictQueueEdenSize() {
         return evictQ.eden();
+    }
+
+    /**
+     * Prints full eviction queue.
+     */
+    public void printQueue() {
+        evictQ.printFullQueue();
     }
 
     /**
@@ -371,7 +375,10 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
      *
      */
     private void evictQueueGc() {
-        evictQ.gc(EVICT_QUEUE_MAX_EDEN_SIZE);
+        int maxQueueSize = maxQueueSize();
+
+        if (maxQueueSize > 0)
+            evictQ.gc(maxQueueSize());
     }
 
     /**
@@ -541,8 +548,16 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
      *      and must be shrinked.
      */
     private boolean isQueueFull() {
-        return evictQ.size() >=
-            (int)(cctx.cache().keySize() * cctx.config().getMaxEvictionOverflowRatio()) / 100;
+        return evictQ.size() >= maxQueueSize();
+    }
+
+    /**
+     * @return Max queue size.
+     */
+    private int maxQueueSize() {
+        int cnt = (int)(cctx.cache().keySize() * cctx.config().getMaxEvictionOverflowRatio()) / 100;
+
+        return cnt < 500 ? 500 : cnt;
     }
 
     /**

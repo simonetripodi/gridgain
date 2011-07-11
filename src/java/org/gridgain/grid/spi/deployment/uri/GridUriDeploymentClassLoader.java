@@ -14,6 +14,8 @@ import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
 
 /**
  * Loads classes and resources from "unpacked" GAR file (GAR directory).
@@ -22,10 +24,12 @@ import java.net.*;
  * class/resource was not found scans all JAR files.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
-@SuppressWarnings({"CustomClassloader"})
 class GridUriDeploymentClassLoader extends URLClassLoader {
+    /** */
+    private final ConcurrentMap<String, Lock> locks = new ConcurrentHashMap<String, Lock>();
+
     /**
      * Creates new instance of class loader.
      *
@@ -37,7 +41,6 @@ class GridUriDeploymentClassLoader extends URLClassLoader {
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"UnusedCatchParameter"})
     @Override public Class<?> loadClass(String name) throws ClassNotFoundException {
         try {
             // First, check if the class has already been loaded
@@ -48,7 +51,7 @@ class GridUriDeploymentClassLoader extends URLClassLoader {
                     // Search classes in GAR file.
                     cls = findClass(name);
                 }
-                catch (ClassNotFoundException e) {
+                catch (ClassNotFoundException ignored) {
                     // If still not found, then invoke parent class loader in order
                     // to find the class.
                     cls = loadClass(name, true);
@@ -74,7 +77,6 @@ class GridUriDeploymentClassLoader extends URLClassLoader {
      * @return Loaded class.
      * @throws ClassNotFoundException If no class found.
      */
-    @SuppressWarnings({"UnusedCatchParameter"})
     public Class<?> loadClassGarOnly(String name) throws ClassNotFoundException {
         try {
             // First, check if the class has already been loaded
@@ -94,6 +96,39 @@ class GridUriDeploymentClassLoader extends URLClassLoader {
         catch (Throwable e) {
             throw new ClassNotFoundException("Failed to load class due to unexpected error: " + name, e);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override protected Class<?> findClass(String name) throws ClassNotFoundException {
+        Lock lock = lock(name);
+
+        lock.lock();
+
+        try {
+            Class cls = findLoadedClass(name);
+
+            if (cls != null)
+                return cls;
+
+            return super.findClass(name);
+        }
+        finally {
+            lock.unlock();
+
+            locks.remove(name);
+        }
+    }
+
+    /**
+     * @param clsName Class name.
+     * @return Lock to synchronize load on.
+     */
+    private Lock lock(String clsName) {
+        Lock lock = new ReentrantLock();
+
+        Lock oldLock = locks.putIfAbsent(clsName, lock);
+
+        return oldLock != null ? oldLock : lock;
     }
 
     /** {@inheritDoc} */

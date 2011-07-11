@@ -118,7 +118,7 @@ import annotation.target.field
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 object scalar extends ScalarMixin {
     /** Visor copyright blurb. */
@@ -128,7 +128,7 @@ object scalar extends ScalarMixin {
     private val VER = "3.1.1c"
 
     /** Visor build number. */
-    private val BUILD = "06072011"
+    private val BUILD = "11072011"
 
     /** Type alias for `GridCacheQuerySqlField`. */
     type ScalarCacheQuerySqlField = GridCacheQuerySqlField @field
@@ -346,8 +346,9 @@ object scalar extends ScalarMixin {
         Option(G.grid.cloud(cloudName))
 
     /**
-     * Gets named cloud from the default grid instance.
+     * Gets named cloud from specified grid instance.
      *
+     * @param gridName Grid name.
      * @param cloudName Cloud name.
      */
     @inline def cloud$(gridName: String, cloudName: String): Option[GridRichCloud] =

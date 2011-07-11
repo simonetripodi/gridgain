@@ -17,7 +17,7 @@ import java.util.*;
  * Management bean that provides access to {@link GridCloud}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.06072011
+ * @version 3.1.1c.11072011
  */
 class GridCloudMBeanAdapter implements GridCloudMBean {
     /** Cloud. */
