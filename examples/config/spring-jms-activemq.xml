@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    _________        _____ __________________        _____
+    __  ____/___________(_)______  /__  ____/______ ____(_)_______
+    _  / __  __  ___/__  / _  __  / _  / __  _  __ `/__  / __  __ \
+    / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
+    \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
+
+    Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+    Version: 3.1.1c.12072011
+-->
+
+<!--
+    GridGain Spring configuration file to startup grid with configuration
+    for GridJmsDiscoverySpi and GridJmsCommunicationSpi used for node discovery
+    and message exchange.
+
+    If using this configuration file to run examples, be sure to add relevant JMS
+    libraries to the example classpath and remote node classpath. Also check that
+    both nodes use JMS communication and discovery configured the same way.
+
+    When starting a standalone GridGain node, you need to execute the following command:
+    {GRIDGAIN_HOME}/bin/ggstart.{bat|sh} path-to-this-file/spring-jms.xml
+
+    When starting GridGain from Java IDE, pass path to this file into GridFactory:
+    GridFactory.start("path-to-this-file/spring-jms-activemq.xml");
+
+    Be sure that JMS server is up and running. This configuration uses
+    "myjmscomm" topic for message exchange and "myjmsdisco" topic
+    for node discovery. These topics are dynamical ones.
+
+    You need not add any special configuration to ActiveMQ server v4.1.1
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+    <!--
+        Optional description.
+    -->
+    <description>
+        JMS Spring file for ActiveMQ v4.1.1 grid configuration.
+    </description>
+
+    <!--
+        Grid configuration bean.
+    -->
+    <bean id="grid.cfg" class="org.gridgain.grid.GridConfigurationAdapter" scope="singleton">
+        <!--
+            Configuration for GridJmsCommunicationSpi communication SPI.
+        -->
+        <property name="communicationSpi">
+            <bean class="org.gridgain.grid.spi.communication.jms.GridJmsCommunicationSpi">
+                <!-- JMS connection factory registered in JNDI. -->
+                <property name="connectionFactoryName" value="ConnectionFactory"/>
+
+                <!-- JMS topic name used for sending messages to multiple nodes. -->
+                <property name="topicName" value="dynamicTopics/myCommTopic"/>
+
+                <!-- JNDI environment (specific to JMS provider). -->
+                <property name="jndiEnvironment">
+                    <map>
+                        <entry>
+                            <key><util:constant static-field="javax.naming.Context.INITIAL_CONTEXT_FACTORY"/></key>
+                            <value>org.apache.activemq.jndi.ActiveMQInitialContextFactory</value>
+                        </entry>
+                        <entry>
+                            <key><util:constant static-field="javax.naming.Context.PROVIDER_URL"/></key>
+                            <value>tcp://localhost:61616</value>
+                        </entry>
+                    </map>
+                </property>
+            </bean>
+        </property>
+
+        <!--
+            Configuration for GridJmsDiscoverySpi discovery SPI.
+        -->
+        <property name="discoverySpi">
+            <bean class="org.gridgain.grid.spi.discovery.jms.GridJmsDiscoverySpi">
+                <!-- JMS connection factory registered in JNDI. -->
+                <property name="connectionFactoryName" value="ConnectionFactory"/>
+
+                <!-- JMS topic name used for node discovery. -->
+                <property name="topicName" value="dynamicTopics/myDiscoTopic"/>
+
+                <!-- JNDI environment (specific to JMS provider). -->
+                <property name="jndiEnvironment">
+                    <map>
+                        <entry>
+                            <key><util:constant static-field="javax.naming.Context.INITIAL_CONTEXT_FACTORY"/></key>
+                            <value>org.apache.activemq.jndi.ActiveMQInitialContextFactory</value>
+                        </entry>
+                        <entry>
+                            <key><util:constant static-field="javax.naming.Context.PROVIDER_URL"/></key>
+                            <value>tcp://localhost:61616</value>
+                        </entry>
+                    </map>
+                </property>
+            </bean>
+        </property>
+    </bean>
+</beans>

@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure.dtd">
+
+<!-- Configure the Jetty Server for GridGain Management Console -->
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+    <!-- Server Thread Pool -->
+    <Set name="ThreadPool">
+        <New class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+            <Set name="minThreads">10</Set>
+            <Set name="maxThreads">200</Set>
+        </New>
+    </Set>
+
+    <!-- Connectors -->
+    <Call name="addConnector">
+        <Arg>
+            <New class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+                <Set name="host"><Property name="jetty.host" /></Set>
+                <Set name="port"><Property name="jetty.port" default="8080"/></Set>
+                <Set name="maxIdleTime">300000</Set>
+                <Set name="Acceptors">2</Set>
+                <Set name="statsOn">false</Set>
+                <Set name="confidentialPort">8443</Set>
+                <Set name="lowResourcesConnections">20000</Set>
+                <Set name="lowResourcesMaxIdleTime">5000</Set>
+            </New>
+        </Arg>
+    </Call>
+
+    <!-- Set handler Collection Structure -->
+    <Set name="handler">
+        <New id="Handlers" class="org.eclipse.jetty.server.handler.HandlerCollection">
+            <Set name="handlers">
+                <Array type="org.eclipse.jetty.server.Handler">
+                    <Item>
+                        <New id="Contexts" class="org.eclipse.jetty.server.handler.ContextHandlerCollection"/>
+                    </Item>
+                    <Item>
+                        <New id="DefaultHandler" class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+                    </Item>
+                </Array>
+            </Set>
+        </New>
+    </Set>
+
+    <!-- Extra options -->
+    <Set name="stopAtShutdown">true</Set>
+    <Set name="sendServerVersion">true</Set>
+    <Set name="sendDateHeader">true</Set>
+    <Set name="gracefulShutdown">1000</Set>
+
+    <!-- java.security.auth.login.config System property -->
+    <!-- This is usually a runtime parameter to the jvm, but it is placed here for convenience. -->
+    <Call class="java.lang.System" name="setProperty">
+        <Arg>java.security.auth.login.config</Arg>
+        <Arg><SystemProperty name="GRIDGAIN_HOME"/>/config/console/login.conf<SystemProperty name="jetty.login.suffix" default=""/></Arg>
+    </Call>
+
+    <!-- Configure context deployer. -->
+    <Call name="addLifeCycle">
+        <Arg>
+            <New class="org.eclipse.jetty.deploy.ContextDeployer">
+                <Set name="contexts">
+                    <Ref id="Contexts" />
+                </Set>
+                <Set name="configurationDir"><SystemProperty name="GRIDGAIN_HOME"/>/config/console/contexts</Set>
+                <Set name="scanInterval">1</Set>
+            </New>
+        </Arg>
+    </Call>
+</Configure>
