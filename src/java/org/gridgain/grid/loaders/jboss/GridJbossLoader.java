@@ -35,7 +35,7 @@ import java.util.*;
  * more information.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 @GridLoader(description = "JBoss loader")
 public class GridJbossLoader extends ServiceMBeanSupport implements GridJbossLoaderMBean {

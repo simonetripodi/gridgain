@@ -27,7 +27,7 @@ import java.util.*;
  * about every change.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridUriDeploymentFileScanner extends GridUriDeploymentScanner {
     /** Scanning directory or file. */
@@ -133,9 +133,8 @@ public class GridUriDeploymentFileScanner extends GridUriDeploymentScanner {
         GridDeploymentFolderScannerHelper.scanFolder(scanDir, garFilter, handler);
 
         // Print warning if no GAR-units found first time.
-        if (isFirstScan() && foundFiles.isEmpty()) {
-            getLogger().warning("No GAR-units found in: " + U.hidePassword(getUri().toString()));
-        }
+        if (isFirstScan() && foundFiles.isEmpty())
+            U.warn(getLogger(), "No GAR-units found in: " + U.hidePassword(getUri().toString()));
 
         if (!isFirstScan()) {
             Collection<File> deletedFiles = new HashSet<File>(tstampCache.keySet());

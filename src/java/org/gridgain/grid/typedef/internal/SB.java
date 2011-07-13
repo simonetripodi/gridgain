@@ -17,7 +17,7 @@ import org.gridgain.grid.util.*;
  * use only and meant to provide for more terse code when readability of code is not compromised.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class SB extends GridStringBuilder {
     /**

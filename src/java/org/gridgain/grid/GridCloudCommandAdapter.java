@@ -24,7 +24,7 @@ import java.util.*;
  * This class is a simple bean and it doesn't provide any synchronization.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridCloudCommandAdapter extends GridMetadataAwareAdapter implements GridCloudCommand {
     /** Command ID. */

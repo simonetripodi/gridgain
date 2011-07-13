@@ -37,7 +37,7 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * Cache eviction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
     /** Synchronized evictions. */
@@ -90,9 +90,10 @@ public class GridCacheEvictionManager<K, V> extends GridCacheManager<K, V> {
 
         if (syncEvict) {
             if (cfg.getStore() == null && !cfg.isEvictBackupSynchronized())
-                log.warning("Backups evictions are not synchronized with primary node which " +
+                U.warn(log, "Backups evictions are not synchronized with primary node which " +
                     "may cause data inconsistency (either change isBackupEvictSynchronized " +
-                    "configuration property or configure persistent GridCacheStore)");
+                    "configuration property or configure persistent GridCacheStore)",
+                    "Backups evictions are not synchronized with primary node.");
 
             cctx.io().addHandler(GridCacheEvictionRequest.class, new CI2<UUID, GridCacheEvictionRequest<K, V>>() {
                 @Override public void apply(UUID nodeId, GridCacheEvictionRequest<K, V> msg) {

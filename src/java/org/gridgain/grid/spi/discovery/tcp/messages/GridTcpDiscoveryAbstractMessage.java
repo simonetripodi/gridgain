@@ -19,7 +19,7 @@ import java.util.*;
  * Base class to implement discovery messages.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public abstract class GridTcpDiscoveryAbstractMessage implements Externalizable {
     /** Sender of the message. */

@@ -11,8 +11,6 @@ package org.gridgain.grid.thread;
 
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.worker.*;
-
-import java.io.*;
 import java.util.concurrent.atomic.*;
 
 /**
@@ -26,30 +24,11 @@ import java.util.concurrent.atomic.*;
  * <b>Note</b>: this class is intended for internal use only.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridThread extends Thread {
     /** Default thread's group. */
-    public static final ThreadGroup DFLT_GRP = new ThreadGroup("gridgain") {
-        @Override public void uncaughtException(Thread t, Throwable e) {
-            super.uncaughtException(t, e);
-
-            if (e instanceof AssertionError) {
-                AssertionError ae = (AssertionError)e;
-
-                try {
-                    FileWriter writer = new FileWriter(U.getGridGainHome() + "/work/assert-test.txt", true);
-
-                    writer.write("Assertion in thread " + t.getName() + ": " + e.getMessage() + "\n");
-
-                    writer.close();
-                }
-                catch (IOException e1) {
-                    e1.printStackTrace(); // TODO implement.
-                }
-            }
-        }
-    };
+    public static final ThreadGroup DFLT_GRP = new ThreadGroup("gridgain");
 
     /** Number of all grid threads in the system. */
     private static final AtomicLong threadCntr = new AtomicLong(0);

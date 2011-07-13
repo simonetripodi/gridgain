@@ -23,7 +23,7 @@ import java.util.*;
  * Scanner doesn't search files in subfolders.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridUriDeploymentFtpScanner extends GridUriDeploymentScanner {
     /** */
@@ -163,7 +163,7 @@ public class GridUriDeploymentFtpScanner extends GridUriDeploymentScanner {
                             // Add new file in cache to avoid print warning every time.
                             cache.put(file, UNKNOWN_FILE_TSTAMP);
 
-                            getLogger().warning("File with unknown timestamp will be ignored " +
+                            U.warn(getLogger(), "File with unknown timestamp will be ignored " +
                                 "(check FTP server configuration): " + file);
                         }
                     }

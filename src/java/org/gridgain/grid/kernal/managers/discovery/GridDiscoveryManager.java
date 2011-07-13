@@ -37,7 +37,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * Discovery SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
     /** System line separator. */
@@ -832,11 +832,14 @@ public class GridDiscoveryManager extends GridManagerAdapter<GridDiscoverySpi> {
         }
 
         /**
-         * Checks whether network segment is correct performs all necessary actions.
+         * Checks whether network segment is correct.
          *
          * @return {@code True} if segment is correct.
          */
         private boolean isSegmentValid() {
+            if (!segChkEnabled)
+                return true;
+
             boolean segValid = false;
 
             try {

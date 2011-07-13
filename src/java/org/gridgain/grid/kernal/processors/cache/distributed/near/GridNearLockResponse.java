@@ -24,7 +24,7 @@ import java.util.*;
  * Near cache lock response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridNearLockResponse<K, V> extends GridDistributedLockResponse<K, V> {
     /** Collection of versions that are pending and less than lock version. */

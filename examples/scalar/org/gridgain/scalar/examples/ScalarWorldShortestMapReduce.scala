@@ -21,18 +21,19 @@ import org.gridgain.grid.GridClosureCallMode._
  * on thousands requiring no special configuration or deployment.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 object ScalarWorldShortestMapReduce {
     /**
-     * Entry point. Just pass any string and it's non-space length will be
-     * calculated on the grid/cloud.
+     * Entry point.
      *
-     * @param args Command line arguments, one is required.
+     * @param args Command line arguments, none required.
      */
-    def main(args: Array[String]): Unit = scalar {
+    def main(args: Array[String]) = scalar {
+        val input = "World shortest mapreduce application"
+
         println("Non-space characters count: " +
-            grid$ @< (SPREAD, for (w <- args(0).split(" ")) yield (() => w.length), (s: Seq[Int]) => s.sum)
+            grid$ @< (SPREAD, for (w <- input.split(" ")) yield (() => w.length), (s: Seq[Int]) => s.sum)
         )
     }
 }

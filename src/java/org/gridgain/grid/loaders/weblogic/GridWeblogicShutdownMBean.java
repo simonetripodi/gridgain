@@ -15,7 +15,7 @@ import weblogic.common.*;
  * This MBean interface for GridGain shutdown class for WebLogic.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 @SuppressWarnings("deprecation")
 public interface GridWeblogicShutdownMBean extends T3ShutdownDef {

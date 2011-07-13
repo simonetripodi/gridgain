@@ -13,7 +13,7 @@ package org.gridgain.grid.kernal.controllers.rest.impl.handlers.task;
  * Task result for REST API.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 public class GridTaskRestResult {
     /** Synthetic ID containing task ID and result holding node ID. */

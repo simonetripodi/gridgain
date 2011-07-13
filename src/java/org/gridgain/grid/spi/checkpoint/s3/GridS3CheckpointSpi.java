@@ -92,14 +92,14 @@ import java.util.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  * @see GridCheckpointSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.12072011")
+    version = "3.1.1c.14072011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridS3CheckpointSpi extends GridSpiAdapter implements GridCheckpointSpi, GridS3CheckpointSpiMBean {
     /** Logger. */

@@ -79,12 +79,12 @@ import org.springframework.context.*
  *
  * This code snippet prints out full topology:
  * <pre name="code" class="groovy">
- * grover { -> grid$.each { n -> println("Node: " + n.id8()) } }
+ * grover { -> grid$.each { println("Node: " + it.id8()) } }
  * </pre>
  * The obligatory example - cloud enabled <code>Hello World!</code>. It splits the phrase
  * into multiple words and prints each word on a separate grid node:
  * <pre name="code" class="groovy">
- * grover { -> grid$.run(SPREAD, "Hello World!".split(" ").collect { w -> { -> println(w) } } ) }
+ * grover { -> grid$.run(SPREAD, "Hello World!".split(" ").collect { { -> println(it) } } ) }
  * </pre>
  * This example broadcasts message to all nodes:
  * <pre name="code" class="groovy">
@@ -92,7 +92,7 @@ import org.springframework.context.*
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.12072011
+ * @version 3.1.1c.14072011
  */
 @Typed
 abstract class Grover {
