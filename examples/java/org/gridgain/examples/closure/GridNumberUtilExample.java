@@ -1,4 +1,4 @@
-// @java.file.header
+// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -15,8 +15,8 @@ import java.util.*;
 /**
  * This class for internal use in examples.
  *
- * @author @java.author
- * @version @java.version
+ * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+ * @version 3.1.1c.14072011
  */
 class GridNumberUtilExample {
     /** Random numbers generator. */

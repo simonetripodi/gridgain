@@ -1,4 +1,4 @@
-// @java.file.header
+// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -26,8 +26,8 @@ import java.util.*;
  * than {@code 50%}. If no node falls into such criteria, then local
  * node is used for execution.
  *
- * @author @java.author
- * @version @java.version
+ * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+ * @version 3.1.1c.14072011
  */
 public class GridMetricsTask extends GridTaskAdapter<Object, Object> {
     /** Injected grid instance. */
@@ -84,8 +84,8 @@ public class GridMetricsTask extends GridTaskAdapter<Object, Object> {
      * The execution simply prints out the metrics for
      * the local node.
      *
-     * @author @java.author
-     * @version @java.version
+     * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+     * @version 3.1.1c.14072011
      */
     private static class GridMetricsJob extends GridJobAdapterEx {
         /** Injected grid instance. */

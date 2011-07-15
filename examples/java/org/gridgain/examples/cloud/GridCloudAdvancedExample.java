@@ -1,4 +1,4 @@
-// @java.file.header
+// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -33,8 +33,8 @@ import static org.gridgain.grid.GridEventType.*;
  * To use Sigar library simply put its JARs and native libraries into <code>$GRIDGAIN_HOME/libs</code>
  * folder and restart the example.
  *
- * @author @java.author
- * @version @java.version
+ * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+ * @version 3.1.1c.14072011
  */
 public class GridCloudAdvancedExample {
     /** Cloud ID. */

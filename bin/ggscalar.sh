@@ -1,13 +1,13 @@
 #!/bin/bash
 #
-# @sh.file.header
+# Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
 #  _________        _____ __________________        _____
 #  __  ____/___________(_)______  /__  ____/______ ____(_)_______
 #  _  / __  __  ___/__  / _  __  / _  / __  _  __ `/__  / __  __ \
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: @sh.file.version
+# Version: 3.1.1c.14072011
 #
 
 #
@@ -27,7 +27,7 @@ fi
 #
 # Set property JAR name during the Ant build.
 #
-ANT_AUGMENTED_GGJAR=gridgain.jar
+ANT_AUGMENTED_GGJAR=gridgain-3.1.1c.jar
 
 osname=`uname`
 
@@ -93,4 +93,4 @@ JAVA_OPTS=-Xss2m
 #
 # Start REPL.
 #
-env JAVA_OPTS=${JAVA_OPTS} scala ${QUIET} -DGRIDGAIN_UPDATE_NOTIFIER=false -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" -i ${GRIDGAIN_HOME}/bin/scalar.scala
+env JAVA_OPTS=${JAVA_OPTS} scala ${QUIET}  -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="${GRIDGAIN_HOME}" -DGRIDGAIN_PROG_NAME="$0" -cp "${CP}" -i ${GRIDGAIN_HOME}/bin/scalar.scala

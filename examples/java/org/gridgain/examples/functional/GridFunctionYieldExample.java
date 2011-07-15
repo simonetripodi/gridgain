@@ -1,4 +1,4 @@
-// @java.file.header
+// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -18,8 +18,8 @@ import java.util.*;
 /**
  * Demonstrates various functional APIs from {@link org.gridgain.grid.lang.GridFunc} class.
  *
- * @author @java.author
- * @version @java.version
+ * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+ * @version 3.1.1c.14072011
  */
 public class GridFunctionYieldExample {
     /**
@@ -77,8 +77,8 @@ public class GridFunctionYieldExample {
     /**
      * This class represents a temperature indicator with various formats.
      *
-     * @author @java.author
-     * @version @java.version
+     * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+     * @version 3.1.1c.14072011
      */
     private static class Temperature {
         /** Temperature value in Fahrenheit. */
@@ -105,8 +105,8 @@ public class GridFunctionYieldExample {
     /**
      * This class is intended for building {@link Temperature} instances from {@code String} values.
      *
-     * @author @java.author
-     * @version @java.version
+     * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+     * @version 3.1.1c.14072011
      */
     private static class TemperatureFactory {
         /**
