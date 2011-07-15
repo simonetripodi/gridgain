@@ -1,12 +1,12 @@
 ::
-:: Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+:: @bat.file.header
 :: _________        _____ __________________        _____
 :: __  ____/___________(_)______  /__  ____/______ ____(_)_______
 :: _  / __  __  ___/__  / _  __  / _  / __  _  __ `/__  / __  __ \
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.14072011
+:: Version: @bat.file.version
 ::
 
 ::
@@ -56,7 +56,7 @@ goto error_finish
 :run
 
 :: This is Ant-augmented variable.
-set ANT_AUGMENTED_GGJAR=gridgain-3.1.1c.jar
+set ANT_AUGMENTED_GGJAR=gridgain.jar
 
 ::
 :: Set GRIDGAIN_LIBS
@@ -140,7 +140,7 @@ if "%OS%" == "Windows_NT" set PROG_NAME=%~nx0%
 :: set JVM_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n %JVM_OPTS%
 ::
 
-"%JAVA_HOME%\bin\java.exe" %JVM_OPTS% %JMX_MON% %QUIET% -DGRIDGAIN_SCRIPT  -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%" -cp "%CP%" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "%CONFIG%"
+"%JAVA_HOME%\bin\java.exe" %JVM_OPTS% %JMX_MON% %QUIET% -DGRIDGAIN_SCRIPT -DGRIDGAIN_UPDATE_NOTIFIER=false -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%" -cp "%CP%" org.gridgain.grid.loaders.cmdline.GridCommandLineLoader "%CONFIG%"
 
 :error_finish
 

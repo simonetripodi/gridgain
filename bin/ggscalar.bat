@@ -1,12 +1,12 @@
 ::
-:: Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+:: @bat.file.header
 :: _________        _____ __________________        _____
 :: __  ____/___________(_)______  /__  ____/______ ____(_)_______
 :: _  / __  __  ___/__  / _  __  / _  / __  _  __ `/__  / __  __ \
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.14072011
+:: Version: @bat.file.version
 ::
 
 ::
@@ -40,7 +40,7 @@ goto error_finish
 :run
 
 :: This is Ant-augmented variable.
-set ANT_AUGMENTED_GGJAR=gridgain-3.1.1c.jar
+set ANT_AUGMENTED_GGJAR=gridgain.jar
 
 ::
 :: Set GRIDGAIN_LIBS
@@ -67,7 +67,7 @@ if "%OS%" == "Windows_NT" set PROG_NAME=%~nx0%
 ::
 :: Set Java options.
 ::
-set JAVA_OPTS=-Xss2m  -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%"
+set JAVA_OPTS=-Xss2m -DGRIDGAIN_UPDATE_NOTIFIER=false -DGRIDGAIN_SCRIPT -DGRIDGAIN_HOME="%GRIDGAIN_HOME%" -DGRIDGAIN_PROG_NAME="%PROG_NAME%"
 
 ::
 :: Start REPL.

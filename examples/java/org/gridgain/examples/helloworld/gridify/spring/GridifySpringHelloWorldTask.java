@@ -1,4 +1,4 @@
-// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+// @java.file.header
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -23,8 +23,8 @@ import java.util.*;
  * to prepare the instance for execution and then execute grid-enabled
  * {@link GridifySpringHelloWorld#sayIt()} method on it.
  *
- * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @author @java.author
+ * @version @java.version
  */
 public class GridifySpringHelloWorldTask extends GridifyTaskSplitAdapter<Integer> {
     /**

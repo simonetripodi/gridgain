@@ -7,8 +7,8 @@
     / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
     \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 
-    Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
-    Version: 3.1.1c.14072011
+    @xml.file.header
+    Version: @xml.file.version
 -->
 
 <!--
@@ -18,19 +18,19 @@
     - $GRIDGAIN_HOME/libs/*.jar
     - $GRIDGAIN_HOME/gridgain_x.x.x.jar
 
-    For example, if GridGain is installed on Linux into /opt/gridgain-3.1.1c then
+    For example, if GridGain is installed on Linux into /opt/gridgain-@ANT_XML_VERSION@ then
     you can use the following classpath settings to includes all
     necessary JARs:
 
-    <classpath codebase="file:///opt/gridgain-3.1.1c/gridgain-3.1.1c.jar"/>
-    <classpath codebase="file:///opt/gridgain-3.1.1c/libs" archives="*"/>
+    <classpath codebase="file:///opt/gridgain-@ANT_XML_VERSION@/gridgain-@ANT_XML_VERSION@.jar"/>
+    <classpath codebase="file:///opt/gridgain-@ANT_XML_VERSION@/libs" archives="*"/>
 
-    If GridGain is installed on Windows into C:/gridgain-3.1.1c then
+    If GridGain is installed on Windows into C:/gridgain-@ANT_XML_VERSION@ then
     you can use the following classpath settings to includes all
     necessary JARs:
 
-    <classpath codebase="file:/C:/gridgain-3.1.1c/gridgain-3.1.1c.jar"/>
-    <classpath codebase="file:/C:/gridgain-3.1.1c/libs" archives="*"/>
+    <classpath codebase="file:/C:/gridgain-@ANT_XML_VERSION@/gridgain-@ANT_XML_VERSION@.jar"/>
+    <classpath codebase="file:/C:/gridgain-@ANT_XML_VERSION@/libs" archives="*"/>
 -->
 <server>
     <!--
@@ -38,7 +38,7 @@
         Replace ${GRIDGAIN_HOME} with actual path to GridGain
         installation folder.
     -->
-    <classpath codebase="file:/${GRIDGAIN_HOME}/gridgain-3.1.1c.jar"/>
+    <classpath codebase="file:/${GRIDGAIN_HOME}/gridgain-@ANT_XML_VERSION@.jar"/>
     <classpath codebase="file:/${GRIDGAIN_HOME}/libs" archives="*"/>
 
     <mbean code="org.gridgain.grid.loaders.jboss.GridJbossLoader" name="gridgain:service=loader">

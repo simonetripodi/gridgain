@@ -1,4 +1,4 @@
-// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+// @java.file.header
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -21,8 +21,8 @@ import java.util.*;
  * execution. This example should be used together with corresponding functional
  * example code to see the difference in coding approach.
  *
- * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @author @java.author
+ * @version @java.version
  * @see GridClosureExample1
  */
 public class GridTaskExample1 {
@@ -73,8 +73,8 @@ public class GridTaskExample1 {
     /**
      * This class defines grid task for this example.
      *
-     * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @author @java.author
+     * @version @java.version
      */
     private static class GridFactorialTask extends GridTaskAdapter<Integer, BigInteger> {
         /** Execution node. */

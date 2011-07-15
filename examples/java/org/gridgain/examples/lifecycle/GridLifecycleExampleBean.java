@@ -1,4 +1,4 @@
-// Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
+// @java.file.header
 
 /*  _________        _____ __________________        _____
  *  __  ____/___________(_)______  /__  ____/______ ____(_)_______
@@ -19,8 +19,8 @@ import static org.gridgain.grid.GridLifecycleEventType.*;
  * Simple {@link GridLifecycleBean} implementation that outputs event type when it is occurred.
  * Please refer to the log output to find print outs of GridGain lifecycle events.
  *
- * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @author @java.author
+ * @version @java.version
  */
 public class GridLifecycleExampleBean implements GridLifecycleBean {
     /**
