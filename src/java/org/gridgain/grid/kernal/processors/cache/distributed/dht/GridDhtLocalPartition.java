@@ -26,7 +26,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Key partition.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalPartition> {
     /** Partition ID. */
@@ -112,19 +112,30 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
     }
 
     /**
+     * Note that this method has O(N) complexity.
+     *
+     * @return Number of entries in thsis partition.
+     */
+    public int size() {
+        return map.size();
+    }
+
+    /**
      * @return If partition is moving or owning.
      */
     public boolean valid() {
         GridDhtPartitionState state = state();
 
-        return state == MOVING || state == OWNING;
+        return state == MOVING || state == OWNING || state == RENTING;
     }
 
     /**
      * @param entry Entry to add.
      */
     void onAdded(GridDhtCacheEntry<K, V> entry) {
-        assert valid() : "Adding entry to invalid partition: " + this;
+        GridDhtPartitionState state = state();
+
+        assert state != EVICTED : "Adding entry to invalid partition: " + this;
 
         map.put(entry.key(), entry);
     }
@@ -280,7 +291,7 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
     }
 
     /**
-     * 
+     *
      */
     void onUnlock() {
         tryEvict();

@@ -146,13 +146,13 @@ import static org.gridgain.grid.GridEventType.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.14072011")
+    version = "3.5.0c.10082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implements GridLoadBalancingSpi,
     GridWeightedRandomLoadBalancingSpiMBean {
@@ -341,7 +341,7 @@ public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implement
      * @return Node weight
      */
     private int getWeight(GridNode node) {
-        Integer weight = (Integer)node.getAttribute(createSpiAttributeName(NODE_WEIGHT_ATTR_NAME));
+        Integer weight = (Integer)node.attribute(createSpiAttributeName(NODE_WEIGHT_ATTR_NAME));
 
         if (weight != null && weight == 0) {
             throw new IllegalStateException("Node weight cannot be zero: " + node);
@@ -354,7 +354,7 @@ public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implement
      * Holder for weighted topology.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     private class WeightedTopology {
         /** Total topology weight. */
@@ -364,7 +364,7 @@ public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implement
         private final SortedMap<Integer, GridNode> circle = new TreeMap<Integer, GridNode>();
 
         /**
-         * @param top TODO
+         * @param top Topology.
          */
         WeightedTopology(Collection<GridNode> top) {
             assert !F.isEmpty(top);

@@ -16,6 +16,7 @@ import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.kernal.processors.cache.GridCacheMvccCandidate.Mask.*;
 
@@ -23,9 +24,12 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheMvccCandidate.M
  * Lock candidate.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<GridCacheMvccCandidate<K>> {
+    /** ID generator. */
+    private static final AtomicLong IDGEN = new AtomicLong();
+
     /** Locking node ID. */
     @GridToStringInclude
     private UUID nodeId;
@@ -49,6 +53,9 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     /** Use flags approach to preserve space. */
     @GridToStringExclude
     private short flags;
+
+    /** ID. */
+    private long id;
 
     /** Topology version. */
     @GridToStringInclude
@@ -124,6 +131,8 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
         mask(DHT_LOCAL, dhtLocal);
 
         timestamp = System.currentTimeMillis();
+
+        id = IDGEN.incrementAndGet();
     }
 
     /**
@@ -455,6 +464,7 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
 
         out.writeLong(timeout);
         out.writeLong(threadId);
+        out.writeLong(id);
         out.writeShort(flags());
     }
 
@@ -466,6 +476,7 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
 
         timeout = in.readLong();
         threadId = in.readLong();
+        id = in.readLong();
 
         short flags = in.readShort();
 
@@ -479,11 +490,14 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
 
     /** {@inheritDoc} */
     @Override public int compareTo(GridCacheMvccCandidate<K> o) {
+        if (o == this)
+            return 0;
+
         int c = ver.compareTo(o.ver);
 
         // This is done, so compare and equals methods will be consistent.
         if (c == 0)
-            return key().equals(o.key()) ? 0 : timestamp < o.timestamp ? -1 : 1;
+            return key().equals(o.key()) ? 0 : id < o.id ? -1 : 1;
 
         return c;
     }

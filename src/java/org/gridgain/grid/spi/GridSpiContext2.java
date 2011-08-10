@@ -21,7 +21,7 @@ import java.util.concurrent.*;
  * SPI context provides common functionality for all SPI implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridSpiContext2 {
     /**
@@ -97,18 +97,6 @@ public interface GridSpiContext2 {
      * @throws GridException
      */
     public GridFuture<?> runLocal(Runnable c, boolean sys) throws GridException;
-
-    /**
-     * Sends a message to a remote node. The underlying communication mechanism is defined by
-     * {@link GridCommunicationSpi} implementation used.
-     *
-     * @param node Node to send a message to.
-     * @param msg Message to send.
-     * @param topic Topic to send message to.
-     * @throws GridSpiException If failed to send a message to remote node.
-     */
-    @Deprecated
-    public void send(GridNode node, Object msg, String topic) throws GridSpiException;
 
     /**
      * Sends given message to the nodes in this monad.

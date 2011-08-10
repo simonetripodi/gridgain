@@ -22,9 +22,14 @@ import java.util.*;
  * Internal API for cache entry ({@code 'Ex'} stands for extended).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
+    /**
+     * @return Context.
+     */
+    public GridCacheContext<K, V> context();
+
     /**
      * @return Partition ID.
      */
@@ -56,6 +61,11 @@ public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
      * @return Wrapped entry.
      */
     public GridCacheEntry<K, V> wrap(boolean prjAware);
+
+    /**
+     * @return Entry which is safe to pass into eviction policy.
+     */
+    public GridCacheEntry<K, V> evictWrap();
 
     /**
      * @return Not-null version if entry is obsolete.
@@ -538,6 +548,11 @@ public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
     @Nullable public GridCacheMvccCandidate<K> localOwner() throws GridCacheEntryRemovedException;
 
     /**
+     * @return Metrics, even if entry was removed.
+     */
+    public GridCacheMetrics metrics0();
+
+    /**
      * @return Metrics.
      * @throws GridCacheEntryRemovedException If entry was removed.
      */
@@ -567,10 +582,20 @@ public interface GridCacheEntryEx<K, V> extends GridMetadataAware {
     public byte[] valueBytes(@Nullable GridCacheVersion ver) throws GridException, GridCacheEntryRemovedException;
 
     /**
+     * @return Expire time, without accounting for transactions or removals.
+     */
+    public long rawExpireTime();
+
+    /**
      * @return Expiration time.
      * @throws GridCacheEntryRemovedException If entry was removed.
      */
     public long expireTime() throws GridCacheEntryRemovedException;
+
+    /**
+     * @return Time to live, without accounting for transactions or removals.
+     */
+    public long rawTtl();
 
     /**
      * @return Time to live.

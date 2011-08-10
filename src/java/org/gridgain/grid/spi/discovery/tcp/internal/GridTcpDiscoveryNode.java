@@ -33,7 +33,7 @@ import java.util.*;
  * <tt>public</tt> due to certain limitations of Java technology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridTcpDiscoveryNode extends GridMetadataAwareAdapter implements GridNode,
     GridTcpDiscoveryTopologyStoreNode, Comparable<GridNode>, Externalizable {
@@ -131,33 +131,17 @@ public class GridTcpDiscoveryNode extends GridMetadataAwareAdapter implements Gr
 
     /** {@inheritDoc} */
     @Override public UUID id() {
-        return getId();
-    }
-
-    /** {@inheritDoc} */
-    @Override public UUID getId() {
         return id;
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     @Override public <T> T attribute(String name) {
-        return (T)getAttribute(name);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
-    @Override public <T> T getAttribute(String name) {
         return (T)attrs.get(name);
     }
 
     /** {@inheritDoc} */
     @Override public Map<String, Object> attributes() {
-        return getAttributes();
-    }
-
-    /** {@inheritDoc} */
-    @Override public Map<String, Object> getAttributes() {
         return attrs;
     }
 
@@ -172,11 +156,6 @@ public class GridTcpDiscoveryNode extends GridMetadataAwareAdapter implements Gr
 
     /** {@inheritDoc} */
     @Override public GridNodeMetrics metrics() {
-        return getMetrics();
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridNodeMetrics getMetrics() {
         if (metricsProvider != null)
             metrics = metricsProvider.getMetrics();
         else if (metricsStore != null)
@@ -237,11 +216,6 @@ public class GridTcpDiscoveryNode extends GridMetadataAwareAdapter implements Gr
     /** {@inheritDoc} */
     @Override public Collection<String> externalAddresses() {
         return Collections.emptyList();
-    }
-
-    /** {@inheritDoc} */
-    @Override public String getPhysicalAddress() {
-        return addr.getAddress().getHostAddress();
     }
 
     /**
@@ -330,7 +304,7 @@ public class GridTcpDiscoveryNode extends GridMetadataAwareAdapter implements Gr
         if (metrics != null) {
             mtr = new byte[GridDiscoveryMetricsHelper.METRICS_SIZE];
 
-            GridDiscoveryMetricsHelper.serialize(mtr, 0, getMetrics());
+            GridDiscoveryMetricsHelper.serialize(mtr, 0, metrics());
         }
 
         U.writeByteArray(out, mtr);

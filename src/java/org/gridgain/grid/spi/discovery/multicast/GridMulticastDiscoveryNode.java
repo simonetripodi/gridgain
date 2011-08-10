@@ -25,7 +25,7 @@ import static org.gridgain.grid.spi.discovery.multicast.GridMulticastDiscoveryNo
  * IP address and port.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 class GridMulticastDiscoveryNode extends GridMetadataAwareAdapter implements GridNode {
     /** Node unique identifier. */
@@ -121,34 +121,13 @@ class GridMulticastDiscoveryNode extends GridMetadataAwareAdapter implements Gri
     }
 
     /** {@inheritDoc} */
-    @Override public UUID getId() {
-        return id;
-    }
-
-    /** {@inheritDoc} */
     @Override public UUID id() {
         return id;
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
-    @Override public <T> T attribute(String name) {
-        return (T)getAttribute(name);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridNodeMetrics metrics() {
-        return getMetrics();
-    }
-
-    /** {@inheritDoc} */
-    @Override public Map<String, Object> attributes() {
-        return getAttributes();
-    }
-
-    /** {@inheritDoc} */
     @Override public long order() {
-        return getMetrics().getNodeStartTime();
+        return metrics().getNodeStartTime();
     }
 
     /**
@@ -189,22 +168,15 @@ class GridMulticastDiscoveryNode extends GridMetadataAwareAdapter implements Gri
     }
 
     /** {@inheritDoc} */
-    @Override public String getPhysicalAddress() {
-        assert !F.isEmpty(addrs);
-
-        return F.first(addrs);
-    }
-
-    /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
-    @Override public <T> T getAttribute(String name) {
+    @Override public <T> T attribute(String name) {
         assert getState() == READY || getState() == LEFT : "Invalid state: " + getState();
 
         return (T)attrs.get(name);
     }
 
     /** {@inheritDoc} */
-    @Override public GridNodeMetrics getMetrics() {
+    @Override public GridNodeMetrics metrics() {
         if (metricsProvider == null) {
             synchronized (this) {
                 assert metrics != null;
@@ -218,7 +190,7 @@ class GridMulticastDiscoveryNode extends GridMetadataAwareAdapter implements Gri
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
-    @Override public Map<String, Object> getAttributes() {
+    @Override public Map<String, Object> attributes() {
         assert getState() == READY || getState() == LEFT : "Invalid state: " + getState();
 
         return attrs;

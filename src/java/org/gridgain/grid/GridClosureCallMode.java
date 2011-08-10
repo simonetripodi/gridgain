@@ -12,7 +12,7 @@ package org.gridgain.grid;
 import org.jetbrains.annotations.*;
 
 /**
- * Distribution modes for one or more closures executed on the cloud via {@code Grid.call(...)} methods.
+ * Distribution modes for one or more closures executed via {@code Grid.call(...)} methods.
  * In other words, given a set of jobs (closures) and set of grid nodes this enumeration provides
  * three simple modes of how these jobs will be mapped to the nodes.
  * <p>
@@ -22,7 +22,7 @@ import org.jetbrains.annotations.*;
  * resolution, continuations, etc.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public enum GridClosureCallMode {
     /**
@@ -57,6 +57,10 @@ public enum GridClosureCallMode {
      * In this mode closures will be executed on the nodes provided by the default
      * load balancer. Note that in general this mode may provide different distribution
      * than the {@link #SPREAD} mode as {@link #SPREAD} does not rely on load balancer.
+     * <p>
+     * NOTE: this mode <b>must</b> be used for all cache affinity routing. Load balance
+     * manager has specific logic to handle co-location between compute grid jobs and
+     * in-memory data grid data. All other modes will not work for affinity-based co-location.
      */
     BALANCE;
 

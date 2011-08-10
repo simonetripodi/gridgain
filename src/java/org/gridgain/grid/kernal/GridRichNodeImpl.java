@@ -26,7 +26,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichNode, Externalizable {
     /** */
@@ -423,7 +423,6 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("deprecation")
     @Override public UUID id() {
         lightCheck();
 
@@ -506,18 +505,6 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
 
         try {
             return ctx.localNodeId().equals(node.id());
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override @Nullable public GridRichCloud cloud() {
-        guard();
-
-        try {
-            return ctx.rich().rich(ctx.cloud().cloudByResourceId(node.id().toString()));
         }
         finally {
             unguard();
@@ -817,43 +804,10 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
     }
 
     /** {@inheritDoc} */
-    @Deprecated
-    @Override public UUID getId() {
-        lightCheck();
-
-        return node.id();
-    }
-
-    /** {@inheritDoc} */
     @Override public long order() {
         lightCheck();
 
         return node.order();
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings("RedundantTypeArguments")
-    @Deprecated
-    @Override public <T> T getAttribute(String name) {
-        lightCheck();
-
-        return this.<T>attribute(name);
-    }
-
-    /** {@inheritDoc} */
-    @Deprecated
-    @Override public GridNodeMetrics getMetrics() {
-        lightCheck();
-
-        return metrics();
-    }
-
-    /** {@inheritDoc} */
-    @Deprecated
-    @Override public Map<String, Object> getAttributes() {
-        lightCheck();
-
-        return attributes();
     }
 
     /** {@inheritDoc} */
@@ -890,15 +844,6 @@ public class GridRichNodeImpl extends GridProjectionAdapter implements GridRichN
         lightCheck();
 
         return node.externalAddresses();
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    @Override public String getPhysicalAddress() {
-        lightCheck();
-
-        return node.getPhysicalAddress();
     }
 
     /** {@inheritDoc} */

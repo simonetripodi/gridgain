@@ -57,12 +57,12 @@ import org.gridgain.grid.typedef.internal.*;
  * then you should disable trigonometry score.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridAdaptiveBenchmarkLoadProbe implements GridAdaptiveLoadProbe {
     /**
      * Default node attribute name for storing node benchmarks (value is
-     * {@code 'grid.node.benchmark'}). See {@link GridNode#getAttribute(String)}
+     * {@code 'grid.node.benchmark'}). See {@link GridNode#attribute(String)}
      * for more information.
      */
     public static final String DFLT_BENCHMARK_ATTR = "grid.node.benchmark";
@@ -272,11 +272,10 @@ public class GridAdaptiveBenchmarkLoadProbe implements GridAdaptiveLoadProbe {
 
     /** {@inheritDoc} */
     @Override public double getLoad(GridNode node, int jobsSentSinceLastUpdate) {
-        GridLocalNodeBenchmark benchmark = (GridLocalNodeBenchmark)node.getAttribute(benchmarkAttr);
+        GridLocalNodeBenchmark benchmark = (GridLocalNodeBenchmark)node.attribute(benchmarkAttr);
 
-        if (benchmark == null) {
+        if (benchmark == null)
             return 0.0d;
-        }
 
         double score = 0;
 

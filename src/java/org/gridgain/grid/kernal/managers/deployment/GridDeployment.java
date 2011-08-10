@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.*;
  * Represents single class deployment.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridDeployment extends GridMetadataAwareAdapter implements GridDeploymentInfo {
     /** Timestamp. */
@@ -68,8 +68,9 @@ public class GridDeployment extends GridMetadataAwareAdapter implements GridDepl
 
     /** Class annotations. */
     @GridToStringExclude
-    private final ConcurrentMap<Class<?>, ConcurrentMap<Class<? extends Annotation>,
-        AtomicReference<Annotation>>> anns = new ConcurrentHashMap<Class<?>, ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>>>(1);
+    private final ConcurrentMap<Class<?>,
+        ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>>> anns =
+        new ConcurrentHashMap<Class<?>, ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>>>(1);
 
     /** Classes. */
     @GridToStringExclude
@@ -285,7 +286,7 @@ public class GridDeployment extends GridMetadataAwareAdapter implements GridDepl
      */
     public int getUsage() {
         synchronized (mux) {
-            return  usage;
+            return usage;
         }
     }
 
@@ -304,7 +305,7 @@ public class GridDeployment extends GridMetadataAwareAdapter implements GridDepl
      * @return Annotation value.
      * @param <T> Annotation class.
      */
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({"unchecked", "RedundantCast"})
     public <T extends Annotation> T annotation(Class<?> cls, Class<T> annCls) {
         ConcurrentMap<Class<? extends Annotation>, AtomicReference<Annotation>> clsAnns = anns.get(cls);
 
@@ -343,7 +344,7 @@ public class GridDeployment extends GridMetadataAwareAdapter implements GridDepl
      * @param alias Optional array of aliases.
      * @return Class for given name.
      */
-    @SuppressWarnings({"StringEquality"})
+    @SuppressWarnings({"StringEquality", "UnusedCatchParameter"})
     @Nullable public Class<?> deployedClass(String clsName, String... alias) {
         Class<?> cls = clss.get(clsName);
 

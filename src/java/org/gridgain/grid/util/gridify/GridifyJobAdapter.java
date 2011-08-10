@@ -30,7 +30,7 @@ import java.lang.reflect.*;
  * {@code gridified} methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see org.gridgain.grid.gridify.Gridify
  */
 public class GridifyJobAdapter extends GridJobAdapterEx {
@@ -56,7 +56,7 @@ public class GridifyJobAdapter extends GridJobAdapterEx {
      * @throws GridException {@inheritDoc}
      */
     @Override public Object execute() throws GridException {
-        GridifyArgument arg = argument();
+        GridifyArgument arg = argument(0);
 
         try {
             // Get public, package, protected, or private method.
@@ -64,7 +64,7 @@ public class GridifyJobAdapter extends GridJobAdapterEx {
 
             // Attempt to soften access control in case we grid-enabling
             // non-accessible method. Subject to security manager setting.
-            if (!mtd.isAccessible()) {
+            if (!mtd.isAccessible())
                 try {
                     mtd.setAccessible(true);
                 }
@@ -72,7 +72,6 @@ public class GridifyJobAdapter extends GridJobAdapterEx {
                     throw new GridException("Got security exception when attempting to soften access control for " +
                         "@Gridify method: " + mtd, e);
                 }
-            }
 
             Object obj = null;
 

@@ -26,19 +26,14 @@ import java.util.concurrent.*;
  * Rich entity processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridRichProcessor extends GridProcessorAdapter {
     /** */
     private static final long SLEEP_INTERVAL = 2 * 60 * 1000;
 
     /** Rich node cache. */
-    private ConcurrentMap<UUID, GridRichNode> nodeCache =
-        new ConcurrentHashMap<UUID, GridRichNode>();
-
-    /** Rich cloud cache.*/
-    private ConcurrentMap<String, GridRichCloud> cloudCache =
-        new ConcurrentHashMap<String, GridRichCloud>();
+    private ConcurrentMap<UUID, GridRichNode> nodeCache = new ConcurrentHashMap<UUID, GridRichNode>();
 
     /** Cache cleaning worker. */
     private GcWorker gcWorker = new GcWorker();
@@ -105,35 +100,8 @@ public class GridRichProcessor extends GridProcessorAdapter {
         }
     }
 
-    /**
-     * Converting closure for cloud.
-     */
-    private static class RichCloudClosure extends RichClosure<GridCloud, GridRichCloud> {
-        /**
-         * Required by {@link Externalizable} contract.
-         */
-        public RichCloudClosure() {
-            // No-op.
-        }
-
-        /**
-         * @param proc Rich processor.
-         */
-        RichCloudClosure(GridRichProcessor proc) {
-            super(proc);
-        }
-
-        /** @{inheritDoc} */
-        @Override @Nullable public GridRichCloud apply(GridCloud node) {
-            return proc.rich(node);
-        }
-    }
-
     /** */
     private final GridClosure<GridNode, GridRichNode> richNodeClosure = new RichNodeClosure(this);
-
-    /** */
-    private final GridClosure<GridCloud, GridRichCloud> richCloudClosure = new RichCloudClosure(this);
 
     /**
      * @param ctx Kernal context.
@@ -175,15 +143,6 @@ public class GridRichProcessor extends GridProcessorAdapter {
     }
 
     /**
-     * Gets converting closure from grid cloud to rich cloud.
-     *
-     * @return Converting closure from grid cloud to rich cloud.
-     */
-    public GridClosure<GridCloud, GridRichCloud> richCloud() {
-        return richCloudClosure;
-    }
-
-    /**
      * Converts node into rich node.
      *
      * @param node Grid node to convert.
@@ -210,39 +169,11 @@ public class GridRichProcessor extends GridProcessorAdapter {
         return rich;
     }
 
-    /**
-     * Converts cloud into rich cloud.
-     *
-     * @param cloud Cloud to convert.
-     * @return Rich cloud.
-     */
-    @Nullable public GridRichCloud rich(@Nullable GridCloud cloud) {
-        if (cloud == null)
-            return null;
-
-        if (cloud instanceof GridRichCloud)
-            return (GridRichCloud)cloud;
-
-        String id = cloud.id();
-
-        GridRichCloud rich = cloudCache.get(id);
-
-        if (rich == null) {
-            GridRichCloud cur = cloudCache.putIfAbsent(id, rich = new GridRichCloudImpl(ctx, cloud));
-
-            if (cur != null)
-                rich = cur;
-        }
-
-        return rich;
-    }
-
     /** {@inheritDoc} */
     @Override public void printMemoryStats() {
         X.println(">>>");
         X.println(">>> Rich processor memory stats [grid=" + ctx.gridName() + ']');
         X.println(">>>  nodeCacheSize: " + nodeCache.size());
-        X.println(">>>  cloudCacheSize: " + cloudCache.size());
     }
 
     /**

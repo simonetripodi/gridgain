@@ -20,13 +20,11 @@ import org.gridgain.grid.cache.eviction.lirs.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.kernal.processors.cache.datastructures.*;
-import org.gridgain.grid.kernal.processors.cache.distributed.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.dht.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.near.*;
 import org.gridgain.grid.kernal.processors.cache.distributed.replicated.*;
 import org.gridgain.grid.kernal.processors.cache.local.*;
 import org.gridgain.grid.kernal.processors.cache.query.*;
-import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
@@ -44,7 +42,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -136,17 +134,13 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                 if (cfg.getNearEvictionPolicy() != null)
                     U.warn(log, "Ignoring near eviction policy since near cache is disabled.");
 
-                cfg.setNearEvictionPolicy(new NearEvictionPolicyWrapper(new GridCacheAlwaysEvictionPolicy()));
+                cfg.setNearEvictionPolicy(new GridCacheAlwaysEvictionPolicy());
             }
             else {
                 GridCacheEvictionPolicy policy = cfg.getNearEvictionPolicy();
 
                 if (policy == null)
-                    cfg.setNearEvictionPolicy(new NearEvictionPolicyWrapper(
-                        new GridCacheLirsEvictionPolicy((DFLT_NEAR_SIZE))));
-                else
-                    cfg.setNearEvictionPolicy(policy instanceof NearEvictionPolicyWrapper ? policy :
-                        new NearEvictionPolicyWrapper(policy));
+                    cfg.setNearEvictionPolicy(new GridCacheLirsEvictionPolicy((DFLT_NEAR_SIZE)));
             }
         }
     }
@@ -201,46 +195,52 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      * @param cfg Configuration.
      * @throws GridException If failed to inject.
      */
-    private void injectResources(GridCacheConfiguration cfg) throws GridException {
-        injectResource(cfg.getEvictionPolicy());
-        injectResource(cfg.getNearEvictionPolicy());
-        injectResource(cfg.getAffinity());
-        injectResource(cfg.getAffinityMapper());
-        injectResource(cfg.getTransactionManagerLookup());
-        injectResource(cfg.getCloner());
-        injectResource(cfg.getStore());
+    private void prepare(GridCacheConfiguration cfg) throws GridException {
+        prepare(cfg, cfg.getEvictionPolicy(), false);
+        prepare(cfg, cfg.getNearEvictionPolicy(), true);
+        prepare(cfg, cfg.getAffinity(), false);
+        prepare(cfg, cfg.getAffinityMapper(), false);
+        prepare(cfg, cfg.getTransactionManagerLookup(), false);
+        prepare(cfg, cfg.getCloner(), false);
+        prepare(cfg, cfg.getStore(), false);
     }
 
     /**
+     * @param cfg Cache configuration.
      * @param rsrc Resource.
+     * @param near Near flag.
      * @throws GridException If failed.
      */
-    private void injectResource(Object rsrc) throws GridException {
+    private void prepare(GridCacheConfiguration cfg, Object rsrc, boolean near) throws GridException {
         if (rsrc != null) {
-            if (rsrc instanceof NearEvictionPolicyWrapper)
-                ctx.resource().injectGeneric(((NearEvictionPolicyWrapper)rsrc).wrapped());
-            else
-                ctx.resource().injectGeneric(rsrc);
+            ctx.resource().injectGeneric(rsrc);
+
+            registerMbean(rsrc, cfg.getName(), near);
         }
     }
 
     /**
      * @param cfg Configuration.
      */
-    private void cleanupResources(GridCacheConfiguration cfg) {
-        cleanupResource(cfg.getEvictionPolicy());
-        cleanupResource(cfg.getAffinity());
-        cleanupResource(cfg.<Object>getAffinityMapper());
-        cleanupResource(cfg.getTransactionManagerLookup());
-        cleanupResource(cfg.getCloner());
-        cleanupResource(cfg.getStore());
+    private void cleanup(GridCacheConfiguration cfg) {
+        cleanup(cfg, cfg.getEvictionPolicy(), false);
+        cleanup(cfg, cfg.getNearEvictionPolicy(), true);
+        cleanup(cfg, cfg.getAffinity(), false);
+        cleanup(cfg, cfg.<Object>getAffinityMapper(), false);
+        cleanup(cfg, cfg.getTransactionManagerLookup(), false);
+        cleanup(cfg, cfg.getCloner(), false);
+        cleanup(cfg, cfg.getStore(), false);
     }
 
     /**
+     * @param cfg Cache configuration.
      * @param rsrc Resource.
+     * @param near Near flag.
      */
-    private void cleanupResource(Object rsrc) {
+    private void cleanup(GridCacheConfiguration cfg, Object rsrc, boolean near) {
         if (rsrc != null) {
+            unregisterMbean(rsrc, cfg.getName(), near);
+
             try {
                 ctx.resource().cleanupGeneric(rsrc);
             }
@@ -271,7 +271,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
 
             validate(cfg);
 
-            injectResources(cfg);
+            prepare(cfg);
 
             GridCacheMvccManager mvccMgr = new GridCacheMvccManager();
             GridCacheTxManager tm = new GridCacheTxManager();
@@ -604,7 +604,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                     mgr.stop(cancel, wait);
             }
 
-            cleanupResources(ctx.config());
+            cleanup(ctx.config());
 
             if (log.isInfoEnabled())
                 log.info("Stopped cache: " + cache.name());
@@ -749,6 +749,17 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         return (GridCacheAdapter<K, V>)caches.get(maskName(name));
     }
 
+    /** {@inheritDoc} */
+    @Override public void printMemoryStats() {
+        X.println(">>> ");
+
+        for (GridCacheAdapter c : caches.values()) {
+            X.println(">>> Cache memory stats [grid=" + ctx.gridName() + ", cache=" + c.name() + ']');
+
+            c.context().printMemoryStats();
+        }
+    }
+
     /**
      * Callback invoked by deployment manager for whenever a class loader
      * gets undeployed.
@@ -760,6 +771,72 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         if (!ctx.isStopping())
             for (GridCacheAdapter<?, ?> cache : caches.values())
                 cache.onUndeploy(leftNodeId, ldr);
+    }
+
+    /**
+     * Registers MBean for cache components.
+     *
+     * @param o Cache component.
+     * @param cacheName Cache name.
+     * @param near Near flag.
+     * @throws GridException If registration failed.
+     */
+    private void registerMbean(Object o, @Nullable String cacheName, boolean near)
+        throws GridException {
+        assert o != null;
+
+        MBeanServer srvr = ctx.config().getMBeanServer();
+
+        assert srvr != null;
+
+        cacheName = U.maskCacheName(cacheName);
+
+        cacheName = near ? cacheName + "-near" : cacheName;
+
+        for (Class<?> itf : o.getClass().getInterfaces()) {
+            if (itf.getName().endsWith("MBean")) {
+                try {
+                    U.registerCacheMBean(srvr, ctx.gridName(), cacheName, o.getClass().getName(), o, (Class<Object>)itf);
+                }
+                catch (JMException e) {
+                    throw new GridException("Failed to register MBean for component: " + o, e);
+                }
+
+                break;
+            }
+        }
+    }
+
+    /**
+     * Unregisters MBean for cache components.
+     *
+     * @param o Cache component.
+     * @param cacheName Cache name.
+     * @param near Near flag.
+     */
+    private void unregisterMbean(Object o, @Nullable String cacheName, boolean near) {
+        assert o != null;
+
+        MBeanServer srvr = ctx.config().getMBeanServer();
+
+        assert srvr != null;
+
+        cacheName = U.maskCacheName(cacheName);
+
+        cacheName = near ? cacheName + "-near" : cacheName;
+
+        for (Class<?> itf : o.getClass().getInterfaces()) {
+            if (itf.getName().endsWith("MBean")) {
+                try {
+                    srvr.unregisterMBean(U.makeCacheMBeanName(ctx.gridName(), cacheName, o.getClass().getName()));
+                }
+                catch (JMException e) {
+                    log.error("Failed to unregister MBean for component: " + o, e);
+                }
+
+                break;
+            }
+        }
     }
 
     /**
@@ -788,39 +865,6 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         /** {@inheritDoc} */
         @Override public int partition(Object key) {
             return 0;
-        }
-    }
-
-    /**
-     *
-     */
-    private static class NearEvictionPolicyWrapper<K, V> implements GridCacheEvictionPolicy<K, V> {
-        /** Wrapped policy. */
-        private final GridCacheEvictionPolicy<K, V> policy;
-
-        /**
-         * @param policy Wrapped near policy.
-         */
-        private NearEvictionPolicyWrapper(GridCacheEvictionPolicy<K, V> policy) {
-            this.policy = policy;
-        }
-
-        /**
-         * @return Wrapped policy.
-         */
-        GridCacheEvictionPolicy<K, V> wrapped() {
-            return policy;
-        }
-
-        /** {@inheritDoc} */
-        @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
-            policy.onEntryAccessed(rmv, new GridCacheEntryWrapper<K, V>(entry) {
-                @Override public boolean evict(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter) {
-                    GridPartitionedCacheEntryImpl<K, V> e = (GridPartitionedCacheEntryImpl<K, V>)wrapped();
-
-                    return e.evictNearOnly(filter);
-                }
-            });
         }
     }
 }

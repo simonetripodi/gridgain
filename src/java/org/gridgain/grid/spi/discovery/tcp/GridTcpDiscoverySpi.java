@@ -145,14 +145,14 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.14072011")
+    version = "3.5.0c.10082011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
 @GridDiscoverySpiReconnectSupport(true)
@@ -222,6 +222,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     private int maxMissedHbs = DFLT_MAX_MISSED_HEARTBEATS;
 
     /** Thread priority for all threads started by SPI. */
+    @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
     private int threadPri = DFLT_THREAD_PRI;
 
     /** Stores clean frequency. */
@@ -2917,7 +2918,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             try {
                 if (spiStateCopy() == CONNECTED) {
                     // Cache metrics in node.
-                    GridNodeMetrics metrics = locNode.getMetrics();
+                    GridNodeMetrics metrics = locNode.metrics();
 
                     if (ring.hasRemoteNodes())
                         // Send metrics to store only if there are remote nodes.
@@ -3265,27 +3266,24 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
             setPriority(threadPri);
 
-            try {
-                for (port = locPort; port < locPort + locPortRange; port++) {
-                    try {
-                        srvrSock = new ServerSocket(port, 0, locHost);
+            for (port = locPort; port < locPort + locPortRange; port++) {
+                try {
+                    srvrSock = new ServerSocket(port, 0, locHost);
 
-                        break;
-                    }
-                    catch (BindException ignored) {
+                    break;
+                }
+                catch (IOException e) {
+                    if (port < locPort + locPortRange - 1) {
                         if (log.isDebugEnabled())
                             log.debug("Failed to bind to local port (will try next port within range) " +
                                 "[port=" + port + ", localHost=" + locHost + ']');
                     }
+                    else {
+                        throw new GridSpiException("Failed to bind TCP server socket (possibly all ports in range " +
+                            "are in use) [firstPort=" + locPort + ", lastPort=" + (locPort + locPortRange - 1) +
+                            ", addr=" + locHost + ']', e);
+                    }
                 }
-
-                if (srvrSock == null)
-                    throw new GridSpiException("Failed to bind Tcp server socket (possibly all ports in range " +
-                        "are in use) [firstPort=" + locPort + ", lastPort=" + (locPort + locPortRange - 1) +
-                        ", addr=" + locHost + ']');
-            }
-            catch (IOException e) {
-                throw new GridSpiException("Failed to create Tcp server.", e);
             }
 
             if (log.isInfoEnabled())
@@ -3307,11 +3305,11 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
 
                     synchronized (mux) {
                         readers.add(reader);
+
+                        reader.setPriority(threadPri);
+
+                        reader.start();
                     }
-
-                    reader.setPriority(threadPri);
-
-                    reader.start();
 
                     stats.onServerSocketInitialized(System.currentTimeMillis() - tstamp);
                 }

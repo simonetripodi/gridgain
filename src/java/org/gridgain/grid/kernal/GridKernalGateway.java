@@ -17,15 +17,12 @@ import org.gridgain.grid.util.tostring.*;
  * functionality from the following main API interfaces:
  * <ul>
  * <li>{@link GridProjection}</li>
- * <li>{@link GridRichCloud}</li>
- * <li>{@link GridRichNode}</li>
  * </ul>
  * Note that this kernal gateway <b>should not</b> be used to guard against method from
  * the following non-rich interfaces since their implementations are already managed
  * by their respective implementing classes:
  * <ul>
  * <li>{@link Grid}</li>
- * <li>{@link GridCloud}</li>
  * <li>{@link GridNode}</li>
  * </ul>
  * Kernal gateway is also responsible for notifying various futures about the change in
@@ -33,7 +30,7 @@ import org.gridgain.grid.util.tostring.*;
  * becomes unavailable while future is held externally by the user.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridToStringExclude
 public interface GridKernalGateway {

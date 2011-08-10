@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * This interface defines JMX view on {@link GridFactory}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridMBeanDescription("MBean that provides access to grid life-cycle operations.")
 public interface GridFactoryMBean {
@@ -23,7 +23,7 @@ public interface GridFactoryMBean {
      * Gets state of default grid instance.
      *
      * @return State of default grid instance.
-     * @see GridFactory#getState()
+     * @see GridFactory#state()
      */
     @GridMBeanDescription("State of default grid instance.")
     public String getState();
@@ -33,7 +33,7 @@ public interface GridFactoryMBean {
      *
      * @param name Name of grid instance.
      * @return State of grid instance with given name.
-     * @see GridFactory#getState(String)
+     * @see GridFactory#state(String)
      */
     @GridMBeanDescription("Gets state for a given grid instance. Returns state of grid instance with given name.")
     @GridMBeanParametersNames(

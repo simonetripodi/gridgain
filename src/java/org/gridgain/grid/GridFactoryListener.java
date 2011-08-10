@@ -18,7 +18,7 @@ import java.util.*;
  * listener with grid factory.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridFactoryListener extends EventListener {
     /**

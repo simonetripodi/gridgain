@@ -19,10 +19,10 @@ import java.util.concurrent.*;
  * CommonJ-based wrapper for {@link ExecutorService}.
  * Implementation delegates all execution request to the work manager. Note that CommonJ
  * work manager is used and/or supported by wide verity of application servers and frameworks
- * such as Coherence, Weblogic, Websphere, Spring, Globus, apache projects, etc.
+ * such as Weblogic, Websphere, Spring, Globus, apache projects, etc.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridThreadWorkManagerExecutor extends AbstractExecutorService {
     /** Work manager with all tasks are delegated to. */

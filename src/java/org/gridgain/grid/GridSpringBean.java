@@ -19,6 +19,7 @@ import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
 import org.springframework.context.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -60,7 +61,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -72,12 +73,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
 
     /** */
     private ApplicationContext appCtx;
-
-    /** {@inheritDoc} */
-    @Deprecated
-    @Override public GridConfiguration getConfiguration() {
-        return cfg;
-    }
 
     /** {@inheritDoc} */
     @Override public GridConfiguration configuration() {
@@ -196,6 +191,22 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
+    @Override public void affRun(String cacheName, Object affKey, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        assert g != null;
+
+        g.affRun(cacheName, affKey, job, p);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> affRunAsync(String cacheName, Object affKey, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        assert g != null;
+
+        return g.affRunAsync(cacheName, affKey, job, p);
+    }
+
+    /** {@inheritDoc} */
     @Override public GridRichNode youngestx() throws GridEmptyProjectionException {
         assert g != null;
 
@@ -235,14 +246,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
         assert g != null;
 
         return g.nodeId8(id8);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings("deprecation")
-    @Override public Collection<GridRichNode> getAllNodes() {
-        assert g != null;
-
-        return g.getAllNodes();
     }
 
     /** {@inheritDoc} */
@@ -459,13 +462,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public ExecutorService newGridExecutorService() {
-        assert g != null;
-
-        return g.executor();
-    }
-
-    /** {@inheritDoc} */
     @Override public GridEvent waitForEvent(long timeout, @Nullable Runnable c,
         @Nullable GridPredicate<? super GridEvent> p, @Nullable int... types) throws GridException {
         assert g != null;
@@ -486,13 +482,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
         assert g != null;
 
         return g.rich(node);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridRichCloud rich(GridCloud cloud) {
-        assert g != null;
-
-        return g.rich(cloud);
     }
 
     /** {@inheritDoc} */
@@ -663,15 +652,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    @Override public String getName() {
-        assert g != null;
-
-        return g.getName();
-    }
-
-    /** {@inheritDoc} */
     @Override public String name() {
         assert g != null;
 
@@ -727,48 +707,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
         assert g != null;
 
         g.clearSwapSpace(space);
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<GridRichCloud> clouds(@Nullable GridPredicate<? super GridRichCloud>... p) {
-        assert g != null;
-
-        return g.clouds(p);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridRichCloud cloud(String cloudId) {
-        assert g != null;
-
-        return g.cloud(cloudId);
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<GridRichNode> getRemoteNodes(@Nullable GridPredicate<? super GridRichNode>... p) {
-        assert g != null;
-
-        return g.remoteNodes(p);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridRichNode getLocalNode() {
-        assert g != null;
-
-        return g.localNode();
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<GridRichNode> getNodes(@Nullable GridPredicate<? super GridRichNode>... p) {
-        assert g != null;
-
-        return g.nodes(p);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridNode getNode(UUID nodeId) {
-        assert g != null;
-
-        return g.node(nodeId);
     }
 
     /** {@inheritDoc} */
@@ -1014,13 +952,6 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public GridProjection named(@Nullable String taskName) {
-        assert g != null;
-
-        return g.withName(taskName);
-    }
-
-    /** {@inheritDoc} */
     @Override public GridProjection withName(@Nullable String taskName) {
         assert g != null;
 
@@ -1202,50 +1133,10 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public Map<String, Class<? extends GridTask<?, ?>>> getLocalTasks(
-        @Nullable GridPredicate<? super Class<? extends GridTask<?, ?>>>... p) {
-        assert g != null;
-
-        return g.localTasks(p);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({"deprecation"})
-    @Override public void sendMessage(GridNode node, Object msg) throws GridException {
-        assert g != null;
-
-        g.sendMessage(node, msg);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({"deprecation"})
-    @Override public void sendMessage(Collection<? extends GridNode> nodes, Object msg) throws GridException {
-        assert g != null;
-
-        g.sendMessage(nodes, msg);
-    }
-
-    /** {@inheritDoc} */
     @Override public GridProjection projectionForNodeIds(@Nullable Collection<UUID> nodeIds) {
         assert g != null;
 
         return g.projectionForNodeIds(nodeIds);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({"deprecation"})
-    @Override public void addDiscoveryListener(GridDiscoveryListener lsnr) {
-        assert g != null;
-
-        g.addDiscoveryListener(lsnr);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({"deprecation"})
-    @Override public boolean removeDiscoveryListener(GridDiscoveryListener lsnr) {
-        assert g != null;
-
-        return g.removeDiscoveryListener(lsnr);
     }
 
     /** {@inheritDoc} */
@@ -1567,6 +1458,22 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
         assert g != null;
 
         return g.mapKeyToNode(cacheName, key);
+    }
+
+    @Override public Collection<GridTuple3<String, Boolean, String>> startNodes(File file, @Nullable String dfltUname,
+        @Nullable String dfltPasswd, @Nullable File key, int nodes, @Nullable String cfg, @Nullable String script,
+        @Nullable String log, boolean restart) throws GridException {
+        assert g != null;
+
+        return g.startNodes(file, dfltUname, dfltPasswd, key, nodes, cfg, script, log, restart);
+    }
+
+    @Override public Collection<GridTuple3<String, Boolean, String>> startNodes(Collection<String> hostSpecs,
+        @Nullable String dfltUname, @Nullable String dfltPasswd, @Nullable File key, int nodes, @Nullable String cfg,
+        @Nullable String script, @Nullable String log, boolean restart) throws GridException {
+        assert g != null;
+
+        return g.startNodes(hostSpecs, dfltUname, dfltPasswd, key, nodes, cfg, script, log, restart);
     }
 
     /** {@inheritDoc} */

@@ -11,13 +11,7 @@ package org.gridgain.grid.cache.eviction.random;
 
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.eviction.*;
-import org.gridgain.grid.logger.*;
-import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.internal.*;
-import org.gridgain.grid.util.tostring.*;
-
-import javax.management.*;
-import java.util.concurrent.atomic.*;
 
 /**
  * Cache eviction policy which will select random cache entry for eviction if cache
@@ -29,22 +23,10 @@ import java.util.concurrent.atomic.*;
  * key has the same probability of being accessed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheRandomEvictionPolicyMBean {
-    /** MBean server. */
-    @GridMBeanServerResource
-    @GridToStringExclude
-    private MBeanServer jmx;
-
-    /** Logger. */
-    @GridLoggerResource
-    private GridLogger log;
-
-    /** Init flag. */
-    private AtomicBoolean init = new AtomicBoolean(false);
-
     /** Maximum size. */
     private volatile int max = -1;
 
@@ -86,18 +68,8 @@ public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPol
         this.max = max;
     }
 
-    /**
-     * @param entry Entry to get info from.
-     */
-    private void registerMbean(GridCacheEntry<K, V> entry) {
-        if (init.compareAndSet(false, true))
-            CU.registerEvictionMBean(log, jmx, this, GridCacheRandomEvictionPolicyMBean.class, entry);
-    }
-
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
-        registerMbean(entry);
-
         GridCache<K, V> cache = entry.parent().cache();
 
         int size = cache.keySize();

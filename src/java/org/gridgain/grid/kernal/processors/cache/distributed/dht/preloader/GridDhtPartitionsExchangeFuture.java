@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Future for exchanging partition maps.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Object>
     implements Comparable<GridDhtPartitionsExchangeFuture<K, V>> {
@@ -383,7 +383,7 @@ public class GridDhtPartitionsExchangeFuture<K, V> extends GridFutureAdapter<Obj
                         return;
                     }
 
-                    Set<Integer> parts = cctx.primaryPartitions(node, null);
+                    Set<Integer> parts = cctx.primaryPartitions(node, exchId.order());
 
                     GridFuture<?> partReleaseFut = cctx.partitionReleaseFuture(parts, exchId.order());
 

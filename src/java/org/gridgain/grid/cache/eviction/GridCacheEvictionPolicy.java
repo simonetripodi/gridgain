@@ -31,9 +31,12 @@ import org.gridgain.grid.lang.*;
  * <li>{@link GridCacheLirsEvictionPolicy}</li>
  * <li>{@link GridCacheRandomEvictionPolicy}</li>
  * <li>{@link GridCacheFifoEvictionPolicy}</li>
- * <li>{@link GridCacheAlwaysEvictionPolicy}</li> 
+ * <li>{@link GridCacheAlwaysEvictionPolicy}</li>
  * <li>{@link GridCacheNeverEvictionPolicy}</li>
  * </ul>
+ * <p>
+ * The eviction policy thread-safety is ensured by GridGain. Implementations of this interface should
+ * not worry about concurrency and should be implemented as they were only accessed from one thread.
  * <p>
  * Note that implementations of all eviction policies provided by GridGain are very
  * light weight in a way that they are all lock-free (or very close to it), and do not
@@ -42,11 +45,11 @@ import org.gridgain.grid.lang.*;
  * cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridCacheEvictionPolicy<K, V> {
     /**
-     * Callback for whenever entry is accessed. 
+     * Callback for whenever entry is accessed.
      *
      * @param rmv {@code True} if entry has been removed, {@code false} otherwise.
      * @param entry Accessed entry.

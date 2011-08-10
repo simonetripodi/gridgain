@@ -10,6 +10,7 @@
 package org.gridgain.grid.segmentation;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.editions.*;
 import org.gridgain.grid.lang.*;
 
 /**
@@ -35,7 +36,7 @@ import org.gridgain.grid.lang.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridConfiguration#getSegmentationResolvers()
  * @see GridConfiguration#getSegmentationPolicy()
  * @see GridConfiguration#getSegmentCheckFrequency()
@@ -61,6 +62,7 @@ public abstract class GridSegmentationResolver extends GridAbsPredicate {
      * @return {@code True} if segment is correct, {@code false} otherwise.
      * @throws GridException If an error occurred.
      */
+    @GridEnterpriseFeature
     public abstract boolean isValidSegment() throws GridException;
 
     /**

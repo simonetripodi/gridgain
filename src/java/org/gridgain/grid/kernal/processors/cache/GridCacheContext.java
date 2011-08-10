@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -493,16 +493,13 @@ public class GridCacheContext<K, V> implements Externalizable {
 
     /**
      * @param node Node.
-     * @param exclNode Optional exclude node.
+     * @param topVer Topology version.
      * @return Partitions for which given node is primary.
      */
-    public Set<Integer> primaryPartitions(GridNode node, @Nullable GridRichNode exclNode) {
+    public Set<Integer> primaryPartitions(GridNode node, long topVer) {
         GridCacheAffinity<K> aff = cacheCfg.getAffinity();
 
-        Collection<GridRichNode> nodes = new ArrayList<GridRichNode>(CU.allNodes(this));
-
-        if (exclNode != null)
-            nodes.remove(exclNode);
+        Collection<GridRichNode> nodes = new ArrayList<GridRichNode>(CU.allNodes(this, topVer));
 
         Set<Integer> parts = new HashSet<Integer>();
 
@@ -1449,15 +1446,20 @@ public class GridCacheContext<K, V> implements Externalizable {
         X.println(">>> ");
         X.println(">>> Cache memory stats [grid=" + ctx.gridName() + ", cache=" + name() + ']');
 
-        if (isNear()) {
-            X.println(">>>  Near cache size: " + cache().keySize());
-            X.println(">>>  Dht cache size: " + near().dht().keySize());
-        }
-        else
-            X.println(">>>  Cache size: " + cache().keySize());
+        cache().printMemoryStats();
 
-        for (GridCacheManager mgr : managers())
+        Collection<GridCacheManager> printed = new LinkedList<GridCacheManager>();
+
+        for (GridCacheManager mgr : managers()) {
             mgr.printMemoryStats();
+
+            printed.add(mgr);
+        }
+
+        if (isNear())
+            for (GridCacheManager mgr : near().dht().context().managers())
+                if (!printed.contains(mgr))
+                    mgr.printMemoryStats();
     }
 
     /** {@inheritDoc} */

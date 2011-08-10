@@ -12,7 +12,6 @@ package org.gridgain.grid.spi.deployment.uri;
 import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.logger.*;
-import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.deployment.*;
@@ -20,11 +19,9 @@ import org.gridgain.grid.spi.deployment.uri.scanners.*;
 import org.gridgain.grid.spi.deployment.uri.scanners.file.*;
 import org.gridgain.grid.spi.deployment.uri.scanners.ftp.*;
 import org.gridgain.grid.spi.deployment.uri.scanners.http.*;
-import org.gridgain.grid.spi.deployment.uri.scanners.mail.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -133,10 +130,6 @@ import java.util.Map.*;
  * <li><a href="#file">file://</a> - File protocol</li>
  * <li><a href="#classes">classes://</a> - Custom File protocol.</li>
  * <li><a href="#ftp">ftp://</a> - File transfer protocol</li>
- * <li><a href="#mail">pop3://</a> - POP3 mail protocol</li>
- * <li><a href="#mail">pop3s://</a> - Secured POP3 mail protocol</li>
- * <li><a href="#mail">imap://</a> - IMAP mail protocol</li>
- * <li><a href="#mail">imaps://</a> - Secured IMAP mail protocol</li>
  * <li><a href="#http">http://</a> - HTTP protocol</li>
  * <li><a href="#http">https://</a> - Secure HTTP protocol</li>
  * </ul>
@@ -241,102 +234,6 @@ import java.util.Map.*;
  * ftp://username:password;freq=10000@localhost:21/gridgain/deployment
  * </blockquote>
  * <p>
- * <a name="mail"></a>
- * <h1 class="header">Mail</h1>
- * For Mail protocols this SPI scans mail inboxes for new mail messages looking
- * for GAR file attachments. Once a mail message with GAR file is found, it
- * will be deployed. Mail protocols works with following schemes: {@code pop3},
- * {@code pop3s}, {@code imap}, and {@code imaps}.
- * <p>
- * The following parameters are supported for Mail protocols:
- * <table class="doctable">
- *  <tr>
- *      <th>Parameter</th>
- *      <th>Description</th>
- *      <th>Optional</th>
- *      <th>Default</th>
- *  </tr>
- *  <tr>
- *      <td>freq</td>
- *      <td>Main inbox scan frequency in milliseconds.</td>
- *      <td>Yes</td>
- *      <td>{@code 300000} ms specified in {@link #DFLT_MAIL_SCAN_FREQUENCY DFLT_MAIL_SCAN_FREQUENCY}.</td>
- *  </tr>
- *  <tr>
- *      <td>username:password</td>
- *      <td>
- *          Mail username and password specified in standard URI server-based
- *          authority format.
- *      </td>
- *      <td>No</td>
- *      <td>---</td>
- *  </tr>
- *  <tr>
- *      <td>auth</td>
- *      <td>
- *          Connection type. Can be one of the following:
- *          <ul>
- *          <li>none</li>
- *          <li>ssl</li>
- *          <li>starttls</li>
- *          </ul>
- *      </td>
- *      <td>Yes</td>
- *      <td>{@code none}</td>
- *  </tr>
- *  <tr>
- *      <td>subj</td>
- *      <td>
- *          Subject filter for mail messages used by SPI. All messages with
- *          different subjects will be ignored.
- *      </td>
- *      <td>Yes</td>
- *      <td>
- *          {@code 'grid.email.deploy.msg'} specified in
- *          {@link #DFLT_MAIL_SUBJECT DFLT_MAIL_SUBJECT}
- *      </td>
- *  </tr>
- * </table>
- * <h2 class="header">Mail URI Example</h2>
- * The following example demonstrates Mail URI that will connect user
- * identified as {@code username:password} with authorization set to
- * {@code 'none'} to host {@code 'pop.gmail.com'} on port {@code '110'}
- * scanning inbox every {@code '120000'} milliseconds (2 minutes).
- * <blockquote class="snippet">
- * {@code pop3://username:password;auth=ssl;freq=120000@pop.gmail.com:995}
- * </blockquote>
- * <p>
- * <a name="http"></a>
- * <h1 class="header">HTTP</h1>
- * For HTTP protocols this SPI scans and downloads GAR files from source
- * directory defined in URI. SPI does not scan HTTP folders recursively. Only
- * HTTP links that end with {@code '.gar'} extension will be downloaded.
- * HTTP protocol works with scheme {@code http} and {@code https}.
- * <p>
- * The following parameters are supported for HTTP protocols:
- * <table class="doctable">
- *  <tr>
- *      <th>Parameter</th>
- *      <th>Description</th>
- *      <th>Optional</th>
- *      <th>Default</th>
- *  </tr>
- *  <tr>
- *      <td>freq</td>
- *      <td>HTTP directory scan frequency in milliseconds.</td>
- *      <td>Yes</td>
- *      <td>{@code 300000} ms specified in {@link #DFLT_HTTP_SCAN_FREQUENCY DFLT_HTTP_SCAN_FREQUENCY}.</td>
- *  </tr>
- *  <tr>
- *      <td>username:password</td>
- *      <td>
- *          Optional HTTP directory username and password specified in standard
- *          URI server-based authority format.
- *      </td>
- *      <td>Yes</td>
- *      <td>---</td>
- *  </tr>
- * </table>
  * <h2 class="header">HTTP URI Example</h2>
  * The following example will scan {@code 'gridgain/deployment'} folder with
  * on site {@code 'www.mysite.com'} using authentication
@@ -356,7 +253,6 @@ import java.util.Map.*;
  * uris.add("http://www.site.com/tasks");
  * uris.add("ftp://ftpuser:password;freq=10000@localhost:21/gg-test/deployment");
  * uris.add("file://freq=20000@localhost/c:/Program files/gg-deployment");
- * uris.add("pop3://test%20user:test%20password;subj=grid.deploy.subj;auth=none@pop.mail.ru:110");
  * uris.add("classes:///c:/Java_Projects/myproject/out");
  *
  * // Set URIs.
@@ -385,7 +281,6 @@ import java.util.Map.*;
  *                         &lt;value&gt;http://www.site.com/tasks&lt;/value&gt;
  *                         &lt;value&gt;ftp://ftpuser:password;freq=10000@localhost:21/gg-test/deployment&lt;/value&gt;
  *                         &lt;value&gt;file://freq=20000@localhost/c:/Program files/gg-deployment&lt;/value&gt;
- *                         &lt;value&gt;pop3://test%20user:test%20password;subj=grid.deploy.subj;auth=none@pop.mail.ru:110&lt;/value&gt;
  *                         &lt;value&gt;classes:///c:/Java_Projects/myproject/out&lt;/value&gt;
  *                     &lt;/list&gt;
  *                 &lt;/property&gt;
@@ -400,14 +295,14 @@ import java.util.Map.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridDeploymentSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.14072011")
+    version = "3.5.0c.10082011")
 @GridSpiMultipleInstancesSupport(true)
 @SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized"})
 public class GridUriDeploymentSpi extends GridSpiAdapter implements GridDeploymentSpi, GridUriDeploymentSpiMBean {
@@ -425,15 +320,6 @@ public class GridUriDeploymentSpi extends GridSpiAdapter implements GridDeployme
 
     /** Default scan frequency for {@code http://} protocol (value is {@code 300000}). */
     public static final int DFLT_HTTP_SCAN_FREQUENCY = 300000;
-
-    /**
-     * Default scan frequency for {@code pop3://}, {@code pop3s://}, {@code imap://},
-     * {@code imaps://} protocols (value is {@code 300000} which is 5 minutes).
-     */
-    public static final int DFLT_MAIL_SCAN_FREQUENCY = 300000;
-
-    /** Default Mail subject. */
-    public static final String DFLT_MAIL_SUBJECT = "grid.email.deploy.msg";
 
     /** Default task description file path and name (value is {@code META-INF/gridgain.xml}). */
     public static final String XML_DESCRIPTOR_PATH = "META-INF/gridgain.xml";
@@ -483,10 +369,6 @@ public class GridUriDeploymentSpi extends GridSpiAdapter implements GridDeployme
     /** */
     @GridLoggerResource
     private GridLogger log;
-
-    /** */
-    @GridMarshallerResource
-    private GridMarshaller marshaller;
 
     /**
      * Sets absolute path to temporary directory which will be used by
@@ -682,11 +564,6 @@ public class GridUriDeploymentSpi extends GridSpiAdapter implements GridDeployme
             else if ("http".equals(proto) || "https".equals(proto)) {
                 scanner = new GridUriDeploymentHttpScanner(gridName, uri, file, freq > 0 ? freq :
                     DFLT_HTTP_SCAN_FREQUENCY, filter, lsnr, log);
-            }
-            else if ("pop3".equals(proto) || "pop3s".equals(proto) ||
-                "imap".equals(proto) || "imaps".equals(proto)) {
-                scanner = new GridUriDeploymentMailScanner(gridName, uri, file, freq > 0 ? freq :
-                    DFLT_MAIL_SCAN_FREQUENCY, filter, lsnr, log, marshaller);
             }
             else if ("ftp".equals(proto)) {
                 scanner = new GridUriDeploymentFtpScanner(gridName, uri, file, freq > 0 ? freq :
@@ -957,7 +834,7 @@ public class GridUriDeploymentSpi extends GridSpiAdapter implements GridDeployme
      * @param removedClsLdrs Class loaders to remove.
      * @return {@code True} if resource was removed.
      */
-    private boolean removeResources(ClassLoader ignoreClsLdr, Map<String, String> rsrcs,
+    private boolean removeResources(@Nullable ClassLoader ignoreClsLdr, Map<String, String> rsrcs,
         Collection<ClassLoader> removedClsLdrs) {
         assert Thread.holdsLock(mux);
         assert rsrcs != null;

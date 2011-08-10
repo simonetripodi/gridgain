@@ -16,7 +16,7 @@ import java.util.concurrent.*;
  * NIO server.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridNioServer {
     /** */
@@ -52,8 +52,7 @@ public class GridNioServer {
      * @throws GridException If failed.
      */
     public GridNioServer(InetAddress addr, int port, GridNioServerListener listener, GridLogger log,
-        Executor exec, String gridName, boolean directBuf)
-        throws GridException {
+        Executor exec, String gridName, boolean directBuf) throws GridException {
         assert addr != null;
         assert port > 0 && port < 0xffff;
         assert listener != null;

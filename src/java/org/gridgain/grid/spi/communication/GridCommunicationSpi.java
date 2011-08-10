@@ -12,9 +12,6 @@ package org.gridgain.grid.spi.communication;
 import org.gridgain.grid.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.spi.*;
-import org.gridgain.grid.spi.communication.coherence.*;
-import org.gridgain.grid.spi.communication.jms.*;
-import org.gridgain.grid.spi.communication.mail.*;
 import org.gridgain.grid.spi.communication.tcp.*;
 import org.jetbrains.annotations.*;
 import java.io.*;
@@ -34,16 +31,13 @@ import java.util.*;
  *      <li>{@link Grid#send(Collection, GridPredicate[])}
  * </ul>
  * <p>
- * GridGain comes with large set of built-in communication SPI implementations:
+ * GridGain comes with built-in communication SPI implementations:
  * <ul>
- *      <li>{@link GridCoherenceCommunicationSpi}</li>
- *      <li>{@link GridJmsCommunicationSpi}</li>
- *      <li>{@link GridMailCommunicationSpi}</li>
  *      <li>{@link GridTcpCommunicationSpi}</li>
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridCommunicationSpi extends GridSpi, GridSpiJsonConfigurable {
     /**

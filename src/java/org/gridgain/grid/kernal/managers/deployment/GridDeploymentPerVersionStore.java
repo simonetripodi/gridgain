@@ -31,7 +31,7 @@ import static org.gridgain.grid.GridEventType.*;
  * {@link GridDeploymentMode#CONTINUOUS} modes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
     /** Shared deployment cache. */
@@ -336,7 +336,8 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
                 Class<?> cls = dep.deployedClass(meta.className(), meta.alias());
 
                 if (cls == null) {
-                    U.warn(log, "Failed to load peer class [alias=" + meta.alias() + ", dep=" + dep + ']');
+                    U.warn(log, "Failed to load peer class (ignore if class got undeployed during preloading) [alias=" +
+                        meta.alias() + ", dep=" + dep + ']');
 
                     return null;
                 }
@@ -511,7 +512,8 @@ public class GridDeploymentPerVersionStore extends GridDeploymentStoreAdapter {
                 Class<?> cls = dep.deployedClass(meta.className(), meta.alias());
 
                 if (cls == null) {
-                    U.warn(log, "Failed to load peer class [alias=" + meta.alias() + ", dep=" + dep + ']');
+                    U.warn(log, "Failed to load peer class (ignore if class got undeployed during preloading) [alias=" +
+                        meta.alias() + ", dep=" + dep + ']');
 
                     return null;
                 }

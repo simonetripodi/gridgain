@@ -23,7 +23,7 @@ import java.util.*;
  * by underlying cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheValueCollection<K, V> extends GridSerializableCollection<V> {
     /** Cache context. */
@@ -60,7 +60,50 @@ public class GridCacheValueCollection<K, V> extends GridSerializableCollection<V
             map.values(),
             F.<K, V>cacheEntry2Get(),
             ctx.vararg(F.and(filter, F.<K, V>cacheHasPeekValue()))
-        );
+        ) {
+            {
+                advance();
+            }
+
+            private V next;
+
+            private void advance() {
+                if (next != null)
+                    return;
+
+                boolean has;
+
+                while (has = super.hasNext()) {
+                    next = super.next();
+
+                    if (next != null)
+                        break;
+                }
+
+                if (!has)
+                    next = null;
+            }
+
+            @SuppressWarnings( {"IteratorHasNextCallsIteratorNext"})
+            @Override public boolean hasNext() {
+                advance();
+
+                return next != null;
+            }
+
+            @Override public V next() {
+                advance();
+
+                if (next == null)
+                    throw new NoSuchElementException();
+
+                V v = next;
+
+                next = null;
+
+                return v;
+            }
+        };
     }
 
     /** {@inheritDoc} */

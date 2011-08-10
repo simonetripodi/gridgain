@@ -26,7 +26,7 @@ import scalaz._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 object ScalarCacheProjectionPimp {
     /**
@@ -51,13 +51,13 @@ object ScalarCacheProjectionPimp {
  * Defines Scalar "pimp" for `GridCacheProjection` on Java side.
  *
  * Essentially this class extends Java `GridCacheProjection` interface with Scala specific
- * API adapters using primarily implicit conversions defined in `ScalarMixin` object. What
+ * API adapters using primarily implicit conversions defined in `ScalarConversions` object. What
  * it means is that you can use functions defined in this class on object
  * of Java `GridCacheProjection` type. Scala will automatically (implicitly) convert it into
  * Scalar's pimp and replace the original call with a call on that pimp.
  *
  * Note that Scalar provide extensive library of implicit conversion between Java and
- * Scala GridGain counterparts in `ScalarMixin` object
+ * Scala GridGain counterparts in `ScalarConversions` object
  *
  * ==Suffix '$' In Names==
  * Symbol `$` is used in names when they conflict with the names in the base Java class
@@ -66,7 +66,7 @@ object ScalarCacheProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedType[GridCacheProjection[K, V]]
     with Iterable[GridCacheEntry[K, V]] {
@@ -551,7 +551,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param vp Value filter. See `GridCacheQuery` for more details..
      * @return Collection of cache key-value pairs.
      */
-    def scan(grid: GridProjection, cls: Class[_ <: V], kp: KeyPred, vp: ValuePred): Iterable[(K, V)] = {
+    def scan(grid: GridProjection, cls: Class[_], kp: KeyPred, vp: ValuePred): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
         assert(kp != null)
@@ -604,7 +604,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param vp Value filter. See `GridCacheQuery` for more details..
      * @return Collection of cache key-value pairs.
      */
-    def scan(cls: Class[_ <: V], kp: KeyPred, vp: ValuePred): Iterable[(K, V)] = {
+    def scan(cls: Class[_], kp: KeyPred, vp: ValuePred): Iterable[(K, V)] = {
         assert(cls != null)
         assert(kp != null)
         assert(vp != null)
@@ -649,7 +649,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Collection of cache key-value pairs.
      */
-    def sql(grid: GridProjection, cls: Class[_ <: V], clause: String, args: Any*): Iterable[(K, V)] = {
+    def sql(grid: GridProjection, cls: Class[_], clause: String, args: Any*): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
         assert(clause != null)
@@ -703,7 +703,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Collection of cache key-value pairs.
      */
-    def sql(cls: Class[_ <: V], clause: String, args: Any*): Iterable[(K, V)] = {
+    def sql(cls: Class[_], clause: String, args: Any*): Iterable[(K, V)] = {
         assert(cls != null)
         assert(clause != null)
 
@@ -745,7 +745,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
      * @return Collection of cache key-value pairs.
      */
-    def lucene(grid: GridProjection, cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
+    def lucene(grid: GridProjection, cls: Class[_], clause: String): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
         assert(clause != null)
@@ -788,7 +788,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param clause Query Lucene clause. See `GridCacheQuery` for more details.
      * @return Collection of cache key-value pairs.
      */
-    def lucene(cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
+    def lucene(cls: Class[_], clause: String): Iterable[(K, V)] = {
         assert(cls != null)
         assert(clause != null)
 
@@ -829,7 +829,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
      * @return Collection of cache key-value pairs.
      */
-    def h2Text(grid: GridProjection, cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
+    def h2Text(grid: GridProjection, cls: Class[_], clause: String): Iterable[(K, V)] = {
         assert(grid != null)
         assert(cls != null)
         assert(clause != null)
@@ -872,7 +872,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param clause Query H2 text clause. See `GridCacheQuery` for more details.
      * @return Collection of cache key-value pairs.
      */
-    def h2Text(cls: Class[_ <: V], clause: String): Iterable[(K, V)] = {
+    def h2Text(cls: Class[_], clause: String): Iterable[(K, V)] = {
         assert(cls != null)
         assert(clause != null)
 
@@ -915,7 +915,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param trans Transform function that will be applied to each returned value.
      * @return Collection of cache key-value pairs.
      */
-    def scanTransform[T](grid: GridProjection, cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
+    def scanTransform[T](grid: GridProjection, cls: Class[_], kp: KeyPred, vp: ValuePred,
         trans: V => T): Iterable[(K, T)] = {
         assert(grid != null)
         assert(cls != null)
@@ -974,7 +974,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param trans Transform function that will be applied to each returned value.
      * @return Collection of cache key-value pairs.
      */
-    def scanTransform[T](cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
+    def scanTransform[T](cls: Class[_], kp: KeyPred, vp: ValuePred,
         trans: V => T): Iterable[(K, T)] = {
         assert(cls != null)
         assert(kp != null)
@@ -1025,7 +1025,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Collection of cache key-value pairs.
      */
-    def sqlTransform[T](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def sqlTransform[T](grid: GridProjection, cls: Class[_], clause: String,
         trans: V => T, args: Any*): Iterable[(K, T)] = {
         assert(grid != null)
         assert(cls != null)
@@ -1086,7 +1086,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Collection of cache key-value pairs.
      */
-    def sqlTransform[T](cls: Class[_ <: V], clause: String, trans: V => T,
+    def sqlTransform[T](cls: Class[_], clause: String, trans: V => T,
         args: Any*): Iterable[(K, T)] = {
         assert(cls != null)
         assert(clause != null)
@@ -1136,7 +1136,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param trans Transform function that will be applied to each returned value.
      * @return Collection of cache key-value pairs.
      */
-    def luceneTransform[T](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def luceneTransform[T](grid: GridProjection, cls: Class[_], clause: String,
         trans: V => T): Iterable[(K, T)] = {
         assert(grid != null)
         assert(cls != null)
@@ -1189,7 +1189,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param trans Transform function that will be applied to each returned value.
      * @return Collection of cache key-value pairs.
      */
-    def luceneTransform[T](cls: Class[_ <: V], clause: String, trans: V => T): Iterable[(K, T)] = {
+    def luceneTransform[T](cls: Class[_], clause: String, trans: V => T): Iterable[(K, T)] = {
         assert(cls != null)
         assert(clause != null)
         assert(trans != null)
@@ -1235,7 +1235,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param trans Transform function that will be applied to each returned value.
      * @return Collection of cache key-value pairs.
      */
-    def h2TextTransform[T](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def h2TextTransform[T](grid: GridProjection, cls: Class[_], clause: String,
         trans: V => T): Iterable[(K, T)] = {
         assert(grid != null)
         assert(cls != null)
@@ -1288,7 +1288,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param trans Transform function that will be applied to each returned value.
      * @return Collection of cache key-value pairs.
      */
-    def h2TextTransform[T](cls: Class[_ <: V], clause: String, trans: V => T): Iterable[(K, T)] = {
+    def h2TextTransform[T](cls: Class[_], clause: String, trans: V => T): Iterable[(K, T)] = {
         assert(cls != null)
         assert(clause != null)
         assert(trans != null)
@@ -1336,7 +1336,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param locRdc Reduce function that will be called on local node.
      * @return Reduced value.
      */
-    def scanReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], kp: KeyPred,
+    def scanReduce[R1, R2](grid: GridProjection, cls: Class[_], kp: KeyPred,
         vp: ValuePred, rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(grid != null)
         assert(cls != null)
@@ -1400,7 +1400,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param locRdc Reduce function that will be called on local node.
      * @return Reduced value.
      */
-    def scanReduce[R1, R2](cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
+    def scanReduce[R1, R2](cls: Class[_], kp: KeyPred, vp: ValuePred,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(cls != null)
         assert(kp != null)
@@ -1455,7 +1455,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Reduced value.
      */
-    def sqlReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def sqlReduce[R1, R2](grid: GridProjection, cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2, args: Any*): R2 = {
         assert(grid != null)
         assert(cls != null)
@@ -1521,7 +1521,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Reduced value.
      */
-    def sqlReduce[R1, R2](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R1,
+    def sqlReduce[R1, R2](cls: Class[_], clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2, args: Any*): R2 = {
         assert(cls != null)
         assert(clause != null)
@@ -1575,7 +1575,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param locRdc Reduce function that will be called on local node.
      * @return Reduced value.
      */
-    def luceneReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def luceneReduce[R1, R2](grid: GridProjection, cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(grid != null)
         assert(cls != null)
@@ -1633,7 +1633,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param locRdc Reduce function that will be called on local node.
      * @return Reduced value.
      */
-    def luceneReduce[R1, R2](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R1,
+    def luceneReduce[R1, R2](cls: Class[_], clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2): R2 = {
         assert(cls != null)
         assert(clause != null)
@@ -1684,7 +1684,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param locRdc Reduce function that will be called on local node.
      * @return Reduced value.
      */
-    def h2TextReduce[R1, R2](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def h2TextReduce[R1, R2](grid: GridProjection, cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R1, locRdc: Iterable[R1] => R2): R2 = {
         assert(grid != null)
         assert(cls != null)
@@ -1744,7 +1744,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param locRdc Reduce function that will be called on local node.
      * @return Reduced value.
      */
-    def h2TextReduce[R1, R2](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R1,
+    def h2TextReduce[R1, R2](cls: Class[_], clause: String, rmtRdc: Iterable[(K, V)] => R1,
         locRdc: Iterable[R1] => R2): R2 = {
         assert(cls != null)
         assert(clause != null)
@@ -1797,7 +1797,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param rmtRdc Reduce function that will be called on each remote node.
      * @return Collection of reduced values.
      */
-    def scanReduce[R](grid: GridProjection, cls: Class[_ <: V], kp: KeyPred,
+    def scanReduce[R](grid: GridProjection, cls: Class[_], kp: KeyPred,
         vp: ValuePred, rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(grid != null)
         assert(cls != null)
@@ -1856,7 +1856,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param rmtRdc Reduce function that will be called on each remote node.
      * @return Collection of reduced values.
      */
-    def scanReduce[R](cls: Class[_ <: V], kp: KeyPred, vp: ValuePred,
+    def scanReduce[R](cls: Class[_], kp: KeyPred, vp: ValuePred,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(cls != null)
         assert(kp != null)
@@ -1908,7 +1908,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Collection of reduced values.
      */
-    def sqlReduce[R](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def sqlReduce[R](grid: GridProjection, cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R, args: Any*): Iterable[R] = {
         assert(grid != null)
         assert(cls != null)
@@ -1969,7 +1969,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param args Optional list of query arguments.
      * @return Collection of reduced values.
      */
-    def sqlReduce[R](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R,
+    def sqlReduce[R](cls: Class[_], clause: String, rmtRdc: Iterable[(K, V)] => R,
         args: Any*): Iterable[R] = {
         assert(cls != null)
         assert(clause != null)
@@ -2019,7 +2019,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param rmtRdc Reduce function that will be called on each remote node.
      * @return Collection of reduced values.
      */
-    def luceneReduce[R](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def luceneReduce[R](grid: GridProjection, cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(grid != null)
         assert(cls != null)
@@ -2072,7 +2072,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param rmtRdc Reduce function that will be called on each remote node.
      * @return Collection of reduced values.
      */
-    def luceneReduce[R](cls: Class[_ <: V], clause: String, rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
+    def luceneReduce[R](cls: Class[_], clause: String, rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(cls != null)
         assert(clause != null)
         assert(rmtRdc != null)
@@ -2118,7 +2118,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param rmtRdc Reduce function that will be called on each remote node.
      * @return Collection of reduced values.
      */
-    def h2TextReduce[R](grid: GridProjection, cls: Class[_ <: V], clause: String,
+    def h2TextReduce[R](grid: GridProjection, cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(grid != null)
         assert(cls != null)
@@ -2173,7 +2173,7 @@ class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedTy
      * @param rmtRdc Reduce function that will be called on each remote node.
      * @return Collection of reduced values.
      */
-    def h2TextReduce[R](cls: Class[_ <: V], clause: String,
+    def h2TextReduce[R](cls: Class[_], clause: String,
         rmtRdc: Iterable[(K, V)] => R): Iterable[R] = {
         assert(cls != null)
         assert(clause != null)

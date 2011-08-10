@@ -15,15 +15,15 @@ import org.gridgain.grid.spi.discovery.multicast.*;
 import java.util.*;
 
 /**
- * Interface representing a single grid node. Use {@link #getAttribute(String)} or
- * {@link #getMetrics()} to get static and dynamic information about remote nodes.
+ * Interface representing a single grid node. Use {@link #attribute(String)} or
+ * {@link #metrics()} to get static and dynamic information about remote nodes.
  * {@code GridNode} list, which includes all nodes within task topology, is provided
  * to {@link GridTask#map(List, Object)} method. You can also get a handle on
  * discovered nodes by calling any of the following methods:
  * <ul>
  * <li>{@link Grid#localNode()}</li>
- * <li>{@link Grid#remoteNodes(org.gridgain.grid.lang.GridPredicate[])}</li>
- * <li>{@link Grid#nodes(org.gridgain.grid.lang.GridPredicate[])}</li>
+ * <li>{@link GridProjection#remoteNodes(org.gridgain.grid.lang.GridPredicate[])}</li>
+ * <li>{@link GridProjection#nodes(org.gridgain.grid.lang.GridPredicate[])}</li>
  * </ul>
  * <p>
  * <h1 class="header">Grid Node Attributes</h1>
@@ -55,7 +55,7 @@ import java.util.*;
  * <li>{@code org.gridgain.jit.name} - Name of JIT compiler used.</li>
  * <li>{@code org.gridgain.net.itf.name} - Name of network interface.</li>
  * <li>{@code org.gridgain.user.name} - Operating system user name.</li>
- * <li>{@code org.gridgain.grid.name} - Grid name (see {@link Grid#getName()}).</li>
+ * <li>{@code org.gridgain.grid.name} - Grid name (see {@link Grid#name()}).</li>
  * <li>
  *      {@code spiName.org.gridgain.spi.class} - SPI implementation class for every SPI,
  *      where {@code spiName} is the name of the SPI (see {@link GridSpi#getName()}.
@@ -83,7 +83,7 @@ import java.util.*;
  * interface. Consult {@link GridRichNode} for more information.
  * <p>
  * <h1 class="header">Grid Node Metrics</h1>
- * Grid node metrics (see {@link #getMetrics()}) are updated frequently for all nodes
+ * Grid node metrics (see {@link #metrics()}) are updated frequently for all nodes
  * and can be used to get dynamic information about a node. The frequency of update
  * is often directly related to the heartbeat exchange between nodes. So if, for example,
  * default {@link GridMulticastDiscoverySpi} is used,
@@ -102,66 +102,16 @@ import java.util.*;
  * as a graph.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridRichNode
  */
 public interface GridNode extends GridMetadataAware {
-    /**
-     * Deprecated in favor of {@link #id()} method.
-     * <p>
-     * Gets globally unique node ID.
-     *
-     * @return Globally unique node ID.
-     */
-    @Deprecated
-    public UUID getId();
-
     /**
      * Gets globally unique node ID.
      *
      * @return Globally unique node ID.
      */
     public UUID id();
-
-    /**
-     * This method is deprecated in favor of the following two methods:
-     * <ul>
-     * <li>{@link #externalAddresses()}</li>
-     * <li>{@link #internalAddresses()}</li>
-     * </ul>
-     * Default implementation returns one of the addressed returned by
-     * {@link #externalAddresses()} or {@link #internalAddresses()} method.
-     * <p>
-     * Gets physical address of the node. In most cases, although it is not
-     * strictly guaranteed, it is an IP address of a node.
-     *
-     * @return Physical address of the node.
-     */
-    @Deprecated
-    public String getPhysicalAddress();
-
-    /**
-     * Deprecated in favor of {@link #attribute(String)} method.
-     * <p>
-     * Gets a node attribute. Attributes are assigned to nodes at startup
-     * via {@link GridConfiguration#getUserAttributes()} method.
-     * <p>
-     * The system adds the following attributes automatically:
-     * <ul>
-     * <li>{@code {@link System#getProperties()}} - All system properties.</li>
-     * <li>{@code {@link System#getenv(String)}} - All environment properties.</li>
-     * <li>All attributes defined in {@link GridNodeAttributes}</li>
-     * </ul>
-     * <p>
-     * Note that attributes cannot be changed at runtime.
-     *
-     * @param <T> Attribute Type.
-     * @param name Attribute name. <b>Note</b> that attribute names starting with
-     *      {@code org.gridgain} are reserved for internal use.
-     * @return Attribute value or {@code null}.
-     */
-    @Deprecated
-    public <T> T getAttribute(String name);
 
     /**
      * Gets a node attribute. Attributes are assigned to nodes at startup
@@ -184,24 +134,6 @@ public interface GridNode extends GridMetadataAware {
     public <T> T attribute(String name);
 
     /**
-     * Deprecated in favor of {@link #metrics()} method.
-     * <p>
-     * Gets metrics snapshot for this node. Note that node metrics are constantly updated
-     * and provide up to date information about nodes. For example, you can get
-     * an idea about CPU load on remote node via {@link GridNodeMetrics#getCurrentCpuLoad()}
-     * method and use it during {@link GridTask#map(List, Object)} or during collision
-     * resolution.
-     * <p>
-     * Node metrics are updated with some delay which is directly related to heartbeat
-     * frequency. For example, when used with default
-     * {@link GridMulticastDiscoverySpi} the update will happen every {@code 2} seconds.
-     *
-     * @return Runtime metrics snapshot for this node.
-     */
-    @Deprecated
-    public GridNodeMetrics getMetrics();
-
-    /**
      * Gets metrics snapshot for this node. Note that node metrics are constantly updated
      * and provide up to date information about nodes. For example, you can get
      * an idea about CPU load on remote node via {@link GridNodeMetrics#getCurrentCpuLoad()}
@@ -215,26 +147,6 @@ public interface GridNode extends GridMetadataAware {
      * @return Runtime metrics snapshot for this node.
      */
     public GridNodeMetrics metrics();
-
-    /**
-     * Deprecated in favor of {@link #attributes()} method.
-     * <p>
-     * Gets all node attributes. Attributes are assigned to nodes at startup
-     * via {@link GridConfiguration#getUserAttributes()} method.
-     * <p>
-     * The system adds the following attributes automatically:
-     * <ul>
-     * <li>{@code {@link System#getProperties()}} - All system properties.</li>
-     * <li>{@code {@link System#getenv(String)}} - All environment properties.</li>
-     * <li>All attributes defined in {@link GridNodeAttributes}</li>
-     * </ul>
-     * <p>
-     * Note that attributes cannot be changed at runtime.
-     *
-     * @return All node attributes.
-     */
-    @Deprecated
-    public Map<String, Object> getAttributes();
 
     /**
      * Gets all node attributes. Attributes are assigned to nodes at startup

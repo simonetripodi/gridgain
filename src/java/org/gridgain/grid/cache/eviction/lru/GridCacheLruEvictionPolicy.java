@@ -12,16 +12,10 @@ package org.gridgain.grid.cache.eviction.lru;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.eviction.*;
 import org.gridgain.grid.lang.utils.*;
-import org.gridgain.grid.logger.*;
-import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.internal.*;
-import org.gridgain.grid.util.tostring.*;
+import org.gridgain.grid.lang.utils.GridQueue.Node;
 
-import javax.management.*;
 import java.util.*;
-import java.util.concurrent.atomic.*;
-
-import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
 
 /**
  * Eviction policy based on {@code Least Recently Used (LRU)} algorithm. This
@@ -30,32 +24,18 @@ import static org.gridgain.grid.lang.utils.GridConcurrentLinkedQueue.*;
  * information is maintained by attaching ordering metadata to cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheLruEvictionPolicyMBean {
-    /** MBean server. */
-    @GridMBeanServerResource
-    @GridToStringExclude
-    private MBeanServer jmx;
-
-    /** Logger. */
-    @GridLoggerResource
-    private GridLogger log;
-
-    /** Init flag. */
-    private AtomicBoolean init = new AtomicBoolean(false);
-
     /** Tag. */
-    @GridToStringExclude
     private final String meta = UUID.randomUUID().toString();
 
     /** Maximum size. */
     private volatile int max = -1;
 
-    /** LRU queue. */
-    private final GridConcurrentLinkedQueue<GridCacheEntry<K, V>> queue =
-        new GridConcurrentLinkedQueue<GridCacheEntry<K,V>>();
+    /** Doubly-linked queue which supports GC-robust removals. */
+    private final GridQueue<GridCacheEntry<K, V>> queue = new GridQueue<GridCacheEntry<K, V>>();
 
     /**
      * Constructs LRU eviction policy with all defaults.
@@ -70,7 +50,7 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
     public GridCacheLruEvictionPolicy(int max) {
-        A.ensure(max > 0, "max > 1");
+        A.ensure(max > 0, "max > 0");
 
         this.max = max;
     }
@@ -90,7 +70,7 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
     @Override public void setMaxSize(int max) {
-        A.ensure(max > 0, "max > 1");
+        A.ensure(max > 0, "max > 0");
 
         this.max = max;
     }
@@ -100,144 +80,73 @@ public class GridCacheLruEvictionPolicy<K, V> implements GridCacheEvictionPolicy
         return queue.size();
     }
 
-    /** {@inheritDoc} */
-    @Override public int getCurrentEdenSize() {
-        return queue.eden();
-    }
-
-    /** {@inheritDoc} */
-    @Override public void gc() {
-        queue.gc(0);
-    }
-
-    /** {@inheritDoc} */
-    @Override public long getAverageGcTime() {
-        return queue.averageGcTime();
-    }
-
-    /** {@inheritDoc} */
-    @Override public long getGcCalls() {
-        return queue.gcCalls();
-    }
-
-    /** {@inheritDoc} */
-    @Override public long getNodesGced() {
-        return queue.nodesGced();
-    }
-
-    /** {@inheritDoc} */
-    @Override public long getNodesCreated() {
-        return queue.nodesCreated();
-    }
-
-    /** {@inheritDoc} */
-    @Override public String queueFormatted() {
-        return queue.toShortString();
-    }
-
     /**
-     * Gets read-only view on internal {@code 'LRU'} queue in proper order.
+     * Gets read-only view on internal {@code FIFO} queue in proper order.
      *
-     * @return Read-only view on internal {@code 'LRU'} queue.
+     * @return Read-only view ono internal {@code 'FIFO'} queue.
      */
     public Collection<GridCacheEntry<K, V>> queue() {
         return Collections.unmodifiableCollection(queue);
     }
 
-    /**
-     * @param entry Entry to get info from.
-     */
-    private void registerMbean(GridCacheEntry<K, V> entry) {
-        if (init.compareAndSet(false, true))
-            CU.registerEvictionMBean(log, jmx, this, GridCacheLruEvictionPolicyMBean.class, entry);
-    }
-
     /** {@inheritDoc} */
     @Override public void onEntryAccessed(boolean rmv, GridCacheEntry<K, V> entry) {
-        registerMbean(entry);
-
-        if (!rmv) {
+        if (!rmv)
             touch(entry);
-        }
         else {
-            Node<GridCacheEntry<K, V>> n = entry.removeMeta(meta);
+            Node<GridCacheEntry<K, V>> node = entry.removeMeta(meta);
 
-            if (n != null)
-                queue.clearNode(n);
+            if (node != null)
+                queue.unlink(node);
         }
 
         shrink();
-
-        queue.gc(max);
     }
 
     /**
      * @param entry Entry to touch.
      */
     private void touch(GridCacheEntry<K, V> entry) {
-        Node<GridCacheEntry<K, V>> n = entry.meta(meta);
+        Node<GridCacheEntry<K, V>> node = entry.meta(meta);
 
-        if (n == null) {
-            Node<GridCacheEntry<K, V>> old = entry.putMetaIfAbsent(meta, n = new Node<GridCacheEntry<K, V>>(entry));
+        if (node == null) {
+            Node<GridCacheEntry<K, V>> old = entry.addMeta(meta, queue.offerx(entry));
 
-            if (old == null) {
-                queue.addNode(n);
-
-                return;
-            }
-            else
-                n = old;
+            assert old == null : "Node was enqueued by another thread: " + old;
         }
+        else {
+            queue.unlink(node);
 
-        if (!n.active()) {
-            Node<GridCacheEntry<K, V>> replace = new Node<GridCacheEntry<K, V>>(entry);
+            Node<GridCacheEntry<K, V>> old = entry.addMeta(meta, queue.offerx(entry));
 
-            if (entry.replaceMeta(meta, n, replace)) {
-                queue.addNode(replace);
-
-                return;
-            }
-        }
-
-        if (queue.clearNode(n)) {
-            Node<GridCacheEntry<K, V>> add = new Node<GridCacheEntry<K, V>>(entry);
-
-            if (entry.replaceMeta(meta, n, add))
-                queue.addNode(add);
+            assert old == node : "Node was unlinked by another thread [node=" + node + ", old=" + old + ']';
         }
     }
 
     /**
-     * Shrinks LRU queue to maximum allowed size.
+     * Shrinks FIFO queue to maximum allowed size.
      */
     private void shrink() {
-        int i = 0;
-
         int max = this.max;
 
-        while (queue.size() > max && i++ < max) {
-            Node<GridCacheEntry<K, V>> n = queue.peekNode();
+        int startSize = queue.size();
 
-            if (n != null) {
-                GridCacheEntry<K, V> e = n.value();
+        for (int i = 0; i < startSize && queue.size() > max; i++) {
+            GridCacheEntry<K, V> entry = queue.poll();
 
-                if (e != null) {
-                    if (queue.clearNode(n)) {
-                        if (!e.evict()) {
-                            // Move to the beginning again.
-                            touch(e);
-                        }
-                    }
-                }
-            }
+            assert entry != null;
+
+            Node<GridCacheEntry<K, V>> old = entry.removeMeta(meta);
+
+            assert old != null : "Entry does not have metadata: " + entry;
+
+            if (!entry.evict())
+                touch(entry);
         }
     }
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridCacheLruEvictionPolicy.class, this,
-            "size", getCurrentSize(),
-            "eden", getCurrentEdenSize(),
-            "queue", queue.toShortString());
+        return S.toString(GridCacheLruEvictionPolicy.class, this, "size", queue.size());
     }
 }

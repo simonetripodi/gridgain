@@ -12,13 +12,9 @@ package org.gridgain.grid.spi.discovery;
 import org.gridgain.grid.*;
 import org.gridgain.grid.events.*;
 import org.gridgain.grid.spi.*;
-import org.gridgain.grid.spi.discovery.coherence.*;
-import org.gridgain.grid.spi.discovery.jms.*;
-import org.gridgain.grid.spi.discovery.mail.*;
 import org.gridgain.grid.spi.discovery.multicast.*;
 import org.gridgain.grid.spi.discovery.tcp.*;
 import org.jetbrains.annotations.*;
-
 import java.util.*;
 
 /**
@@ -30,16 +26,13 @@ import java.util.*;
  * <p>
  * Gridgain provides the following {@code GridDeploymentSpi} implementations:
  * <ul>
- * <li>{@link GridJmsDiscoverySpi}</li>
- * <li>{@link GridMailDiscoverySpi}</li>
  * <li>{@link GridMulticastDiscoverySpi}</li>
- * <li>{@link GridCoherenceDiscoverySpi}</li>
  * <li>{@link GridTcpDiscoverySpi}</li>
  *
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridDiscoverySpi extends GridSpi, GridSpiJsonConfigurable {
     /**

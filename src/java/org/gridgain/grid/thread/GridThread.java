@@ -9,9 +9,17 @@
 
 package org.gridgain.grid.thread;
 
+import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.worker.*;
+
+import java.io.*;
+import java.net.*;
+import java.text.*;
+import java.util.*;
 import java.util.concurrent.atomic.*;
+
+import static org.gridgain.grid.GridSystemProperties.*;
 
 /**
  * This class adds some necessary plumbing on top of the {@link Thread} class.
@@ -24,11 +32,72 @@ import java.util.concurrent.atomic.*;
  * <b>Note</b>: this class is intended for internal use only.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridThread extends Thread {
+    /** */
+    private static final Map<Thread, String> emailHeaders = new HashMap<Thread, String>();
+
     /** Default thread's group. */
-    public static final ThreadGroup DFLT_GRP = new ThreadGroup("gridgain");
+    private static final ThreadGroup DFLT_GRP = new ThreadGroup("gridgain") {
+        @Override public void uncaughtException(Thread t, Throwable e) {
+            super.uncaughtException(t, e);
+
+            if (System.getProperty(GG_ASSERT_SEND_DISABLED) != null &&
+                !"false".equalsIgnoreCase(System.getProperty(GG_ASSERT_SEND_DISABLED)))
+                return;
+
+            if (e instanceof AssertionError) {
+                SB params = new SB();
+
+                params.a("header=").a(emailHeaders.get(t)).a("thread=").a(t.getName()).
+                    a("&").a("message=").a(e.getMessage());
+
+                StackTraceElement[] trace = e.getStackTrace();
+
+                params.a("&trace_header=").a(e.toString());
+
+                int length = 0;
+
+                for (StackTraceElement elem : trace)
+                    if (elem.getClassName().startsWith("org.") ||
+                        elem.getClassName().startsWith("java.") ||
+                        elem.getClassName().startsWith("javax.") ||
+                        elem.getClassName().startsWith("scala.") ||
+                        elem.getClassName().startsWith("groovy."))
+                        params.a("&trace_line_").a(length++).a("=").a(elem.toString());
+
+                params.a("&trace_size=").a(length);
+
+                HttpURLConnection conn = null;
+
+                try {
+                    URL url = new URL("http://localhost:81/assert.php");
+
+                    conn = (HttpURLConnection)url.openConnection();
+
+                    conn.setRequestMethod("POST");
+                    conn.setDoOutput(true);
+                    conn.setReadTimeout(5000);
+
+                    DataOutputStream out = new DataOutputStream(conn.getOutputStream());
+
+                    out.writeBytes(params.toString());
+
+                    out.close();
+
+                    conn.getInputStream().read();
+                }
+                catch (IOException ignored) {
+                    // No-op
+                }
+                finally {
+                    if (conn != null)
+                        conn.disconnect();
+                }
+            }
+        }
+    };
 
     /** Number of all grid threads in the system. */
     private static final AtomicLong threadCntr = new AtomicLong(0);
@@ -64,6 +133,31 @@ public class GridThread extends Thread {
      */
     public GridThread(ThreadGroup grp, String gridName, String threadName, Runnable r) {
         super(grp, r, createName(threadCntr.incrementAndGet(), threadName, gridName));
+
+//        if (grp == DFLT_GRP)
+//            emailHeaders.put(this, createEmailHeader(G.grid(gridName)));
+    }
+
+    /**
+     * Creates assertion email header for current grid.
+     *
+     * @param grid Grid.
+     * @return Header for assertion email.
+     */
+    private static String createEmailHeader(Grid grid) {
+        GridEnterpriseLicense lic = grid.license();
+
+        SB sb = new SB();
+
+        sb.a("Error time: ").a(new SimpleDateFormat("MM/dd/yy, HH:mm:ss").format(new Date())).a("\n").
+            a("Grid name: ").a(grid.name()).a("\n").
+            a("Edition: ").a(lic != null ? "Enterprise" : "Community").a("\n");
+
+        if (lic != null)
+            sb.a("License ID: ").a(lic.getId().toString().toUpperCase()).a("\n").
+                a("Licensed to: ").a(lic.getUserOrganization());
+
+        return sb.toString().trim();
     }
 
     /**

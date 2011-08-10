@@ -36,7 +36,7 @@ import java.util.*;
  * simply print out the argument passed in.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridifyHelloWorldCheckpointTask extends GridifyTaskSplitAdapter<Integer> {
     /** Injected task session. */
@@ -98,7 +98,7 @@ public class GridifyHelloWorldCheckpointTask extends GridifyTaskSplitAdapter<Int
                 // Note that since we are calling this method from within the grid job
                 // AOP-based grid enabling will not cross-cut it and method will just
                 // execute normally.
-                return GridifyHelloWorldCheckpointExample.sayIt(this.<String>argument());
+                return GridifyHelloWorldCheckpointExample.sayIt(this.<String>argument(0));
             }
         });
     }

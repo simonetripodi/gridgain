@@ -21,7 +21,7 @@ import org.gridgain.grid._
  * Demonstrates various closure executions on the cloud using Scalar.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 object ScalarClosureExample {
     /**
@@ -75,8 +75,18 @@ object ScalarClosureExample {
      * Count non-whitespace characters by spreading workload to the cloud and reducing
      * on the local node.
      */
+    // Same as 'count2' but with for-expression.
     def count(msg: String): Int =
         grid$ @< (SPREAD, for (w <- msg.split(" ")) yield () => w.length, (_: Seq[Int]).sum)
+
+    /**
+     * Count non-whitespace characters by spreading workload to the cloud and reducing
+     * on the local node.
+     */
+    // Same as 'count' but without for-expression.
+    // Note that map's parameter type inference doesn't work in 2.9.0.
+    def count2(msg: String): Int =
+        grid$ @< (SPREAD, msg.split(" ") map ((s: String) => () => s.length), (_: Seq[Int]).sum)
 
     /**
      *  Greats all remote nodes only.

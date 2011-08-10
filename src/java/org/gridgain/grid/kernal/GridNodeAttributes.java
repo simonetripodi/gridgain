@@ -13,7 +13,7 @@ package org.gridgain.grid.kernal;
  * This class defines constants (NOT enums) for <b>internally-used</b> node attributes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public final class GridNodeAttributes {
     /** Prefix for internally reserved attribute names. */
@@ -50,9 +50,6 @@ public final class GridNodeAttributes {
     public static final String ATTR_CACHE = ATTR_PREFIX + ".cache";
 
     /** Internal attribute name constant. */
-    public static final String ATTR_CLOUD_IDS = ATTR_PREFIX + ".cloud.ids";
-
-    /** Internal attribute name constant. */
     public static final String ATTR_DAEMON = ATTR_PREFIX + ".daemon";
 
     /** Internal attribute name constant. */
@@ -66,9 +63,6 @@ public final class GridNodeAttributes {
 
     /** Internal attribute name constant. */
     public static final String ATTR_MACS = ATTR_PREFIX + ".macs";
-
-    /** Internal attribute name constant. */
-    public static final String ATTR_CLOUD_CRD_DISABLE = ATTR_PREFIX + ".cloud.crd.disable";
 
     /**
      * Enforces singleton.

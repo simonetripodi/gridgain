@@ -13,11 +13,12 @@ package org.gridgain.grid.kernal.processors.cache;
  * Factory for cache entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridCacheMapEntryFactory<K, V> {
     /**
      * @param ctx Cache registry.
+     * @param topVer Topology version.
      * @param key Cache key.
      * @param hash Key hash value.
      * @param val Entry value.

@@ -101,7 +101,7 @@ import java.util.concurrent.*;
  * with Gridify annotation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridLoader(description = "Websphere loader")
 public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomService {
@@ -119,23 +119,22 @@ public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomServ
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
+    @Override
     public void initialize(Properties properties) throws Exception {
         GridLogger log = new GridJclLogger(LogFactory.getLog("GridGain"));
 
         cfgFile = properties.getProperty(cfgFilePathParam);
 
-        if (cfgFile == null) {
+        if (cfgFile == null)
             throw new IllegalArgumentException("Failed to read property: " + cfgFilePathParam);
-        }
 
         String workMgrName = properties.getProperty(workMgrParam);
 
         URL cfgUrl = U.resolveGridGainUrl(cfgFile);
 
-        if (cfgUrl == null) {
+        if (cfgUrl == null)
             throw new IllegalArgumentException("Failed to find Spring configuration file (path provided should be " +
                 "either absolute, relative to GRIDGAIN_HOME, or relative to META-INF folder): " + cfgFile);
-        }
 
         GenericApplicationContext springCtx;
 
@@ -164,13 +163,11 @@ public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomServ
                 ", err=" + e.getMessage() + ']', e);
         }
 
-        if (cfgMap == null) {
+        if (cfgMap == null)
             throw new IllegalArgumentException("Failed to find a single grid factory configuration in: " + cfgUrl);
-        }
 
-        if (cfgMap.size() == 0) {
+        if (cfgMap.isEmpty())
             throw new IllegalArgumentException("Can't find grid factory configuration in: " + cfgUrl);
-        }
 
         try {
             ExecutorService execSvc = null;
@@ -183,15 +180,13 @@ public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomServ
                 GridConfigurationAdapter adapter = new GridConfigurationAdapter(cfg);
 
                 // Set WebSphere logger.
-                if (cfg.getGridLogger() == null) {
+                if (cfg.getGridLogger() == null)
                     adapter.setGridLogger(log);
-                }
 
                 if (cfg.getExecutorService() == null) {
                     if (execSvc == null) {
-                        if (workMgrName != null) {
+                        if (workMgrName != null)
                             execSvc = new GridThreadWorkManagerExecutor(workMgrName);
-                        }
                         else {
                             // Obtain/create singleton.
                             J2EEServiceManager j2eeMgr = J2EEServiceManager.getSelf();
@@ -214,9 +209,8 @@ public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomServ
                 }
 
                 if (cfg.getMBeanServer() == null) {
-                    if (mbeanSrvr == null) {
+                    if (mbeanSrvr == null)
                         mbeanSrvr = AdminServiceFactory.getMBeanFactory().getMBeanServer();
-                    }
 
                     adapter.setMBeanServer(mbeanSrvr);
                 }
@@ -224,16 +218,14 @@ public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomServ
                 Grid grid = G.start(adapter, springCtx);
 
                 // Test if grid is not null - started properly.
-                if (grid != null) {
-                    gridNames.add(grid.getName());
-                }
+                if (grid != null)
+                    gridNames.add(grid.name());
             }
         }
         catch (GridException e) {
             // Stop started grids only.
-            for (String name: gridNames) {
+            for (String name: gridNames)
                 G.stop(name, true);
-            }
 
             throw new IllegalArgumentException("Failed to start GridGain.", e);
         }
@@ -242,9 +234,8 @@ public class GridWebsphereLoader implements GridWebsphereLoaderMBean, CustomServ
     /** {@inheritDoc} */
     @Override public void shutdown() throws Exception {
         // Stop started grids only.
-        for (String name: gridNames) {
+        for (String name: gridNames)
             G.stop(name, true);
-        }
     }
 
     /** {@inheritDoc} */

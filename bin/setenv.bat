@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.14072011
+:: Version: 3.5.0c.10082011
 ::
 
 ::
@@ -28,7 +28,7 @@ goto error_finish
 
 :run
 :: The following libraries are required for GridGain.
-set GRIDGAIN_LIBS=%GRIDGAIN_HOME%\libs\commons-jexl-2.0.jar
+set GRIDGAIN_LIBS=%USER_LIBS%;%GRIDGAIN_HOME%\libs\commons-jexl-2.0.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\commons-logging-1.1.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\commons-lang-2.5.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\commons-collections-3.2.jar
@@ -54,7 +54,6 @@ set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\oro-2.0.8.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\concurrent-1.3.4.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\jgroups-2.10.0.GA.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\mail-1.4.3.jar
-set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\jms-1.1.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\junit-4.8.2.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\xpp3_min-1.1.4c.jar
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\xstream-1.3.1.jar
@@ -98,14 +97,7 @@ set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\config\userversion
 :: Note that starting with GridGain 3.0 - Community Edition is licensed under GPLv3.
 set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\sigar.jar
 
-:: Uncomment if using Tangosol Coherence.
-:: COHERENCE_LIB_DIR must point to Tangosol Coherence lib folder.
-:: set COHERENCE_LIB_DIR=
-
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%COHERENCE_LIB_DIR%\tangosol.jar
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%COHERENCE_LIB_DIR%\coherence.jar
-
-:: Uncomment if using JBoss 4.0.5 or JBoss JMS.
+:: Uncomment if using JBoss.
 :: JBOSS_HOME must point to JBoss installation folder.
 :: set JBOSS_HOME=
 
@@ -113,7 +105,6 @@ set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\sigar.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\lib\jboss-jmx.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\lib\jboss-system.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\server\all\lib\jbossha.jar
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\server\all\lib\jbossmq.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\server\all\lib\jboss-j2ee.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\server\all\lib\jboss.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\server\all\lib\jboss-transaction.jar
@@ -123,18 +114,6 @@ set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%GRIDGAIN_HOME%\libs\sigar.jar
 :: If using JBoss AOP following libraries need to be downloaded separately
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\lib\jboss-aop-jdk50.jar
 :: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JBOSS_HOME%\lib\jboss-aspect-library-jdk50.jar
-
-:: Uncomment if using ActiveMQ 4
-:: AMQ_HOME must point to ActiveMQ installation folder.
-:: set AMQ_HOME=
-
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%AMQ_HOME%\apache-activemq-4.1.1.jar
-
-:: Uncomment if using JXInsight 4 and higher.
-:: JXINSIGHT_HOME must point to Sun Messaging Queue installation folder.
-:: set  JXINSIGHT_HOME=
-
-:: set GRIDGAIN_LIBS=%GRIDGAIN_LIBS%;%JXINSIGHT_HOME%\lib\jxinsight-core.jar
 
 :: Set user external libraries
 call :setallext "%GRIDGAIN_HOME%\libs\ext" %*

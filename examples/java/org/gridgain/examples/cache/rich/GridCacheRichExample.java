@@ -29,7 +29,7 @@ import static org.gridgain.grid.GridEventType.*;
  * cache: {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheRichExample {
     /** Ensure singleton. */
@@ -122,6 +122,10 @@ public class GridCacheRichExample {
      * @throws GridException If failed.
      */
     private static void concurrentMap(GridCacheProjection<UUID,Object> cache) throws GridException {
+        X.println(">>>");
+        X.println(">>> ConcurrentMap Example.");
+        X.println(">>>");
+
         // Organizations.
         Organization org1 = new Organization("GridGain");
         Organization org2 = new Organization("Other");
@@ -226,6 +230,10 @@ public class GridCacheRichExample {
      * @throws GridException If failed.
      */
     private static void visitors(GridCacheProjection<UUID, Object> cache) throws GridException {
+        X.println(">>>");
+        X.println(">>> Visitors Example.");
+        X.println(">>>");
+
         // We only care about Person objects, therefore,
         // let's get projection to filter only Person instances.
         GridCacheProjection<UUID, Person> people = cache.projection(UUID.class, Person.class);
@@ -252,8 +260,8 @@ public class GridCacheRichExample {
         // Predicate should return false, as there are more than 2 people in cache.
         assert !fut.get();
 
-        // Asynchronously calculate total salary budget.
-        int salarySum = people.reduce(new GridReducer<GridCacheEntry<UUID, Person>, Integer>() {
+        // Calculate total salary budget.
+        Integer salarySum = people.reduce(new GridReducer<GridCacheEntry<UUID, Person>, Integer>() {
             private int sum;
 
             @Override public boolean collect(GridCacheEntry<UUID, Person> e) {
@@ -271,6 +279,8 @@ public class GridCacheRichExample {
             }
         });
 
+        assert salarySum != null && salarySum == 6000 : "Invalid salary budget: " + salarySum;
+
         print("Total salary budget for all employees: " + salarySum);
 
         print("Finished cache visitor operations.");
@@ -282,21 +292,25 @@ public class GridCacheRichExample {
      * @param cache Cache to use.
      */
     private static void collections(GridCacheProjection<UUID, Object> cache) {
+        X.println(">>>");
+        X.println(">>> Collections Example.");
+        X.println(">>>");
+
         // We only care about Person objects, therefore,
         // let's get projection to filter only Person instances.
         GridCacheProjection<UUID, Person> people = cache.projection(UUID.class, Person.class);
 
-        // Iterate only over keys of people with name "John".
+        // Iterate only over keys of people with name "Jon".
         for (UUID id : people.keySet(
             new P1<GridCacheEntry<UUID, Person>>() {
                 @Override public boolean apply(GridCacheEntry<UUID, Person> e) {
                     Person p = e.peek();
 
-                    return p != null && "John".equals(p.getFirstName());
+                    return p != null && "Jon".equals(p.getFirstName());
                 }
             })) {
             // Print out keys.
-            print("Cached ID for person named 'John' from keySet: " + id);
+            print("Cached ID for person named 'Jon' from keySet: " + id);
         }
 
         // Delete all people with name "Jane".
@@ -308,19 +322,25 @@ public class GridCacheRichExample {
             }
         });
 
-        assert !janes.isEmpty();
+        assert janes.size() == 1 : "Incorrect 'Janes' size: " + janes.size();
+
+        int cnt = 0;
 
         for (Iterator<Person> it = janes.iterator(); it.hasNext(); ) {
             Person p = it.next();
 
             // Make sure that we are deleting "Jane".
-            assert "Jane".equals(p.getFirstName());
+            assert "Jane".equals(p.getFirstName()) : "First name is not 'Jane': " + p.getFirstName();
 
             // Remove all Janes.
             it.remove();
 
+            cnt++;
+
             print("Removed Jane from cache: " + p);
         }
+
+        assert cnt == 1;
 
         // Make sure that no Jane is present in cache.
         for (Person p : people.values()) {

@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 /**
  * Defines a "rich" node as a single node-based grid projection.
  * <p>
- * All main grid entities such as grid, projection, cloud and a node instances can be viewed as
+ * All main grid entities such as grid, projection and a node instances can be viewed as
  * collection of grid nodes (in case of the grid node this collection consist of only one
  * element). As such they all share the same set of operations that can be performed on a set
  * grid nodes. These operations are defined in {@link GridProjection} interface and called
@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridRichNode extends GridProjection, GridNode, Comparable<GridRichNode>,
     GridTypedProduct<GridRichNode> {
@@ -162,13 +162,6 @@ public interface GridRichNode extends GridProjection, GridNode, Comparable<GridR
      * @return 8-character non-unique node ID.
      */
     public String id8();
-
-    /**
-     * Gets the cloud this node belongs to.
-     *
-     * @return Cloud or {@code null} if this node does not belong to any cloud.
-     */
-    public GridRichCloud cloud();
 
     /**
      * Convenient shortcut that asynchronously executes given closure on this node.

@@ -21,7 +21,7 @@ import java.io.*;
  * JUnit 3 job.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 class GridJunit3Job extends GridJobAdapterEx {
     /** */
@@ -37,7 +37,7 @@ class GridJunit3Job extends GridJobAdapterEx {
 
     /** {@inheritDoc} */
     @Override public GridJunit3SerializableTest execute() throws GridException {
-        final GridJunit3SerializableTest testArg = argument();
+        final GridJunit3SerializableTest testArg = argument(0);
 
         assert testArg != null;
 

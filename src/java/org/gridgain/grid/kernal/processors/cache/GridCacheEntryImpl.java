@@ -28,7 +28,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Entry wrapper that never obscures obsolete entries from user.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externalizable {
     /** Cache context. */
@@ -656,7 +656,7 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
 
     /** {@inheritDoc} */
     @Override public int hashCode() {
-        return unwrap().hashCode();
+        return key.hashCode();
     }
 
     /** {@inheritDoc} */
@@ -670,7 +670,10 @@ public class GridCacheEntryImpl<K, V> implements GridCacheEntry<K, V>, Externali
 
         GridCacheEntryImpl<K, V> other = (GridCacheEntryImpl<K, V>)obj;
 
-        return unwrap().equals(other.unwrap());
+        V v1 = peek();
+        V v2 = other.peek();
+
+        return key.equals(other.key) && F.eq(ctx.cache().name(), other.ctx.cache().name()) && F.eq(v1, v2);
     }
 
     /** {@inheritDoc} */

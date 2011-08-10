@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -158,7 +158,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
      * @param key Key.
      * @return Entry.
      */
-    GridNearCacheEntry<K, V> entryExx(K key) {
+    public GridNearCacheEntry<K, V> entryExx(K key) {
         return (GridNearCacheEntry<K, V>)entryEx(key);
     }
 
@@ -966,6 +966,20 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return new EntrySet(super.primaryEntrySet(filter), dht.primaryEntrySet(filter));
+    }
+
+    /** {@inheritDoc} */
+    @SuppressWarnings({"UnnecessarySuperQualifier"})
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return new EntrySet(super.primaryEntrySet(keys, nearHasKey, filter),
+                            dht.primaryEntrySet(keys, dhtHasKey, filter));
+    }
+
+    /** {@inheritDoc} */
     @Override public Set<K> keySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         return new GridCacheKeySet<K, V>(ctx, entrySet(filter), filter);
     }
@@ -977,6 +991,17 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return new GridCacheKeySet<K, V>(ctx, primaryEntrySet(filter), filter);
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return new GridCacheKeySet<K, V>(ctx, primaryEntrySet(keys, filter), filter);
+    }
+
+    /** {@inheritDoc} */
     @Override public Collection<V> values(GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         return new GridCacheValueCollection<K, V>(ctx, entrySet(filter), ctx.vararg(F.<K, V>cacheHasPeekValue()));
     }
@@ -985,6 +1010,17 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     @Override public Collection<V> values(@Nullable Collection<? extends K> keys,
         @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         return new GridCacheValueCollection<K, V>(ctx, entrySet(keys, filter), filter);
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return new GridCacheValueCollection<K, V>(ctx, primaryEntrySet(filter), ctx.vararg(F.<K, V>cacheHasPeekValue()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return new GridCacheValueCollection<K, V>(ctx, primaryEntrySet(keys, filter), filter);
     }
 
     /** {@inheritDoc} */

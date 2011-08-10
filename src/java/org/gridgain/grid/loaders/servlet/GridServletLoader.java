@@ -10,6 +10,7 @@
 package org.gridgain.grid.loaders.servlet;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.loaders.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.springframework.beans.*;
@@ -102,8 +103,9 @@ import java.util.*;
  * <a target=wiki href="http://www.gridgainsystems.com:8080/wiki/display/GG15UG/Configuration+And+Startup">GridGain Configuration And Startup</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
+@GridLoader(description = "Servlet loader")
 public class GridServletLoader extends HttpServlet {
     /** Grid loaded flag. */
     private static boolean loaded;

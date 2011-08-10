@@ -21,10 +21,9 @@ import java.util.concurrent.atomic.*;
  * internal UUID.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
-public final class GridUuid extends GridOutClosure<GridUuid> implements Comparable<GridUuid>,
-    Iterable<GridUuid> {
+public final class GridUuid implements Comparable<GridUuid>, Iterable<GridUuid>, Cloneable {
     /** */
     private static final UUID ID = UUID.randomUUID();
 
@@ -60,7 +59,7 @@ public final class GridUuid extends GridOutClosure<GridUuid> implements Comparab
 
     /**
      * Constructs {@code GridUuid} from a global and local identifiers.
-     * 
+     *
      * @param gid UUID.
      * @param locId Counter.
      */
@@ -103,11 +102,6 @@ public final class GridUuid extends GridOutClosure<GridUuid> implements Comparab
     }
 
     /** {@inheritDoc} */
-    @Override public GridUuid apply() {
-        return this;
-    }
-
-    /** {@inheritDoc} */
     @Override public GridIterator<GridUuid> iterator() {
         return F.iterator(Collections.singleton(this), F.<GridUuid>identity(), true);
     }
@@ -133,8 +127,8 @@ public final class GridUuid extends GridOutClosure<GridUuid> implements Comparab
     }
 
     /** {@inheritDoc} */
-    @Override public Object clone() {
-        return super.clone(); 
+    @Override public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 
     /** {@inheritDoc} */

@@ -29,7 +29,7 @@ import java.util.*;
  * refer to {@link GridMultipleTopologyExample} documentation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public final class GridNodeFilterExample {
     /**
@@ -72,7 +72,8 @@ public final class GridNodeFilterExample {
             // that has user attribute defined.
 
             Collection<GridRichNode> nodes = grid.nodes(
-                new GridJexlPredicate<GridRichNode>("node.attributes['custom_attribute'] == 'custom_value'", "node"));
+                new GridJexlPredicate<GridRichNode>(
+                    "node.attributes().get('custom_attribute') == 'custom_value'", "node"));
 
             // All available nodes.
             Collection<GridRichNode> allNodes = grid.nodes();

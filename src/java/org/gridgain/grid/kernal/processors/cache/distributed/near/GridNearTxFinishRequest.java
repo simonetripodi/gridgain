@@ -22,7 +22,7 @@ import java.util.*;
  * Near transaction finish request.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridNearTxFinishRequest<K, V> extends GridDistributedTxFinishRequest<K, V> {
     /** Mini future ID. */

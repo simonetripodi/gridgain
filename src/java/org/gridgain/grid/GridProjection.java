@@ -14,13 +14,15 @@ import org.gridgain.grid.editions.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.*;
 import org.jetbrains.annotations.*;
+
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 /**
  * Defines grid projection interface and monadic set of operations on a set of grid nodes.
  * <p>
- * All main grid entities such as grid, cloud and a node instances can be viewed as
+ * All main grid entities such as grid and a node instances can be viewed as
  * collection of grid nodes (in case of the grid node this collection consist of only one
  * element). As such they all share the same set of operations that can be performed on a set
  * grid nodes. These operations are defined in {@link GridProjection} interface and called
@@ -39,9 +41,32 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
+    /**
+     *
+     * @param cacheName
+     * @param affKey
+     * @param job
+     * @param p
+     * @throws GridException
+     */
+    public void affRun(String cacheName, Object affKey, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+
+    /**
+     *
+     * @param cacheName
+     * @param affKey
+     * @param job
+     * @param p
+     * @return
+     * @throws GridException
+     */
+    public GridFuture<?> affRunAsync(String cacheName, Object affKey, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+
     /**
      * Gets a metrics snapshot for this projection.
      *
@@ -1303,16 +1328,6 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @return Parent projection of {@code null}.
      */
     @Nullable public GridProjection parent();
-
-    /**
-     * Deprecated. Use {@link #withName(String)} instead.
-     *
-     * @param taskName Task name.
-     * @return Grid projection ({@code this}).
-     * @deprecated Use {@link #withName(String)} instead.
-     */
-    @Deprecated
-    public GridProjection named(@Nullable String taskName);
 
     /**
      * Sets task name for the next executed task on this projection in the <b>current thread</b>.
@@ -3489,4 +3504,86 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      */
     @GridEnterpriseFeature("Data affinity outside of GridCache is enterprise-only feature.")
     @Nullable public <K> GridRichNode mapKeyToNode(@Nullable String cacheName, K key) throws GridException;
+
+    /**
+     * Starts one or more nodes on remote host(s).
+     * <p>
+     * Uses SSH protocol to execute commands.
+     * <p>
+     * Note that SSH remote execution requires that all environment properties
+     * be set globally on the remote node. Standard GridGain ggstart.{sh|bat}
+     * script needs both GRIDGAIN_HOME and JAVA_HOME environment variables
+     * set globally for SSH-based execution to work.
+     * <p>
+     * On Linux - you can use '/etc/environment' file to set global
+     * environment variables at the login time.
+     * Mac OSX currently doesn't support automatic setting of global
+     * variable and you need to provide custom start script in this case.
+     * On Windows use standard way to set environment properties.
+     *
+     * @param file File with hosts specifications.
+     * @param dfltUname Default username (used if specification doesn't contain username).
+     * @param dfltPasswd Default password (used if specification doesn't contain password).
+     * @param key Private key file.
+     * @param nodes Nodes count.
+     * @param cfg Path to configuration file (optional).
+     * @param script Path to start script (optional).
+     * @param log Path to log file (optional).
+     * @param restart Whether to restart existing nodes.
+     * @return Collection of tuples, each contains host name, result (success of failure)
+     *      and error message (if any).
+     * @throws GridException In case of error.
+     */
+    public Collection<GridTuple3<String, Boolean, String>> startNodes(
+        File file,
+        @Nullable String dfltUname,
+        @Nullable String dfltPasswd,
+        @Nullable File key,
+        int nodes,
+        @Nullable String cfg,
+        @Nullable String script,
+        @Nullable String log,
+        boolean restart
+    ) throws GridException;
+
+    /**
+     * Starts one or more nodes on remote host(s).
+     * <p>
+     * Uses SSH protocol to execute commands.
+     * <p>
+     * Note that SSH remote execution requires that all environment properties
+     * be set globally on the remote node. Standard GridGain ggstart.{sh|bat}
+     * script needs both GRIDGAIN_HOME and JAVA_HOME environment variables
+     * set globally for SSH-based execution to work.
+     * <p>
+     * On Linux - you can use '/etc/environment' file to set global
+     * environment variables at the login time.
+     * Mac OSX currently doesn't support automatic setting of global
+     * variable and you need to provide custom start script in this case.
+     * On Windows use standard way to set environment properties.
+     *
+     * @param hostSpecs Collection of hosts specifications.
+     * @param dfltUname Default username (used if specification doesn't contain username).
+     * @param dfltPasswd Default password (used if specification doesn't contain password).
+     * @param key Private key file.
+     * @param nodes Nodes count.
+     * @param cfg Path to configuration file (optional).
+     * @param script Path to start script (optional).
+     * @param log Path to log file (optional).
+     * @param restart Whether to restart existing nodes.
+     * @return Collection of tuples, each contains host name, result (success of failure)
+     *      and error message (if any).
+     * @throws GridException In case of error.
+     */
+    public Collection<GridTuple3<String, Boolean, String>> startNodes(
+        Collection<String> hostSpecs,
+        @Nullable String dfltUname,
+        @Nullable String dfltPasswd,
+        @Nullable File key,
+        int nodes,
+        @Nullable String cfg,
+        @Nullable String script,
+        @Nullable String log,
+        boolean restart
+    ) throws GridException;
 }

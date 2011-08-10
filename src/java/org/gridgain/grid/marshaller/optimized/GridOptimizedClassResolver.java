@@ -18,7 +18,7 @@ import java.util.concurrent.locks.*;
  * Resolves class names by serialVersionUID.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @SuppressWarnings( {"UnnecessaryFullyQualifiedName"})
 class GridOptimizedClassResolver {
@@ -143,7 +143,7 @@ class GridOptimizedClassResolver {
             GridBoundedLinkedHashSet.class,
             GridCollectionOpt.class,
             GridConcurrentHashSet.class,
-            GridConcurrentLinkedQueue.class,
+            GridConcurrentLinkedDeque.class,
             GridConcurrentPhantomHashSet.class,
             GridConcurrentSkipListSet.class,
             GridConcurrentWeakHashSet.class,
@@ -196,7 +196,7 @@ class GridOptimizedClassResolver {
     /**
      * @param cls A Class.
      * @return serialVersionUID.
-     * @throws IOException If serial version UID failed. 
+     * @throws IOException If serial version UID failed.
      */
     private static short shortClassId(Class cls) throws IOException {
         Long uid = cls2uid.get(cls);
@@ -338,7 +338,7 @@ class GridOptimizedClassResolver {
      * @param name Name of primitive class.
      * @return Primitive type class or null.
      */
-    private static Class primitive(String name) {
+    @Nullable private static Class primitive(String name) {
         if ("byte".equals(name))
             return byte.class;
 

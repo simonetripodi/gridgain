@@ -23,7 +23,7 @@ import java.util.*;
  * Detects timeout events and processes them.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridTimeoutProcessor extends GridProcessorAdapter {
     /** */
@@ -80,6 +80,7 @@ public class GridTimeoutProcessor extends GridProcessorAdapter {
     /**
      * @param timeoutObj Timeout object.
      */
+    @SuppressWarnings({"NakedNotify"})
     public void addTimeoutObject(GridTimeoutObject timeoutObj) {
         if (timeoutObj.endTime() <= 0 || timeoutObj.endTime() == Long.MAX_VALUE)
             // Timeout will never happen.
@@ -89,7 +90,6 @@ public class GridTimeoutProcessor extends GridProcessorAdapter {
 
         if (timeoutObjs.firstx() == timeoutObj) {
             synchronized (mux) {
-                //noinspection NakedNotify
                 mux.notifyAll();
             }
         }
@@ -106,7 +106,7 @@ public class GridTimeoutProcessor extends GridProcessorAdapter {
      * Handles job timeouts.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     private class TimeoutWorker extends GridWorker {
         /** */

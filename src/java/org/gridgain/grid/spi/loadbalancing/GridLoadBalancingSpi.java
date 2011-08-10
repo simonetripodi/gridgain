@@ -12,8 +12,6 @@ package org.gridgain.grid.spi.loadbalancing;
 import org.gridgain.grid.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.loadbalancing.adaptive.*;
-import org.gridgain.grid.spi.loadbalancing.affinity.*;
-import org.gridgain.grid.spi.loadbalancing.coherence.*;
 import org.gridgain.grid.spi.loadbalancing.roundrobin.*;
 import org.gridgain.grid.spi.loadbalancing.weightedrandom.*;
 import java.util.*;
@@ -89,15 +87,13 @@ import java.util.*;
  * <p>
  * GridGain comes with the following load balancing SPI implementations out of the box:
  * <ul>
- * <li>{@link GridAffinityLoadBalancingSpi}</li>
- * <li>{@link GridCoherenceLoadBalancingSpi}</li>
  * <li>{@link GridAdaptiveLoadBalancingSpi}</li>
  * <li>{@link GridWeightedRandomLoadBalancingSpi}</li>
  * <li>{@link GridRoundRobinLoadBalancingSpi}</li>
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridLoadBalancingSpi extends GridSpi, GridSpiJsonConfigurable {
     /**

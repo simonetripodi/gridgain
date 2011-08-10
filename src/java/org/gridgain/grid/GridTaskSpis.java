@@ -67,7 +67,7 @@ import java.lang.annotation.*;
  *                 &lt;property name="name" value="topologyA"/&gt;
  *                 &lt;property name="filter"&gt;
  *                     &lt;bean class="org.gridgain.grid.lang.GridJexlPredicate2"&gt;
- *                         &lt;property name="expression" value="elem1.attributes['segment'] == 'A'"/&gt;
+ *                         &lt;property name="expression" value="elem1.attributes().get('segment') == 'A'"/&gt;
  *                     &lt;/bean&gt;
  *                 &lt;/property&gt;
  *             &lt;/bean&gt;
@@ -75,7 +75,7 @@ import java.lang.annotation.*;
  *                 &lt;property name="name" value="topologyB"/&gt;
  *                 &lt;property name="filter"&gt;
  *                     &lt;bean class="org.gridgain.grid.lang.GridJexlPredicate2"&gt;
- *                         &lt;property name="expression" value="elem1.attributes['segment'] == 'B'"/&gt;
+ *                         &lt;property name="expression" value="elem1.attributes().get('segment') == 'B'"/&gt;
  *                     &lt;/bean&gt;
  *                 &lt;/property&gt;
  *             &lt;/bean&gt;
@@ -104,7 +104,7 @@ import java.lang.annotation.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @SuppressWarnings({"JavaDoc"})
 @Documented

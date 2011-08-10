@@ -30,7 +30,7 @@ import static org.gridgain.grid.cache.GridCacheTxState.*;
  * Managed transaction adapter.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     implements GridCacheTxEx<K, V>, Externalizable {
@@ -49,6 +49,10 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
     /** Thread ID. */
     @GridToStringInclude
     protected long threadId;
+
+    /** Thread name. */
+    @GridToStringInclude
+    protected String threadName; // TODO: remove.
 
     /** Transaction start time. */
     @GridToStringInclude
@@ -183,7 +187,10 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
         nodeId = cctx.discovery().localNode().id();
 
-        threadId = Thread.currentThread().getId();
+        Thread t = Thread.currentThread();
+
+        threadId = t.getId();
+        threadName = t.getName();
 
         log = cctx.logger(getClass());
     }
@@ -228,6 +235,8 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
         implicit = false;
         local = false;
+
+        threadName = Thread.currentThread().getName();
 
         log = cctx.logger(getClass());
     }
@@ -909,7 +918,8 @@ public abstract class GridCacheTxAdapter<K, V> extends GridMetadataAwareAdapter
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return GridToStringBuilder.toString(GridCacheTxAdapter.class, this);
+        return GridToStringBuilder.toString(GridCacheTxAdapter.class, this, "duration",
+            (System.currentTimeMillis() - startTime) + "ms");
     }
 
     /**

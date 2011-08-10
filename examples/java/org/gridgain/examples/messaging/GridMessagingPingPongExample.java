@@ -42,16 +42,10 @@ import java.util.concurrent.*;
  * <p>
  * GridGain examples come with multiple configuration files you can try.
  * All configuration files are located under {@code GRIDGAIN_HOME/examples/config}
- * folder. You are free to try any of these configurations, but whenever
- * using 3rd party configurations, such as JBoss JMS, ActiveMQ JMS, Sun MQ JMS, or GigaSpaces,
- * make sure to download these respective products and include all the necessary
- * libraries into classpath at node startup. All these libraries are already
- * specified in commented format in {@code GRIDGAIN_HOME/bin/setenv.{bat|sh}} files
- * which get executed automatically by GridGain startup scripts. You can simply
- * uncomment the necessary classpath portions as you need.
+ * folder.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridMessagingPingPongExample {
     /**

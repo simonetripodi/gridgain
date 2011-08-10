@@ -57,7 +57,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridEventType#EVT_CACHE_ENTRY_CREATED
  * @see GridEventType#EVT_CACHE_ENTRY_DESTROYED
  * @see GridEventType#EVT_CACHE_ENTRY_EVICTED
@@ -116,8 +116,8 @@ public class GridCacheEvent extends GridEventAdapter {
      * @param newVal New value.
      * @param oldVal Old value.
      */
-    public GridCacheEvent(String cacheName, UUID nodeId, UUID evtNodeId, String msg, int type, int partition, Object key, UUID xid,
-        UUID lockId, Object newVal, Object oldVal) {
+    public GridCacheEvent(String cacheName, UUID nodeId, UUID evtNodeId, String msg, int type, int partition,
+        Object key, UUID xid, UUID lockId, Object newVal, Object oldVal) {
         super(nodeId, msg, type);
         this.cacheName = cacheName;
         this.evtNodeId = evtNodeId;

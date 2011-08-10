@@ -92,7 +92,7 @@ import org.springframework.context.*
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @Typed
 abstract class Grover {
@@ -113,7 +113,7 @@ abstract class Grover {
              res = body.call(g)
          }
          finally {
-             G.stop(g.name, true)
+             G.stop(g.name(), true)
          }
 
          res
@@ -136,7 +136,7 @@ abstract class Grover {
             res = body.call()
         }
         finally {
-            G.stop(g.name, true)
+            G.stop(g.name(), true)
         }
 
         res
@@ -385,34 +385,6 @@ abstract class Grover {
         catch (IllegalStateException ignored) {
             null
         }
-    }
-
-    /**
-     * Gets named cloud from specified grid instance.
-     *
-     * @param gridName Grid name.
-     * @param cloudName Cloud name.
-     * @return Cloud instance.
-     */
-    @Nullable static GridRichCloud cloud$(String gridName, String cloudName) {
-        GridRichCloud c = null
-
-        def g = grid$(gridName)
-
-        if (g != null)
-            c = g.cloud(cloudName)
-
-        c
-    }
-
-    /**
-     * Gets named cloud from the default grid instance.
-     *
-     * @param cloudName Cloud name.
-     * @return Cloud instance.
-     */
-    @Nullable static GridRichCloud cloud$(String cloudName) {
-        cloud$(null, cloudName)
     }
 
     /**

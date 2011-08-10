@@ -20,7 +20,6 @@ import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
 
-import javax.management.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -34,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -1299,6 +1298,20 @@ public abstract class GridCacheUtils {
     }
 
     /**
+     * @param ctx Context.
+     * @param prj Projection.
+     * @param concurrency Concurrency.
+     * @param isolation Isolation.
+     * @return New transaction.
+     */
+    public static GridCacheTx txStartInternal(GridCacheContext ctx, GridCacheProjection prj,
+        GridCacheTxConcurrency concurrency, GridCacheTxIsolation isolation) {
+        ctx.tm().txContextReset();
+
+        return prj.txStart(concurrency, isolation);
+    }
+
+    /**
      * @param tx Transaction.
      * @return String view of all safe-to-print transaction properties.
      */
@@ -1420,36 +1433,5 @@ public abstract class GridCacheUtils {
         }
 
         return expireTime;
-    }
-
-    /**
-     * @param log Logger.
-     * @param jmx MBean server.
-     * @param impl Implementation.
-     * @param itf MBean interface.
-     * @param entry Entry to get info from.
-     */
-    public static <K, V, T> void registerEvictionMBean(GridLogger log, MBeanServer jmx, T impl, Class<T> itf,
-        GridCacheEntry<K, V> entry) {
-        GridCacheProjection<K, V> cache = entry.parent();
-
-        String gridName = cache.gridProjection().grid().name();
-
-        try {
-            ObjectName mbeanName = U.makeCacheMBeanName(gridName, cache.name(), impl.getClass().getSimpleName());
-
-            try {
-                jmx.unregisterMBean(mbeanName);
-            }
-            catch (JMException e) {
-                if (log.isDebugEnabled())
-                    log.debug("Ignoring JMX exception when unregistering mbean: " + e);
-            }
-
-            U.registerMBean(jmx, mbeanName, impl, itf);
-        }
-        catch (JMException e) {
-            U.error(log, "Failed to register MBean: " + impl, e);
-        }
     }
 }

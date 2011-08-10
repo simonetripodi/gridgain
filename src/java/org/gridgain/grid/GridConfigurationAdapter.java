@@ -17,7 +17,6 @@ import org.gridgain.grid.logger.*;
 import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.segmentation.*;
 import org.gridgain.grid.spi.checkpoint.*;
-import org.gridgain.grid.spi.cloud.*;
 import org.gridgain.grid.spi.collision.*;
 import org.gridgain.grid.spi.communication.*;
 import org.gridgain.grid.spi.deployment.*;
@@ -28,10 +27,8 @@ import org.gridgain.grid.spi.loadbalancing.*;
 import org.gridgain.grid.spi.metrics.*;
 import org.gridgain.grid.spi.swapspace.*;
 import org.gridgain.grid.spi.topology.*;
-import org.gridgain.grid.spi.tracing.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
-
 import javax.management.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -42,7 +39,7 @@ import java.util.concurrent.*;
  * will automatically pick default values for all values that are not set.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridConfigurationAdapter implements GridConfiguration {
     /** Optional grid name. */
@@ -120,12 +117,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
     /** Collection of life-cycle beans. */
     private GridLifecycleBean[] lifecycleBeans;
 
-    /** Array of cloud strategies. */
-    private GridCloudStrategy[] cloudStrategies;
-
-    /** Array of cloud policies. */
-    private GridCloudPolicy[] cloudPolicies;
-
     /** Discovery SPI. */
     private GridDiscoverySpi discoSpi;
 
@@ -162,9 +153,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
     /** Checkpoint SPI. */
     private GridCheckpointSpi[] cpSpi;
 
-    /** Tracing SPI. */
-    private GridTracingSpi[] traceSpi;
-
     /** Failover SPI. */
     private GridFailoverSpi[] failSpi;
 
@@ -177,9 +165,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
     /** Checkpoint SPI. */
     private GridSwapSpaceSpi[] swapSpaceSpi;
 
-    /** Cloud SPI. */
-    private GridCloudSpi[] cloudSpi;
-
     /** Cache configurations. */
     private GridCacheConfiguration[] cacheCfg;
 
@@ -191,9 +176,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
 
     /** Cache size of missed resources. */
     private int p2pMissedCacheSize = DFLT_P2P_MISSED_RESOURCES_CACHE_SIZE;
-
-    /** */
-    private boolean disableCloudCrd = true;
 
     /** */
     private String smtpHost;
@@ -231,6 +213,9 @@ public class GridConfigurationAdapter implements GridConfiguration {
     /** License custom URL. */
     private String licUrl;
 
+    /** Frequency of metrics log print out. */
+    private int metricsLogFreq;
+
     /**
      * Creates valid grid configuration with all default values.
      */
@@ -258,9 +243,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
         topSpi = cfg.getTopologySpi();
         metricsSpi = cfg.getMetricsSpi();
         loadBalancingSpi = cfg.getLoadBalancingSpi();
-        traceSpi = cfg.getTracingSpi();
         swapSpaceSpi = cfg.getSwapSpaceSpi();
-        cloudSpi = cfg.getCloudSpi();
 
         /*
          * Order alphabetically for maintenance purposes.
@@ -269,10 +252,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
         allResolversPassReq = cfg.isAllSegmentationResolversPassRequired();
         daemon = cfg.isDaemon();
         cacheCfg = cfg.getCacheConfiguration();
-        cloudStrategies = cfg.getCloudStrategies();
-        cloudPolicies = cfg.getCloudPolicies();
         deployMode = cfg.getDeploymentMode();
-        disableCloudCrd = cfg.isDisableCloudCoordinator();
         discoStartupDelay = cfg.getDiscoveryStartupDelay();
         exclEvtTypes = cfg.getExcludeEventTypes();
         execSvc = cfg.getExecutorService();
@@ -290,6 +270,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
         mbeanSrv = cfg.getMBeanServer();
         metricsHistSize = cfg.getMetricsHistorySize();
         metricsExpTime = cfg.getMetricsExpireTime();
+        metricsLogFreq = cfg.getMetricsLogFrequency();
         netTimeout = cfg.getNetworkTimeout();
         nodeId = cfg.getNodeId();
         p2pEnabled = cfg.isPeerClassLoadingEnabled();
@@ -1027,22 +1008,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
     }
 
     /** {@inheritDoc} */
-    @Override public GridTracingSpi[] getTracingSpi() {
-        return traceSpi;
-    }
-
-    /**
-     * Sets fully configured instance of {@link GridTracingSpi}.
-     *
-     * @param traceSpi Fully configured instance of {@link GridTracingSpi} or
-     *      {@code null} if no SPI provided.
-     * @see GridConfiguration#getTracingSpi()
-     */
-    public void setTracingSpi(GridTracingSpi... traceSpi) {
-        this.traceSpi = traceSpi;
-    }
-
-    /** {@inheritDoc} */
     @Override public GridFailoverSpi[] getFailoverSpi() {
         return failSpi;
     }
@@ -1123,22 +1088,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
     }
 
     /**
-     * Sets fully configured instances of {@link GridCloudSpi}.
-     *
-     * @param cloudSpi Fully configured instances of {@link GridCloudSpi} or
-     *      <tt>null</tt> if no SPI provided.
-     * @see GridConfiguration#getCloudSpi()
-     */
-    public void setCloudSpi(GridCloudSpi... cloudSpi) {
-        this.cloudSpi = cloudSpi;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCloudSpi[] getCloudSpi() {
-        return cloudSpi;
-    }
-
-    /**
      * Sets task classes and resources sharing mode.
      *
      * @param deployMode Task classes and resources sharing mode.
@@ -1210,49 +1159,6 @@ public class GridConfigurationAdapter implements GridConfiguration {
      */
     public void setExcludeEventTypes(int... exclEvtTypes) {
         this.exclEvtTypes = exclEvtTypes;
-    }
-
-    /** {@inheritDoc} */
-    @Override public boolean isDisableCloudCoordinator() {
-        return disableCloudCrd;
-    }
-
-    /**
-     * Sets whether or not this should be considered for being cloud coordinator.
-     *
-     * @param disableCloudCrd Whether or not this should be considered for being cloud
-     *      coordinator. {@code true} will exclude this node from consideration.
-     */
-    public void setDisableCloudCoordinator(boolean disableCloudCrd) {
-        this.disableCloudCrd = disableCloudCrd;
-    }
-
-    /**
-     * Sets cloud strategies.
-     *
-     * @param cloudStrategies Cloud strategies to set.
-     */
-    public void setCloudStrategies(GridCloudStrategy[] cloudStrategies) {
-        this.cloudStrategies = cloudStrategies;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCloudStrategy[] getCloudStrategies() {
-        return cloudStrategies;
-    }
-
-    /**
-     * Sets cloud policies.
-     *
-     * @param cloudPolicies Cloud policies to set.
-     */
-    public void setCloudPolicies(GridCloudPolicy[] cloudPolicies) {
-        this.cloudPolicies = cloudPolicies;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridCloudPolicy[] getCloudPolicies() {
-        return cloudPolicies;
     }
 
     /**
@@ -1327,6 +1233,24 @@ public class GridConfigurationAdapter implements GridConfiguration {
      */
     public void setIncludeProperties(String... includeProps) {
         this.includeProps = includeProps;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int getMetricsLogFrequency() {
+        return metricsLogFreq;
+    }
+
+    /**
+     * Sets frequency of metrics log print out.
+     * <p>
+     * If {@code 0}, metrics print out is disabled.
+     * <p>
+     * Metrics log print out is disabled by default.
+     *
+     * @param metricsLogFreq Frequency of metrics log print out.
+     */
+    public void setMetricsLogFrequency(int metricsLogFreq) {
+        this.metricsLogFreq = metricsLogFreq;
     }
 
     /** {@inheritDoc} */

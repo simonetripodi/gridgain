@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.1.1c.14072011
+# Version: 3.5.0c.10082011
 #
 
 #
@@ -41,7 +41,7 @@ case "`uname`" in
 esac
 
 # The following libraries are required for GridGain.
-GRIDGAIN_LIBS="${GRIDGAIN_HOME}"/libs/commons-jexl-2.0.jar
+GRIDGAIN_LIBS="${USE_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-jexl-2.0.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-logging-1.1.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-lang-2.5.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-collections-3.2.jar
@@ -67,7 +67,6 @@ GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/oro-2.0.8.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/concurrent-1.3.4.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/jgroups-2.10.0.GA.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/mail-1.4.3.jar
-GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/jms-1.1.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/junit-4.8.2.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/xpp3_min-1.1.4c.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/xstream-1.3.1.jar
@@ -111,14 +110,7 @@ GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/config/userversion
 # Note that starting with GridGain 3.0 - Community Edition is licensed under GPLv3.
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/sigar.jar
 
-# Uncomment if using Tangosol Coherence.
-# COHERENCE_LIB_DIR must point to Tangosol Coherence lib folder.
-# COHERENCE_LIB_DIR=
-
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${COHERENCE_LIB_DIR}"/tangosol.jar
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${COHERENCE_LIB_DIR}"/coherence.jar
-
-# Uncomment if using JBoss 4.0.5 or JBoss JMS.
+# Uncomment if using JBoss.
 # JBOSS_HOME must point to JBoss installation folder.
 # JBOSS_HOME=
 
@@ -126,7 +118,6 @@ GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/sigar.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/lib/jboss-jmx.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/lib/jboss-system.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/server/all/lib/jbossha.jar
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/server/all/lib/jbossmq.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/server/all/lib/jboss-j2ee.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/server/all/lib/jboss.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/server/all/lib/jboss-transaction.jar
@@ -136,12 +127,6 @@ GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/sigar.jar
 # If using JBoss AOP following libraries need to be downloaded separately
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/lib/jboss-aop-jdk50.jar
 # GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JBOSS_HOME}"/lib/jboss-aspect-library-jdk50.jar
-
-# Uncomment if using JXInsight 4 and higher.
-# JXINSIGHT_HOME must point to Sun Messaging Queue installation folder.
-# JXINSIGHT_HOME=
-
-# GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${JXINSIGHT_HOME}"/lib/jxinsight-core.jar
 
 for jar in `find ${GRIDGAIN_HOME}/libs/ext -depth -name '*.jar'`
 do

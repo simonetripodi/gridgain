@@ -15,7 +15,6 @@ import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
 import org.gridgain.grid.kernal.controllers.segmentation.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
-import org.gridgain.grid.kernal.managers.cloud.*;
 import org.gridgain.grid.kernal.managers.collision.*;
 import org.gridgain.grid.kernal.managers.communication.*;
 import org.gridgain.grid.kernal.managers.deployment.*;
@@ -26,7 +25,6 @@ import org.gridgain.grid.kernal.managers.loadbalancer.*;
 import org.gridgain.grid.kernal.managers.metrics.*;
 import org.gridgain.grid.kernal.managers.swapspace.*;
 import org.gridgain.grid.kernal.managers.topology.*;
-import org.gridgain.grid.kernal.managers.tracing.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.closure.*;
 import org.gridgain.grid.kernal.processors.email.*;
@@ -56,7 +54,7 @@ import static org.gridgain.grid.kernal.GridKernalState.*;
  * Implementation of kernal context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridToStringExclude
 public class GridKernalContextImpl extends GridMetadataAwareAdapter implements GridKernalContext, Externalizable {
@@ -107,14 +105,6 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     /** */
     @GridToStringExclude
     private GridLocalMetricsManager metricsMgr;
-
-    /** */
-    @GridToStringExclude
-    private GridTracingManager traceMgr;
-
-    /** */
-    @GridToStringExclude
-    private GridCloudManager cloudMgr;
 
     /** */
     @GridToStringExclude
@@ -273,10 +263,6 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
             metricsMgr = (GridLocalMetricsManager)comp;
         else if (comp instanceof GridLoadBalancerManager)
             loadMgr = (GridLoadBalancerManager)comp;
-        else if (comp instanceof GridTracingManager)
-            traceMgr = (GridTracingManager)comp;
-        else if (comp instanceof GridCloudManager)
-            cloudMgr = (GridCloudManager)comp;
         else if (comp instanceof GridSwapSpaceManager)
             swapspaceMgr = (GridSwapSpaceManager)comp;
 
@@ -457,11 +443,6 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     }
 
     /** {@inheritDoc} */
-    @Override public GridCloudManager cloud() {
-        return cloudMgr;
-    }
-
-    /** {@inheritDoc} */
     @Override public GridScheduleProcessor schedule() {
         return scheduleProc;
     }
@@ -489,11 +470,6 @@ public class GridKernalContextImpl extends GridMetadataAwareAdapter implements G
     /** {@inheritDoc} */
     @Override public GridEventStorageManager event() {
         return evtMgr;
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridTracingManager tracing() {
-        return traceMgr;
     }
 
     /** {@inheritDoc} */

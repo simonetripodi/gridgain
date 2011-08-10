@@ -34,7 +34,7 @@ import java.util.*;
  * default configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridCacheConfiguration {
     /** Default query log name. */
@@ -143,11 +143,14 @@ public interface GridCacheConfiguration {
     /** Default maximum eviction queue ratio. */
     public static final float DFLT_MAX_EVICTION_OVERFLOW_RATIO = 10;
 
-    /** Default backup eviction synchronized flag. */
-    public static final boolean DFLT_EVICT_BACKUP_SYNCHRONIZED = false;
+    /** Default eviction synchronized flag. */
+    public static final boolean DFLT_EVICT_SYNCHRONIZED = false;
 
     /** Default near nodes eviction synchronized flag. */
     public static final boolean DFLT_EVICT_NEAR_SYNCHRONIZED = true;
+
+    /** Default eviction key buffer size. */
+    public static final int DFLT_EVICT_KEY_BUFFER_SIZE = 10240;
 
     /** Default value for 'synchronousCommit' flag. */
     public static final boolean DFLT_SYNC_COMMIT = false;
@@ -222,7 +225,7 @@ public interface GridCacheConfiguration {
      * @return {@code true} If eviction is synchronized with backup nodes (or the
      *      rest of the nodes in case of replicated cache), {@code false} if not.
      */
-    public boolean isEvictBackupSynchronized();
+    public boolean isEvictSynchronized();
 
     /**
      * Gets flag indicating whether eviction on primary node is synchronized with
@@ -239,9 +242,18 @@ public interface GridCacheConfiguration {
     public boolean isEvictNearSynchronized();
 
     /**
+     * Gets size of the key buffer for evictions.
+     * <p>
+     * Default value is defined by {@link #DFLT_EVICT_KEY_BUFFER_SIZE}.
+     *
+     * @return Eviction key buffer size.
+     */
+    public int getEvictionKeyBufferSize();
+
+    /**
      * This value denotes the maximum size of eviction queue in percents of cache
      * size in case of distributed cache (replicated and partitioned) and using
-     * synchronized eviction (that is if {@link #isEvictBackupSynchronized()} returns
+     * synchronized eviction (that is if {@link #isEvictSynchronized()} returns
      * {@code true}).
      * <p>
      * That queue is used internally as a buffer to decrease network costs for

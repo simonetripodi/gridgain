@@ -33,13 +33,13 @@ import java.util.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.14072011")
+    version = "3.5.0c.10082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridAttributesTopologySpi extends GridSpiAdapter implements GridTopologySpi,
     GridAttributesTopologySpiMBean {
@@ -70,22 +70,19 @@ public class GridAttributesTopologySpi extends GridSpiAdapter implements GridTop
         Collection<GridNode> top = new ArrayList<GridNode>(grid.size());
 
         for (GridNode node : grid) {
-            Map<String, Object> nodeAttrs = node.getAttributes();
+            Map<String, Object> nodeAttrs = node.attributes();
 
             if (attrs != null && nodeAttrs != null) {
-                if (!U.containsAll(nodeAttrs, attrs)) {
+                if (!U.containsAll(nodeAttrs, attrs))
                     continue;
-                }
             }
-            else if (nodeAttrs == null && attrs != null) {
+            else if (nodeAttrs == null && attrs != null)
                 continue;
-            }
 
             top.add(node);
 
-            if (log.isDebugEnabled()) {
+            if (log.isDebugEnabled())
                 log.debug("Included node into topology: " + node);
-            }
         }
 
         return top;
@@ -99,14 +96,12 @@ public class GridAttributesTopologySpi extends GridSpiAdapter implements GridTop
         registerMBean(gridName, this, GridAttributesTopologySpiMBean.class);
 
         // Ack parameters.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(configInfo("attrs", attrs));
-        }
 
         // Ack ok start.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(startInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -114,9 +109,8 @@ public class GridAttributesTopologySpi extends GridSpiAdapter implements GridTop
         unregisterMBean();
 
         // Ack ok stop.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /** {@inheritDoc} */

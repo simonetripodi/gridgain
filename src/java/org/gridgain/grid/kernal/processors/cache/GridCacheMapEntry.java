@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
@@ -89,6 +89,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     protected GridCacheVersion obsoleteVer;
 
     /** Metrics. */
+    @SuppressWarnings( {"FieldAccessedSynchronizedAndUnsynchronized"})
     @GridToStringInclude
     protected GridCacheMetricsAdapter metrics;
 
@@ -133,6 +134,11 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
         metrics = new GridCacheMetricsAdapter(cctx.cache().metrics0());
 
         mvcc = new GridCacheMvcc<K>(cctx);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridCacheContext<K, V> context() {
+        return cctx;
     }
 
     /** {@inheritDoc} */
@@ -1567,6 +1573,13 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     }
 
     /** {@inheritDoc} */
+    @Override public long rawExpireTime() {
+        synchronized (mux) {
+            return expireTime;
+        }
+    }
+
+    /** {@inheritDoc} */
     @SuppressWarnings({"IfMayBeConditional"})
     @Override public long expireTime() throws GridCacheEntryRemovedException {
         GridCacheTxLocalAdapter<K, V> tx;
@@ -1587,6 +1600,13 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
             checkObsolete();
 
             return expireTime;
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public long rawTtl() {
+        synchronized (mux) {
+            return ttl;
         }
     }
 
@@ -1612,6 +1632,11 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
             return ttl;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridCacheMetrics metrics0() {
+        return metrics;
     }
 
     /** {@inheritDoc} */
@@ -1763,12 +1788,17 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
     }
 
     /** {@inheritDoc} */
+    @Override public GridCacheEntry<K, V> evictWrap() {
+        return new GridCacheEvictionEntry<K, V>(this);
+    }
+
+    /** {@inheritDoc} */
     @Override public boolean evictInternal(boolean swap, GridCacheVersion obsoleteVer,
         @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) throws GridException {
         try {
             if (F.isEmpty(filter)) {
                 synchronized (mux) {
-                    if ((!hasReaders() || swap) && markObsolete(obsoleteVer)) {
+                    if (!hasReaders() && markObsolete(obsoleteVer)) {
                         if (swap) {
                             if (startVer != ver)
                                 try {
@@ -1805,7 +1835,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
                         // Version has changed since entry passed the filter. Do it again.
                         return evictInternal(swap, obsoleteVer, filter);
 
-                    if ((!hasReaders() || swap) && markObsolete(obsoleteVer)) {
+                    if (!hasReaders() && markObsolete(obsoleteVer)) {
                         if (swap) {
                             if (startVer != ver)
                                 try {

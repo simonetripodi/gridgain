@@ -24,8 +24,6 @@ import org.gridgain.grid.resources.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.checkpoint.*;
 import org.gridgain.grid.spi.checkpoint.sharedfs.*;
-import org.gridgain.grid.spi.cloud.*;
-import org.gridgain.grid.spi.cloud.jvm.*;
 import org.gridgain.grid.spi.collision.*;
 import org.gridgain.grid.spi.collision.fifoqueue.*;
 import org.gridgain.grid.spi.communication.*;
@@ -46,7 +44,6 @@ import org.gridgain.grid.spi.swapspace.*;
 import org.gridgain.grid.spi.swapspace.file.*;
 import org.gridgain.grid.spi.topology.*;
 import org.gridgain.grid.spi.topology.basic.*;
-import org.gridgain.grid.spi.tracing.*;
 import org.gridgain.grid.thread.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -57,7 +54,6 @@ import org.springframework.beans.factory.xml.*;
 import org.springframework.context.*;
 import org.springframework.context.support.*;
 import org.springframework.core.io.*;
-
 import javax.management.*;
 import java.io.*;
 import java.lang.management.*;
@@ -103,7 +99,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * </pre>
  * Here is how a grid instance can be configured from Spring XML configuration file. The
  * example below configures a grid instance with additional user attributes
- * (see {@link GridNode#getAttributes()}) and specifies a grid name:
+ * (see {@link GridNode#attributes()}) and specifies a grid name:
  * <pre name="code" class="xml">
  * &lt;bean id="grid.cfg" class="org.gridgain.grid.GridConfigurationAdapter" scope="singleton"&gt;
  *     ...
@@ -132,7 +128,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridFactory {
     /**
@@ -226,33 +222,6 @@ public class GridFactory {
      */
     public static boolean isDaemon() {
         return daemon;
-    }
-
-    /**
-     * Deprecated in favor of {@link #state()}
-     * <p>
-     * Gets state of grid default grid.
-     *
-     * @return Default grid state.
-     */
-    @Deprecated
-    public static GridFactoryState getState() {
-        return state();
-    }
-
-    /**
-     * Deprecated in favor of {@link #state(String)}
-     * <p>
-     * Gets states of named grid. If name is {@code null}, then state of
-     * default no-name grid is returned.
-     *
-     * @param name Grid name. If name is {@code null}, then state of
-     *      default no-name grid is returned.
-     * @return Grid state.
-     */
-    @Deprecated
-    public static GridFactoryState getState(@Nullable String name) {
-        return state(name);
     }
 
     /**
@@ -1152,25 +1121,6 @@ public class GridFactory {
     }
 
     /**
-     * Deprecated in favor of {@link #grid()}.
-     * <p>
-     * Gets an instance of default no-name grid. Note that
-     * caller of this method should not assume that it will return the same
-     * instance every time.
-     * <p>
-     * This method is identical to {@code G.grid(null)} apply.
-     *
-     * @return An instance of default no-name grid. This method never returns
-     *      {@code null}.
-     * @throws IllegalStateException Thrown if default grid was not properly
-     *      initialized or grid instance was stopped or was not started.
-     */
-    @Deprecated
-    public static Grid getGrid() throws IllegalStateException {
-        return grid();
-    }
-
-    /**
      * Gets an instance of default no-name grid. Note that
      * caller of this method should not assume that it will return the same
      * instance every time.
@@ -1184,18 +1134,6 @@ public class GridFactory {
      */
     public static Grid grid() throws IllegalStateException {
         return grid((String)null);
-    }
-
-    /**
-     * Deprecated in favor of {@link #allGrids()}.
-     * <p>
-     * Gets a list of all grids started so far.
-     *
-     * @return List of all grids started so far.
-     */
-    @Deprecated
-    public static List<Grid> getAllGrids() {
-        return allGrids();
     }
 
     /**
@@ -1223,25 +1161,6 @@ public class GridFactory {
 
             return allGrids;
         }
-    }
-
-    /**
-     * Deprecated in favor of {@link #grid(UUID)}.
-     * <p>
-     * Gets a grid instance for given local node ID. Note that grid instance and local node have
-     * one-to-one relationship where node has ID and instance has name of the grid to which
-     * both grid instance and its node belong. Note also that caller of this method
-     * should not assume that it will return the same instance every time.
-     *
-     * @param localNodeId ID of local node the requested grid instance is managing.
-     * @return An instance of named grid. This method never returns
-     *      {@code null}.
-     * @throws IllegalStateException Thrown if grid was not properly
-     *      initialized or grid instance was stopped or was not started.
-     */
-    @Deprecated
-    public static Grid getGrid(UUID localNodeId) throws IllegalStateException {
-        return grid(localNodeId);
     }
 
     /**
@@ -1277,29 +1196,6 @@ public class GridFactory {
 
         throw new IllegalStateException("Grid instance with given local node ID was not properly " +
             "started or was stopped: " + localNodeId);
-    }
-
-    /**
-     * Deprecated in favor of {@link #grid(String)}.
-     * <p>
-     * Gets an named grid instance. If grid name is {@code null} or empty string,
-     * then default no-name grid will be returned. Note that caller of this method
-     * should not assume that it will return the same instance every time.
-     * <p>
-     * Note that Java VM can run multiple grid instances and every grid instance (and its
-     * node) can belong to a different grid. Grid name defines what grid a particular grid
-     * instance (and correspondingly its node) belongs to.
-     *
-     * @param name Grid name to which requested grid instance belongs to. If {@code null},
-     *      then grid instanced belonging to a default no-name grid will be returned.
-     * @return An instance of named grid. This method never returns
-     *      {@code null}.
-     * @throws IllegalStateException Thrown if default grid was not properly
-     *      initialized or grid instance was stopped or was not started.
-     */
-    @Deprecated
-    public static Grid getGrid(@Nullable String name) throws IllegalStateException {
-        return grid(name);
     }
 
     /**
@@ -1391,7 +1287,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1567,15 +1463,13 @@ public class GridFactory {
             myCfg.setMetricsHistorySize(cfg.getMetricsHistorySize());
             myCfg.setMetricsExpireTime(cfg.getMetricsExpireTime());
             myCfg.setLifecycleBeans(cfg.getLifecycleBeans());
-            myCfg.setCloudStrategies(cfg.getCloudStrategies());
-            myCfg.setCloudPolicies(cfg.getCloudPolicies());
             myCfg.setPeerClassLoadingMissedResourcesCacheSize(cfg.getPeerClassLoadingMissedResourcesCacheSize());
             myCfg.setIncludeEventTypes(cfg.getIncludeEventTypes());
             myCfg.setExcludeEventTypes(cfg.getExcludeEventTypes());
-            myCfg.setDisableCloudCoordinator(cfg.isDisableCloudCoordinator());
             myCfg.setDaemon(cfg.isDaemon());
             myCfg.setIncludeProperties(cfg.getIncludeProperties());
             myCfg.setLifeCycleEmailNotification(cfg.isLifeCycleEmailNotification());
+            myCfg.setMetricsLogFrequency(cfg.getMetricsLogFrequency());
 
             String ntfStr = X.getSystemOrEnv(GG_LIFECYCLE_EMAIL_NOTIFY);
 
@@ -1631,8 +1525,6 @@ public class GridFactory {
             GridTopologySpi[] topSpi = cfg.getTopologySpi();
             GridFailoverSpi[] failSpi = cfg.getFailoverSpi();
             GridLoadBalancingSpi[] loadBalancingSpi = cfg.getLoadBalancingSpi();
-            GridTracingSpi[] traceSpi = cfg.getTracingSpi();
-            GridCloudSpi[] cloudSpis = cfg.getCloudSpi();
             GridSwapSpaceSpi[] swapspaceSpi = cfg.getSwapSpaceSpi();
 
             if (nodeId == null)
@@ -1653,8 +1545,6 @@ public class GridFactory {
 
             // Initialize factory's log.
             log = cfgLog.getLogger(G.class);
-
-            GridProxyFactory proxyFact = new GridProxyFactory();
 
             execSvc = cfg.getExecutorService();
             sysExecSvc = cfg.getSystemExecutorService();
@@ -1690,13 +1580,6 @@ public class GridFactory {
                 // not be needed.
                 p2pExecSvc = new GridThreadPoolExecutor(cfg.getGridName(), DFLT_P2P_THREAD_CNT,
                     DFLT_P2P_THREAD_CNT, 0, new LinkedBlockingQueue<Runnable>());
-            }
-
-            if (traceSpi != null) {
-                // Make existing object proxy.
-                execSvc = proxyFact.getProxy(execSvc);
-                sysExecSvc = proxyFact.getProxy(sysExecSvc);
-                p2pExecSvc = proxyFact.getProxy(p2pExecSvc);
             }
 
             execSvcShutdown = cfg.getExecutorServiceShutdown();
@@ -1758,29 +1641,6 @@ public class GridFactory {
             if (swapspaceSpi == null)
                 swapspaceSpi = new GridSwapSpaceSpi[] {new GridFileSwapSpaceSpi()};
 
-            if (cloudSpis == null)
-                cloudSpis = new GridCloudSpi[] {new GridJvmCloudSpi()};
-
-            // Wrap SPIs and Grid instance with proxies if interception is enabled.
-            if (traceSpi != null) {
-                commSpi = wrapSpi(proxyFact, commSpi);
-                discoSpi = wrapSpi(proxyFact, discoSpi);
-                colSpi = wrapSpi(proxyFact, colSpi);
-                metricsSpi = wrapSpi(proxyFact, metricsSpi);
-                evtSpi = wrapSpi(proxyFact, evtSpi);
-                deploySpi = wrapSpi(proxyFact, deploySpi);
-
-                cpSpi = wrapSpis(proxyFact, cpSpi);
-                topSpi = wrapSpis(proxyFact, topSpi);
-                failSpi = wrapSpis(proxyFact, failSpi);
-                loadBalancingSpi = wrapSpis(proxyFact, loadBalancingSpi);
-
-                if (cloudSpis != null)
-                    cloudSpis = wrapSpis(proxyFact, cloudSpis);
-
-                swapspaceSpi = wrapSpis(proxyFact, swapspaceSpi);
-            }
-
             myCfg.setCommunicationSpi(commSpi);
             myCfg.setDiscoverySpi(discoSpi);
             myCfg.setCheckpointSpi(cpSpi);
@@ -1791,7 +1651,6 @@ public class GridFactory {
             myCfg.setFailoverSpi(failSpi);
             myCfg.setCollisionSpi(colSpi);
             myCfg.setLoadBalancingSpi(loadBalancingSpi);
-            myCfg.setCloudSpi(cloudSpis);
             myCfg.setSwapSpaceSpi(swapspaceSpi);
 
             // Set SMTP configuration.
@@ -1894,10 +1753,6 @@ public class GridFactory {
             if (adminEmails != null)
                 myCfg.setAdminEmails(adminEmails.split(","));
 
-            // Don't trace the tracing SPI.
-            if (traceSpi != null)
-                myCfg.setTracingSpi(traceSpi);
-
             GridCacheConfiguration[] cacheCfgs = cfg.getCacheConfiguration();
 
             if (cacheCfgs != null) {
@@ -1947,23 +1802,9 @@ public class GridFactory {
                 ensureMultiInstanceSupport(metricsSpi);
                 ensureMultiInstanceSupport(loadBalancingSpi);
                 ensureMultiInstanceSupport(swapspaceSpi);
-
-                if (cloudSpis != null)
-                    ensureMultiInstanceSupport(cloudSpis);
-
-                if (traceSpi != null)
-                    ensureMultiInstanceSupport(traceSpi);
             }
 
-            grid = new GridKernal(proxyFact, ctx);
-
-            if (traceSpi != null)
-                grid = proxyFact.getProxy(
-                    grid,
-                    proxyFact,
-                    GridProxyFactory.class,
-                    ctx,
-                    ApplicationContext.class);
+            grid = new GridKernal(ctx);
 
             // Register GridFactory MBean for current grid instance.
             try {
@@ -2056,33 +1897,6 @@ public class GridFactory {
          */
         private static boolean relaxDiscoveryOrdered() {
             return "true".equalsIgnoreCase(System.getProperty(GG_NO_DISCO_ORDER));
-        }
-
-        /**
-         * @param <T> SPI type.
-         * @param spi SPI to wrap.
-         * @param proxy Proxy.
-         * @return Wrapped SPI instance.
-         * @throws GridException If wrapping failed.
-         */
-        private static <T extends GridSpi> T wrapSpi(GridProxyFactory proxy, T spi) throws GridException {
-            return proxy.getProxy(spi);
-        }
-
-        /**
-         * @param <T> SPI type.
-         * @param spis SPIs to wrap.
-         * @param proxy Proxy.
-         * @return Wrapped SPI instance.
-         * @throws GridException If wrapping failed.
-         */
-        private <T extends GridSpi> T[] wrapSpis(GridProxyFactory proxy, T[] spis) throws GridException {
-            T[] copy = spis.clone();
-
-            for (int i = 0; i < spis.length; i++)
-                copy[i] = wrapSpi(proxy, spis[i]);
-
-            return copy;
         }
 
         /**
@@ -2298,7 +2112,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.1.1c.14072011
+         * @version 3.5.0c.10082011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

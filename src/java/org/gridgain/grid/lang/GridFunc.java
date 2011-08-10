@@ -11,7 +11,6 @@ package org.gridgain.grid.lang;
 
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
-import org.gridgain.grid.events.*;
 import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -42,7 +41,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridFunc {
     /** */
@@ -492,7 +491,7 @@ public class GridFunc {
         return new P1<T>() {
             @SuppressWarnings("deprecation")
             @Override public boolean apply(T n) {
-                return n.getId().equals(localNodeId);
+                return n.id().equals(localNodeId);
             }
         };
     }
@@ -1844,6 +1843,30 @@ public class GridFunc {
     }
 
     /**
+     * Concatenates an elements to an array.
+     *
+     * @param arr Array.
+     * @param obj One or more elements.
+     * @return Concatenated array.
+     */
+    public static <T> T[] concat(@Nullable T[] arr, T... obj) {
+        T[] newArr;
+
+        if (isEmpty(arr)) {
+            newArr = obj;
+        }
+        else {
+            newArr = Arrays.copyOf(arr, arr.length + obj.length);
+
+            for (int i = 0; i < obj.length; i++) {
+                newArr[arr.length + i] = obj[i];
+            }
+        }
+
+        return newArr;
+    }
+
+    /**
      * Loses all elements in input collection that are contained in {@code filter} collection.
      *
      * @param c Input collection.
@@ -2477,7 +2500,8 @@ public class GridFunc {
      */
     public static <T extends Callable<?>> Collection<GridJob> outJobs(@Nullable Collection<? extends T> c) {
         return isEmpty(c) ? Collections.<GridJob>emptyList() : viewReadOnly(c, new C1<T, GridJob>() {
-            @Override public GridJob apply(T e) {
+            @Override
+            public GridJob apply(T e) {
                 return job(e);
             }
         });
@@ -2492,7 +2516,8 @@ public class GridFunc {
      */
     public static <T extends Runnable> Collection<GridJob> absJobs(@Nullable Collection<? extends T> c) {
         return isEmpty(c) ? Collections.<GridJob>emptyList() : viewReadOnly(c, new C1<T, GridJob>() {
-            @Override public GridJob apply(T e) {
+            @Override
+            public GridJob apply(T e) {
                 return job(e);
             }
         });
@@ -2834,7 +2859,8 @@ public class GridFunc {
         A.notNull(c, "c", f, "f");
 
         return viewReadOnly(c, new C1<T, GridOutClosure<R>>() {
-            @Override public GridOutClosure<R> apply(T e) {
+            @Override
+            public GridOutClosure<R> apply(T e) {
                 return f.curry(e);
             }
         });
@@ -2853,7 +2879,8 @@ public class GridFunc {
         A.notNull(c, "c", f, "f");
 
         return viewReadOnly(c, new C1<T, GridAbsClosure>() {
-            @Override public GridAbsClosure apply(T e) {
+            @Override
+            public GridAbsClosure apply(T e) {
                 return f.curry(e);
             }
         });
@@ -3123,7 +3150,8 @@ public class GridFunc {
                 peerDeployLike(U.peerDeployAware(c));
             }
 
-            @Override public R apply() {
+            @Override
+            public R apply() {
                 try {
                     return c.call();
                 }
@@ -5550,116 +5578,6 @@ public class GridFunc {
         A.notNull(c, "c", f, "f");
 
         F.<X>forEach(asList(c), f, p);
-    }
-
-    /**
-     * Creates cloud resource predicate that evaluates to {@code true} if given resource's
-     * type is in passed in set of types.
-     *
-     * @param types Set of types to compare with.
-     * @return Predicate for cloud resources that evaluates to {@code true} if given
-     *      resource's type one of the passed in.
-     * @see #resource(String)
-     * @see #resources(boolean, GridCloudResource...)
-     * @see #resources(boolean, Collection)
-     */
-    public static GridPredicate<GridCloudResource> resources(@Nullable final int... types) {
-        return isEmpty(types) ? GridFunc.<GridCloudResource>alwaysFalse() : new PCR() {
-            @Override public boolean apply(GridCloudResource r) {
-                assert types != null;
-
-                int type = r.type();
-
-                for (int t : types) {
-                    if (type == t) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        };
-    }
-
-    /**
-     * Creates cloud resource predicate that evaluates given resource based on matching its
-     * ID with provided ID.
-     *
-     * @param id ID to match in the predicate.
-     * @return Cloud resource predicate that evaluates given resource based on matching its ID.
-     * @see #resources(int...)
-     * @see #resources(boolean, GridCloudResource...)
-     * @see #resources(boolean, Collection)
-     */
-    public static GridPredicate<GridCloudResource> resource(@Nullable final String id) {
-        return id == null ? GridFunc.<GridCloudResource>alwaysFalse() : new PCR() {
-            @Override public boolean apply(GridCloudResource r) {
-                return r.id().equals(id);
-            }
-        };
-    }
-
-    /**
-     * Creates cloud resource predicate that evaluates based on whether it has all or any links
-     * from the provided collection of links.
-     *
-     * @param all {@code True} to evaluate based on whether all provided links are the links in
-     *      evaluating cloud resource. {@code False} to evaluate based on any instead of all.
-     * @param links Collection of cloud resources to match by.
-     * @return Cloud resource predicate that evaluates based on whether it has all or any links
-     *      from the provided collection of links.
-     * @see #resources(int...)
-     * @see #resource(String)
-     * @see #resources(boolean, GridCloudResource...)
-     */
-    public static GridPredicate<GridCloudResource> resources(final boolean all,
-        @Nullable final Collection<? extends GridCloudResource> links) {
-        return new PCR() {
-            @Override public boolean apply(GridCloudResource e) {
-                Collection<GridCloudResource> el = e.links();
-
-                if (el == null) {
-                    return false;
-                }
-
-                assert el != null;
-
-                if (all) {
-                    return isEmpty(links) ? isEmpty(el) : el.containsAll(links);
-                }
-                else { // Any.
-                    if (!isEmpty(links)) {
-                        assert links != null;
-
-                        for (GridCloudResource r2 : el) {
-                            if (links.contains(r2)) {
-                                return true;
-                            }
-                        }
-                    }
-
-                    return false;
-                }
-            }
-        };
-    }
-
-    /**
-     * Creates cloud resource predicate that evaluates based on whether it has all or
-     * any links from the provided collection of links.
-     *
-     * @param all {@code True} to evaluate based on whether all provided links are the
-     *      links in evaluating cloud resource. {@code False} to evaluate based on any
-     *      instead of all.
-     * @param links Collection of cloud resources to match by.
-     * @return Cloud resource predicate that evaluates based on whether it has all or
-     *      any links from the provided collection of links.
-     * @see #resources(int...)
-     * @see #resource(String)
-     * @see #resources(boolean, Collection)
-     */
-    public static GridPredicate<GridCloudResource> resources(boolean all, @Nullable GridCloudResource... links) {
-        return resources(all, isEmpty(links) ? Collections.<GridCloudResource>emptyList() : asList(links));
     }
 
     /**
@@ -8877,140 +8795,6 @@ public class GridFunc {
                 assert e != null;
 
                 return !forAll(nodes, not(nodeForNodeId(e.nodeId())));
-            }
-        };
-    }
-
-    /**
-     * Gets event predicate that returns {@code true} only if event is a cloud event with
-     * cloud id and resource id equal to given.
-     *
-     * @param cloudId Cloud id.
-     * @param rsrcId Cloud resource id.
-     * @return Event predicate.
-     */
-    public static GridPredicate<GridEvent> cloudEventResourceId(String cloudId, String rsrcId) {
-        A.notNull(cloudId, "cloudId", rsrcId, "rsrcId");
-
-        return cloudEventResourceId(cloudId, equalTo(rsrcId));
-    }
-
-    /**
-     * Gets event predicate that returns {@code true} only if event is a cloud event with cloud
-     * id equal to given value and command execution id is contained in the given ids. Note that
-     * if array of provided command execution ids is {@code null} or empty this method returns
-     * predicate that evaluates to {@code false} when applying.
-     *
-     * @param cloudId Cloud id.
-     * @param ids Cloud command execution ids.
-     * @return Event predicate.
-     */
-    public static GridPredicate<GridEvent> cloudEventCommandId(String cloudId, @Nullable UUID... ids) {
-        A.notNull(cloudId, "cloudId");
-
-        return isEmpty(ids) ? F.<GridEvent>alwaysFalse() : cloudEventCommandId(cloudId, in(ids));
-    }
-
-    /**
-     * Gets event predicate that returns {@code true} only if event is a cloud event with
-     * cloud id equal to given value and resource id satisfied to given predicates.
-     *
-     * @param cloudId Cloud id.
-     * @param p Resource id filtering predicates.
-     * @return Event predicate.
-     */
-    public static GridPredicate<GridEvent> cloudEventResourceId(final String cloudId,
-        @Nullable final GridPredicate<? super String>... p) {
-        A.notNull(cloudId, "cloudId");
-
-        return isAlwaysFalse(p) ? F.<GridEvent>alwaysFalse() : new GridPredicate<GridEvent>() {
-            {
-                peerDeployLike(U.peerDeployAware0((Object[])p));
-            }
-
-            @Override public boolean apply(GridEvent e) {
-                assert e != null;
-
-                if (!(e instanceof GridCloudEvent)) {
-                    return false;
-                }
-
-                GridCloudEvent evt = (GridCloudEvent)e;
-
-                return eq(evt.cloudId(), cloudId) && isAll(evt.resourceId(), p);
-            }
-        };
-    }
-
-    /**
-     * Gets event predicate that returns {@code true} only if event is a cloud event with
-     * cloud id equal to given value and resource type is one of the given types. Note
-     * that if array of provided event types is {@code null} or empty this method returns
-     * predicate that evaluates to {@code false} when applying.
-     *
-     * @param cloudId Cloud id.
-     * @param types Cloud resource types.
-     * @return Event predicate.
-     */
-    public static GridPredicate<GridEvent> cloudEventResourceTypes(final String cloudId,
-        @Nullable final int... types) {
-        A.notNull(cloudId, "cloudId");
-
-        return isEmpty(types) ? F.<GridEvent>alwaysFalse() : new GridPredicate<GridEvent>() {
-            @Override public boolean apply(GridEvent e) {
-                assert e != null;
-
-                if (!(e instanceof GridCloudEvent)) {
-                    return false;
-                }
-
-                GridCloudEvent evt = (GridCloudEvent)e;
-
-                if (!eq(evt.cloudId(), cloudId)) {
-                    return false;
-                }
-
-                assert types != null;
-
-                for (int t : types) {
-                    if (evt.resourceType() == t) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        };
-    }
-
-    /**
-     * Gets event predicate that returns {@code true} only if event is a cloud event
-     * with cloud id equal to given value and command execution id satisfies to given
-     * predicates.
-     *
-     * @param cloudId Cloud id.
-     * @param p Command execution id filtering predicates.
-     * @return Event predicate.
-     */
-    public static GridPredicate<GridEvent> cloudEventCommandId(final String cloudId,
-        @Nullable final GridPredicate<? super UUID>... p) {
-        A.notNull(cloudId, "cloudId");
-
-        return isAlwaysFalse(p) ? F.<GridEvent>alwaysFalse() : new GridPredicate<GridEvent>() {
-            {
-                peerDeployLike(U.peerDeployAware0((Object[])p));
-            }
-
-            @Override public boolean apply(GridEvent e) {
-                assert e != null;
-
-                if (!(e instanceof GridCloudEvent)) {
-                    return false;
-                }
-
-                GridCloudEvent evt = (GridCloudEvent)e;
-
-                return eq(evt.cloudId(), cloudId) && isAll(evt.executionId(), p);
             }
         };
     }

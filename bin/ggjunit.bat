@@ -6,7 +6,7 @@
 :: / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 :: \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 ::
-:: Version: 3.1.1c.14072011
+:: Version: 3.5.0c.10082011
 ::
 
 ::
@@ -56,7 +56,7 @@ goto error_finish
 :run
 
 :: This is Ant-augmented variable.
-set ANT_AUGMENTED_GGJAR=gridgain-3.1.1c.jar
+set ANT_AUGMENTED_GGJAR=gridgain-3.5.0c.jar
 
 ::
 :: Set GRIDGAIN_LIBS
@@ -114,19 +114,6 @@ set JMX_MON=%JMX_MON% -Dcom.sun.management.jmxremote.port=%JMX_PORT% -Dcom.sun.m
 :: ADD YOUR/CHANGE ADDITIONAL OPTIONS HERE
 ::
 set JVM_OPTS=-ea -XX:MaxPermSize=128m -XX:+UseParNewGC -XX:MaxNewSize=32m -XX:NewSize=32m -Xms256m -Xmx256m -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0  -XX:+UseTLAB -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -Djava.net.preferIPv4Stack=true
-
-::
-:: If using NewRelic for monitoring - uncomment the following.
-:: Make sure to sing up at www.newrelic.com and put your custom newrelic.yml
-:: file that you receive after registration into %GRIDGAIN_HOME%\libs folder.
-::
-:: File newrelic.jar is already shipped with GridGain but you can always
-:: update it to the latest in %GRIDGAIN_HOME%\libs folder.
-::
-:: Note also that since NewRelic is using java agent it will
-:: conflict with AspectJ AOP that is also using java agent.
-::
-:: set JVM_OPTS=%JVM_OPTS% -javaagent:%GRIDGAIN_HOME%\libs\newrelic.jar
 
 ::
 :: Set program name.

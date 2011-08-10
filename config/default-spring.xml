@@ -8,7 +8,7 @@
     \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 
     Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
-    Version: 3.1.1c.14072011
+    Version: 3.5.0c.10082011
 -->
 
 <!--
@@ -16,11 +16,8 @@
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:util="http://www.springframework.org/schema/util"
     xsi:schemaLocation="http://www.springframework.org/schema/beans
-        http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-        http://www.springframework.org/schema/util
-        http://www.springframework.org/schema/util/spring-util-2.0.xsd">
+        http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
     <description>Main Spring file for grid configuration.</description>
 
     <!-- Import caches definition. -->
@@ -92,13 +89,6 @@
         -->
         <!--
         <property name="peerClassLoadingEnabled" value="false"/>
-        -->
-
-        <!--
-            Uncomment to enable cloud coordinator.
-        -->
-        <!--
-        <property name="disableCloudCoordinator" value="false"/>
         -->
 
         <!--
@@ -445,31 +435,6 @@
         -->
 
         <!--
-            Uncomment to provide non-default configuration for Affinity Load Balancing SPI.
-        -->
-        <!--
-        <property name="loadBalancingSpi">
-            <bean class="org.gridgain.grid.spi.loadbalancing.affinity.GridAffinityLoadBalancingSpi">
-                <property name="virtualNodeCount" value="1000"/>
-                <property name="affinityNodeAttributes">
-                    <map>
-                        <entry key="node.segment" value="foobar"/>
-                    </map>
-                </property>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment to provide non-default configuration for Coherence Affinity Load Balancing SPI.
-        -->
-        <!--
-        <property name="loadBalancingSpi">
-            <bean class="org.gridgain.grid.spi.loadbalancing.coherence.GridCoherenceLoadBalancingSpi"/>
-        </property>
-        -->
-
-        <!--
             Uncomment to provide non-default configuration for Shared File System Checkpoint SPI.
             Note that Shared File System Checkpoint SPI is used be default, so there is no need
             to uncomment this section if you don't filter to change any default
@@ -520,17 +485,6 @@
         <property name="checkpointSpi">
             <bean class="org.gridgain.grid.spi.checkpoint.gigaspaces.GridGigaSpacesCheckpointSpi">
                 <property name="spaceUrl" value="/./mySpaceMap" />
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment to provide non-default configuration for Tangosol Coherence Checkpoint SPI.
-        -->
-        <!--
-        <property name="checkpointSpi">
-            <bean class="org.gridgain.grid.spi.checkpoint.coherence.GridCoherenceCheckpointSpi">
-                <property name="cacheName" value="gridgain.checkpoint.cache" />
             </bean>
         </property>
         -->
@@ -600,68 +554,6 @@
             <bean class="org.gridgain.grid.spi.communication.tcp.GridTcpCommunicationSpi">
                 <property name="json"
                     value="{directBuffer: 'false', localAddress='1.2.3.4', localPort: 47100, localPortRange: 100}"/>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment to provide custom configuration for JMS communication SPI.
-
-            NOTE: JARs for specific JMS provider should be available on classpath.
-            If you use ggstart.{sh|bat} script to start grid node than you only need
-            to change setenv.{sh|bat} script in the same directory to add necessary
-            JARs to GridGain class path.
-        -->
-        <!--
-        <property name="communicationSpi">
-            <bean class="org.gridgain.grid.spi.communication.jms.GridJmsCommunicationSpi">
-                <property name="connectionFactoryName" value="java:ConnectionFactory"/>
-                <property name="topicName" value="topic/myjmstopic"/>
-                <property name="jndiEnvironment">
-                    <map>
-                        <entry>
-                            <key><util:constant static-field="javax.naming.Context.INITIAL_CONTEXT_FACTORY"/></key>
-                            <value>org.jnp.interfaces.NamingContextFactory</value>
-                        </entry>
-                        <entry>
-                            <key><util:constant static-field="javax.naming.Context.PROVIDER_URL"/></key>
-                            <value>jnp://my.ip.address:1099</value>
-                        </entry>
-                        <entry>
-                            <key><util:constant static-field="javax.naming.Context.URL_PKG_PREFIXES"/></key>
-                            <value>org.jboss.naming:org.jnp.interfaces</value>
-                        </entry>
-                    </map>
-                </property>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment to provide custom configuration for Mail communication SPI.
-        -->
-        <!--
-        <property name="communicationSpi">
-            <bean class="org.gridgain.grid.spi.communication.mail.GridMailCommunicationSpi">
-                <property name="outHost" value="smtp.google.com"/>
-                <property name="inHost" value="pop.google.com"/>
-                <property name="fromAddress" value="grid@google.com"/>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment to provide custom configuration for Coherence communication SPI.
-
-            NOTE: JARs for Coherence should be available on classpath.
-            If you use ggstart.{sh|bat} script to start grid node than you only need
-            to change setenv.{sh|bat} script in the same directory to add necessary
-            JARs to GridGain class path.
-        -->
-        <!--
-        <property name="communicationSpi">
-            <bean class="org.gridgain.grid.spi.communication.coherence.GridCoherenceCommunicationSpi">
-                <property name="acknowledgment" value="false"/>
             </bean>
         </property>
         -->
@@ -776,67 +668,6 @@
         -->
 
         <!--
-            Uncomment this to provide custom JMS discovery SPI.
-
-            NOTE: JARs for specific JMS provider should be available on classpath.
-            If you use ggstart.{sh|bat} script to start grid node than you only need
-            to change setenv.{sh|bat} script in the same directory to add necessary
-            JARs to GridGain class path.
-        -->
-        <!--
-        <property name="discoverySpi">
-            <bean class="org.gridgain.grid.spi.discovery.jms.GridJmsDiscoverySpi">
-                <property name="connectionFactoryName" value="ConnectionFactory"/>
-                <property name="topicName" value="topic/myjmstopic"/>
-                <property name="jndiEnvironment">
-                    <map>
-                        <entry>
-                            <key><util:constant static-field="javax.naming.Context.INITIAL_CONTEXT_FACTORY"/></key>
-                            <value>org.jnp.interfaces.NamingContextFactory</value>
-                        </entry>
-                        <entry>
-                            <key><util:constant static-field="javax.naming.Context.PROVIDER_URL"/></key>
-                            <value>jnp://my.ip.address:1099</value>
-                        </entry>
-                        <entry>
-                            <key><util:constant static-field="javax.naming.Context.URL_PKG_PREFIXES"/></key>
-                            <value>org.jboss.naming:org.jnp.interfaces</value>
-                        </entry>
-                    </map>
-                </property>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment this to provide custom mail discovery SPI.
-        -->
-        <!--
-        <property name="discoverySpi">
-            <bean class="org.gridgain.grid.spi.discovery.mail.GridMailDiscoverySpi">
-                <property name="outHost" value="smtp.google.com"/>
-                <property name="inHost" value="pop.google.com"/>
-                <property name="fromAddress" value="grid@google.com"/>
-                <property name="broadcastAddress" value="grid-broadcast@google.com"/>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment this to provide custom Coherence discovery SPI.
-
-            NOTE: JARs for Tangosol Coherence should be available on classpath.
-            If you use ggstart.{sh|bat} script to start grid node than you only need
-            to change setenv.{sh|bat} script in the same directory to add necessary
-            JARs to GridGain class path.
-        -->
-        <!--
-        <property name="discoverySpi">
-            <bean class="org.gridgain.grid.spi.discovery.coherence.GridCoherenceDiscoverySpi"/>
-        </property>
-        -->
-
-        <!--
             Uncomment this to provide custom event storage SPI.
         -->
         <!--
@@ -923,7 +754,7 @@
                     <map>
                         <entry key="myTaskName">
                             <bean class="org.gridgain.grid.lang.GridJexlPredicate2">
-                                <property name="expression" value="elem1.metrics.getTotalCpus() > 1"/>
+                                <property name="expression" value="elem1.metrics().totalCpus > 1"/>
                             </bean>
                         </entry>
                     </map>
@@ -953,33 +784,6 @@
             <bean class="org.gridgain.grid.spi.swapspace.file.GridFileSwapSpaceSpi">
                 <property name="maximumSwapSize" value="1048576"/>
                 <property name="persistent" value="false"/>
-            </bean>
-        </property>
-        -->
-
-        <!--
-            Uncomment this to provide custom tracing SPI.
-
-            NOTE: JARs for JXinsight should be available on classpath.
-            If you use ggstart.{sh|bat} script to start grid node than you only need
-            to change setenv.{sh|bat} script in the same directory to add necessary
-            JARs to GridGain class path.
-        -->
-        <!--
-        <property name="tracingSpi">
-            <bean class="org.gridgain.grid.spi.tracing.jxinsight.GridJxinsightTracingSpi"/>
-        </property>
-        -->
-
-        <!--
-            Uncomment this to provide custom cloud SPI.
-            Note that GridJvmCloudSpi is used by default.
-        -->
-        <!--
-        <property name="cloudSpi">
-            <bean class="org.gridgain.grid.spi.cloud.jvm.GridJvmCloudSpi">
-                <property name="cloudId" value="jvm-cloud"/>
-                <property name="stateCheckFrequency" value="3000"/>
             </bean>
         </property>
         -->

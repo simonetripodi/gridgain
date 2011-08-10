@@ -13,13 +13,12 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.job.*;
 import org.gridgain.grid.spi.collision.*;
-import java.util.*;
 
 /**
  * TODO: add file description.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public abstract class GridCollisionJobContextAdapter implements GridCollisionJobContext {
     /** */
@@ -28,7 +27,7 @@ public abstract class GridCollisionJobContextAdapter implements GridCollisionJob
     /**
      * @param jobWorker Job worker instance.
      */
-    public GridCollisionJobContextAdapter(GridJobWorker jobWorker) {
+    protected GridCollisionJobContextAdapter(GridJobWorker jobWorker) {
         assert jobWorker != null;
 
         this.jobWorker = jobWorker;
@@ -37,12 +36,6 @@ public abstract class GridCollisionJobContextAdapter implements GridCollisionJob
     /** {@inheritDoc} */
     @Override public GridJobSessionImpl getTaskSession() {
         return jobWorker.getSession();
-    }
-
-    /** {@inheritDoc} */
-    @Deprecated
-    public UUID getJobId() {
-        return jobWorker.getJobId();
     }
 
     /** {@inheritDoc} */

@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -53,11 +53,14 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Near cache eviction policy. */
     private GridCacheEvictionPolicy nearEvictPolicy;
 
-    /** Flag indicating whether eviction is synchronized with backup nodes. */
-    private boolean evictBackupSynchronized = DFLT_EVICT_BACKUP_SYNCHRONIZED;
+    /** Flag indicating whether eviction is synchronized. */
+    private boolean evictSync = DFLT_EVICT_SYNCHRONIZED;
 
     /** Flag indicating whether eviction is synchronized with near nodes. */
-    private boolean evictNearSynchronized = DFLT_EVICT_NEAR_SYNCHRONIZED;
+    private boolean evictNearSync = DFLT_EVICT_NEAR_SYNCHRONIZED;
+
+    /** Eviction key buffer size. */
+    private int evictKeyBufferSize = DFLT_EVICT_KEY_BUFFER_SIZE;
 
     /** Maximum eviction overflow ratio. */
     private float maxEvictionOverflowRatio = DFLT_MAX_EVICTION_OVERFLOW_RATIO;
@@ -204,7 +207,10 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         dgcFreq = cacheCfg.getDgcFrequency();
         dgcRmvLocks = cacheCfg.isDgcRemoveLocks();
         dgcSuspectLockTimeout = cacheCfg.getDgcSuspectLockTimeout();
+        evictSync = cacheCfg.isEvictSynchronized();
         evictPolicy = cacheCfg.getEvictionPolicy();
+        evictNearSync = cacheCfg.isEvictNearSynchronized();
+        evictKeyBufferSize = cacheCfg.getEvictionKeyBufferSize();
         idxH2Opt = cacheCfg.getIndexH2Options();
         idxAnalyzeFreq = cacheCfg.getIndexAnalyzeFrequency();
         idxAnalyzeSampleSize = cacheCfg.getIndexAnalyzeSampleSize();
@@ -223,8 +229,6 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
         nearStartSize = cacheCfg.getNearStartSize();
         nearEnabled = cacheCfg.isNearEnabled();
         nearEvictPolicy = cacheCfg.getNearEvictionPolicy();
-        evictBackupSynchronized = cacheCfg.isEvictBackupSynchronized();
-        evictNearSynchronized = cacheCfg.isEvictNearSynchronized();
         maxEvictionOverflowRatio = cacheCfg.getMaxEvictionOverflowRatio();
         preloadMode = cacheCfg.getPreloadMode();
         preloadBatchSize = cacheCfg.getPreloadBatchSize();
@@ -281,7 +285,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
      *
      * @param evictPolicy Cache expiration policy.
      */
-    public <K, V> void setEvictionPolicy(GridCacheEvictionPolicy<K, V> evictPolicy) {
+    public void setEvictionPolicy(GridCacheEvictionPolicy evictPolicy) {
         this.evictPolicy = evictPolicy;
     }
 
@@ -302,32 +306,46 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     }
 
     /** {@inheritDoc} */
-    @Override public boolean isEvictBackupSynchronized() {
-        return evictBackupSynchronized;
+    @Override public boolean isEvictSynchronized() {
+        return evictSync;
     }
 
     /**
      * Sets flag indicating whether eviction is synchronized with backup nodes
      * (or the rest of the nodes for replicated cache).
      *
-     * @param evictBackupSynchronized {@code true} if synchronized, {@code false} if not.
+     * @param evictSync {@code true} if synchronized, {@code false} if not.
      */
-    public void setEvictBackupSynchronized(boolean evictBackupSynchronized) {
-        this.evictBackupSynchronized = evictBackupSynchronized;
+    public void setEvictSynchronized(boolean evictSync) {
+        this.evictSync = evictSync;
     }
 
     /**
      * Sets flag indicating whether eviction is synchronized with near nodes.
      *
-     * @param evictNearSynchronized {@code true} if synchronized, {@code false} if not.
+     * @param evictNearSync {@code true} if synchronized, {@code false} if not.
      */
-    public void setEvictNearSynchronized(boolean evictNearSynchronized) {
-        this.evictNearSynchronized = evictNearSynchronized;
+    public void setEvictNearSynchronized(boolean evictNearSync) {
+        this.evictNearSync = evictNearSync;
     }
 
     /** {@inheritDoc} */
     @Override public boolean isEvictNearSynchronized() {
-        return evictNearSynchronized;
+        return evictNearSync;
+    }
+
+    /** {@inheritDoc} */
+    @Override public int getEvictionKeyBufferSize() {
+        return evictKeyBufferSize;
+    }
+
+    /**
+     * Sets eviction key buffer size.
+     *
+     * @param evictKeyBufferSize Eviction key buffer size.
+     */
+    public void setEvictionKeyBufferSize(int evictKeyBufferSize) {
+        this.evictKeyBufferSize = evictKeyBufferSize;
     }
 
     /** {@inheritDoc} */

@@ -137,7 +137,7 @@ import java.util.concurrent.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>>, GridMetadataAware {
     /**
@@ -1782,6 +1782,84 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
     public Set<K> keySet(@Nullable K... keys);
 
     /**
+     * Set of cached primary keys for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes.
+     * Note that this set will contain mappings for all keys, even if their values are
+     * {@code null} because they were invalidated. You can remove elements from
+     * this set, but you cannot add elements to this set. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * Iterator over this set will not fail if set was concurrently updated
+     * by another thread. This means that iterator may or may not return latest
+     * keys depending on whether they were added before or after current
+     * iterator position.
+     *
+     * @return Primary key set for the current node.
+     */
+    public Set<K> primaryKeySet();
+
+    /**
+     * Set of cached primary keys for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes.
+     * Note that this set will contain mappings for all keys, even if their values are
+     * {@code null} because they were invalidated. You can remove elements from
+     * this set, but you cannot add elements to this set. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * Iterator over this set will not fail if set was concurrently updated
+     * by another thread. This means that iterator may or may not return latest
+     * keys depending on whether they were added before or after current
+     * iterator position.
+     *
+     * @param filter Filter for the key set. If not provided then primary key set for the
+     *      current node is returned.
+     * @return Primary key set for the current node.
+     */
+    public Set<K> primaryKeySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
+
+    /**
+     * Set of cached primary keys for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes.
+     * Note that this set will contain mappings for all keys, even if their values are
+     * {@code null} because they were invalidated. You can remove elements from
+     * this set, but you cannot add elements to this set. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * If filter is provided, then only the keys for the entries that pass
+     * provided filters are returned.
+     * <p>
+     * Iterator over this set will not fail if set was concurrently updated
+     * by another thread. This means that iterator may or may not return latest
+     * keys depending on whether they were added before or after current
+     * iterator position.
+     *
+     * @param keys Only keys specified here will be returned in the set.
+     * @param filter Filter for the key set. If not provided then primary key set for the
+     *      current node is returned.
+     * @return Primary key set for the current node.
+     */
+    public Set<K> primaryKeySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
+
+    /**
+     * Set of cached primary keys for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes.
+     * Note that this set will contain mappings for all keys, even if their values are
+     * {@code null} because they were invalidated. You can remove elements from
+     * this set, but you cannot add elements to this set. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * Iterator over this set will not fail if set was concurrently updated
+     * by another thread. This means that iterator may or may not return latest
+     * keys depending on whether they were added before or after current
+     * iterator position.
+     *
+     * @param keys Only keys specified here will be returned in the set.
+     * @return Primary key set for the current node.
+     */
+    public Set<K> primaryKeySet(@Nullable K... keys);
+
+    /**
      * Collection of cached values. Note that this collection will not contain
      * values that are {@code null} because they were invalided. You can remove
      * elements from this collection, but you cannot add elements to this collection.
@@ -1802,7 +1880,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * elements from this collection, but you cannot add elements to this collection.
      * All removal operation will be reflected on the cache itself.
      * <p>
-     * If filter is provided, then only the keys for the entries that pass
+     * If filter is provided, then only the values for the entries that pass
      * provided filters are returned.
      * <p>
      * Iterator over this collection will not fail if collection was
@@ -1810,8 +1888,8 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * may not return latest values depending on whether they were added before
      * or after current iterator position.
      *
-     * @param filter Filter for the key set. If not provided then key set for the
-     *      whole cache is returned.
+     * @param filter Filter for the collection of values. If not provided then
+     *      values for the whole cache is returned.
      * @return Collection of cached values.
      */
     public Collection<V> values(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
@@ -1822,7 +1900,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * elements from this collection, but you cannot add elements to this collection.
      * All removal operation will be reflected on the cache itself.
      * <p>
-     * If filter is provided, then only the keys for the entries that pass
+     * If filter is provided, then only the values for the entries that pass
      * provided filters are returned.
      * <p>
      * Iterator over this collection will not fail if collection was
@@ -1831,8 +1909,8 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * or after current iterator position.
      *
      * @param keys Keys for which value pairs will be returned.
-     * @param filter Filter for the values. If not provided then key set for the
-     *      whole cache is returned.
+     * @param filter Filter for the collection of values. If not provided then
+     *      values for the whole cache is returned.
      * @return Collection of cached values.
      */
     public Collection<V> values(@Nullable Collection<? extends K> keys,
@@ -1844,9 +1922,6 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * elements from this collection, but you cannot add elements to this collection.
      * All removal operation will be reflected on the cache itself.
      * <p>
-     * If filter is provided, then only the keys for the entries that pass
-     * provided filters are returned.
-     * <p>
      * Iterator over this collection will not fail if collection was
      * concurrently updated by another thread. This means that iterator may or
      * may not return latest values depending on whether they were added before
@@ -1856,6 +1931,87 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @return Collection of cached values.
      */
     public Collection<V> values(@Nullable K... keys);
+
+    /**
+     * Collection of primary cached values.for which local node is the primary node.
+     * This collection is dynamic and may change with grid topology changes.
+     * Note that this collection will not contain values that are {@code null}
+     * because they were invalided. You can remove elements from this collection,
+     * but you cannot add elements to this collection. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * Iterator over this collection will not fail if collection was
+     * concurrently updated by another thread. This means that iterator may or
+     * may not return latest values depending on whether they were added before
+     * or after current iterator position.
+     *
+     * @return Collection of primary cached values for the current node.
+     */
+    public Collection<V> primaryValues();
+
+    /**
+     * Collection of primary cached values.for which local node is the primary node.
+     * This collection is dynamic and may change with grid topology changes.
+     * Note that this collection will not contain values that are {@code null}
+     * because they were invalided. You can remove elements from this collection,
+     * but you cannot add elements to this collection. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * If filter is provided, then only the values for the entries that pass
+     * provided filters are returned.
+     * <p>
+     * Iterator over this collection will not fail if collection was
+     * concurrently updated by another thread. This means that iterator may or
+     * may not return latest values depending on whether they were added before
+     * or after current iterator position.
+     *
+     * @param filter Filter for the collection of values. If not provided then primary
+     *      values for the current node is returned.
+     * @return Collection of primary cached values for the current node.
+     */
+    public Collection<V> primaryValues(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
+
+    /**
+     * Collection of primary cached values.for which local node is the primary node.
+     * This collection is dynamic and may change with grid topology changes.
+     * Note that this collection will not contain values that are {@code null}
+     * because they were invalided. You can remove elements from this collection,
+     * but you cannot add elements to this collection. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * If filter is provided, then only the values for the entries that pass
+     * provided filters are returned.
+     * <p>
+     * Iterator over this collection will not fail if collection was
+     * concurrently updated by another thread. This means that iterator may or
+     * may not return latest values depending on whether they were added before
+     * or after current iterator position.
+     *
+     * @param keys Keys for which value pairs will be returned.
+     * @param filter Filter for the collection of values. If not provided then primary
+     *      values for the current node is returned.
+     * @return Collection of primary cached values for the current node.
+     */
+    public Collection<V> primaryValues(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
+
+    /**
+     * Collection of primary cached values.for which local node is the primary node.
+     * This collection is dynamic and may change with grid topology changes.
+     * Note that this collection will not contain values that are {@code null}
+     * because they were invalided. You can remove elements from this collection,
+     * but you cannot add elements to this collection. All removal operation will be
+     * reflected on the cache itself.
+     * <p>
+     * Iterator over this collection will not fail if collection was
+     * concurrently updated by another thread. This means that iterator may or
+     * may not return latest values depending on whether they were added before
+     * or after current iterator position.
+     *
+     * @param keys Keys for which value pairs will be returned.
+     * @return Collection of primary cached values for the current node.
+     */
+    public Collection<V> primaryValues(@Nullable K... keys);
 
     /**
      * Gets set containing all cache entries. You can remove
@@ -1903,6 +2059,57 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @return Entries that pass through key filter.
      */
     public Set<GridCacheEntry<K, V>> entrySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
+
+    /**
+     * Gets set containing cache entries for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes. You can remove
+     * elements from this set, but you cannot add elements to this set.
+     * All removal operation will be reflected on the cache itself.
+     *
+     * @return Set containing primary cache entries for the current node.
+     */
+    public Set<GridCacheEntry<K, V>> primaryEntrySet();
+
+    /**
+     * Gets set containing cache entries for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes. You can remove
+     * elements from this set, but you cannot add elements to this set.
+     * All removal operation will be reflected on the cache itself.
+     * <p>
+     * If optional filters are provided, then only entries that successfully
+     * pass the filters will be included in the resulting set.
+     *
+     * @param keys Keys to get entries for.
+     * @param filter Filter for primary entries in the set.
+     * @return Primary cache entries for specified keys (possibly empty).
+     */
+    public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
+
+    /**
+     * Gets set containing cache entries for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes. You can remove
+     * elements from this set, but you cannot add elements to this set.
+     * All removal operation will be reflected on the cache itself.
+     *
+     * @param keys Keys to get entries for.
+     * @return Primary cache entries for specified keys (possibly empty).
+     */
+    public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable K... keys);
+
+    /**
+     * Gets set containing cache entries for which local node is the primary node.
+     * This set is dynamic and may change with grid topology changes. You can remove
+     * elements from this set, but you cannot add elements to this set.
+     * All removal operation will be reflected on the cache itself.
+     * <p>
+     * If optional filters are provided, then only entries that successfully
+     * pass the filters will be included in the resulting set.
+     *
+     * @param filter Key filter for entries.
+     * @return Primary cache entries that pass through key filter.
+     */
+    public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>... filter);
 
     /**
      * Creates user's query for given query type. For more information refer to
@@ -3759,4 +3966,13 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @see GridCacheConfigurationAdapter#setAffinity(GridCacheAffinity)
      */
     public Map<Integer, GridRichNode> mapPartitionsToNodes(Collection<Integer> parts);
+
+    /**
+     * Maps passed in key to a key which will be used for node affinity.
+     *
+     * @param key Key to map.
+     * @return Key to be used for node-to-affinity mapping (may be the same
+     *      key as passed in).
+     */
+    public Object affinityKey(K key);
 }

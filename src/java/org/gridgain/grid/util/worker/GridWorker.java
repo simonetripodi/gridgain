@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.*;
  * with {@link Executor} implementations. Only for internal use.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public abstract class GridWorker implements Runnable {
     /** Grid logger. */
@@ -114,7 +114,7 @@ public abstract class GridWorker implements Runnable {
     /**
      * Resets this instance in case if it needs to be executed more than once.
      */
-    public final void reset() {
+    private void reset() {
         isCancelled = false;
 
         fut = new FutureTask<Void>(new Runnable() {

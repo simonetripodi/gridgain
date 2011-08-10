@@ -16,7 +16,6 @@ import org.gridgain.grid.logger.*;
 import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.segmentation.*;
 import org.gridgain.grid.spi.checkpoint.*;
-import org.gridgain.grid.spi.cloud.*;
 import org.gridgain.grid.spi.collision.*;
 import org.gridgain.grid.spi.communication.*;
 import org.gridgain.grid.spi.deployment.*;
@@ -27,9 +26,7 @@ import org.gridgain.grid.spi.loadbalancing.*;
 import org.gridgain.grid.spi.metrics.*;
 import org.gridgain.grid.spi.swapspace.*;
 import org.gridgain.grid.spi.topology.*;
-import org.gridgain.grid.spi.tracing.*;
 import org.jetbrains.annotations.*;
-
 import javax.management.*;
 import java.lang.management.*;
 import java.util.*;
@@ -55,7 +52,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridConfiguration {
     /**
@@ -278,22 +275,6 @@ public interface GridConfiguration {
     public String getGridName();
 
     /**
-     * Gets optional set of cloud strategies. Note that cloud strategies are only
-     * activated on the local node if the local node is acting as cloud coordinator.
-     *
-     * @return Optional set of cloud strategies.
-     */
-    public GridCloudStrategy[] getCloudStrategies();
-
-    /**
-     * Gets optional set of cloud policies. Note that cloud policies are only
-     * activated on the local node if the local node is acting as cloud coordinator.
-     *
-     * @return Optional set of cloud policies.
-     */
-    public GridCloudPolicy[] getCloudPolicies();
-
-    /**
      * Should return any user-defined attributes to be added to this node. These attributes can
      * then be accessed on nodes by calling {@link GridNode#getAttribute(String)} or
      * {@link GridNode#getAttributes()} methods.
@@ -464,6 +445,7 @@ public interface GridConfiguration {
      *
      * @return Segmentation resolvers.
      */
+    @GridEnterpriseFeature
     public GridSegmentationResolver[] getSegmentationResolvers();
 
     /**
@@ -477,6 +459,7 @@ public interface GridConfiguration {
      *
      * @return {@code True} to wait for segment on startup, {@code false} otherwise.
      */
+    @GridEnterpriseFeature
     public boolean isWaitForSegmentOnStart();
 
     /**
@@ -484,6 +467,7 @@ public interface GridConfiguration {
      *
      * @return Segmentation policy.
      */
+    @GridEnterpriseFeature
     public GridSegmentationPolicy getSegmentationPolicy();
 
     /**
@@ -499,6 +483,7 @@ public interface GridConfiguration {
      * @return {@code True} if all segmentation resolvers should succeed,
      *      {@code false} if only one is enough.
      */
+    @GridEnterpriseFeature
     public boolean isAllSegmentationResolversPassRequired();
 
     /**
@@ -511,6 +496,7 @@ public interface GridConfiguration {
      *
      * @return Segment check frequency.
      */
+    @GridEnterpriseFeature
     public int getSegmentCheckFrequency();
 
     /**
@@ -586,15 +572,6 @@ public interface GridConfiguration {
     public GridLoadBalancingSpi[] getLoadBalancingSpi();
 
     /**
-     * Should return fully configured tracing SPI implementation. If not provided, returns
-     * {@code null}. Note that tracing SPI is optional. If not provided - no tracing will
-     * be configured (i.e. there is no default tracing SPI implementation).
-     *
-     * @return Grid tracing SPI implementation or {@code null} to <b>not use tracing.</b>
-     */
-    public GridTracingSpi[] getTracingSpi();
-
-    /**
      * Should return fully configured swap space SPI implementations. If not provided, default
      * implementation will be used. See {@link GridFactory} for information on default configuration.
      * <p>
@@ -606,28 +583,14 @@ public interface GridConfiguration {
     public GridSwapSpaceSpi[] getSwapSpaceSpi();
 
     /**
-     * Should return fully configured cloud SPI implementations.
-     * Note that cloud SPI is optional. If not provided, no cloud support
-     * will be used.
-     * <p>
-     * Note that user can provide one or multiple instances of this SPI (and select later which one
-     * is used in a particular context).
-     *
-     * @return Grid cloud SPI implementation or <tt>null</tt> to
-     *      not use cloud SPI.
-     */
-    public GridCloudSpi[] getCloudSpi();
-
-    /**
      * This value is used to expire messages from waiting list whenever node
      * discovery discrepancies happen.
      * <p>
-     * During startup, it is possible for some SPIs, such as
-     * {@code GridJmsDiscoverySpi}, to have a
-     * small time window when <tt>Node A</tt> has discovered <tt>Node B</tt>, but <tt>Node B</tt>
+     * During startup, it is possible for some SPIs to have a small time window when
+     * <tt>Node A</tt> has discovered <tt>Node B</tt>, but <tt>Node B</tt>
      * has not discovered <tt>Node A</tt> yet. Such time window is usually very small,
-     * a matter of milliseconds, but certain JMS providers may be very slow and hence have
-     * larger discovery delay window.
+     * a matter of milliseconds, but certain JMS providers, for example, may be very slow
+     * and hence have larger discovery delay window.
      * <p>
      * The default value of this property is {@code 60,000} specified by
      * {@link #DFLT_DISCOVERY_STARTUP_DELAY}. This should be good enough for vast
@@ -778,15 +741,6 @@ public interface GridConfiguration {
     public boolean isDaemon();
 
     /**
-     * Returning {@code true} allows to exclude local node from being considered for cloud
-     * coordinator.
-     *
-     * @return {@code true} if local node should be excluded from being a cloud
-     *      coordinator, {@code false} otherwise.
-     */
-    public boolean isDisableCloudCoordinator();
-
-    /**
      * Gets path, either absolute or relative to {@code GRIDGAIN_HOME}, to {@code Jetty}
      * XML configuration file. {@code Jetty} is used to support REST over HTTP protocol for
      * accessing GridGain APIs remotely.
@@ -854,4 +808,15 @@ public interface GridConfiguration {
      */
     @GridEnterpriseFeature
     @Nullable public String getLicenseUrl();
+
+    /**
+     * Gets frequency of metrics log print out.
+     * <p>
+     * If {@code 0}, metrics print out is disabled.
+     * <p>
+     * Metrics log print out is disabled by default.
+     *
+     * @return Frequency of metrics log print out.
+     */
+    public int getMetricsLogFrequency();
 }

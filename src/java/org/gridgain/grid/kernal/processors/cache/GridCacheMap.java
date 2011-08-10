@@ -27,7 +27,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Underlying map used by distributed cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @SuppressWarnings({"ObjectEquality"})
 public class GridCacheMap<K, V> {
@@ -124,8 +124,6 @@ public class GridCacheMap<K, V> {
         table = new Bucket[capacity];
 
         bits = new BitSet(capacity);
-
-        init();
     }
 
     /**
@@ -141,15 +139,6 @@ public class GridCacheMap<K, V> {
     }
 
     /**
-     * Initialization hook for subclasses. This method is called
-     * in all constructors and pseudo-constructors (clone, readObject)
-     * after HashMap has been initialized but before any entries have
-     * been inserted.  (In the absence of this method, readObject would
-     * require explicit knowledge of subclasses.)
-     */
-    protected void init() { /* No-op. */ }
-
-    /**
      * Sets factory for entries.
      *
      * @param factory Entry factory.
@@ -163,7 +152,8 @@ public class GridCacheMap<K, V> {
     /**
      * Read lock.
      */
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"}) void readLock() {
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
+    void readLock() {
         lock.readLock().lock();
     }
 
@@ -177,7 +167,8 @@ public class GridCacheMap<K, V> {
     /**
      * Write lock.
      */
-    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"}) void writeLock() {
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased"})
+    void writeLock() {
         lock.writeLock().lock();
     }
 
@@ -263,26 +254,6 @@ public class GridCacheMap<K, V> {
      */
     public boolean isEmpty() {
         return size.get() == 0;
-    }
-
-    /**
-     * Returns the value to which the specified key is mapped in this identity
-     * hash map, or {@code null} if the map contains no mapping for this key.
-     * A return value of {@code null} does not <i>necessarily</i> indicate
-     * that the map contains no mapping for the key; it is also possible that
-     * the map explicitly maps the key to {@code null}. The
-     * <tt>containsKey</tt> method may be used to distinguish these two cases.
-     *
-     * @param key the key whose associated value is to be returned.
-     * @return the value to which this map maps the specified key, or
-     *      {@code null} if the map contains no mapping for this key.
-     * @see #put(Object, Object, long)
-     */
-
-    @Nullable public V get(Object key) {
-        GridCacheMapEntry<K, V> entry = getEntry(key);
-
-        return entry == null ? null : entry.rawGet();
     }
 
     /**
@@ -385,7 +356,6 @@ public class GridCacheMap<K, V> {
      * @return {@code True} if this map contains a mapping for the specified
      * key.
      */
-
     public boolean containsKey(Object k) {
         assert k != null;
 
@@ -898,7 +868,7 @@ public class GridCacheMap<K, V> {
 
         /** {@inheritDoc} */
         @Override public boolean hasNext() {
-            return next != null;
+            return next != null && (!isVal || nextVal != null);
         }
 
         /**
@@ -950,6 +920,8 @@ public class GridCacheMap<K, V> {
                     map.readUnlock();
                 }
 
+                assert next != null;
+
                 if (isVal) {
                     nextVal = next.wrap(true).peek(CU.<K, V>empty());
 
@@ -958,7 +930,7 @@ public class GridCacheMap<K, V> {
                 }
 
                 // Verify outside of read-lock.
-                if (next != null && (next.visitable(NON_INTERNAL_ARR) && next.visitable(filter)))
+                if (next.visitable(NON_INTERNAL_ARR) && next.visitable(filter))
                     break; // While.
             }
 

@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code LRU} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridMBeanDescription("MBean for LRU cache eviction policy.")
 public interface GridCacheLruEvictionPolicyMBean {
@@ -42,59 +42,4 @@ public interface GridCacheLruEvictionPolicyMBean {
      */
     @GridMBeanDescription("Current queue size.")
     public int getCurrentSize();
-
-    /**
-     * Gets number of voided nodes that remain on queue to be removed later for better concurrency.
-     * This concept is similar to Garbage Collection Eden space, hence the name.
-     *
-     * @return Number of voided nodes that remain on queue.
-     */
-    @GridMBeanDescription("Current queue eden size.")
-    public int getCurrentEdenSize();
-
-    /**
-     * Clear eden space of internal queue.
-     */
-    @GridMBeanDescription("Clears Eden space from internal queue.")
-    public void gc();
-
-    /**
-     * Gets average time spent on GC'ing queue.
-     *
-     * @return Average time spent on GC'ing queue.
-     */
-    @GridMBeanDescription("Average time spent on GC'ing queue.")
-    public long getAverageGcTime();
-
-    /**
-     * Gets number of LRU queue nodes GC'ed by this policy.
-     *
-     * @return Number of LRU queue nodes GC'ed by this policy.
-     */
-    @GridMBeanDescription("Number of queue nodes GC'ed.")
-    public long getNodesGced();
-
-    /**
-     * Gets number of LRU queue nodes created by this policy.
-     *
-     * @return Number of LRU queue nodes created by this policy.
-     */
-    @GridMBeanDescription("Number of queue nodes created.")
-    public long getNodesCreated();
-
-    /**
-     * Gets number of LRU queue GC calls executed by this policy.
-     *
-     * @return Number of LRU queue GC calls executed by this policy.
-     */
-    @GridMBeanDescription("Number of GC calls.")
-    public long getGcCalls();
-
-    /**
-     * Gets formatted representation of internal queue.
-     *
-     * @return Formatted representation of internal queue.
-     */
-    @GridMBeanDescription("Formatted representation of internal queue.")
-    public String queueFormatted();
 }

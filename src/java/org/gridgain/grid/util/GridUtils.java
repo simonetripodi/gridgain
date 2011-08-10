@@ -22,8 +22,6 @@ import org.gridgain.grid.marshaller.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
-import org.gridgain.grid.util.mail.*;
-import org.gridgain.grid.util.mail.inbox.*;
 import org.gridgain.grid.util.mbean.*;
 import org.gridgain.grid.util.worker.*;
 import org.gridgain.jsr305.*;
@@ -34,7 +32,6 @@ import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.*;
 import org.springframework.core.io.*;
 import sun.misc.*;
-
 import javax.mail.*;
 import javax.mail.Authenticator;
 import javax.mail.internet.*;
@@ -60,8 +57,8 @@ import java.util.jar.*;
 import java.util.regex.*;
 import java.util.zip.*;
 
-import static org.fusesource.jansi.Ansi.*;
 import static org.fusesource.jansi.Ansi.Attribute.*;
+import static org.fusesource.jansi.Ansi.*;
 import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
@@ -69,7 +66,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1440,7 +1437,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -2480,39 +2477,6 @@ public abstract class GridUtils {
      * Closes given resource logging possible checked exception.
      *
      * @param rsrc Resource to close. If it's {@code null} - it's no-op.
-     * @param purge Whether or not to purge mail inbox on closing.
-     * @param log Logger to log possible checked exception with (optional).
-     */
-    public static void close(@WillClose @Nullable GridMailInbox rsrc, boolean purge, @Nullable GridLogger log) {
-        if (rsrc != null)
-            try {
-                rsrc.close(purge);
-            }
-            catch (GridMailException e) {
-                warn(log, "Failed to close resource: " + e.getMessage());
-            }
-    }
-
-    /**
-     * Quietly closes given resource ignoring possible checked exception.
-     *
-     * @param rsrc Resource to close. If it's {@code null} - it's no-op.
-     * @param purge Whether or not to purge mail inbox on closing.
-     */
-    public static void closeQuiet(@WillClose @Nullable GridMailInbox rsrc, boolean purge) {
-        if (rsrc != null)
-            try {
-                rsrc.close(purge);
-            }
-            catch (GridMailException ignored) {
-                // No-op.
-            }
-    }
-
-    /**
-     * Closes given resource logging possible checked exception.
-     *
-     * @param rsrc Resource to close. If it's {@code null} - it's no-op.
      * @param log Logger to log possible checked exception with (optional).
      */
     public static void close(@WillClose @Nullable Reader rsrc, @Nullable GridLogger log) {
@@ -3009,6 +2973,16 @@ public abstract class GridUtils {
     }
 
     /**
+     * Mask cache name to make sure that it is not {@code null}.
+     *
+     * @param cacheName Cache name to mask, possibly {@code null}.
+     * @return {@code Non-null} cache name.
+     */
+    public static String maskCacheName(@Nullable String cacheName) {
+        return cacheName == null ? "defaultCache" : cacheName;
+    }
+
+    /**
      * Constructs JMX object name with given properties.
      * Map with ordered {@code groups} used for proper object name construction.
      *
@@ -3025,8 +2999,7 @@ public abstract class GridUtils {
         if (gridName != null && gridName.length() > 0)
             sb.a("grid=").a(gridName).a(',');
 
-        if (cacheName == null)
-            cacheName = "defaultCache";
+        cacheName = maskCacheName(cacheName);
 
         sb.a("group=").a(cacheName).a(',');
 

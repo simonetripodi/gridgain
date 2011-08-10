@@ -17,16 +17,16 @@ import org.jetbrains.annotations._
 import org.gridgain.scalar._
 
 /**
- * This trait provide mixin for properly typed version of `GridProjection#withName(...)` method.
+ * This trait provide mixin for properly typed version of `GridProjection#with...()` methods.
  *
  * Method on `GridProjection` always returns an instance of type `GridProjection` even when
- * called on a sub-class. This trait's method `withName$` return the instance of the same type
+ * called on a sub-class. This trait's methods return the instance of the same type
  * it was called on.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
-trait ScalarTaskThreadContext[T <: GridProjection] extends ScalarMixin { this: PimpedType[T] =>
+trait ScalarTaskThreadContext[T <: GridProjection] extends ScalarConversions { this: PimpedType[T] =>
     /**
      * Properly typed version of `GridProjection#withName(...)` method.
      *

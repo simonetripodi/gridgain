@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * Cache proxy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externalizable {
     /** Context. */
@@ -1339,6 +1339,55 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
     }
 
     /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet() {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryKeySet();
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryKeySet(filter);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryKeySet(keys, filter);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable K[] keys) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryKeySet(keys);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
     @Override public Collection<V> values() {
         GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
 
@@ -1381,6 +1430,55 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
 
         try {
             return cache.values(keys);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues() {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryValues();
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryValues(filter);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryValues(keys, filter);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable K[] keys) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryValues(keys);
         }
         finally {
             gate.leave(prev);
@@ -1431,6 +1529,56 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
 
         try {
             return cache.entrySet(filter);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet() {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryEntrySet();
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryEntrySet(keys, filter);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable K[] keys) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryEntrySet(keys);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.primaryEntrySet(filter);
         }
         finally {
             gate.leave(prev);
@@ -3144,6 +3292,18 @@ public class GridCacheProxyImpl<K, V> implements GridCacheProxy<K, V>, Externali
 
         try {
             return cache.mapPartitionsToNodes(parts);
+        }
+        finally {
+            gate.leave(prev);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Object affinityKey(K key) {
+        GridCacheProjectionImpl<K, V> prev = gate.enter(prj);
+
+        try {
+            return cache.affinityKey(key);
         }
         finally {
             gate.leave(prev);

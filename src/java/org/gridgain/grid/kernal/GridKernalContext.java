@@ -16,7 +16,6 @@ import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
 import org.gridgain.grid.kernal.controllers.segmentation.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
-import org.gridgain.grid.kernal.managers.cloud.*;
 import org.gridgain.grid.kernal.managers.collision.*;
 import org.gridgain.grid.kernal.managers.communication.*;
 import org.gridgain.grid.kernal.managers.deployment.*;
@@ -27,7 +26,6 @@ import org.gridgain.grid.kernal.managers.loadbalancer.*;
 import org.gridgain.grid.kernal.managers.metrics.*;
 import org.gridgain.grid.kernal.managers.swapspace.*;
 import org.gridgain.grid.kernal.managers.topology.*;
-import org.gridgain.grid.kernal.managers.tracing.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.closure.*;
 import org.gridgain.grid.kernal.processors.email.*;
@@ -42,12 +40,11 @@ import org.gridgain.grid.kernal.processors.task.*;
 import org.gridgain.grid.kernal.processors.timeout.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.util.tostring.*;
-
 import java.util.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridToStringExclude
 public interface GridKernalContext extends GridMetadataAware, Iterable<GridComponent> {
@@ -227,13 +224,6 @@ public interface GridKernalContext extends GridMetadataAware, Iterable<GridCompo
     public GridEmailProcessor email();
 
     /**
-     * Gets cloud manager.
-     *
-     * @return Cloud manager.
-     */
-    public GridCloudManager cloud();
-
-    /**
      * Gets rich processor.
      *
      * @return Rich processor.
@@ -295,13 +285,6 @@ public interface GridKernalContext extends GridMetadataAware, Iterable<GridCompo
      * @return Event storage manager.
      */
     public GridEventStorageManager event();
-
-    /**
-     * Gets tracing manager.
-     *
-     * @return Tracing manager, possibly {@code null} if tracing is disabled.
-     */
-    public GridTracingManager tracing();
 
     /**
      * Gets failover manager.

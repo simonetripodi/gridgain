@@ -11,17 +11,12 @@ package org.gridgain.grid;
 
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.editions.*;
-import org.gridgain.grid.events.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.spi.deployment.*;
 import org.gridgain.grid.spi.discovery.*;
-import org.gridgain.grid.spi.loadbalancing.*;
-import org.gridgain.grid.spi.topology.*;
 import org.gridgain.grid.typedef.*;
 import org.jetbrains.annotations.*;
-
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -47,7 +42,7 @@ import java.util.concurrent.*;
  * on Wiki.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface Grid extends GridProjection {
     /**
@@ -156,16 +151,6 @@ public interface Grid extends GridProjection {
     public GridLogger log();
 
     /**
-     * Deprecated in favor of {@link #nodes(GridPredicate[])} method.
-     * <p>
-     * Gets collection of all grid nodes.
-     *
-     * @return Collection of all grid nodes.
-     */
-    @Deprecated
-    public Collection<GridRichNode> getAllNodes();
-
-    /**
      * Tests whether or not this GridGain runtime runs on an enterprise edition. This method
      * is primarily for informational purpose.
      *
@@ -174,35 +159,6 @@ public interface Grid extends GridProjection {
      * @see GridEnterpriseOnly
      */
     public boolean isEnterprise();
-
-    /**
-     * This method is deprecated in favor of {@link #executor(GridPredicate[])} method.
-     * <p>
-     * Creates new {@link ExecutorService} which will execute all submitted
-     * {@link Callable} and {@link Runnable} tasks on this projection.
-     * <p>
-     * User may run {@link Callable} and {@link Runnable} tasks
-     * just like normally with {@link ExecutorService java.util.ExecutorService},
-     * but these tasks must implement {@link Serializable} interface.
-     * <p>
-     * The execution will happen either locally or remotely, depending on
-     * configuration of {@link GridLoadBalancingSpi} and {@link GridTopologySpi}.
-     * <p>
-     * The typical Java example could be:
-     * <pre name="code" class="java">
-     * ...
-     * ExecutorService exec = grid.newGridExecutorService();
-     *
-     * Future&lt;String&gt; fut = exec.submit(new MyCallable());
-     * ...
-     * String res = fut.get();
-     * ...
-     * </pre>
-     *
-     * @return {@code ExecutorService} which delegates all calls to grid.
-     */
-    @Deprecated
-    public ExecutorService newGridExecutorService();
 
     /**
      * Creates grid rich node wrapped around given thin node.
@@ -218,21 +174,6 @@ public interface Grid extends GridProjection {
      * @return Rich node.
      */
     public GridRichNode rich(GridNode node);
-
-    /**
-     * Creates grid rich cloud wrapped around given thin cloud.
-     * <p>
-     * Note that in most cases end user should not have to use this method as most of
-     * the APIs returning rich clouds already. This functionality exists for easier
-     * migration from previous versions as well as for internal purposes.
-     * <p>
-     * Note also that GridGain caches rich instances internal and for same thin cloud
-     * it will always return the same rich cloud.
-     *
-     * @param cloud Thin cloud to wrap.
-     * @return Rich cloud.
-     */
-    public GridRichCloud rich(GridCloud cloud);
 
     /**
      * Blocks and waits for the local event.
@@ -680,53 +621,6 @@ public interface Grid extends GridProjection {
         @Nullable GridPredicate<? super Class<? extends GridTask<?, ?>>>... p);
 
     /**
-     * Deprecated in favor of following two monadic methods:
-     * <ul>
-     * <li>{@link #send(Collection, GridPredicate[])}</li>
-     * <li>{@link #send(Object, GridPredicate[])}</li>
-     * </ul>
-     * <p>
-     * Sends message to the given grid node.
-     *
-     * @param node Node to send message to.
-     * @param msg Message to send.
-     * @throws GridException Thrown in case of any errors.
-     */
-    @Deprecated
-    public void sendMessage(GridNode node, Object msg) throws GridException;
-
-    /**
-     * Deprecated in favor of following two monadic methods:
-     * <ul>
-     * <li>{@link #send(Collection, GridPredicate[])}</li>
-     * <li>{@link #send(Object, GridPredicate[])}</li>
-     * </ul>
-     * <p>
-     * Sends message to the given grid nodes.
-     *
-     * @param nodes Nodes to send message to.
-     * @param msg Message to send.
-     * @throws GridException Thrown in case of any errors.
-     */
-    @Deprecated
-    public void sendMessage(Collection<? extends GridNode> nodes, Object msg) throws GridException;
-
-    /**
-     * Deprecated in favor of {@link #localTasks(GridPredicate[])} method.
-     * <p>
-     * Gets map of all locally deployed tasks keyed by their task name satisfying all given predicates.
-     * If no tasks were locally deployed, then empty map is returned. If no predicates provided - all
-     * locally deployed tasks, if any, will be returned.
-     *
-     * @param p Set of filtering predicates. If no predicates provided - all
-     *      locally deployed tasks, if any, will be returned.
-     * @return Map of locally deployed tasks keyed by their task name.
-     */
-    @Deprecated
-    public Map<String, Class<? extends GridTask<?, ?>>> getLocalTasks(
-        @Nullable GridPredicate<? super Class<? extends GridTask<?, ?>>>... p);
-
-    /**
      * Makes the best attempt to undeploy a task from the whole grid. Note that this
      * method returns immediately and does not wait until the task will actually be
      * undeployed on every node.
@@ -765,23 +659,6 @@ public interface Grid extends GridProjection {
      * @param evt Locally generated event.
      */
     public void recordLocalEvent(GridEvent evt);
-
-    /**
-     * This method is deprecated in favor of {@link #name()}.
-     * <p>
-     * Gets the name of the grid this grid instance (and correspondingly its local node) belongs to.
-     * Note that single Java VM can have multiple grid instances all belonging to different grids. Grid
-     * name allows to indicate to what grid this particular grid instance (i.e. grid runtime and its
-     * local node) belongs to.
-     * <p>
-     * If default grid instance is used, then
-     * {@code null} is returned. Refer to {@link GridFactory} documentation
-     * for information on how to start named grids.
-     *
-     * @return Name of the grid, or {@code null} for default grid.
-     */
-    @Deprecated
-    public String getName();
 
     /**
      * Gets the name of the grid this grid instance (and correspondingly its local node) belongs to.
@@ -895,105 +772,9 @@ public interface Grid extends GridProjection {
     public void clearSwapSpace(@Nullable String space) throws GridException;
 
     /**
-     * This method is deprecated in favor of {@link #configuration()}.
-     * <p>
-     * Gets the configuration of this grid instance.
-     *
-     * @return Grid configuration instance.
-     */
-    @Deprecated
-    public GridConfiguration getConfiguration();
-
-    /**
      * Gets the configuration of this grid instance.
      *
      * @return Grid configuration instance.
      */
     public GridConfiguration configuration();
-
-    /**
-     * Gets collection of clouds that satisfy all given predicates. Note that if no predicates provided
-     * - all cloud descriptors will be returned.
-     *
-     * @param p Predicates. If none is provided - all cloud will be returned.
-     * @return Collection of clouds that satisfy all given predicates.
-     * @see org.gridgain.grid.typedef.PCR
-     */
-    public Collection<GridRichCloud> clouds(@Nullable GridPredicate<? super GridRichCloud>... p);
-
-    /**
-     * Gets the cloud for given cloud ID.
-     *
-     * @param cloudId Cloud ID.
-     * @return Cloud for given ID or {@code null} if such cloud was not found.
-     */
-    public GridRichCloud cloud(String cloudId);
-
-    /**
-     * Use {@link #remoteNodes(GridPredicate[])} instead.
-     *
-     * @param p Predicates to filter remote nodes. If none provided - all remote nodes will be returned.
-     * @return Nodes for which the predicates returned {@code true}.
-     * @see #remoteNodes(GridPredicate[])
-     */
-    @Deprecated
-    public Collection<GridRichNode> getRemoteNodes(@Nullable GridPredicate<? super GridRichNode>... p);
-
-    /**
-     * Use {@link #localNode()} instead.
-     *
-     * @return Local grid node.
-     * @see #localNode()
-     */
-    @Deprecated
-    public GridRichNode getLocalNode();
-
-    /**
-     * Use {@link #nodes(GridPredicate[])} instead.
-     *
-     * @param p Predicate to filter nodes. If none provided - all nodes will be returned.
-     * @return Nodes for which the predicate returned {@code true}.
-     */
-    @Deprecated
-    public Collection<GridRichNode> getNodes(@Nullable GridPredicate<? super GridRichNode>... p);
-
-    /**
-     * Use {@link #node(UUID, GridPredicate[])} instead.
-     *
-     * @param nodeId ID of a node to get.
-     * @return Node for a given ID or {@code null} is such node has not been discovered.
-     */
-    @Deprecated
-    public GridNode getNode(UUID nodeId);
-
-    /**
-     * Deprecated in favor of new unified event management. See the following:
-     * <ul>
-     * <li>{@link GridEvent}</li>
-     * <li>{@link #addLocalEventListener(GridLocalEventListener, int...)}</li>
-     * <li>{@link GridDiscoveryEvent}</li>
-     * <li>{@link GridEventType}</li>
-     * </ul>
-     *
-     * @param lsnr Discovery listener to add.
-     */
-    @SuppressWarnings({"deprecation"})
-    @Deprecated
-    public void addDiscoveryListener(GridDiscoveryListener lsnr);
-
-    /**
-     * Deprecated in favor of new unified event management. See the following:
-     * <ul>
-     * <li>{@link GridEvent}</li>
-     * <li>{@link #addLocalEventListener(GridLocalEventListener, int...)}</li>
-     * <li>{@link GridDiscoveryEvent}</li>
-     * <li>{@link GridEventType}</li>
-     * </ul>
-     *
-     * @param lsnr Discovery listener to remove.
-     * @return {@code True} if listener was removed, {@code false} otherwise.
-     */
-    @SuppressWarnings({"deprecation"})
-    @Deprecated
-    public boolean removeDiscoveryListener(GridDiscoveryListener lsnr);
 }

@@ -25,7 +25,7 @@ import java.util.concurrent.*;
  * for more details.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @param <T> Return type of {@link Callable}.
  */
 @SuppressWarnings({"TransientFieldNotInitialized"})
@@ -76,7 +76,7 @@ public class GridExecutorCallableTask<T> extends GridTaskAdapter<Callable<T>, T>
             */
             @SuppressWarnings("unchecked")
             @Override public Object execute() throws GridException {
-                Callable<T> call = (Callable<T>)argument();
+                Callable<T> call = (Callable<T>)argument(0);
 
                 if (call != null) {
                     GridKernalContext ctx = ((GridKernal)grid).context();

@@ -28,7 +28,7 @@ import java.util.concurrent.locks.*;
  * <a href="http://weblogs.java.net/blog/tomwhite/archive/2007/11/consistent_hash.html">Tom White's Blog</a>.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridConsistentHash<N> implements Serializable {
     /**
@@ -396,6 +396,8 @@ public class GridConsistentHash<N> implements Serializable {
                         rmv.add(n);
 
                         nodes.remove(n);
+
+                        this.nodes.remove(n);
                     }
                 }
             }

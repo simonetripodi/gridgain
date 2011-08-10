@@ -23,6 +23,7 @@ import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.communication.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
+import org.gridgain.grid.util.*;
 import org.gridgain.grid.util.tostring.*;
 import org.gridgain.grid.util.worker.*;
 import org.jetbrains.annotations.*;
@@ -40,7 +41,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
     /** */
@@ -111,9 +112,8 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
 
     /** */
     private ThreadLocal<GridTuple2<Object, GridByteArrayList>> cacheMsg =
-        new ThreadLocal<GridTuple2<Object, GridByteArrayList>>() {
-            @Nullable
-            @Override protected GridTuple2<Object, GridByteArrayList> initialValue() {
+        new GridThreadLocal<GridTuple2<Object, GridByteArrayList>>() {
+            @Nullable @Override protected GridTuple2<Object, GridByteArrayList> initialValue() {
                 return null;
             }
         };
@@ -1728,7 +1728,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a pair of listener and its corresponding message p.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     @SuppressWarnings("deprecation")
     private class GridFilteredMessageListener implements GridMessageListener {
@@ -1780,7 +1780,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a message listener wrapper that knows about peer deployment.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     @SuppressWarnings("deprecation")
     private class GridUserMessageListener implements GridMessageListener {
@@ -1876,7 +1876,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * Ordered communication message set.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.1.1c.14072011
+     * @version 3.5.0c.10082011
      */
     private class GridCommunicationMessageSet implements GridTimeoutObject {
         /** */

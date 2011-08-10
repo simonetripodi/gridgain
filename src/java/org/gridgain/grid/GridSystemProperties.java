@@ -13,13 +13,14 @@ import org.gridgain.grid.editions.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.spi.discovery.*;
 import org.gridgain.grid.test.*;
+import org.gridgain.grid.thread.*;
 
 /**
  * Contains constants for all system properties and environmental variables in GridGain. These
  * properties and variables can be used to affect the behavior of GridGain.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridTestVmParameters
  */
 public final class GridSystemProperties {
@@ -287,6 +288,19 @@ public final class GridSystemProperties {
      * @see GridConfiguration#getDeploymentMode()
      */
     public static final String GG_DEP_MODE_OVERRIDE = "GRIDGAIN_DEPLOYMENT_MODE_OVERRIDE";
+
+    /**
+     * System property to specify a threshold of eviction events accumulating before
+     * eviction policy gets notified.
+     */
+    public static final String GG_EVICT_UNWIND_THRESHOLD = "GRIDGAIN_EVICT_UNWIND_THRESHOLD";
+
+    /**
+     * System property to disable emailing of assertion errors.
+     *
+     * @see GridThread
+     */
+    public static final String GG_ASSERT_SEND_DISABLED = "GRIDGAIN_ASSERT_SEND_DISABLED";
 
     /**
      * Enforces singleton.

@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Cache communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
     /** Number of retries using to send messages. */
@@ -634,23 +634,16 @@ public class GridCacheIoManager<K, V> extends GridCacheManager<K, V> {
                 cacheMsg.p2pUnmarshal(cctx, cctx.deploy().globalLoader());
             }
             catch (GridException e) {
-                if (cacheMsg.ignoreClassErrors()) {
-                    if (X.hasCause(e, InvalidClassException.class, ClassNotFoundException.class,
-                        NoClassDefFoundError.class, UnsupportedClassVersionError.class))
-                        cacheMsg.onClassError(e);
-                    else
-                        throw e;
-                }
+                if (cacheMsg.ignoreClassErrors() && X.hasCause(e, InvalidClassException.class,
+                        ClassNotFoundException.class, NoClassDefFoundError.class, UnsupportedClassVersionError.class))
+                    cacheMsg.onClassError(e);
                 else
                     throw e;
             }
             catch (Error e) {
-                if (cacheMsg.ignoreClassErrors()) {
-                    if (X.hasCause(e, NoClassDefFoundError.class, UnsupportedClassVersionError.class))
+                if (cacheMsg.ignoreClassErrors() && X.hasCause(e, NoClassDefFoundError.class,
+                    UnsupportedClassVersionError.class))
                         cacheMsg.onClassError(new GridException("Failed to load class during unmarshalling: " + e, e));
-                    else
-                        throw e;
-                }
                 else
                     throw e;
             }

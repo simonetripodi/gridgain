@@ -34,7 +34,7 @@ import java.util.*;
  * The new job will simply print out the argument passed in.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridifyHelloWorldFailoverTask extends GridifyTaskSplitAdapter<Integer> {
     /** Grid task session is injected here. */
@@ -95,7 +95,7 @@ public class GridifyHelloWorldFailoverTask extends GridifyTaskSplitAdapter<Integ
                 // Note that since we are calling this method from within the grid job
                 // AOP-based grid enabling will not cross-cut it and method will just
                 // execute normally.
-                return GridifyHelloWorldFailoverExample.sayIt(this.<String>argument());
+                return GridifyHelloWorldFailoverExample.sayIt(this.<String>argument(0));
             }
         });
     }

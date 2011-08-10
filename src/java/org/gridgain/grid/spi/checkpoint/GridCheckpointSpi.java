@@ -12,7 +12,6 @@ package org.gridgain.grid.spi.checkpoint;
 import org.gridgain.grid.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.checkpoint.cache.*;
-import org.gridgain.grid.spi.checkpoint.coherence.*;
 import org.gridgain.grid.spi.checkpoint.jdbc.*;
 import org.gridgain.grid.spi.checkpoint.s3.*;
 import org.gridgain.grid.spi.checkpoint.sharedfs.*;
@@ -43,13 +42,12 @@ import org.jetbrains.annotations.*;
  * <ul>
  * <li>{@link GridSharedFsCheckpointSpi}</li>
  * <li>{@link GridS3CheckpointSpi}</li>
- * <li>{@link GridCoherenceCheckpointSpi}</li>
  * <li>{@link GridJdbcCheckpointSpi}</li>
  * <li>{@link GridCacheCheckpointSpi}</li>
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridSpiOptional(false)
 public interface GridCheckpointSpi extends GridSpi {

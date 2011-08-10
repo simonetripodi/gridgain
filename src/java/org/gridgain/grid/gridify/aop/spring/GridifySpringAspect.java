@@ -31,7 +31,7 @@ import static org.gridgain.grid.GridFactoryState.*;
  * {@code gridified} methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see Gridify
  */
 public class GridifySpringAspect implements MethodInterceptor {
@@ -57,9 +57,8 @@ public class GridifySpringAspect implements MethodInterceptor {
         // annotation bugs in some scripting languages (e.g. Groovy).
         String gridName = F.isEmpty(ann.gridName()) ? null : ann.gridName();
 
-        if (G.state(gridName) != STARTED) {
+        if (G.state(gridName) != STARTED)
             throw new GridException("Grid is not locally started: " + gridName);
-        }
 
         // Initialize defaults.
         GridifyArgument arg = new GridifyArgumentAdapter(mtd.getDeclaringClass(), mtd.getName(),
@@ -67,29 +66,25 @@ public class GridifySpringAspect implements MethodInterceptor {
 
         if (!ann.interceptor().equals(GridifyInterceptor.class)) {
             // Check interceptor first.
-            if (!ann.interceptor().newInstance().isGridify(ann, arg)) {
+            if (!ann.interceptor().newInstance().isGridify(ann, arg))
                 return invoc.proceed();
-            }
         }
 
-        if (!ann.taskClass().equals(GridifyDefaultTask.class) && ann.taskName().length() > 0) {
+        if (!ann.taskClass().equals(GridifyDefaultTask.class) && ann.taskName().length() > 0)
             throw new GridException("Gridify annotation must specify either Gridify.taskName() or " +
                 "Gridify.taskClass(), but not both: " + ann);
-        }
 
         try {
             Grid grid = G.grid(gridName);
 
-            if (!ann.taskClass().equals(GridifyDefaultTask.class)) {
+            if (!ann.taskClass().equals(GridifyDefaultTask.class))
                 return grid.execute((Class<? extends GridTask<GridifyArgument, Object>>)ann.taskClass(), arg,
                     ann.timeout()).get();
-            }
 
             // If task name was not specified.
-            if (ann.taskName().length() == 0) {
+            if (ann.taskName().length() == 0)
                 return grid.execute(new GridifyDefaultTask(invoc.getMethod().getDeclaringClass()), arg,
                     ann.timeout()).get();
-            }
 
             // If task name was specified.
             return grid.execute(ann.taskName(), arg, ann.timeout()).get();
@@ -100,16 +95,14 @@ public class GridifySpringAspect implements MethodInterceptor {
                 Throwable cause = e.getCause();
 
                 while (cause != null) {
-                    if (ex.isAssignableFrom(cause.getClass())) {
+                    if (ex.isAssignableFrom(cause.getClass()))
                         throw cause;
-                    }
 
                     cause = cause.getCause();
                 }
 
-                if (ex.isAssignableFrom(e.getClass())) {
+                if (ex.isAssignableFrom(e.getClass()))
                     throw e;
-                }
             }
 
             throw new GridifyRuntimeException("Undeclared exception thrown: " + e.getMessage(), e);

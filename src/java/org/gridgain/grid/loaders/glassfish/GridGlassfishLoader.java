@@ -51,7 +51,7 @@ import java.util.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridGlassfishLoader implements LifecycleListener {
     /**
@@ -72,12 +72,10 @@ public class GridGlassfishLoader implements LifecycleListener {
 
     /** {@inheritDoc} */
     @Override public void handleEvent(LifecycleEvent evt) throws ServerLifecycleException {
-        if (evt.getEventType() == LifecycleEvent.INIT_EVENT) {
+        if (evt.getEventType() == LifecycleEvent.INIT_EVENT)
             start((Properties)evt.getData());
-        }
-        else if (evt.getEventType() == LifecycleEvent.SHUTDOWN_EVENT) {
+        else if (evt.getEventType() == LifecycleEvent.SHUTDOWN_EVENT)
             stop();
-        }
     }
 
     /**
@@ -90,13 +88,11 @@ public class GridGlassfishLoader implements LifecycleListener {
     private void start(Properties props) throws ServerLifecycleException {
         GridLogger log = new GridJclLogger(LogFactory.getLog("GridGain"));
 
-        if (props != null) {
+        if (props != null)
             cfgFile = props.getProperty(cfgFilePathParam);
-        }
 
-        if (cfgFile == null) {
+        if (cfgFile == null)
             throw new ServerLifecycleException("Failed to read property: " + cfgFilePathParam);
-        }
 
         ctxClsLdr = Thread.currentThread().getContextClassLoader();
 
@@ -105,10 +101,9 @@ public class GridGlassfishLoader implements LifecycleListener {
 
         URL cfgUrl = U.resolveGridGainUrl(cfgFile);
 
-        if (cfgUrl == null) {
+        if (cfgUrl == null)
             throw new ServerLifecycleException("Failed to find Spring configuration file (path provided should be " +
                 "either absolute, relative to GRIDGAIN_HOME, or relative to META-INF folder): " + cfgFile);
-        }
 
         GenericApplicationContext springCtx;
 
@@ -137,13 +132,11 @@ public class GridGlassfishLoader implements LifecycleListener {
                 ", err=" + e.getMessage() + ']', e);
         }
 
-        if (cfgMap == null) {
+        if (cfgMap == null)
             throw new ServerLifecycleException("Failed to find a single grid factory configuration in: " + cfgUrl);
-        }
 
-        if (cfgMap.size() == 0) {
+        if (cfgMap.isEmpty())
             throw new ServerLifecycleException("Can't find grid factory configuration in: " + cfgUrl);
-        }
 
         try {
             for (GridConfiguration cfg : (Collection<GridConfiguration>)cfgMap.values()) {
@@ -152,23 +145,20 @@ public class GridGlassfishLoader implements LifecycleListener {
                 GridConfigurationAdapter adapter = new GridConfigurationAdapter(cfg);
 
                 // Set Glassfish logger.
-                if (cfg.getGridLogger() == null) {
+                if (cfg.getGridLogger() == null)
                     adapter.setGridLogger(log);
-                }
 
                 Grid grid = G.start(adapter, springCtx);
 
                 // Test if grid is not null - started properly.
-                if (grid != null) {
-                    gridNames.add(grid.getName());
-                }
+                if (grid != null)
+                    gridNames.add(grid.name());
             }
         }
         catch (GridException e) {
             // Stop started grids only.
-            for (String name: gridNames) {
+            for (String name: gridNames)
                 G.stop(name, true);
-            }
 
             throw new ServerLifecycleException("Failed to start GridGain.", e);
         }
@@ -181,8 +171,7 @@ public class GridGlassfishLoader implements LifecycleListener {
         Thread.currentThread().setContextClassLoader(ctxClsLdr);
 
         // Stop started grids only.
-        for (String name: gridNames) {
+        for (String name: gridNames)
             G.stop(name, true);
-        }
     }
 }

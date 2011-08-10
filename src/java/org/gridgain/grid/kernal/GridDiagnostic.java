@@ -22,7 +22,7 @@ import java.util.concurrent.*;
  * reports errors or suspicious results.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 final class GridDiagnostic {
     /** */
@@ -116,7 +116,7 @@ final class GridDiagnostic {
                     if (U.allLocalMACs() == null)
                         U.warn(log, "No live network interfaces detected. If IP-multicast discovery is used - " +
                             "make sure to add 127.0.0.1 as a local address.",
-                            "No live network interfaces detected.");
+                            "No live network interfaces. Add 127.0.0.1 as a local address.");
                 }
             });
 

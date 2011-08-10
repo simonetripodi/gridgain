@@ -34,7 +34,7 @@ import org.gridgain.grid.typedef.internal.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridAdaptiveProcessingTimeLoadProbe implements GridAdaptiveLoadProbe {
     /** Flag indicating whether to use average execution time vs. current. */
@@ -78,16 +78,15 @@ public class GridAdaptiveProcessingTimeLoadProbe implements GridAdaptiveLoadProb
 
     /** {@inheritDoc} */
     @Override public double getLoad(GridNode node, int jobsSentSinceLastUpdate) {
-        GridNodeMetrics metrics = node.getMetrics();
+        GridNodeMetrics metrics = node.metrics();
 
         if (useAvg) {
             double load = metrics.getAverageJobExecuteTime() + metrics.getAverageJobWaitTime();
 
             // If load is greater than 0, then we can use average times.
             // Otherwise, we will proceed to using current times.
-            if (load > 0) {
+            if (load > 0)
                 return load;
-            }
         }
 
         double load = metrics.getCurrentJobExecuteTime() + metrics.getCurrentJobWaitTime();

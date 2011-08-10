@@ -23,7 +23,7 @@ import java.util.*;
  * Cache eviction request.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 class GridCacheEvictionRequest<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Future id. */
@@ -31,7 +31,7 @@ class GridCacheEvictionRequest<K, V> extends GridCacheMessage<K, V> implements G
 
     /** Keys to clear from near and backup nodes. */
     @GridToStringInclude
-    private Map<K, GridTuple2<GridCacheVersion, Boolean>> keys = new HashMap<K, GridTuple2<GridCacheVersion, Boolean>>();
+    private Map<K, GridTuple2<GridCacheVersion, Boolean>> keys;
 
     /** Serialized keys. */
     @GridToStringExclude
@@ -46,9 +46,12 @@ class GridCacheEvictionRequest<K, V> extends GridCacheMessage<K, V> implements G
 
     /**
      * @param futId Future id.
+     * @param size Size.
      */
-    GridCacheEvictionRequest(long futId) {
+    GridCacheEvictionRequest(long futId, int size) {
         this.futId = futId;
+
+        keys = new HashMap<K, GridTuple2<GridCacheVersion, Boolean>>(size, 1.0f);
     }
 
     /** {@inheritDoc} */

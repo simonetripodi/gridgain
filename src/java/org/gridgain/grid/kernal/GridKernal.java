@@ -13,16 +13,13 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.affinity.*;
 import org.gridgain.grid.editions.*;
-import org.gridgain.grid.events.*;
 import org.gridgain.grid.kernal.controllers.*;
 import org.gridgain.grid.kernal.controllers.affinity.*;
 import org.gridgain.grid.kernal.controllers.license.*;
 import org.gridgain.grid.kernal.controllers.rest.*;
 import org.gridgain.grid.kernal.controllers.segmentation.*;
-import org.gridgain.grid.kernal.executor.*;
 import org.gridgain.grid.kernal.managers.*;
 import org.gridgain.grid.kernal.managers.checkpoint.*;
-import org.gridgain.grid.kernal.managers.cloud.*;
 import org.gridgain.grid.kernal.managers.collision.*;
 import org.gridgain.grid.kernal.managers.communication.*;
 import org.gridgain.grid.kernal.managers.deployment.*;
@@ -33,7 +30,6 @@ import org.gridgain.grid.kernal.managers.loadbalancer.*;
 import org.gridgain.grid.kernal.managers.metrics.*;
 import org.gridgain.grid.kernal.managers.swapspace.*;
 import org.gridgain.grid.kernal.managers.topology.*;
-import org.gridgain.grid.kernal.managers.tracing.*;
 import org.gridgain.grid.kernal.processors.cache.*;
 import org.gridgain.grid.kernal.processors.closure.*;
 import org.gridgain.grid.kernal.processors.email.*;
@@ -50,12 +46,10 @@ import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.checkpoint.*;
-import org.gridgain.grid.spi.cloud.*;
 import org.gridgain.grid.spi.failover.*;
 import org.gridgain.grid.spi.loadbalancing.*;
 import org.gridgain.grid.spi.swapspace.*;
 import org.gridgain.grid.spi.topology.*;
-import org.gridgain.grid.spi.tracing.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
@@ -63,7 +57,6 @@ import org.gridgain.grid.util.future.*;
 import org.gridgain.grid.util.worker.*;
 import org.jetbrains.annotations.*;
 import org.springframework.context.*;
-
 import javax.management.*;
 import java.io.*;
 import java.lang.management.*;
@@ -73,7 +66,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.cache.GridCacheMode.*;
 import static org.gridgain.grid.kernal.GridKernalState.*;
@@ -86,14 +78,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
-    private static final String VER = "3.1.1c";
+    private static final String VER = "3.5.0c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "14072011";
+    private static final String BUILD = "10082011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -150,9 +142,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     /** Kernal start timestamp. */
     private long startTime = System.currentTimeMillis();
 
-    /** Proxy object factory. */
-    private GridProxyFactory proxyFact;
-
     /** Spring context, potentially {@code null}. */
     private ApplicationContext springCtx;
 
@@ -161,6 +150,9 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
     /** */
     private Timer licTimer;
+
+    /** */
+    private Timer metricsLogTimer;
 
     /** Indicate error on grid stop. */
     private boolean errOnStop;
@@ -174,11 +166,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     /** */
     private final GridBreaker stopBrk = new GridBreaker();
 
-    /** Set of legacy discovery listeners. */
-    @SuppressWarnings("deprecation")
-    private final Map<GridDiscoveryListener, GridLocalEventListener> discoLsnrs =
-        new IdentityHashMap<GridDiscoveryListener, GridLocalEventListener>();
-
     /**
      * No-arg constructor is required by externalization.
      */
@@ -187,13 +174,11 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     }
 
     /**
-     * @param proxyFact Proxy objects factory.
      * @param springCtx Optional Spring application context.
      */
-    public GridKernal(GridProxyFactory proxyFact, @Nullable ApplicationContext springCtx) {
+    public GridKernal(@Nullable ApplicationContext springCtx) {
         super(null);
 
-        this.proxyFact = proxyFact;
         this.springCtx = springCtx;
     }
 
@@ -225,17 +210,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     /** {@inheritDoc} */
     @Override public boolean isEnterprise() {
         return U.isEnterprise();
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<GridRichNode> getAllNodes() {
-        return nodes(EMPTY_PN);
-    }
-
-    /** {@inheritDoc} */
-    @Deprecated
-    @Override public String getName() {
-        return gridName;
     }
 
     /** {@inheritDoc} */
@@ -285,13 +259,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         assert cfg != null;
 
         return Arrays.toString(cfg.getCheckpointSpi());
-    }
-
-    /** {@inheritDoc} */
-    @Override public String getCloudSpiFormatted() {
-        assert cfg != null;
-
-        return Arrays.toString(cfg.getCloudSpi());
     }
 
     /** {@inheritDoc} */
@@ -362,13 +329,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         assert cfg != null;
 
         return Arrays.toString(cfg.getTopologySpi());
-    }
-
-    /** {@inheritDoc} */
-    @Override public String getTracingSpiFormatted() {
-        assert cfg != null;
-
-        return Arrays.toString(cfg.getTracingSpi());
     }
 
     /** {@inheritDoc} */
@@ -578,7 +538,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         A.notNull(cfg.getDiscoverySpi(), "cfg.getDiscoverySpi()");
         A.notNull(cfg.getEventStorageSpi(), "cfg.getEventStorageSpi()");
         A.notNull(cfg.getMetricsSpi(), "cfg.getMetricsSpi()");
-        A.notNull(cfg.getCloudSpi(), "cfg.getCloudSpi()");
         A.notNull(cfg.getCollisionSpi(), "cfg.getCollisionSpi()");
         A.notNull(cfg.getFailoverSpi(), "cfg.getFailoverSpi()");
         A.notNull(cfg.getLoadBalancingSpi(), "cfg.getLoadBalancingSpi()");
@@ -673,17 +632,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             startProcessor(ctx, new GridRichProcessor(ctx));
             startProcessor(ctx, new GridJobMetricsProcessor(ctx));
 
-            // Start tracing manager first if there is SPI.
-            // By default no tracing SPI provided.
-            if (cfg.getTracingSpi() != null) {
-                GridTracingManager traceMgr = new GridTracingManager(ctx);
-
-                // Configure proxy factory for tracing.
-                traceMgr.setProxyFactory(proxyFact);
-
-                startManager(ctx, traceMgr, attrs);
-            }
-
             // Timeout processor needs to be started before managers,
             // as managers may depend on it.
             startProcessor(ctx, new GridTimeoutProcessor(ctx));
@@ -701,7 +649,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             startManager(ctx, new GridCollisionManager(ctx), attrs);
             startManager(ctx, new GridTopologyManager(ctx), attrs);
             startManager(ctx, new GridSwapSpaceManager(ctx), attrs);
-            startManager(ctx, new GridCloudManager(ctx), attrs);
 
             // Create the controllers. Order is important.
             startController(ctx, GridLicenseController.class);
@@ -819,6 +766,39 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                     }
                 }
             }, PERIODIC_LIC_CHECK_DELAY, PERIODIC_LIC_CHECK_DELAY);
+
+        int metricsLogFreq = cfg.getMetricsLogFrequency();
+
+        if (metricsLogFreq > 0) {
+            metricsLogTimer = new Timer("gridgain-metrics-logger");
+
+            metricsLogTimer.scheduleAtFixedRate(new GridTimerTask() {
+                @Override protected void safeRun() {
+                    DecimalFormat dblFmt = new DecimalFormat("#.##");
+
+                    GridNodeMetrics m = localNode().metrics();
+
+                    double cpuLoadPct = m.getCurrentCpuLoad() * 100;
+                    double avgCpuLoadPct = m.getAverageCpuLoad() * 100;
+
+                    long heapUsed = m.getHeapMemoryUsed();
+                    long heapMax = m.getHeapMemoryMaximum();
+
+                    double heapUsedPct = heapUsed * 100.0 / heapMax;
+
+                    SB sb = new SB();
+
+                    sb.a("Metrics [").
+                        a("currentCpuLoad=").a(dblFmt.format(cpuLoadPct)).a("%").
+                        a(", avgCpuLoad=").a(dblFmt.format(avgCpuLoadPct)).a("%").
+                        a(", heapUsed=").a(dblFmt.format(heapUsedPct)).a("%").
+                        a("]");
+
+                    if (log.isInfoEnabled())
+                        log.info(sb.toString());
+                }
+            }, metricsLogFreq, metricsLogFreq);
+        }
 
         if (log.isQuiet()) {
             U.quiet("System info:");
@@ -1065,26 +1045,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             add(attrs, U.spiAttribute(swapSpi, ATTR_SPI_VER), getSpiVersion(spiCls));
         }
 
-        // Cloud SPIs.
-        if (cfg.getCloudSpi() != null) {
-            if (!cfg.isDisableCloudCoordinator()) {
-                ArrayList<String> cloudIds = new ArrayList<String>();
-
-                for (GridCloudSpi cloudSpi : cfg.getCloudSpi()) {
-                    spiCls = cloudSpi.getClass();
-
-                    add(attrs, U.spiAttribute(cloudSpi, ATTR_SPI_CLASS), spiCls.getName());
-                    add(attrs, U.spiAttribute(cloudSpi, ATTR_SPI_VER), getSpiVersion(spiCls));
-
-                    cloudIds.add(cloudSpi.getCloudId());
-                }
-
-                add(attrs, ATTR_CLOUD_IDS, cloudIds);
-            }
-            else
-                add(attrs, ATTR_CLOUD_CRD_DISABLE, null);
-        }
-
         // Topology SPIs.
         for (GridTopologySpi topSpi : cfg.getTopologySpi()) {
             spiCls = topSpi.getClass();
@@ -1118,15 +1078,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
         add(attrs, U.spiAttribute(cfg.getEventStorageSpi(), ATTR_SPI_CLASS), spiCls.getName());
         add(attrs, U.spiAttribute(cfg.getEventStorageSpi(), ATTR_SPI_VER), getSpiVersion(spiCls));
-
-        // Tracing SPIs.
-        if (cfg.getTracingSpi() != null)
-            for (GridTracingSpi traceSpi : cfg.getTracingSpi()) {
-                spiCls = traceSpi.getClass();
-
-                add(attrs, U.spiAttribute(traceSpi, ATTR_SPI_CLASS), spiCls.getName());
-                add(attrs, U.spiAttribute(traceSpi, ATTR_SPI_VER), getSpiVersion(spiCls));
-            }
 
         // Checkpoints SPIs.
         for (GridCheckpointSpi cpSpi : cfg.getCheckpointSpi()) {
@@ -1482,13 +1433,13 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             // Font name "Small Slant"
             if (log.isQuiet())
                 U.quiet(
-                    "  _____     _     _______      _         ____  ___",
-                    " / ___/____(_)___/ / ___/___ _(_)___    |_  / <  /",
-                    "/ (_ // __/ // _  / (_ // _ `/ // _ \\  _/_ <_ / / ",
-                    "\\___//_/ /_/ \\_,_/\\___/ \\_,_/_//_//_/ /____(_)_/",
+                    "  _____     _     _______      _         ____   ____",
+                    " / ___/____(_)___/ / ___/___ _(_)___    |_  /  / __/",
+                    "/ (_ // __/ // _  / (_ // _ `/ // _ \\  _/_ <_ /__ \\ ",
+                    "\\___//_/ /_/ \\_,_/\\___/ \\_,_/_//_//_/ /____(_)____/ ",
                     "",
-                    U.bright(tag),
-                    U.pad((tag.length() - ver.length()) / 2) + ver,
+                    " " + U.bright(tag),
+                    " " + U.pad((tag.length() - ver.length()) / 2) + ver,
                     " " + COPYRIGHT,
                     "",
                     "Quiet mode.",
@@ -1496,10 +1447,10 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                 );
             else if (log.isInfoEnabled())
                 log.info(NL + NL +
-                    ">>>   _____     _     _______      _         ____  ___" + NL +
-                    ">>>  / ___/____(_)___/ / ___/___ _(_)___    |_  / <  /" + NL +
-                    ">>> / (_ // __/ // _  / (_ // _ `/ // _ \\  _/_ <_ / / " + NL +
-                    ">>> \\___//_/ /_/ \\_,_/\\___/ \\_,_/_//_//_/ /____(_)_/" + NL +
+                    ">>>   _____     _     _______      _         ____   ____" + NL +
+                    ">>>  / ___/____(_)___/ / ___/___ _(_)___    |_  /  / __/" + NL +
+                    ">>> / (_ // __/ // _  / (_ // _ `/ // _ \\  _/_ <_ /__ \\ " + NL +
+                    ">>> \\___//_/ /_/ \\_,_/\\___/ \\_,_/_//_//_/ /____(_)____/ " + NL +
                     ">>> " + NL +
                     ">>> " + tag + NL +
                     ">>> " + U.pad((tag.length() - ver.length()) / 2) + ver + NL +
@@ -1681,6 +1632,10 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             // Cancel license timer.
             if (licTimer != null)
                 licTimer.cancel();
+
+            // Cancel metrics log timer.
+            if (metricsLogTimer != null)
+                metricsLogTimer.cancel();
 
             // Clear node local store.
             nodeLocal.clear();
@@ -2005,9 +1960,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             log.debug("Grid load balancing SPI : " + Arrays.toString(cfg.getLoadBalancingSpi()));
             log.debug("Grid metrics SPI        : " + cfg.getMetricsSpi());
             log.debug("Grid swap space SPI     : " + Arrays.toString(cfg.getSwapSpaceSpi()));
-            log.debug("Grid cloud SPI          : " + Arrays.toString(cfg.getCloudSpi()));
             log.debug("Grid topology SPI       : " + Arrays.toString(cfg.getTopologySpi()));
-            log.debug("Grid tracing SPI        : " + Arrays.toString(cfg.getTracingSpi()));
         }
     }
 
@@ -2105,12 +2058,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             log.debug("Class path: " + rtBean.getClassPath());
             log.debug("Library path: " + rtBean.getLibraryPath());
         }
-    }
-
-    /** {@inheritDoc} */
-    @Deprecated
-    @Override public GridConfiguration getConfiguration() {
-        return cfg;
     }
 
     /** {@inheritDoc} */
@@ -2439,19 +2386,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
-    @Override public ExecutorService newGridExecutorService() {
-        guard();
-
-        try {
-            return new GridExecutorService(ctx.grid(), log());
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
     @Override public <R> GridFuture<R> callLocal(Callable<R> c) throws GridException {
         A.notNull(c, "c");
 
@@ -2710,53 +2644,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     }
 
     /** {@inheritDoc} */
-    @Override public Collection<GridRichCloud> clouds(GridPredicate<? super GridRichCloud>[] p) {
-        guard();
-
-        try {
-            return F.lose(F.transform(ctx.cloud().clouds(), ctx.rich().richCloud()), false, p);
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override @Nullable public GridRichCloud cloud(String cloudId) {
-        A.notNull(cloudId, "cloudId");
-
-        guard();
-
-        try {
-            return ctx.rich().rich(ctx.cloud().cloud(cloudId));
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<GridRichNode> getRemoteNodes(GridPredicate<? super GridRichNode>[] p) {
-        return remoteNodes(p);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridRichNode getLocalNode() {
-        return localNode();
-    }
-
-    /** {@inheritDoc} */
-    @Override public Collection<GridRichNode> getNodes(GridPredicate<? super GridRichNode>[] p) {
-        return nodes(p);
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings("unchecked")
-    @Override public GridNode getNode(UUID nodeId) {
-        return node(nodeId, null);
-    }
-
-    /** {@inheritDoc} */
     @Override public GridProjection projectionForNodeIds(UUID[] nodeIds) {
         return projectionForNodeIds(Arrays.asList(nodeIds));
     }
@@ -2774,93 +2661,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
                     return node(nodeId, null);
                 }
             }));
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({"deprecation"})
-    @Override public void addDiscoveryListener(final GridDiscoveryListener lsnr) {
-        A.notNull(lsnr, "lsnr");
-
-        guard();
-
-        try {
-            GridLocalEventListener evtLsnr = new GridLocalEventListener() {
-                @SuppressWarnings("unchecked")
-                @Override public void onEvent(GridEvent evt) {
-                    assert evt != null;
-                    assert evt instanceof GridDiscoveryEvent;
-
-                    GridDiscoveryEvent discoEvt = (GridDiscoveryEvent)evt;
-
-                    GridDiscoveryEventType type;
-
-                    if (discoEvt.type() == EVT_NODE_FAILED)
-                        type = GridDiscoveryEventType.FAILED;
-                    else if (discoEvt.type() == EVT_NODE_JOINED)
-                        type = GridDiscoveryEventType.JOINED;
-                    else if (discoEvt.type() == EVT_NODE_LEFT)
-                        type = GridDiscoveryEventType.LEFT;
-                    else if (discoEvt.type() == EVT_NODE_METRICS_UPDATED)
-                        type = GridDiscoveryEventType.METRICS_UPDATED;
-                    else
-                        return;
-
-                    lsnr.onDiscovery(type, node(discoEvt.eventNodeId(), null));
-                }
-            };
-
-            ctx.event().addLocalEventListener(evtLsnr, EVTS_DISCOVERY_ALL);
-
-            synchronized (discoLsnrs) {
-                discoLsnrs.put(lsnr, evtLsnr);
-            }
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings({"deprecation"})
-    @Override public boolean removeDiscoveryListener(GridDiscoveryListener lsnr) {
-        A.notNull(lsnr, "lsnr");
-
-        guard();
-
-        try {
-            GridLocalEventListener evtLsnr;
-
-            synchronized (discoLsnrs) {
-                evtLsnr = discoLsnrs.remove(lsnr);
-            }
-
-            return evtLsnr != null && ctx.event().removeLocalEventListener(evtLsnr);
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @SuppressWarnings("deprecation")
-    @Override public void sendMessage(GridNode node, Object msg) throws GridException {
-        A.notNull(node, "node", msg, "msg");
-
-        send(msg, asArray(F.<GridRichNode>nodeForNodeId(node.id())));
-    }
-
-    /** {@inheritDoc} */
-    @Override public void sendMessage(Collection<? extends GridNode> nodes, Object msg) throws GridException {
-        A.notNull(nodes, "nodes", msg, "msg");
-
-        guard();
-
-        try {
-            send(msg, asArray(F.<GridRichNode>nodeForNodeIds(F.nodeIds(nodes))));
         }
         finally {
             unguard();
@@ -2889,35 +2689,6 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             assert n != null;
 
             return n;
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridRichCloud rich(GridCloud cloud) {
-        guard();
-
-        try {
-            GridRichCloud r = ctx.rich().rich(cloud);
-
-            assert r != null;
-
-            return r;
-        }
-        finally {
-            unguard();
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override public Map<String, Class<? extends GridTask<?, ?>>> getLocalTasks(@Nullable GridPredicate<? super Class<?
-        extends GridTask<?, ?>>>[] p) {
-        guard();
-
-        try {
-            return ctx.deploy().findAllTasks(p);
         }
         finally {
             unguard();

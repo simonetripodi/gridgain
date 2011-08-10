@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -124,6 +124,21 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     @Nullable
     @Override public <K, V> GridCacheProjection<K, V> parent() {
         return null;
+    }
+
+    /**
+     * Prints memory stats.
+     */
+    public void printMemoryStats() {
+        if (ctx.isNear()) {
+            X.println(">>>  Near cache size: " + keySize());
+
+            ctx.near().dht().printMemoryStats();
+        }
+        else if (ctx.isDht())
+            X.println(">>>  DHT cache size: " + keySize());
+        else
+            X.println(">>>  Cache size: " + keySize());
     }
 
     /**
@@ -1178,6 +1193,45 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet() {
+        return primaryEntrySet(CU.<K, V>empty());
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return map.entries(F.<GridPredicate<? super GridCacheEntry<K, V>>>concat(filter, F.<K, V>cachePrimary()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return primaryEntrySet(keys, null, filter);
+    }
+
+    /**
+     * @param keys Keys.
+     * @param keyFilter Key filter.
+     * @param filter Entry filter.
+     * @return Primary entry set.
+     */
+    public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super K> keyFilter, @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        if (F.isEmpty(keys))
+            return emptySet();
+
+        return new GridCacheEntrySet<K, V>(
+            ctx,
+            F.<K, GridCacheEntry<K, V>>viewReadOnly(keys, CU.<K, V>cacheKey2Entry(ctx), keyFilter),
+            F.<GridPredicate<? super GridCacheEntry<K, V>>>concat(filter, F.<K, V>cachePrimary()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(K[] keys) {
+        return primaryEntrySet(F.asList(keys));
+    }
+
+    /** {@inheritDoc} */
     @Override public Set<K> keySet() {
         return keySet(CU.<K, V>empty());
     }
@@ -1206,6 +1260,34 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet() {
+        return primaryKeySet(CU.<K, V>empty());
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return map.keySet(F.<GridPredicate<? super GridCacheEntry<K, V>>>concat(filter, F.<K, V>cachePrimary()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        if (F.isEmpty(keys)) {
+            return emptySet();
+        }
+
+        return new GridCacheKeySet<K, V>(
+            ctx,
+            F.viewReadOnly(keys, CU.<K, V>cacheKey2Entry(ctx)),
+            F.<GridPredicate<? super GridCacheEntry<K, V>>>concat(filter, F.<K, V>cachePrimary()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(K[] keys) {
+        return primaryKeySet(F.asList(keys), CU.<K, V>empty());
+    }
+
+    /** {@inheritDoc} */
     @Override public Collection<V> values() {
         return values(CU.<K, V>empty());
     }
@@ -1231,6 +1313,35 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     /** {@inheritDoc} */
     @Override public Collection<V> values(K[] keys) {
         return values(F.asList(keys), CU.<K, V>empty());
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues() {
+        return primaryValues(CU.<K, V>empty());
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return map.values(F.<GridPredicate<? super GridCacheEntry<K, V>>>concat(filter, F.<K, V>cachePrimary()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        if (F.isEmpty(keys)) {
+            return emptySet();
+        }
+
+        return new GridCacheValueCollection<K, V>(
+            ctx,
+            F.viewReadOnly(keys, CU.<K, V>cacheKey2Entry(ctx)),
+            F.<GridPredicate<? super GridCacheEntry<K, V>>>concat(filter, F.<K, V>cachePrimary()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(K[] keys) {
+        List<K> k = F.asList(keys);
+        return primaryValues(k, CU.<K, V>empty());
     }
 
     /**
@@ -1632,17 +1743,17 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         @Nullable final GridCacheTx tx, GridPredicate<? super GridCacheEntry<K, V>>[] filter,
         final GridInClosure2<K, V> vis) {
         return ctx.closures().callLocalSafe(new GPC<Object>() {
-                @Nullable @Override public Object call() {
-                    try {
-                        CU.loadAllFromStore(ctx, log, tx, keys, vis);
-                    }
-                    catch (GridException e) {
-                        throw new GridClosureException(e);
-                    }
-
-                    return null;
+            @Nullable @Override public Object call() {
+                try {
+                    CU.loadAllFromStore(ctx, log, tx, keys, vis);
                 }
-            }, true);
+                catch (GridException e) {
+                    throw new GridClosureException(e);
+                }
+
+                return null;
+            }
+        }, true);
     }
 
     /**
@@ -3132,13 +3243,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
         ctx.denyOnFlag(LOCAL);
 
-        GridCacheTx tx = ctx.tm().userTx();
-
-        if (tx != null)
-            throw new IllegalStateException("Failed to start new transaction " +
-                "(current thread already has a transaction): " + tx);
-
-        tx = txStart(concurrency, isolation, timeout, invalidate);
+        GridCacheTx tx = txStart(concurrency, isolation, timeout, invalidate);
 
         try {
             for (GridInClosure<GridCacheProjection<K, V>> c : closures)
@@ -3197,13 +3302,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         A.ensure(timeout >= 0, "timeout cannot be negative");
         A.ensure(!F.isEmpty(closures), "closures cannot be empty");
 
-        GridCacheTx tx = ctx.tm().userTx();
-
-        if (tx != null)
-            throw new IllegalStateException("Failed to start new transaction " +
-                "(current thread already has a transaction): " + tx);
-
-        tx = txStart(concurrency, isolation, timeout, invalidate);
+        GridCacheTx tx = txStart(concurrency, isolation, timeout, invalidate);
 
         Collection<R> res = new LinkedList<R>();
 
@@ -3623,11 +3722,8 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         GridCacheAffinity<K> aff = configuration().getAffinity();
 
         for (int part = 0; part < aff.partitions(); part++)
-            if (p.contains(F.first(aff.nodes(part, CU.allNodes(ctx))))) {
+            if (p.contains(F.first(aff.nodes(part, CU.allNodes(ctx)))))
                 parts.add(part);
-
-                break;
-            }
 
         return U.toIntArray(parts);
     }
@@ -3729,6 +3825,11 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 map.put(p, mapPartitionToNode(p));
 
         return map;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Object affinityKey(K key) {
+        return cacheCfg.getAffinityMapper().affinityKey(key);
     }
 
     /** {@inheritDoc} */

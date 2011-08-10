@@ -52,7 +52,7 @@ import org.gridgain.grid.typedef.internal.*;
  * This implementation is used by default by {@link GridAdaptiveLoadBalancingSpi} SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridAdaptiveCpuLoadProbe implements GridAdaptiveLoadProbe {
     /** Flag indicating whether to use average CPU load vs. current. */
@@ -209,16 +209,15 @@ public class GridAdaptiveCpuLoadProbe implements GridAdaptiveLoadProbe {
 
     /** {@inheritDoc} */
     @Override public double getLoad(GridNode node, int jobsSentSinceLastUpdate) {
-        GridNodeMetrics metrics = node.getMetrics();
+        GridNodeMetrics metrics = node.metrics();
 
         double k = 1.0d;
 
         if (useProcs) {
             int procs = metrics.getTotalCpus();
 
-            if (procs > 1) {
+            if (procs > 1)
                 k = procs * procCoefficient;
-            }
         }
 
         double load = (useAvg ? metrics.getAverageCpuLoad() : metrics.getCurrentCpuLoad()) / k;

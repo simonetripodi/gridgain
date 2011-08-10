@@ -23,7 +23,7 @@ import GridClosureCallMode._
  * two nodes. It is analogous to `GridMessagingPingPongExample` on Java side.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 object ScalarPingPongExample {
     def main(args: Array[String]) {
@@ -39,51 +39,49 @@ object ScalarPingPongExample {
     def pingPong() {
         val g = grid$
 
-        if (g.nodes().size < 2) {
+        if (g.nodes().size < 2)
             sys.error("I need a partner to play a ping pong!")
+        else {
+            // Pick first remote node as a partner.
+            val loc = g.localNode
+            val rmt = g.remoteNodes$().head
 
-            return
-        }
+            // Set up remote player: configure remote node 'rmt' to listen
+            // for messages from local node 'loc'.
+            rmt.remoteListenAsync(loc, new GridListenActor[String]() {
+                def receive(nodeId: UUID, msg: String) {
+                    println(msg)
 
-        // Pick first remote node as a partner.
-        val loc = g.localNode
-        val rmt = g.remoteNodes$().head
+                    msg match {
+                        case "PING" => respond("PONG")
+                        case "STOP" => stop()
+                    }
+                }
+            }).get
 
-        // Set up remote player: configure remote node 'rmt' to listen
-        // for messages from local node 'loc'.
-        rmt.remoteListenAsync(loc, new GridListenActor[String]() {
-            def receive(nodeId: UUID, msg: String) {
-                println(msg)
+            val latch = new CountDownLatch(10)
 
-                msg match {
-                    case "PING" => respond("PONG")
-                    case "STOP" => stop()
+            // Set up local player: configure local node 'loc'
+            // to listen for messages from remote node 'rmt'.
+            rmt listen new GridListenActor[String]() {
+                def receive(nodeId: UUID, msg: String) {
+                    println(msg)
+
+                    if (latch.getCount == 1)
+                        stop("STOP")
+                    else // We know it's 'PONG'.
+                        respond("PING")
+
+                    latch.countDown()
                 }
             }
-        }).get
 
-        val latch = new CountDownLatch(10)
+            // Serve!
+            rmt !< "PING"
 
-        // Set up local player: configure local node 'loc'
-        // to listen for messages from remote node 'rmt'.
-        rmt listen new GridListenActor[String]() {
-            def receive(nodeId: UUID, msg: String) {
-                println(msg)
-
-                if (latch.getCount == 1)
-                    stop("STOP")
-                else // We know it's 'PONG'.
-                    respond("PING")
-
-                latch.countDown()
-            }
+            // Wait til the match is over.
+            latch.await()
         }
-
-        // Serve!
-        rmt !< "PING"
-
-        // Wait til the match is over.
-        latch.await()
     }
 
     /**
@@ -92,59 +90,55 @@ object ScalarPingPongExample {
     def pingPong2() {
         val g = grid$
 
-        if (g.remoteNodes().size() < 2) {
+        if (g.remoteNodes().size() < 2)
             sys.error("I need at least two remote nodes!")
+        else {
+            // Pick two remote nodes.
+            val n1 = g.remoteNodes$().head
+            val n2 = g.remoteNodes$().tail.head
 
-            return
+            // Configure remote node 'n1' to receive messages from 'n2'.
+            n1.remoteListenAsync(n2, new GridListenActor[String] {
+                def receive(nid: UUID, msg: String) {
+                    println(msg)
+
+                    msg match {
+                        case "PING" => respond("PONG")
+                        case "STOP" => stop()
+                    }
+                }
+            }).get
+
+            // Configure remote node 'n2' to receive messages from 'n1'.
+            n2.remoteListenAsync(n1, new GridListenActor[String] {
+                // Get local count down latch.
+                private lazy val latch: CountDownLatch = g.nodeLocal.get("latch")
+
+                def receive(nid: UUID, msg: String) {
+                    println(msg)
+
+                    latch.getCount match {
+                        case 1 => stop("STOP")
+                        case _ => respond("PING")
+                    }
+
+                    latch.countDown()
+                }
+            }).get
+
+
+            // 1. Sets latch into node local storage so that local actor could use it.
+            // 2. Sends first 'PING' to 'n1'.
+            // 3. Waits until all messages are exchanged between two remote nodes.
+            n2 *< (UNICAST, () => {
+                val latch = new CountDownLatch(10)
+
+                g.nodeLocal[String, CountDownLatch].put("latch", latch)
+
+                n1 !< "PING"
+
+                latch.await()
+            })
         }
-
-        // Pick two remote nodes.
-        val n1 = g.remoteNodes$().head
-        val n2 = g.remoteNodes$().tail.head
-
-        // Configure remote node 'n1' to receive messages from 'n2'.
-        n1.remoteListenAsync(n2, new GridListenActor[String] {
-            def receive(nid: UUID, msg: String) {
-                println(msg)
-
-                msg match {
-                    case "PING" => respond("PONG")
-                    case "STOP" => stop()
-                }
-            }
-        }).get
-
-        // Configure remote node 'n2' to receive messages from 'n1'.
-        n2.remoteListenAsync(n1, new GridListenActor[String] {
-            // Get local count down latch.
-            private lazy val latch: CountDownLatch = g.nodeLocal.get("latch")
-
-            def receive(nid: UUID, msg: String) {
-                println(msg)
-
-                latch.getCount match {
-                    case 1 => stop("STOP")
-                    case _ => respond("PING")
-                }
-
-                latch.countDown()
-            }
-        }).get
-
-
-        // 1. Sets latch into node local storage so that local actor could use it.
-        // 2. Sends first 'PING' to 'n1'.
-        // 3. Waits until all messages are exchanged between two remote nodes.
-        n2 *< (UNICAST, () => {
-            val latch = new CountDownLatch(10)
-
-            g.nodeLocal[String, CountDownLatch].put("latch", latch)
-
-            println("Latch set: " + g.nodeLocal.get("latch"))
-
-            n1 !< "PING"
-
-            latch.await()
-        })
     }
 }

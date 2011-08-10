@@ -118,17 +118,17 @@ import annotation.target.field
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
-object scalar extends ScalarMixin {
+object scalar extends ScalarConversions {
     /** Visor copyright blurb. */
     private val COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc."
 
     /** Visor version number. */
-    private val VER = "3.1.1c"
+    private val VER = "3.5.0c"
 
     /** Visor build number. */
-    private val BUILD = "14072011"
+    private val BUILD = "10082011"
 
     /** Type alias for `GridCacheQuerySqlField`. */
     type ScalarCacheQuerySqlField = GridCacheQuerySqlField @field
@@ -336,26 +336,6 @@ object scalar extends ScalarMixin {
     def apply(springCfgUrl: URL)(body: => Unit) {
         init0(GridFactory.start(springCfgUrl), body)
     }
-
-    /**
-     * Gets named cloud from the default grid instance.
-     *
-     * @param cloudName Cloud name.
-     */
-    @inline def cloud$(cloudName: String): Option[GridRichCloud] =
-        Option(G.grid.cloud(cloudName))
-
-    /**
-     * Gets named cloud from specified grid instance.
-     *
-     * @param gridName Grid name.
-     * @param cloudName Cloud name.
-     */
-    @inline def cloud$(gridName: String, cloudName: String): Option[GridRichCloud] =
-        grid$(gridName) match {
-            case Some(g) => Option(g.cloud(cloudName))
-            case None => None
-        }
 
     /**
      * Gets default cache.

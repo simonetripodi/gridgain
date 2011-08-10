@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -204,23 +204,43 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
      * USE ONLY FOR MEMORY PROFILING DURING TESTS.
      */
     @Override public void printMemoryStats() {
-        int threadMapSize = threadMap.size();
-        int idMapSize = idMap.size();
-        int committedQueueSize = committedQ.size();
-        int prepareQueueSize = prepareQ.size();
-        int startVerCntsSize = startVerCnts.size();
-        int committedVersSize = committedVers.size();
-        int rolledbackVersSize = rolledbackVers.size();
+        GridCacheTxEx<K, V> firstTx = committedQ.peek();
+
+        int committedSize = committedQ.size();
+
+        Map.Entry<GridCacheVersion, AtomicInt> startVerEntry = startVerCnts.firstEntry();
+
+        GridCacheVersion minStartVer = null;
+        long dur = 0;
+
+        if (committedSize > 3000) {
+            minStartVer = new GridCacheVersion(Long.MAX_VALUE, cctx.nodeId());
+
+            GridCacheTxEx<K, V> stuck = null;
+
+            for (GridCacheTxEx<K, V> tx : idMap.values())
+                if (tx.startVersion().isLess(minStartVer)) {
+                    minStartVer = tx.startVersion();
+                    dur = System.currentTimeMillis() - tx.startTime();
+
+                    stuck = tx;
+                }
+
+            X.println("Stuck transaction: " + stuck);
+        }
 
         X.println(">>> ");
-        X.println(">>> Transaction memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
-        X.println(">>>   threadMapSize: " + threadMapSize);
-        X.println(">>>   idMapSize: " + idMapSize);
-        X.println(">>>   committedQueueSize: " + committedQueueSize);
-        X.println(">>>   prepareQueueSize: " + prepareQueueSize);
-        X.println(">>>   startVerCntsSize: " + startVerCntsSize);
-        X.println(">>>   committedVersSize: " + committedVersSize);
-        X.println(">>>   rolledbackVersSize: " + rolledbackVersSize);
+        X.println(">>> Transaction manager memory stats [grid=" + cctx.gridName() + ", cache=" + cctx.name() + ']');
+        X.println(">>>   threadMapSize: " + threadMap.size());
+        X.println(">>>   idMap [size=" + idMap.size() + ", minStartVer=" + minStartVer + ", dur=" + dur + "ms]");
+        X.println(">>>   committedQueue [size=" + committedSize +
+            ", firstStartVersion=" + (firstTx == null ? "null" : firstTx.startVersion()) +
+            ", firstEndVersion=" + (firstTx == null ? "null" : firstTx.endVersion()) + ']');
+        X.println(">>>   prepareQueueSize: " + prepareQ.size());
+        X.println(">>>   startVerCntsSize [size=" + startVerCnts.size() +
+            ", firstVer=" + startVerEntry + ']');
+        X.println(">>>   committedVersSize: " + committedVers.size());
+        X.println(">>>   rolledbackVersSize: " + rolledbackVers.size());
     }
 
     /**
@@ -557,6 +577,9 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     if (isSafeToForget(committedTx))
                         it.remove();
                 }
+
+                // Clean memory.
+                committedQ.peek();
             }
 
             if (tx.pessimistic())
@@ -652,6 +675,9 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                     }
                 }
             }
+
+            // Clean memory.
+            prepareQ.peek();
         }
 
         assert tx.ec() || tx.optimistic();

@@ -33,7 +33,7 @@ import static org.gridgain.grid.util.gridify.GridifyUtils.*;
  * {@code gridified} methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridifySetToSet
  */
 public class GridifySetToSetSpringAspect extends GridifySetToSetAbstractAspect implements MethodInterceptor {
@@ -59,15 +59,13 @@ public class GridifySetToSetSpringAspect extends GridifySetToSetAbstractAspect i
         // annotation bugs in some scripting languages (e.g. Groovy).
         String gridName = F.isEmpty(ann.gridName()) ? null : ann.gridName();
 
-        if (G.state(gridName) != STARTED) {
+        if (G.state(gridName) != STARTED)
             throw new GridException("Grid is not locally started: " + gridName);
-        }
 
         GridifyNodeFilter nodeFilter = null;
 
-        if (!ann.nodeFilter().equals(GridifyNodeFilter.class)) {
+        if (!ann.nodeFilter().equals(GridifyNodeFilter.class))
             nodeFilter = ann.nodeFilter().newInstance();
-        }
 
         GridifyArgumentBuilder argBuilder = new GridifyArgumentBuilder();
 
@@ -83,20 +81,17 @@ public class GridifySetToSetSpringAspect extends GridifySetToSetAbstractAspect i
 
         if (!ann.interceptor().equals(GridifyInterceptor.class)) {
             // Check interceptor first.
-            if (!ann.interceptor().newInstance().isGridify(ann, arg)) {
+            if (!ann.interceptor().newInstance().isGridify(ann, arg))
                 return invoc.proceed();
-            }
         }
 
         // Proceed locally for negative threshold parameter.
-        if (ann.threshold() < 0) {
+        if (ann.threshold() < 0)
             return invoc.proceed();
-        }
 
         // Analyse where to execute method (remotely or locally).
-        if (arg.getInputSize() != UNKNOWN_SIZE && arg.getInputSize() <= ann.threshold()) {
+        if (arg.getInputSize() != UNKNOWN_SIZE && arg.getInputSize() <= ann.threshold())
             return invoc.proceed();
-        }
 
         // Check is split to jobs allowed for input method argument with declared splitSize.
         checkIsSplitToJobsAllowed(arg, ann);
@@ -113,16 +108,14 @@ public class GridifySetToSetSpringAspect extends GridifySetToSetAbstractAspect i
                 Throwable cause = e.getCause();
 
                 while (cause != null) {
-                    if (ex.isAssignableFrom(cause.getClass())) {
+                    if (ex.isAssignableFrom(cause.getClass()))
                         throw cause;
-                    }
 
                     cause = cause.getCause();
                 }
 
-                if (ex.isAssignableFrom(e.getClass())) {
+                if (ex.isAssignableFrom(e.getClass()))
                     throw e;
-                }
             }
 
             throw new GridifyRuntimeException("Undeclared exception thrown: " + e.getMessage(), e);

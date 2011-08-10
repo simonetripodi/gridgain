@@ -29,8 +29,6 @@ import java.util.*;
  * <li>{@link #EVTS_DISCOVERY_ALL}</li>
  * <li>{@link #EVTS_JOB_EXECUTION}</li>
  * <li>{@link #EVTS_TASK_EXECUTION}</li>
- * <li>{@link #EVTS_CLOUD_ALL}</li>
- * <li>{@link #EVTS_CLOUD_COMMANDS}</li>
  * <li>{@link #EVTS_CACHE}</li>
  * <li>{@link #EVTS_SWAPSPACE}</li>
  * </ul>
@@ -50,7 +48,7 @@ import java.util.*;
  * event storage SPI if they are disabled in GridGain configuration.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public interface GridEventType {
     /**
@@ -557,86 +555,6 @@ public interface GridEventType {
     public static final int EVT_CACHE_PRELOAD_PART_LOADED = 82;
 
     /**
-     * Built-in event type: cloud changed.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_CHANGED = 100;
-
-    /**
-     * Built-in event type: cloud command executed.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_COMMAND_EXECUTED = 101;
-
-    /**
-     * Built-in event type: cloud command rejected by policy.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_COMMAND_REJECTED_BY_POLICY = 102;
-
-    /**
-     * Built-in event type: cloud command rejected by version.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_COMMAND_REJECTED_BY_ID = 103;
-
-    /**
-     * Built-in event type: cloud command failed.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_COMMAND_FAILED = 104;
-
-    /**
-     * Built-in event type: cloud resource added.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_RESOURCE_ADDED = 105;
-
-    /**
-     * Built-in event type: cloud resource changed.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_RESOURCE_CHANGED = 106;
-
-    /**
-     * Built-in event type: cloud resource removed.
-     * <p>
-     * NOTE: all types in range <b>from 1 to 1000 are reserved</b> for
-     * internal GridGain events and should not be used by user-defined events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int EVT_CLOUD_RESOURCE_REMOVED = 107;
-
-    /**
      * Built-in event type: license violation detected. Note that this event
      * can only be triggered in Enterprise Edition.
      * <p>
@@ -813,43 +731,11 @@ public interface GridEventType {
     };
 
     /**
-     * All cloud events. This array can be directly passed into
-     * {@link Grid#addLocalEventListener(GridLocalEventListener, int...)} method to
-     * subscribe to all cloud events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int[] EVTS_CLOUD_ALL = {
-        EVT_CLOUD_CHANGED,
-        EVT_CLOUD_COMMAND_EXECUTED,
-        EVT_CLOUD_COMMAND_REJECTED_BY_POLICY,
-        EVT_CLOUD_COMMAND_REJECTED_BY_ID,
-        EVT_CLOUD_COMMAND_FAILED,
-        EVT_CLOUD_RESOURCE_ADDED,
-        EVT_CLOUD_RESOURCE_CHANGED,
-        EVT_CLOUD_RESOURCE_REMOVED
-    };
-
-    /**
-     * Cloud command events. This array can be directly passed into
-     * {@link Grid#addLocalEventListener(GridLocalEventListener, int...)} method to
-     * subscribe to all cloud events.
-     *
-     * @see GridCloudEvent
-     */
-    public static final int[] EVTS_CLOUD_COMMANDS = {
-        EVT_CLOUD_COMMAND_EXECUTED,
-        EVT_CLOUD_COMMAND_REJECTED_BY_POLICY,
-        EVT_CLOUD_COMMAND_REJECTED_BY_ID,
-        EVT_CLOUD_COMMAND_FAILED,
-    };
-
-    /**
      * All swap space events. This array can be directly passed into
      * {@link Grid#addLocalEventListener(GridLocalEventListener, int...)} method to
      * subscribe to all cloud events.
      *
-     * @see GridCloudEvent
+     * @see GridSwapSpaceEvent
      */
     public static final int[] EVTS_SWAPSPACE = {
         EVT_SWAP_SPACE_CLEARED,

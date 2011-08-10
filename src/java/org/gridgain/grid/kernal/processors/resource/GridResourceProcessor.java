@@ -32,7 +32,7 @@ import java.util.concurrent.*;
  * Processor for all Grid and task/job resources.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridResourceProcessor extends GridProcessorAdapter {
     /** Grid instance injector. */
@@ -466,62 +466,6 @@ public class GridResourceProcessor extends GridProcessorAdapter {
         Object obj = unwrapTarget(lifecycleBean);
 
         // Caching key is null for the life-cycle beans.
-        ioc.inject(obj, GridLoggerResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridExecutorServiceResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridLocalNodeIdResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridLocalHostResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridMBeanServerResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridHomeResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridNameResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridMarshallerResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridSpringApplicationContextResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridSpringResource.class, nullInjector, null, null);
-        ioc.inject(obj, GridInstanceResource.class, nullInjector, null, null);
-    }
-
-    /**
-     * Injects held resources into given cloud enabled algorithms (such as strategies and policies).
-     *
-     * @param ce Cloud enabled.
-     * @throws GridException Throw in case of any errors.
-     */
-    public void inject(GridCloudEnabled ce) throws GridException {
-        if (log.isDebugEnabled())
-            log.debug("Injecting resources: " + ce);
-
-        // Unwrap Proxy object.
-        Object obj = unwrapTarget(ce);
-
-        injectBasicResource(ce, GridLoggerResource.class, injectLog.getLogger(ce.getClass()));
-
-        // No deployment for cloud enabled.
-        ioc.inject(obj, GridExecutorServiceResource.class, execInjector, null, null);
-        ioc.inject(obj, GridLocalNodeIdResource.class, nodeIdInjector, null, null);
-        ioc.inject(obj, GridLocalHostResource.class, locHostInjector, null, null);
-        ioc.inject(obj, GridMBeanServerResource.class, mbeanSrvInjector, null, null);
-        ioc.inject(obj, GridHomeResource.class, ggHomeInjector, null, null);
-        ioc.inject(obj, GridNameResource.class, ggNameInjector, null, null);
-        ioc.inject(obj, GridMarshallerResource.class, marshallerInjector, null, null);
-        ioc.inject(obj, GridSpringApplicationContextResource.class, springCtxInjector, null, null);
-        ioc.inject(obj, GridSpringResource.class, springBeanInjector, null, null);
-        ioc.inject(obj, GridInstanceResource.class, gridInjector, null, null);
-    }
-
-    /**
-     * Cleans up resources from given cloud enabled algorithms (such as strategies and policies).
-     * Essentially, this method injects <tt>null</tt>s into cloud enabled.
-     *
-     * @param ce Cloud enabled.
-     * @throws GridException Thrown in case of any errors.
-     */
-    public void cleanup(GridCloudEnabled ce) throws GridException {
-        if (log.isDebugEnabled())
-            log.debug("Cleaning up resources: " + ce);
-
-        // Unwrap Proxy object.
-        Object obj = unwrapTarget(ce);
-
-        // Caching key is null.
         ioc.inject(obj, GridLoggerResource.class, nullInjector, null, null);
         ioc.inject(obj, GridExecutorServiceResource.class, nullInjector, null, null);
         ioc.inject(obj, GridLocalNodeIdResource.class, nullInjector, null, null);

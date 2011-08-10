@@ -71,9 +71,9 @@ import java.util.*;
  * GridNodeFilterTopologySpi topSpi = new GridNodeFilterTopologySpi();
  *
  * GridJexlPredicate2&lt;GridNode, GridTaskSession&gt; filter = new GridJexlPredicate2&lt;GridNode, GridTaskSession&gt;(
- *     "node.metrics.availableProcessors &gt; 1 && " +
- *     "node.metrics.averageCpuLoad &lt; 0.5 && " +
- *     "node.attributes['os.name'] == 'Windows XP'", "node", "ses");
+ *     "node.metrics().availableProcessors &gt; 1 && " +
+ *     "node.metrics().averageCpuLoad &lt; 0.5 && " +
+ *     "node.attributes().get('os.name') == 'Windows XP'", "node", "ses");
  *
  * // Add filter.
  * topSpi.setFilter(filter);
@@ -97,9 +97,9 @@ import java.util.*;
  *                    &lt;bean class="org.gridgain.grid.lang.GridJexlPredicate2"&gt;
  *                        &lt;property name="expression"&gt;
  *                            &lt;value&gt;
- *                                &lt;![CDATA[elem1.metrics.availableProcessors > 1 &&
- *                                elem1.metrics.averageCpuLoad < 0.5 &&
- *                                elem1.attributes['os.name'] == 'Windows XP']]&gt;
+ *                                &lt;![CDATA[elem1.metrics().availableProcessors > 1 &&
+ *                                elem1.metrics().averageCpuLoad < 0.5 &&
+ *                                elem1.attributes().get('os.name') == 'Windows XP']]&gt;
  *                            &lt;/value&gt;
  *                        &lt;/property&gt;
  *                    &lt;/bean&gt;
@@ -112,13 +112,13 @@ import java.util.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.1.1c.14072011")
+    version = "3.5.0c.10082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridNodeFilterTopologySpi extends GridSpiAdapter implements GridTopologySpi,
     GridNodeFilterTopologySpiMBean {

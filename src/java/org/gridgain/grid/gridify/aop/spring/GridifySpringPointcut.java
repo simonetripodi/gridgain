@@ -19,7 +19,7 @@ import java.lang.reflect.*;
  * {@link GridifySetToSet} annotations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridifySpringPointcut implements Pointcut {
     /**
@@ -81,18 +81,12 @@ public class GridifySpringPointcut implements Pointcut {
     /** {@inheritDoc} */
     @Override public MethodMatcher getMethodMatcher() {
         switch (type) {
-            case DFLT: {
-                return dfltMatcher;
-            }
-            case SET_TO_VALUE: {
-                return setToValueMatcher;
-            }
-            case SET_TO_SET: {
-                return setToSetMatcher;
-            }
-            default: {
+            case DFLT: return dfltMatcher;
+            case SET_TO_VALUE: return setToValueMatcher;
+            case SET_TO_SET: return setToSetMatcher;
+
+            default:
                 assert false : "Unknown pointcut type: " + type;
-            }
         }
 
         return null;

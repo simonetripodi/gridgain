@@ -70,8 +70,8 @@ import java.util.concurrent.*;
  * For convenience, you can also optionally use {@link GridCacheAffinityKey} class. Here is how a
  * {@code PersonKey} defined above would look using {@link GridCacheAffinityKey}:
  * <pre name="code" class="java">
- * Object personKey1 = new GridCacheAffinityKey("myPersonId1", myCompanyId");
- * Object personKey2 = new GridCacheAffinityKey("myPersonId2", myCompanyId");
+ * Object personKey1 = new GridCacheAffinityKey("myPersonId1", "myCompanyId");
+ * Object personKey2 = new GridCacheAffinityKey("myPersonId2", "myCompanyId");
  *
  * // Both, the company and the person objects will be cached on the same node.
  * cache.put(myCompanyId, new Company(..));
@@ -147,7 +147,7 @@ import java.util.concurrent.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  * @see GridCacheName
  * @see GridCacheAffinity
  * @see GridCacheAffinityMapper

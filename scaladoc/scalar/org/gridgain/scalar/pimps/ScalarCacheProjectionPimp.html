@@ -40,15 +40,15 @@
       </h4>
       
           <div class="fullcommenttop" id="comment"><div class="comment cmt"><h4>Overview</h4><p>Defines Scalar &quot;pimp&quot; for <code>GridCacheProjection</code> on Java side.</p><p>Essentially this class extends Java <code>GridCacheProjection</code> interface with Scala specific
-API adapters using primarily implicit conversions defined in <code>ScalarMixin</code> object. What
+API adapters using primarily implicit conversions defined in <code>ScalarConversions</code> object. What
 it means is that you can use functions defined in this class on object
 of Java <code>GridCacheProjection</code> type. Scala will automatically (implicitly) convert it into
 Scalar's pimp and replace the original call with a call on that pimp.</p><p>Note that Scalar provide extensive library of implicit conversion between Java and
-Scala GridGain counterparts in <code>ScalarMixin</code> object</p><h4>Suffix '$' In Names</h4><p>Symbol <code>$</code> is used in names when they conflict with the names in the base Java class
+Scala GridGain counterparts in <code>ScalarConversions</code> object</p><h4>Suffix '$' In Names</h4><p>Symbol <code>$</code> is used in names when they conflict with the names in the base Java class
 that Scala pimp is shadowing or with Java package name that your Scala code is importing.
 Instead of giving two different names to the same function we've decided to simply mark
 Scala's side method with <code>$</code> suffix.
-</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.1 build: 14072011
+</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.5 build: 10082011
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]], <span name="scala.collection.IterableLike" class="extype">IterableLike</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scala.Equals" class="extype">Equals</span>, <span name="scala.collection.GenIterable" class="extype">GenIterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]], <span name="scala.collection.GenIterableLike" class="extype">GenIterableLike</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scala.collection.Traversable" class="extype">Traversable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]], <span name="scala.collection.GenTraversable" class="extype">GenTraversable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]], <span name="scala.collection.generic.GenericTraversableTemplate" class="extype">GenericTraversableTemplate</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>], <span name="scala.collection.TraversableLike" class="extype">TraversableLike</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scala.collection.GenTraversableLike" class="extype">GenTraversableLike</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scala.collection.Parallelizable" class="extype">Parallelizable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.parallel.ParIterable" class="extype">ParIterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scala.collection.TraversableOnce" class="extype">TraversableOnce</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]], <span name="scala.collection.GenTraversableOnce" class="extype">GenTraversableOnce</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]], <span name="scala.collection.generic.FilterMonadic" class="extype">FilterMonadic</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scala.collection.generic.HasNewBuilder" class="extype">HasNewBuilder</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V], <span name="scala.collection.Iterable" class="extype">Iterable</span>[<span name="org.gridgain.grid.cache.GridCacheEntry" class="extype">GridCacheEntry</span>[K, V]]], <span name="scalaz.PimpedType" class="extype">PimpedType</span>[<span name="org.gridgain.grid.cache.GridCacheProjection" class="extype">GridCacheProjection</span>[K, V]], AnyRef, <span name="scala.Any" class="extype">Any</span></div>
@@ -785,13 +785,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2Text" data-isabs="false">
-      <a id="h2Text(Class[_ <span class='angle_bracket'>&lt;</span>: V],String):Iterable[(K, V)]"></a>
+      <a id="h2Text(Class[_],String):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2Text</span>
         
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -819,13 +819,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2Text" data-isabs="false">
-      <a id="h2Text(GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String):Iterable[(K, V)]"></a>
+      <a id="h2Text(GridProjection,Class[_],String):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2Text</span>
         
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -853,13 +853,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2TextReduce" data-isabs="false">
-      <a id="h2TextReduce[R](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
+      <a id="h2TextReduce[R](Class[_],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2TextReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -887,13 +887,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2TextReduce" data-isabs="false">
-      <a id="h2TextReduce[R](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
+      <a id="h2TextReduce[R](GridProjection,Class[_],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2TextReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -921,13 +921,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2TextReduce" data-isabs="false">
-      <a id="h2TextReduce[R1, R2](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
+      <a id="h2TextReduce[R1, R2](Class[_],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2TextReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -955,13 +955,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2TextReduce" data-isabs="false">
-      <a id="h2TextReduce[R1, R2](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
+      <a id="h2TextReduce[R1, R2](GridProjection,Class[_],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2TextReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -989,13 +989,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2TextTransform" data-isabs="false">
-      <a id="h2TextTransform[T](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(V) ⇒ T):Iterable[(K, T)]"></a>
+      <a id="h2TextTransform[T](Class[_],String,(V) ⇒ T):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2TextTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> transform query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> transform query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1023,13 +1023,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query H2 text clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#h2TextTransform" data-isabs="false">
-      <a id="h2TextTransform[T](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(V) ⇒ T):Iterable[(K, T)]"></a>
+      <a id="h2TextTransform[T](GridProjection,Class[_],String,(V) ⇒ T):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">h2TextTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>H2TEXT</code> transform query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>H2TEXT</code> transform query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1201,13 +1201,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#lucene" data-isabs="false">
-      <a id="lucene(Class[_ <span class='angle_bracket'>&lt;</span>: V],String):Iterable[(K, V)]"></a>
+      <a id="lucene(Class[_],String):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">lucene</span>
         
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1235,13 +1235,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#lucene" data-isabs="false">
-      <a id="lucene(GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String):Iterable[(K, V)]"></a>
+      <a id="lucene(GridProjection,Class[_],String):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">lucene</span>
         
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1269,13 +1269,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#luceneReduce" data-isabs="false">
-      <a id="luceneReduce[R](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
+      <a id="luceneReduce[R](Class[_],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">luceneReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1303,13 +1303,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#luceneReduce" data-isabs="false">
-      <a id="luceneReduce[R](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
+      <a id="luceneReduce[R](GridProjection,Class[_],String,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">luceneReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1337,13 +1337,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#luceneReduce" data-isabs="false">
-      <a id="luceneReduce[R1, R2](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
+      <a id="luceneReduce[R1, R2](Class[_],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">luceneReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1371,13 +1371,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#luceneReduce" data-isabs="false">
-      <a id="luceneReduce[R1, R2](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
+      <a id="luceneReduce[R1, R2](GridProjection,Class[_],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">luceneReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1405,13 +1405,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#luceneTransform" data-isabs="false">
-      <a id="luceneTransform[T](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(V) ⇒ T):Iterable[(K, T)]"></a>
+      <a id="luceneTransform[T](Class[_],String,(V) ⇒ T):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">luceneTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> transform query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> transform query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1439,13 +1439,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query Lucene clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#luceneTransform" data-isabs="false">
-      <a id="luceneTransform[T](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(V) ⇒ T):Iterable[(K, T)]"></a>
+      <a id="luceneTransform[T](GridProjection,Class[_],String,(V) ⇒ T):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">luceneTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>LUCENE</code> transform query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>LUCENE</code> transform query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1964,13 +1964,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details..</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scan" data-isabs="false">
-      <a id="scan(Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred):Iterable[(K, V)]"></a>
+      <a id="scan(Class[_],KeyPred,ValuePred):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scan</span>
         
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -1998,13 +1998,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details..</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scan" data-isabs="false">
-      <a id="scan(GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred):Iterable[(K, V)]"></a>
+      <a id="scan(GridProjection,Class[_],KeyPred,ValuePred):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scan</span>
         
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2054,13 +2054,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scanReduce" data-isabs="false">
-      <a id="scanReduce[R](Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
+      <a id="scanReduce[R](Class[_],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scanReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2088,13 +2088,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scanReduce" data-isabs="false">
-      <a id="scanReduce[R](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
+      <a id="scanReduce[R](GridProjection,Class[_],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scanReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2122,13 +2122,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scanReduce" data-isabs="false">
-      <a id="scanReduce[R1, R2](Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
+      <a id="scanReduce[R1, R2](Class[_],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scanReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2156,13 +2156,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scanReduce" data-isabs="false">
-      <a id="scanReduce[R1, R2](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
+      <a id="scanReduce[R1, R2](GridProjection,Class[_],KeyPred,ValuePred,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scanReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2204,13 +2204,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scanTransform" data-isabs="false">
-      <a id="scanTransform[T](Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred,(V) ⇒ T):Iterable[(K, T)]"></a>
+      <a id="scanTransform[T](Class[_],KeyPred,ValuePred,(V) ⇒ T):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scanTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> transform query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> transform query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2238,13 +2238,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">kp</dt><dd class="cmt"><p>Key filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">vp</dt><dd class="cmt"><p>Value filter. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#scanTransform" data-isabs="false">
-      <a id="scanTransform[T](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],KeyPred,ValuePred,(V) ⇒ T):Iterable[(K, T)]"></a>
+      <a id="scanTransform[T](GridProjection,Class[_],KeyPred,ValuePred,(V) ⇒ T):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">scanTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="kp">kp: KeyPred</span>, <span name="vp">vp: ValuePred</span>, <span name="trans">trans: (V) ⇒ T</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SCAN</code> transform query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SCAN</code> transform query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2349,13 +2349,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sql" data-isabs="false">
-      <a id="sql(Class[_ <span class='angle_bracket'>&lt;</span>: V],String,Any*):Iterable[(K, V)]"></a>
+      <a id="sql(Class[_],String,Any*):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sql</span>
         
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2383,13 +2383,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sql" data-isabs="false">
-      <a id="sql(GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,Any*):Iterable[(K, V)]"></a>
+      <a id="sql(GridProjection,Class[_],String,Any*):Iterable[(K, V)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sql</span>
         
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2417,13 +2417,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sqlReduce" data-isabs="false">
-      <a id="sqlReduce[R](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R,Any*):Iterable[R]"></a>
+      <a id="sqlReduce[R](Class[_],String,(Iterable[(K, V)]) ⇒ R,Any*):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sqlReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2451,13 +2451,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of reduced values.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sqlReduce" data-isabs="false">
-      <a id="sqlReduce[R](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R,Any*):Iterable[R]"></a>
+      <a id="sqlReduce[R](GridProjection,Class[_],String,(Iterable[(K, V)]) ⇒ R,Any*):Iterable[R]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sqlReduce</span>
         <span class="tparams">[<span name="R">R</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[R]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2485,13 +2485,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sqlReduce" data-isabs="false">
-      <a id="sqlReduce[R1, R2](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2,Any*):R2"></a>
+      <a id="sqlReduce[R1, R2](Class[_],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2,Any*):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sqlReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> reduce query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> reduce query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2519,13 +2519,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">rmtRdc</dt><dd class="cmt"><p>Reduce function that will be called on each remote node.</p></dd><dt class="param">locRdc</dt><dd class="cmt"><p>Reduce function that will be called on local node.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Reduced value.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sqlReduce" data-isabs="false">
-      <a id="sqlReduce[R1, R2](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2,Any*):R2"></a>
+      <a id="sqlReduce[R1, R2](GridProjection,Class[_],String,(Iterable[(K, V)]) ⇒ R1,(Iterable[R1]) ⇒ R2,Any*):R2"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sqlReduce</span>
         <span class="tparams">[<span name="R1">R1</span>, <span name="R2">R2</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: R2</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="rmtRdc">rmtRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, V)]) ⇒ R1</span>, <span name="locRdc">locRdc: (<span name="scala.collection.Iterable" class="extype">Iterable</span>[R1]) ⇒ R2</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: R2</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> reduce query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> reduce query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2553,13 +2553,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sqlTransform" data-isabs="false">
-      <a id="sqlTransform[T](Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(V) ⇒ T,Any*):Iterable[(K, T)]"></a>
+      <a id="sqlTransform[T](Class[_],String,(V) ⇒ T,Any*):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sqlTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> transform query on global projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> transform query on global projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -2587,13 +2587,13 @@ cache projection.
 </p></div><dl class="paramcmts block"><dt class="param">grid</dt><dd class="cmt"><p>Grid projection on which this query will be executed.</p></dd><dt class="param">clause</dt><dd class="cmt"><p>Query SQL clause. See <code>GridCacheQuery</code> for more details.</p></dd><dt class="param">trans</dt><dd class="cmt"><p>Transform function that will be applied to each returned value.</p></dd><dt class="param">args</dt><dd class="cmt"><p>Optional list of query arguments.</p></dd><dt>returns</dt><dd class="cmt"><p>Collection of cache key-value pairs.
 </p></dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.pimps.ScalarCacheProjectionPimp#sqlTransform" data-isabs="false">
-      <a id="sqlTransform[T](GridProjection,Class[_ <span class='angle_bracket'>&lt;</span>: V],String,(V) ⇒ T,Any*):Iterable[(K, T)]"></a>
+      <a id="sqlTransform[T](GridProjection,Class[_],String,(V) ⇒ T,Any*):Iterable[(K, T)]"></a>
       <h4 class="signature">
       <span class="kind">def</span>
       <span class="symbol"> 
         <span class="name">sqlTransform</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_ <span class='angle_bracket'>&lt;</span>: V]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
+        <span class="params">(<span name="grid">grid: <span name="org.gridgain.grid.GridProjection" class="extype">GridProjection</span></span>, <span name="cls">cls: Class[_]</span>, <span name="clause">clause: String</span>, <span name="trans">trans: (V) ⇒ T</span>, <span name="args">args: <span name="scala.Any" class="extype">Any</span>*</span>)</span><span class="result">: <span name="scala.collection.Iterable" class="extype">Iterable</span>[(K, T)]</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Creates and executes ad-hoc <code>SQL</code> transform query on given projection returning its result.</p><div class="fullcomment"><div class="comment cmt"><p>Creates and executes ad-hoc <code>SQL</code> transform query on given projection returning its result.</p><p>Note that if query is executed more than once (potentially with different
@@ -3184,7 +3184,7 @@ pairs that have matching key and value pairs will be used in this projection.</p
                         <td align="left" valign="center">
                             <nobr>GridGain - High Performance Cloud Computing</nobr>
                             <br>
-                            <b>Version:</b> 3.1 build: 14072011
+                            <b>Version:</b> 3.5 build: 10082011
                             <br>
                             <a target=_blank href="http://www.gridgain.com"><nobr>2005-2011 Copyright &#169; GridGain Systems, Inc.</nobr></a>
                         </td>

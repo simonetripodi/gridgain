@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.*;
  * and therefore don't need to accumulate them be be processed at reduction step.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridTaskNoResultCache
 public class GridContinuousMapperTask extends GridTaskAdapter<String, Integer> {
@@ -90,7 +90,7 @@ public class GridContinuousMapperTask extends GridTaskAdapter<String, Integer> {
             // Map next word.
             mapper.send(new GridJobAdapterEx(word) {
                 @Override public Object execute() {
-                    String word = argument();
+                    String word = argument(0);
 
                     int cnt = GridContinuousMapperExample.charCount(word);
 

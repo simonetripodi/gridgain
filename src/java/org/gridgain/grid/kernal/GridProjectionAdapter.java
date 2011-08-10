@@ -10,6 +10,8 @@
 package org.gridgain.grid.kernal;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.cache.*;
+import org.gridgain.grid.cache.affinity.*;
 import org.gridgain.grid.kernal.executor.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.lang.utils.*;
@@ -18,17 +20,22 @@ import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.future.*;
+import org.gridgain.grid.util.nodestart.*;
 import org.jetbrains.annotations.*;
+
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 import static org.gridgain.grid.GridClosureCallMode.*;
 import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.*;
+import static org.gridgain.grid.util.nodestart.GridNodeStartUtils.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** Empty rich node predicate array. */
@@ -130,6 +137,38 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
 
         try {
             return ctx.grid();
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void affRun(String cacheName, Object affKey, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        affRunAsync(cacheName, affKey, job, p).get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> affRunAsync(final String cacheName, final Object affKey,
+        @Nullable final Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        A.notNull(cacheName, "cacheName");
+        A.notNull(affKey, "affKey");
+
+        guard();
+
+        try {
+            return ctx.closure().runAsync(BALANCE, job == null ? null : new CA() {
+                @GridCacheName
+                private String cn = cacheName;
+
+                @GridCacheAffinityMapped
+                private Object ak = affKey;
+
+                @Override public void apply() {
+                    job.run();
+                }
+            }, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -1284,11 +1323,6 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public GridProjection named(@Nullable String taskName) {
-        return withName(taskName);
-    }
-
-    /** {@inheritDoc} */
     @Override public GridProjection withName(@Nullable String taskName) {
         if (taskName != null) {
             guard();
@@ -2101,5 +2135,112 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
         finally {
             unguard();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<GridTuple3<String, Boolean, String>> startNodes(File file, @Nullable String dfltUname,
+        @Nullable String dfltPasswd, @Nullable File key, int nodes, @Nullable String cfg, @Nullable String script,
+        @Nullable String log, boolean restart) throws GridException {
+        assert file != null;
+        assert file.exists();
+        assert file.isFile();
+        assert nodes > 0;
+
+        try {
+            Collection<String> specs = new HashSet<String>();
+
+            BufferedReader r = new BufferedReader(new FileReader(file));
+
+            String line;
+
+            while ((line = r.readLine()) != null)
+                specs.add(line);
+
+            return startNodes(specs, dfltUname, dfltPasswd, key, nodes, cfg, script, log, restart);
+        }
+        catch (IOException e) {
+            throw new GridException(e);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<GridTuple3<String, Boolean, String>> startNodes(Collection<String> hostSpecs,
+        @Nullable String dfltUname, @Nullable String dfltPasswd, @Nullable File key, int nodes, @Nullable String cfg,
+        @Nullable String script, @Nullable String log, boolean restart) throws GridException {
+        assert hostSpecs != null;
+        assert nodes > 0;
+
+        if (key != null) {
+            assert key.exists();
+            assert key.isFile();
+        }
+
+        Collection<GridHost> hosts = new HashSet<GridHost>();
+
+        for (String spec : hostSpecs)
+            hosts.addAll(mkHosts(spec, dfltUname, dfltPasswd, nodes, key != null));
+
+        Collection<GridHostRunnable> hostRuns = new ArrayList<GridHostRunnable>();
+
+        List<GridTuple3<String, Boolean, String>> res =
+            new ArrayList<GridTuple3<String, Boolean, String>>();
+
+        for (GridHost h : hosts) {
+            GridProjection neighbors = null;
+
+            for (GridProjection p : neighborhood()) {
+                try {
+                    InetAddress addr = InetAddress.getByName(h.host());
+
+                    if (addr.isLoopbackAddress() || addr.isLinkLocalAddress())
+                        throw new GridException("Host resolves to loopback address: " + h.host());
+
+                    if (p.iterator().next().internalAddresses().iterator().next().
+                        equals(addr.getHostAddress())) {
+                        neighbors = p;
+
+                        break;
+                    }
+                }
+                catch (UnknownHostException e) {
+                    throw new GridException("Invalid host name: " + h.host(), e);
+                }
+            }
+
+            if (neighbors != null) {
+                int count;
+
+                if (restart) {
+                    neighbors.withName("grid-kill").execute(new GridKillTask(false), null).get();
+
+                    count = h.nodes();
+                }
+                else
+                    count = h.nodes() - neighbors.size();
+
+                List<GridNodeRunnable> nodeRuns = new ArrayList<GridNodeRunnable>();
+
+                for (int i = 1; i <= count; i++)
+                    nodeRuns.add(new GridNodeRunnable(i, h.host(), h.port(), h.uname(),
+                        h.passwd(), key, script, cfg, log, res));
+
+                hostRuns.add(new GridHostRunnable(ctx.config().getSystemExecutorService(), nodeRuns, 5));
+            }
+        }
+
+        Collection<Future<?>> futs = new ArrayList<Future<?>>(hostRuns.size());
+
+        try {
+            for (GridHostRunnable run : hostRuns)
+                futs.add(ctx.config().getSystemExecutorService().submit(run));
+
+            for (Future<?> fut : futs)
+                fut.get();
+        }
+        catch (Exception e) {
+            throw new GridRuntimeException(e);
+        }
+
+        return res;
     }
 }

@@ -19,13 +19,13 @@ import scalaz._
  * Defines Scalar "pimp" for `Grid` on Java side.
  *
  * Essentially this class extends Java `GridProjection` interface with Scala specific
- * API adapters using primarily implicit conversions defined in `ScalarMixin` object. What
+ * API adapters using primarily implicit conversions defined in `ScalarConversions` object. What
  * it means is that you can use functions defined in this class on object
  * of Java `GridProjection` type. Scala will automatically (implicitly) convert it into
  * Scalar's pimp and replace the original call with a call on that pimp.
  *
  * Note that Scalar provide extensive library of implicit conversion between Java and
- * Scala GridGain counterparts in `ScalarMixin` object
+ * Scala GridGain counterparts in `ScalarConversions` object
  *
  * ==Suffix '$' In Names==
  * Symbol `$` is used in names when they conflict with the names in the base Java class
@@ -34,7 +34,7 @@ import scalaz._
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 class ScalarGridPimp extends ScalarProjectionPimp[Grid] with ScalarTaskThreadContext[Grid]
 
@@ -42,7 +42,7 @@ class ScalarGridPimp extends ScalarProjectionPimp[Grid] with ScalarTaskThreadCon
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 object ScalarGridPimp {
     /**

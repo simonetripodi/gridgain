@@ -100,7 +100,7 @@ import java.util.concurrent.*;
  * with Gridify annotation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 @GridLoader(description = "Weblogic loader")
 @SuppressWarnings("deprecation")
@@ -130,6 +130,7 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
      * @throws Exception Thrown if error occurred.
      */
     @SuppressWarnings({"unchecked", "CatchGenericClass"})
+    @Override
     public String startup(String str, Hashtable params) throws Exception {
         GridLogger log = new GridJavaLogger(LoggingHelper.getServerLogger());
 
@@ -143,10 +144,9 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
 
         URL cfgUrl = U.resolveGridGainUrl(cfgFile);
 
-        if (cfgUrl == null) {
+        if (cfgUrl == null)
             throw new ServerLifecycleException("Failed to find Spring configuration file (path provided should be " +
                 "either absolute, relative to GRIDGAIN_HOME, or relative to META-INF folder): " + cfgFile);
-        }
 
         GenericApplicationContext springCtx;
 
@@ -175,13 +175,11 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
                 ", err=" + e.getMessage() + ']', e);
         }
 
-        if (cfgMap == null) {
+        if (cfgMap == null)
             throw new ServerLifecycleException("Failed to find a single grid factory configuration in: " + cfgUrl);
-        }
 
-        if (cfgMap.size() == 0) {
+        if (cfgMap.isEmpty())
             throw new ServerLifecycleException("Can't find grid factory configuration in: " + cfgUrl);
-        }
 
         try {
             ExecutorService execSvc = null;
@@ -194,15 +192,13 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
                 GridConfigurationAdapter adapter = new GridConfigurationAdapter(cfg);
 
                 // Set logger.
-                if (cfg.getGridLogger() == null) {
+                if (cfg.getGridLogger() == null)
                     adapter.setGridLogger(log);
-                }
 
                 if (cfg.getExecutorService() == null) {
-                    if (execSvc == null) {
+                    if (execSvc == null)
                         execSvc = workMgrName != null ? new GridThreadWorkManagerExecutor(workMgrName) :
                             new GridThreadWorkManagerExecutor(J2EEWorkManager.getDefault());
-                    }
 
                     adapter.setExecutorService(execSvc);
                 }
@@ -221,9 +217,8 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
                                 "Weblogic MBean server.", e);
                         }
                         finally {
-                            if (ctx != null) {
+                            if (ctx != null)
                                 ctx.close();
-                            }
                         }
                     }
 
@@ -233,18 +228,16 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
                 Grid grid = G.start(adapter, springCtx);
 
                 // Test if grid is not null - started properly.
-                if (grid != null) {
-                    gridNames.add(grid.getName());
-                }
+                if (grid != null)
+                    gridNames.add(grid.name());
             }
 
             return getClass().getSimpleName() + " started successfully.";
         }
         catch (GridException e) {
             // Stop started grids only.
-            for (String name: gridNames) {
+            for (String name: gridNames)
                 G.stop(name, true);
-            }
 
             throw new ServerLifecycleException("Failed to start GridGain.", e);
         }
@@ -257,6 +250,7 @@ public class GridWeblogicStartup implements GridWeblogicStartupMBean {
      *
      * @param t3ServicesDef Weblogic services accessor.
      */
+    @Override
     public void setServices(T3ServicesDef t3ServicesDef) {
         // No-op.
     }

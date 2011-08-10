@@ -12,16 +12,17 @@ package org.gridgain.grid.kernal.processors.cache;
 import com.sun.grizzly.util.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.affinity.*;
+import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
 import org.jetbrains.annotations.*;
+
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 /**
  * Default key affinity mapper. If key class has annotation {@link GridCacheAffinityMapped},
@@ -32,19 +33,19 @@ import java.util.concurrent.atomic.*;
  * conjunction with this mapper to automatically provide custom affinity keys for cache keys.
  * <p>
  * If non-default affinity mapper is used, is should be provided via
- * {@link GridCacheConfiguration#getAffinityMapper()} configuration property. 
+ * {@link GridCacheConfiguration#getAffinityMapper()} configuration property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheDefaultAffinityMapper<K> implements GridCacheAffinityMapper<K> {
     /** Weak fields cache. If class is GC'ed, then it will be removed from this cache. */
-    private final ConcurrentMap<Class<?>, AtomicReference<Field>> fields =
-        new ConcurrentWeakHashMap<Class<?>, AtomicReference<Field>>();
+    private final ConcurrentMap<String, GridTuple2<Field, Class<?>>> fields =
+        new ConcurrentWeakHashMap<String, GridTuple2<Field, Class<?>>>();
 
     /** Weak methods cache. If class is GC'ed, then it will be removed from this cache. */
-    private final ConcurrentMap<Class<?>, AtomicReference<Method>> mtds =
-        new ConcurrentWeakHashMap<Class<?>, AtomicReference<Method>>();
+    private final ConcurrentMap<String, GridTuple2<Method, Class<?>>> mtds =
+        new ConcurrentWeakHashMap<String, GridTuple2<Method, Class<?>>>();
 
     /** Logger. */
     @GridLoggerResource
@@ -94,12 +95,12 @@ public class GridCacheDefaultAffinityMapper<K> implements GridCacheAffinityMappe
      * Gets fields annotated with {@link GridCacheAffinityMapped} annotation.
      *
      * @param cls Class.
-     * @return Annotated field. 
+     * @return Annotated field.
      */
     @Nullable private Field field(Class<?> cls) {
-        AtomicReference<Field> field = fields.get(cls);
+        GridTuple2<Field, Class<?>> tuple = fields.get(cls.getName());
 
-        if (field == null) {
+        if (tuple == null || !cls.equals(tuple.get2())) {
             for (Class<?> c = cls; !c.equals(Object.class); c = c.getSuperclass()) {
                 for (Field f : c.getDeclaredFields()) {
                     // Account for anonymous inner classes.
@@ -108,17 +109,17 @@ public class GridCacheDefaultAffinityMapper<K> implements GridCacheAffinityMappe
                     if (ann != null) {
                         f.setAccessible(true);
 
-                        fields.putIfAbsent(cls, new AtomicReference<Field>(f));
+                        fields.putIfAbsent(cls.getName(), new GridTuple2<Field, Class<?>>(f, cls));
 
                         return f;
                     }
                 }
             }
-            
-            fields.putIfAbsent(cls, field = new AtomicReference<Field>());
+
+            fields.putIfAbsent(cls.getName(), tuple = new GridTuple2<Field, Class<?>>());
         }
 
-        return field.get();
+        return tuple.get1();
     }
 
 
@@ -129,9 +130,9 @@ public class GridCacheDefaultAffinityMapper<K> implements GridCacheAffinityMappe
      * @return Annotated method.
      */
     @Nullable private Method method(Class<?> cls) {
-        AtomicReference<Method> mtd = mtds.get(cls);
+        GridTuple2<Method, Class<?>> mtd = mtds.get(cls.getName());
 
-        if (mtd == null) {
+        if (mtd == null || cls.equals(mtd.get2())) {
             for (Class<?> c = cls; !c.equals(Object.class); c = c.getSuperclass()) {
                 for (Method m : c.getDeclaredMethods()) {
                     // Account for anonymous inner classes.
@@ -145,16 +146,16 @@ public class GridCacheDefaultAffinityMapper<K> implements GridCacheAffinityMappe
 
                         m.setAccessible(true);
 
-                        mtds.putIfAbsent(cls, new AtomicReference<Method>(m));
+                        mtds.putIfAbsent(cls.getName(), new GridTuple2<Method, Class<?>>(m, cls));
 
                         return m;
                     }
                 }
             }
 
-            mtds.putIfAbsent(cls, mtd = new AtomicReference<Method>());
+            mtds.putIfAbsent(cls.getName(), mtd = new GridTuple2<Method, Class<?>>());
         }
 
-        return mtd.get();
+        return mtd.get1();
     }
 }

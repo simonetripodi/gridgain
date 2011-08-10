@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Cache projection.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.1.1c.14072011
+ * @version 3.5.0c.10082011
  */
 public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter implements GridCacheProjection<K, V>,
     Externalizable {
@@ -968,6 +968,27 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
     }
 
     /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet() {
+        return cache.primaryKeySet(entryFilter(true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return cache.primaryKeySet(and(filter, true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return cache.primaryKeySet(keys, and(filter, true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<K> primaryKeySet(@Nullable K[] keys) {
+        return cache.primaryKeySet(F.asList(keys), entryFilter(true));
+    }
+
+    /** {@inheritDoc} */
     @Override public Collection<V> values() {
         return cache.values(entryFilter(true));
     }
@@ -986,6 +1007,27 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
     /** {@inheritDoc} */
     @Override public Collection<V> values(@Nullable K[] keys) {
         return cache.values(F.asList(keys), entryFilter(true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues() {
+        return cache.primaryValues(entryFilter(true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return cache.primaryValues(and(filter, true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return cache.primaryValues(keys, and(filter, true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Collection<V> primaryValues(@Nullable K[] keys) {
+        return cache.primaryValues(F.asList(keys), entryFilter(true));
     }
 
     /** {@inheritDoc} */
@@ -1008,6 +1050,28 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
     @Override public Set<GridCacheEntry<K, V>> entrySet(
         @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         return cache.entrySet(and(filter, true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet() {
+        return cache.primaryEntrySet(entryFilter(true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable Collection<? extends K> keys,
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return cache.primaryEntrySet(keys, and(filter, true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(@Nullable K[] keys) {
+        return cache.primaryEntrySet(F.asList(keys), entryFilter(true));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Set<GridCacheEntry<K, V>> primaryEntrySet(
+        @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+        return cache.primaryEntrySet(and(filter, true));
     }
 
     /** {@inheritDoc} */
@@ -1988,5 +2052,10 @@ public class GridCacheProjectionImpl<K, V> extends GridMetadataAwareAdapter impl
 
             return true;
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public Object affinityKey(K key) {
+        return cache.affinityKey(key);
     }
 }
