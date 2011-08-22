@@ -25,7 +25,7 @@ import java.util.concurrent.*;
  * Schedules cron-based execution of grid tasks and closures.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridScheduleProcessor extends GridProcessorAdapter {
     /** Cron scheduler. */

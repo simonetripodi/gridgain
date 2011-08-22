@@ -17,13 +17,14 @@ import java.net.*;
 import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 /**
  * <tt>GridTcpCommunicationSpi</tt> is default communication SPI which uses
  * TCP/IP protocol and Java NIO to communicate with other nodes.
  * <p>
  * To enable communication with other nodes, this SPI adds {@link #ATTR_ADDR}
- * and {@link #ATTR_PORT} local node attributes (see {@link GridNode#getAttributes()}.
+ * and {@link #ATTR_PORT} local node attributes (see {@link GridNode#attributes()}.
  * <p>
  * At startup, this SPI tries to start listening to local port specified by
  * {@link #setLocalPort(int)} method. If local port is occupied, then SPI will
@@ -92,7 +93,7 @@ import java.util.concurrent.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  * @see GridCommunicationSpi
  */
 @SuppressWarnings({"deprecation"}) @GridSpiInfo(
@@ -104,7 +105,7 @@ import java.util.concurrent.*;
 public class GridTcpCommunicationSpi extends GridSpiAdapter implements GridCommunicationSpi,
     GridTcpCommunicationSpiMBean {
     /** Number of threads responsible for handling messages. */
-    public static final int DFLT_MSG_THREADS = 5;
+    public static final int DFLT_MSG_THREADS = 20;
 
     /** Node attribute that is mapped to node IP address (value is <tt>comm.tcp.addr</tt>). */
     public static final String ATTR_ADDR = "comm.tcp.addr";
@@ -192,6 +193,18 @@ public class GridTcpCommunicationSpi extends GridSpiAdapter implements GridCommu
 
     /** */
     private GridSpiPortResolver portRsvr;
+
+    /** */
+    private final AtomicInteger rcvdMsgsCnt = new AtomicInteger();
+
+    /** */
+    private final AtomicInteger sentMsgsCnt = new AtomicInteger();
+
+    /** */
+    private final AtomicLong rcvdBytesCnt = new AtomicLong();
+
+    /** */
+    private final AtomicLong sentBytesCnt = new AtomicLong();
 
     /** */
     private final Object mux = new Object();
@@ -389,6 +402,26 @@ public class GridTcpCommunicationSpi extends GridSpiAdapter implements GridCommu
     }
 
     /** {@inheritDoc} */
+    @Override public int getSentMessagesCount() {
+        return sentMsgsCnt.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getSentBytesCount() {
+        return sentBytesCnt.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public int getReceivedMessagesCount() {
+        return rcvdMsgsCnt.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public long getReceivedBytesCount() {
+        return rcvdBytesCnt.get();
+    }
+
+    /** {@inheritDoc} */
     @Override public Map<String, Object> getNodeAttributes() throws GridSpiException {
         assertParameter(localPort > 1023, "localPort > 1023");
         assertParameter(localPort <= 0xffff, "localPort < 0xffff");
@@ -496,6 +529,10 @@ public class GridTcpCommunicationSpi extends GridSpiAdapter implements GridCommu
                 try {
                     GridTcpCommunicationMessage msg = (GridTcpCommunicationMessage)U.unmarshal(marshaller,
                         new GridByteArrayList(data, data.length), clsLdr);
+
+                    rcvdMsgsCnt.incrementAndGet();
+
+                    rcvdBytesCnt.addAndGet(data.length);
 
                     notifyListener(msg);
                 }
@@ -636,6 +673,10 @@ public class GridTcpCommunicationSpi extends GridSpiAdapter implements GridCommu
                 GridByteArrayList buf = U.marshal(marshaller, new GridTcpCommunicationMessage(nodeId, msg));
 
                 client.sendMessage(buf.getInternalArray(), buf.getSize());
+
+                sentMsgsCnt.incrementAndGet();
+
+                sentBytesCnt.addAndGet(buf.getSize());
             }
             catch (GridException e) {
                 throw new GridSpiException("Failed to send message to remote node: " + node, e);

@@ -16,7 +16,7 @@ import org.gridgain.grid.util.tostring.*;
  * Controller for enterprise kernal-level functionality.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @GridToStringExclude
 public interface GridController extends GridComponent {

@@ -7,7 +7,7 @@
  *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
  */
 
-package org.gridgain.examples.primenumbers.api;
+package org.gridgain.examples.primenumbers.api20;
 
 import org.gridgain.examples.primenumbers.*;
 import org.gridgain.grid.*;
@@ -43,7 +43,7 @@ import java.util.*;
  * If divisor is found, then we return it, otherwise we return {@code null}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridPrimeTask extends GridTaskSplitAdapter<Long, Long> {
     /** {@inheritDoc} */

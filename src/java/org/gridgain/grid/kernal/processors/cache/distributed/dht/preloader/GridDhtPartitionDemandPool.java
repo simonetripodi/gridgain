@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -346,14 +346,18 @@ public class GridDhtPartitionDemandPool<K, V> {
 
     /**
      * @param p Partition.
+     * @param allNodes All nodes.
      * @return Picked owners.
      */
-    private Collection<GridNode> pickedOwners(int p) {
-        Collection<GridRichNode> affNodes = cctx.affinity(p, CU.allNodes(cctx));
+    private Collection<GridNode> pickedOwners(int p, Collection<GridRichNode> allNodes) {
+        Collection<GridRichNode> affNodes = cctx.affinity(p, allNodes);
 
         int affCnt = affNodes.size();
 
         Collection<GridNode> rmts = remoteOwners(p);
+
+        assert allNodes.containsAll(rmts) : "All nodes does not contain all remote nodes [allNodes=" +
+            F.nodeIds(allNodes) + ", rmtNodes=" + F.nodeIds(rmts) + ']';
 
         int rmtCnt = rmts.size();
 
@@ -568,6 +572,7 @@ public class GridDhtPartitionDemandPool<K, V> {
 
             Set<Integer> missed = new HashSet<Integer>();
 
+            // Get the same collection that will be sent in the message.
             Collection<Integer> remaining = d.partitions();
 
             // Drain queue before processing a new node.
@@ -591,6 +596,9 @@ public class GridDhtPartitionDemandPool<K, V> {
                 // =======
                 do {
                     retry = false;
+
+                    // Create copy.
+                    d = new GridDhtPartitionDemandMessage<K, V>(d);
 
                     long timeout = GridDhtPartitionDemandPool.this.timeout.get();
 
@@ -688,6 +696,8 @@ public class GridDhtPartitionDemandPool<K, V> {
                                     assert reserved : "Failed to reserve partition [gridName=" +
                                         cctx.gridName() + ", cacheName=" + cctx.namex() + ", part=" + part + ']';
 
+                                    part.lock();
+
                                     try {
                                         Collection<Integer> invalidParts = new GridLeanSet<Integer>();
 
@@ -724,6 +734,7 @@ public class GridDhtPartitionDemandPool<K, V> {
                                         }
                                     }
                                     finally {
+                                        part.unlock();
                                         part.release();
                                     }
                                 }
@@ -753,6 +764,12 @@ public class GridDhtPartitionDemandPool<K, V> {
 
                         if (remaining.isEmpty())
                             break; // While.
+
+                        if (s.supply().ack()) {
+                            retry = true;
+
+                            break;
+                        }
                     }
                 }
                 while (retry && !isCancelled() && !topologyChanged());
@@ -1088,7 +1105,7 @@ public class GridDhtPartitionDemandPool<K, V> {
                         continue; // For.
                     }
 
-                    Collection<GridNode> picked = pickedOwners(p);
+                    Collection<GridNode> picked = pickedOwners(p, allNodes);
 
                     if (picked.isEmpty()) {
                         top.own(part);

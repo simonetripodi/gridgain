@@ -19,6 +19,7 @@ import org.gridgain.grid.util.tostring.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtPartitionState.*;
 
@@ -26,7 +27,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Key partition.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalPartition> {
     /** Partition ID. */
@@ -53,6 +54,9 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
     /** Create time. */
     @GridToStringExclude
     private final long createTime = System.currentTimeMillis();
+
+    /** Lock. */
+    private final Lock lock = new ReentrantLock();
 
     /**
      * @param cctx Context.
@@ -151,6 +155,21 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
 
         // Attempt to evict.
         tryEvict();
+    }
+
+    /**
+     * Locks partition.
+     */
+    @SuppressWarnings( {"LockAcquiredButNotSafelyReleased"})
+    public void lock() {
+        lock.lock();
+    }
+
+    /**
+     * Unlocks partition.
+     */
+    public void unlock() {
+        lock.unlock();
     }
 
     /**

@@ -7,7 +7,7 @@
  *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
  */
 
-package org.gridgain.examples.primenumbers.api;
+package org.gridgain.examples.primenumbers.api20;
 
 import org.gridgain.grid.*;
 import org.gridgain.grid.typedef.*;
@@ -52,7 +52,7 @@ import java.util.*;
  * folder.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public final class GridPrimeExample {
     /**

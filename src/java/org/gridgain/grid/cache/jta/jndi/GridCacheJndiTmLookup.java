@@ -21,7 +21,7 @@ import java.util.*;
  * Implementation of {@link GridCacheTmLookup} interface that is using list of JNDI names to find TM.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridCacheJndiTmLookup implements GridCacheTmLookup {
     /** */

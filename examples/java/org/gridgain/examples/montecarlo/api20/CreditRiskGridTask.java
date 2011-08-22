@@ -7,8 +7,9 @@
  *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
  */
 
-package org.gridgain.examples.montecarlo;
+package org.gridgain.examples.montecarlo.api20;
 
+import org.gridgain.examples.montecarlo.*;
 import org.gridgain.grid.*;
 import org.gridgain.grid.gridify.*;
 import org.gridgain.grid.spi.loadbalancing.*;
@@ -27,7 +28,7 @@ import java.util.*;
  * adapt to the load, use {@link GridAdaptiveLoadBalancingSpi} SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class CreditRiskGridTask extends GridTaskSplitAdapter<GridifyArgument, Double> {
     /** {@inheritDoc} */

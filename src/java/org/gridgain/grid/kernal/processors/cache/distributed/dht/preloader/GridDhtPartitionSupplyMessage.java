@@ -21,7 +21,7 @@ import java.util.*;
  * Partition supply message.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 class GridDhtPartitionSupplyMessage<K, V> extends GridCacheMessage<K, V> {
     /** Worker ID. */
@@ -29,6 +29,9 @@ class GridDhtPartitionSupplyMessage<K, V> extends GridCacheMessage<K, V> {
 
     /** Update sequence. */
     private long updateSeq;
+
+    /** Acknowledgement flag. */
+    private boolean ack;
 
     /** Partitions that have been fully sent. */
     @GridToStringInclude
@@ -90,6 +93,20 @@ class GridDhtPartitionSupplyMessage<K, V> extends GridCacheMessage<K, V> {
      */
     long updateSequence() {
         return updateSeq;
+    }
+
+    /**
+     * Marks this message for acknowledgment.
+     */
+    void markAck() {
+        ack = true;
+    }
+
+    /**
+     * @return Acknowledgement flag.
+     */
+    boolean ack() {
+        return ack;
     }
 
     /**
@@ -200,6 +217,7 @@ class GridDhtPartitionSupplyMessage<K, V> extends GridCacheMessage<K, V> {
 
         out.writeInt(workerId);
         out.writeLong(updateSeq);
+        out.writeBoolean(ack);
 
         U.writeIntCollection(out, last);
         U.writeIntCollection(out, missed);
@@ -213,6 +231,7 @@ class GridDhtPartitionSupplyMessage<K, V> extends GridCacheMessage<K, V> {
 
         workerId = in.readInt();
         updateSeq = in.readLong();
+        ack = in.readBoolean();
 
         last = U.readIntSet(in);
         missed = U.readIntSet(in);

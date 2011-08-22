@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Responsible for all grid job execution and communication.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @SuppressWarnings({"deprecation"})
 public class GridJobProcessor extends GridProcessorAdapter {
@@ -184,7 +184,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
             GridException e = new GridTopologyException("Originating task node left grid [nodeId=" +
                 job.getTaskNodeId() + ", jobSes=" + job.getSession() + ", job=" + job + ']');
 
-            log.error(e.getMessage(), e);
+            U.error(log, e.getMessage(), e);
 
             finishJob(job, null, e, false);
         }
@@ -920,7 +920,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Handles job execution requests.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.10082011
+     * @version 3.5.0c.22082011
      */
     private class JobExecutionListener implements GridMessageListener {
         @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
@@ -1011,7 +1011,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                             req.getTaskName() + ", taskClsName=" + req.getTaskClassName() + ", codeVer=" +
                             req.getUserVersion() + ", taskClsLdr=" + dep.classLoader() + ']');
 
-                        log.error(ex.getMessage(), e);
+                        U.error(log, ex.getMessage(), e);
 
                         handleException(req, ex, endTime);
 
@@ -1076,7 +1076,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                         ", codeVer=" + req.getUserVersion() + ", clsLdrId=" + req.getClassLoaderId() + ", seqNum=" +
                         req.getSequenceNumber() + ", depMode=" + req.getDeploymentMode() + ", dep=" + dep + ']');
 
-                    log.error(ex.getMessage(), ex);
+                    U.error(log, ex.getMessage(), ex);
 
                     handleException(req, ex, endTime);
                 }
@@ -1261,7 +1261,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.10082011
+     * @version 3.5.0c.22082011
      */
     private class JobDiscoveryListener implements GridLocalEventListener {
         /**
@@ -1333,7 +1333,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                                 "(job will fail) [nodeId=" + nodeId + ", jobSes=" + job.getSession() +
                                 ", job=" + job + ']');
 
-                            log.error(e.getMessage(), e);
+                            U.error(log, e.getMessage(), e);
 
                             finishJob(job, null, e, false);
                         }

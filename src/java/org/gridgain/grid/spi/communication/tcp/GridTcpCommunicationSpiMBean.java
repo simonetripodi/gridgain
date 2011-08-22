@@ -7,7 +7,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean provide access to TCP-based communication SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @GridMBeanDescription("MBean provide access to TCP-based communication SPI.")
 public interface GridTcpCommunicationSpiMBean extends GridSpiManagementMBean {
@@ -137,6 +137,38 @@ public interface GridTcpCommunicationSpiMBean extends GridSpiManagementMBean {
      */
     @GridMBeanDescription("Number of threads used for handling NIO messages.")
     public int getMessageThreads();
+
+    /**
+     * Gets sent messages count.
+     *
+     * @return Sent messages count.
+     */
+    @GridMBeanDescription("Sent messages count.")
+    public int getSentMessagesCount();
+
+    /**
+     * Gets sent bytes count.
+     *
+     * @return Sent bytes count.
+     */
+    @GridMBeanDescription("Sent bytes count.")
+    public long getSentBytesCount();
+
+    /**
+     * Gets received messages count.
+     *
+     * @return Received messages count.
+     */
+    @GridMBeanDescription("Received messages count.")
+    public int getReceivedMessagesCount();
+
+    /**
+     * Gets received bytes count.
+     *
+     * @return Received bytes count.
+     */
+    @GridMBeanDescription("Received bytes count.")
+    public long getReceivedBytesCount();
 
     /**
      * Gets port resolver for ports mapping determination.

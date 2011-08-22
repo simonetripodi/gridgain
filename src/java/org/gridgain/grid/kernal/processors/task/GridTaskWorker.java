@@ -34,7 +34,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
  * Grid task worker. Handles full task life cycle.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  * @param <T> Task argument type.
  * @param <R> Task return value type.
  */
@@ -640,6 +640,16 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
             Collection<? extends GridNode> top = ctx.topology().getTopology(ses, ctx.discovery().allNodes());
 
             synchronized (mux) {
+                // If task is not waiting for responses,
+                // then there is no point to proceed.
+                if (state != State.WAITING) {
+                    if (log.isDebugEnabled())
+                        log.debug("Ignoring GridTask.result(..) value since task is already reducing or finishing " +
+                            "[res=" + res + ", job=" + ses + ", state=" + state + ']');
+
+                    return;
+                }
+
                 switch (policy) {
                     // Start reducing all results received so far.
                     case REDUCE: {

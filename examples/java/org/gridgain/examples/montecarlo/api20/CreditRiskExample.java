@@ -7,9 +7,10 @@
  *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
  */
 
-package org.gridgain.examples.montecarlo;
+package org.gridgain.examples.montecarlo.api20;
 
 import org.gridgain.examples.helloworld.gridify.spring.*;
+import org.gridgain.examples.montecarlo.*;
 import org.gridgain.grid.*;
 import org.gridgain.grid.gridify.*;
 import org.gridgain.grid.gridify.aop.spring.*;
@@ -104,7 +105,7 @@ import java.util.*;
  * with Spring AOP refer to {@link GridifySpringHelloWorldExample} example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public final class CreditRiskExample {
     /**

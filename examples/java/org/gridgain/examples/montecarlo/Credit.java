@@ -19,9 +19,9 @@ import java.io.*;
  * risk assessment application.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
-class Credit implements Serializable {
+public class Credit implements Serializable {
     /** Remaining crediting amount. */
     private final double remAmnt;
 
@@ -42,7 +42,7 @@ class Credit implements Serializable {
      * @param apr Annual percentage rate (APR).
      * @param edf Expected annual probability of default (EaDF).
      */
-    Credit(double remAmnt, int remTerm, double apr, double edf) {
+    public Credit(double remAmnt, int remTerm, double apr, double edf) {
         this.remAmnt = remAmnt;
         this.remTerm = remTerm;
         this.apr = apr;

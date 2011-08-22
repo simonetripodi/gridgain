@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {

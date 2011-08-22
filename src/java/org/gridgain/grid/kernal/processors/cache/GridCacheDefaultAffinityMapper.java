@@ -9,7 +9,6 @@
 
 package org.gridgain.grid.kernal.processors.cache;
 
-import com.sun.grizzly.util.*;
 import org.gridgain.grid.cache.*;
 import org.gridgain.grid.cache.affinity.*;
 import org.gridgain.grid.lang.*;
@@ -36,16 +35,16 @@ import java.util.concurrent.*;
  * {@link GridCacheConfiguration#getAffinityMapper()} configuration property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridCacheDefaultAffinityMapper<K> implements GridCacheAffinityMapper<K> {
     /** Weak fields cache. If class is GC'ed, then it will be removed from this cache. */
     private final ConcurrentMap<String, GridTuple2<Field, Class<?>>> fields =
-        new ConcurrentWeakHashMap<String, GridTuple2<Field, Class<?>>>();
+        new ConcurrentHashMap<String, GridTuple2<Field, Class<?>>>();
 
     /** Weak methods cache. If class is GC'ed, then it will be removed from this cache. */
     private final ConcurrentMap<String, GridTuple2<Method, Class<?>>> mtds =
-        new ConcurrentWeakHashMap<String, GridTuple2<Method, Class<?>>>();
+        new ConcurrentHashMap<String, GridTuple2<Method, Class<?>>>();
 
     /** Logger. */
     @GridLoggerResource

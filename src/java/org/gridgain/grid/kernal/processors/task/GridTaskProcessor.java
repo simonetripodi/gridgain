@@ -32,7 +32,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
  * This class defines task processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridTaskProcessor extends GridProcessorAdapter {
     /** Wait for 5 seconds to allow discovery to take effect (best effort). */
@@ -607,8 +607,11 @@ public class GridTaskProcessor extends GridProcessorAdapter {
 
                 assert subgrid != null;
 
-                if (subgrid.isEmpty())
+                if (subgrid.isEmpty()) {
+                    release(dep);
+
                     handleException(lsnr, new GridEmptyProjectionException("Projection is empty."), fut);
+                }
                 else {
                     GridTaskWorker<?, ?> taskWorker = new GridTaskWorker<T, R>(
                         ctx,
@@ -625,7 +628,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
 
                     synchronized (mux) {
                         if (task != null)
-                            // Check if someone reuse the same task instance by walking
+                            // Check if someone reuses the same task instance by walking
                             // through the "tasks" map
                             for (GridTaskWorker worker : tasks.values()) {
                                 GridTask workerTask = worker.getTask();
@@ -1058,7 +1061,7 @@ public class GridTaskProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.10082011
+     * @version 3.5.0c.22082011
      */
     private class TaskDiscoveryListener implements GridLocalEventListener {
         /** {@inheritDoc} */

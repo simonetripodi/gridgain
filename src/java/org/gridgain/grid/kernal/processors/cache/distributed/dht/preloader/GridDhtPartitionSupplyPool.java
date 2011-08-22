@@ -31,7 +31,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Thread pool for supplying partitions to demanding nodes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridDhtPartitionSupplyPool<K, V> {
     /** */
@@ -226,6 +226,8 @@ public class GridDhtPartitionSupplyPool<K, V> {
                     d.updateSequence());
 
                 try {
+                    boolean ack = false;
+
                     for (Integer part : d.partitions()) {
                         GridDhtLocalPartition<K, V> loc = top.localPartition(part, -1, false);
 
@@ -257,6 +259,8 @@ public class GridDhtPartitionSupplyPool<K, V> {
                                 }
 
                                 if (s.messageSize() >= cctx.config().getPreloadBatchSize()) {
+                                    ack = true;
+
                                     if (!reply(node, d, s))
                                         // Demander left grid.
                                         break;
@@ -274,6 +278,12 @@ public class GridDhtPartitionSupplyPool<K, V> {
 
                             // Mark as last supply message.
                             s.last(part);
+
+                            if (ack) {
+                                s.markAck();
+
+                                break; // Partition for loop.
+                            }
 
                             watch.step("SUPPLY_LAST_SENT");
                         }

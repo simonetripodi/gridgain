@@ -34,13 +34,13 @@ import java.util.*;
  * which may be used for filtering:
  * <ul>
  * <li>
- *  {@link GridNode#getAttributes()} - attributes attached to a grid node. Node
+ *  {@link GridNode#attributes()} - attributes attached to a grid node. Node
  *  attributes are specified in grid configuration via {@link GridConfiguration#getUserAttributes()}
  *  parameter. Note that all system and environment properties are automatically pre-set as
  *  node attributes for every node.
  * </li>
  * <li>
- *  {@link GridNode#getMetrics()} - about {@code 50} node metrics parameters that are periodically
+ *  {@link GridNode#metrics()} - about {@code 50} node metrics parameters that are periodically
  *  updated, such as heap, CPU, job counts, average job execution times, etc...
  * </li>
  * </ul>
@@ -95,13 +95,13 @@ import java.util.*;
  *           &lt;bean class="org.gridgain.grid.spi.topology.nodefilter.GridNodeFilterTopologySpi"&gt;
  *               &lt;property name="filter"&gt;
  *                    &lt;bean class="org.gridgain.grid.lang.GridJexlPredicate2"&gt;
- *                        &lt;property name="expression"&gt;
+ *                        &lt;constructor-arg&gt;
  *                            &lt;value&gt;
  *                                &lt;![CDATA[elem1.metrics().availableProcessors > 1 &&
  *                                elem1.metrics().averageCpuLoad < 0.5 &&
  *                                elem1.attributes().get('os.name') == 'Windows XP']]&gt;
  *                            &lt;/value&gt;
- *                        &lt;/property&gt;
+ *                        &lt;/constructor-arg&gt;
  *                    &lt;/bean&gt;
  *                &lt;/property&gt;
  *           &lt;/bean&gt;
@@ -112,13 +112,13 @@ import java.util.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.10082011")
+    version = "3.5.0c.22082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridNodeFilterTopologySpi extends GridSpiAdapter implements GridTopologySpi,
     GridNodeFilterTopologySpiMBean {

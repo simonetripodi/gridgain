@@ -7,7 +7,7 @@
  *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
  */
 
-package org.gridgain.grid.loaders.cmdline;
+package org.gridgain.grid.util;
 
 import org.gridgain.grid.typedef.internal.*;
 
@@ -19,9 +19,9 @@ import java.util.*;
  * and its subfolders.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
-final class GridConfigurationFinder {
+public final class GridConfigurationFinder {
     /** Path to default configuration file. */
     private static final String DFLT_CFG = "config" + File.separator + "default-spring.xml";
 
@@ -40,7 +40,7 @@ final class GridConfigurationFinder {
      * @return List of configuration files.
      * @throws IOException If error occurs.
      */
-    static List<String> getConfigurationFiles() throws IOException {
+    public static List<String> getConfigurationFiles() throws IOException {
         LinkedList<String> files = getConfigurationFiles(new File(U.getGridGainHome()));
 
         Collections.sort(files);
@@ -68,21 +68,22 @@ final class GridConfigurationFinder {
             if (file.isDirectory())
                 files.addAll(getConfigurationFiles(file));
             else if (file.getName().endsWith(".xml")) {
-                BufferedReader reader = new BufferedReader(new FileReader(file));
+                String path = "(?) " + file.getAbsolutePath().replace(U.getGridGainHome() + File.separator, "");
 
-                String line;
+                if (!path.equals(DFLT_CFG)) {
+                    BufferedReader reader = new BufferedReader(new FileReader(file));
 
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("class=\"org.gridgain.grid.GridConfigurationAdapter\"")) {
-                        String path =
-                            file.getAbsolutePath().replace(U.getGridGainHome() + File.separator, "");
+                    String line;
 
-                        // Skip the default config file.
-                        if (!path.equals(DFLT_CFG))
-                            files.add(path);
+                    while ((line = reader.readLine()) != null) {
+                        if (line.contains("class=\"org.gridgain.grid.GridConfigurationAdapter\"")) {
+                            path = path.substring(4);
 
-                        break;
+                            break;
+                        }
                     }
+
+                    files.add(path);
                 }
             }
         }

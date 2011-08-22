@@ -9,6 +9,7 @@
 
 package org.gridgain.examples.montecarlo;
 
+import org.gridgain.examples.montecarlo.api20.*;
 import org.gridgain.grid.gridify.*;
 import org.gridgain.grid.typedef.*;
 import java.util.*;
@@ -17,7 +18,7 @@ import java.util.*;
  * This class abstracts out the calculation of risk for a credit portfolio.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 @SuppressWarnings({"FloatingPointEquality"})
 public class CreditRiskManager {

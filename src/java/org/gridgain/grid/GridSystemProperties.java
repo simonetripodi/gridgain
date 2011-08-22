@@ -20,7 +20,7 @@ import org.gridgain.grid.thread.*;
  * properties and variables can be used to affect the behavior of GridGain.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  * @see GridTestVmParameters
  */
 public final class GridSystemProperties {

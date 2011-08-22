@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.10082011
+ * @version 3.5.0c.22082011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
