@@ -18,7 +18,7 @@ import java.io.*;
  * Acknowledgement message for {@link GridReplicatedPreloadBatchRequest}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Partition. */
@@ -29,6 +29,9 @@ public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K
 
     /** Mode. */
     private int mod;
+
+    /** Retry flag. */
+    private boolean retry;
 
     /**
      * Required by {@link Externalizable}.
@@ -48,9 +51,20 @@ public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K
      * @param idx Batch index.
      */
     public GridReplicatedPreloadBatchResponse(int part, int mod, int idx) {
+        this(part, mod, idx, false);
+    }
+
+    /**
+     * @param part Partition.
+     * @param mod Mod.
+     * @param idx Batch index.
+     * @param retry Retry flag.
+     */
+    public GridReplicatedPreloadBatchResponse(int part, int mod, int idx, boolean retry) {
         this.part = part;
         this.mod = mod;
         this.idx = idx;
+        this.retry = retry;
     }
 
     /**
@@ -74,6 +88,13 @@ public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K
         return idx;
     }
 
+    /**
+     * @return {@code True} if sender should resend batch.
+     */
+    public boolean retry() {
+        return retry;
+    }
+
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
@@ -81,6 +102,7 @@ public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K
         out.writeInt(part);
         out.writeInt(mod);
         out.writeInt(idx);
+        out.writeBoolean(retry);
     }
 
     /** {@inheritDoc} */
@@ -90,6 +112,7 @@ public class GridReplicatedPreloadBatchResponse<K, V> extends GridCacheMessage<K
         part = in.readInt();
         mod = in.readInt();
         idx = in.readInt();
+        retry = in.readBoolean();
     }
 
     /** {@inheritDoc} */

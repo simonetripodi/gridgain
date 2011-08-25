@@ -19,7 +19,7 @@ import java.util.*;
  * Management MBean for job stealing based collision SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @GridMBeanDescription("MBean for job stealing based collision SPI.")
 public interface GridJobStealingCollisionSpiMBean extends GridSpiManagementMBean {
@@ -126,7 +126,7 @@ public interface GridJobStealingCollisionSpiMBean extends GridSpiManagementMBean
 
     /**
      * Configuration parameter to enable stealing to/from only nodes that
-     * have these attributes set (see {@link GridNode#getAttribute(String)} and
+     * have these attributes set (see {@link GridNode#attribute(String)} and
      * {@link GridConfiguration#getUserAttributes()} methods).
      *
      * @return Node attributes to enable job stealing for.

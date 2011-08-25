@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * will automatically pick default values for all values that are not set.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridConfigurationAdapter implements GridConfiguration {
     /** Optional grid name. */
@@ -740,7 +740,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
      * @param p2pEnabled {@code true} if peer class loading is
      *      enabled, {@code false} otherwise.
      */
-    public void setP2PClassLoadingEnabled(boolean p2pEnabled) {
+    public void setPeerClassLoadingEnabled(boolean p2pEnabled) {
         this.p2pEnabled = p2pEnabled;
     }
 
@@ -756,7 +756,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
      * @param p2pLocalClsPathExcl List of P2P loaded packages. Package
      *      name supports '*' at the end like in package import clause.
      */
-    public void setP2PLocalClassPathExclude(String... p2pLocalClsPathExcl) {
+    public void setPeerClassLoadingLocalClassPathExclude(String... p2pLocalClsPathExcl) {
         this.p2pLocalClsPathExcl = p2pLocalClsPathExcl;
     }
 

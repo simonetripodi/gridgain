@@ -11,7 +11,6 @@ package org.gridgain.grid.kernal.processors.cache;
 
 import org.gridgain.grid.*;
 import org.gridgain.grid.cache.affinity.*;
-import org.gridgain.grid.kernal.managers.deployment.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.util.future.*;
 import org.jetbrains.annotations.*;
@@ -22,7 +21,7 @@ import java.util.*;
  * Adapter for preloading which always assumes that preloading finished.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridCachePreloaderAdapter<K, V> implements GridCachePreloader<K, V> {
     /** Cache context. */
@@ -74,33 +73,6 @@ public class GridCachePreloaderAdapter<K, V> implements GridCachePreloader<K, V>
     /** {@inheritDoc} */
     @Override public GridFuture<?> startFuture() {
         return finFut;
-    }
-
-    /**
-     * Sets p2p context for the current thread and returns class loader that should be used.
-     *
-     * @param senderId Sender node id.
-     * @param msg Deployable message.
-     * @return Class loader that should be used while working with message (unmarshalling, etc.)
-     */
-    protected ClassLoader p2pContext(UUID senderId, GridCacheDeployable msg) {
-        ClassLoader clsLdr = cctx.deploy().localLoader();
-
-        GridDeploymentInfo dep = msg.deployInfo();
-
-        if (dep != null) {
-            cctx.deploy().p2pContext(
-                senderId,
-                dep.classLoaderId(),
-                dep.userVersion(),
-                dep.deployMode(),
-                dep.participants()
-            );
-
-            clsLdr = cctx.deploy().globalLoader();
-        }
-
-        return clsLdr;
     }
 
     /**

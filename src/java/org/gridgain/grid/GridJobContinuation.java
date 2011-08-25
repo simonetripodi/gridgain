@@ -16,7 +16,7 @@ import org.jetbrains.annotations.*;
  * Defines continuation support for grid job context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public interface GridJobContinuation {
     /**
@@ -44,7 +44,7 @@ public interface GridJobContinuation {
      * pretty standard notation for this concept that originated from Scheme programming
      * language. Basically, the job is held to be continued later, hence the name of the method.
      *
-     * @return Always returns {@code null}.
+     * @return Always returns {@code null} for convenience to be used in code with return statement.
      */
     @Nullable public <T> T holdcc();
 
@@ -66,7 +66,7 @@ public interface GridJobContinuation {
      * be continued later, hence the name of the method.
      *
      * @param timeout Timeout in milliseconds after which job will be automatically resumed.
-     * @return Always returns {@code null}.
+     * @return Always returns {@code null} for convenience to be used in code with return statement.
      */
     @Nullable public <T> T holdcc(long timeout);
 

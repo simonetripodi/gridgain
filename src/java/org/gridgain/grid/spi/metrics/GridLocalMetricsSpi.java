@@ -14,7 +14,7 @@ import org.gridgain.grid.spi.*;
 
 /**
  * Grid local metrics SPI allows grid to get metrics on local VM. These metrics
- * are a subset of metrics included into {@link GridNode#getMetrics()} method.
+ * are a subset of metrics included into {@link GridNode#metrics()} method.
  * This way every grid node can become aware of certain changes on other nodes,
  * such as CPU load for example.
  * <p>
@@ -26,7 +26,7 @@ import org.gridgain.grid.spi.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public interface GridLocalMetricsSpi extends GridSpi, GridSpiJsonConfigurable {
     /**

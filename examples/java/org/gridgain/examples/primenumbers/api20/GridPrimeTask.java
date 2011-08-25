@@ -43,7 +43,7 @@ import java.util.*;
  * If divisor is found, then we return it, otherwise we return {@code null}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridPrimeTask extends GridTaskSplitAdapter<Long, Long> {
     /** {@inheritDoc} */
@@ -64,9 +64,8 @@ public class GridPrimeTask extends GridTaskSplitAdapter<Long, Long> {
             jobMinRange = i * numbersPerTask + taskMinRange;
             jobMaxRange = (i + 1) * numbersPerTask + taskMinRange - 1;
 
-            if (jobMaxRange > arg) {
+            if (jobMaxRange > arg)
                 jobMaxRange = arg;
-            }
 
             final long min = jobMinRange;
             final long max = jobMaxRange;
@@ -99,22 +98,19 @@ public class GridPrimeTask extends GridTaskSplitAdapter<Long, Long> {
     /** {@inheritDoc} */
     @Override public GridJobResultPolicy result(GridJobResult result, List<GridJobResult> received) throws GridException {
         // If divisor is found then complete right away, otherwise, keep waiting.
-        if(result.getData() != null) {
+        if(result.getData() != null)
             // Start reducing. All jobs that are still running
             // will be cancelled automatically.
             return GridJobResultPolicy.REDUCE;
-        }
 
         return super.result(result, received);
     }
 
     /** {@inheritDoc} */
     @Override public Long reduce(List<GridJobResult> results) {
-        for (GridJobResult res : results) {
-            if (res.getData() != null) {
+        for (GridJobResult res : results)
+            if (res.getData() != null)
                 return res.getData();
-            }
-        }
 
         // No divisor was found, the value is 'prime'.
         return null;

@@ -70,14 +70,14 @@ import java.util.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  * @see GridFailoverSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.22082011")
+    version = "3.5.0c.24082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailoverSpi, GridAlwaysFailoverSpiMBean {
     /** Maximum number of attempts to execute a failed job on another node (default is {@code 5}). */
@@ -142,9 +142,8 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
         registerMBean(gridName, this, GridAlwaysFailoverSpiMBean.class);
 
         // Ack ok start.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(startInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -152,9 +151,8 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
         unregisterMBean();
 
         // Ack ok stop.
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /** {@inheritDoc} */
@@ -163,9 +161,8 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
         assert ctx != null;
         assert top != null;
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug("Received failed job result: " + ctx.getJobResult());
-        }
 
         if (top.isEmpty()) {
             U.warn(log, "Received empty topology for failover and is forced to fail (check topology SPI?)");
@@ -177,9 +174,8 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
         Collection<UUID> failedNodes =
             (Collection<UUID>)ctx.getJobResult().getJobContext().getAttribute(FAILED_NODE_LIST_ATTR);
 
-        if (failedNodes == null) {
+        if (failedNodes == null)
             failedNodes = new HashSet<UUID>(1);
-        }
 
         Integer failoverCnt = failedNodes.size();
 
@@ -195,11 +191,9 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
         // Copy.
         List<GridNode> newTop = new ArrayList<GridNode>(top.size());
 
-        for (GridNode node : top) {
-            if (!failedNodes.contains(node.id())) {
+        for (GridNode node : top)
+            if (!failedNodes.contains(node.id()))
                 newTop.add(node);
-            }
-        }
 
         if (newTop.isEmpty()) {
             U.warn(log, "Received topology with only nodes that job had failed on (forced to fail) [failedNodes=" +
@@ -212,9 +206,8 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
         try {
             GridNode node = ctx.getBalancedNode(newTop);
 
-            if (node == null) {
+            if (node == null)
                 U.warn(log, "Load balancer returned null node for topology: " + newTop);
-            }
             else {
                 // Increment failover count.
                 ctx.getJobResult().getJobContext().setAttribute(FAILED_NODE_LIST_ATTR, failedNodes);
@@ -222,14 +215,13 @@ public class GridAlwaysFailoverSpi extends GridSpiAdapter implements GridFailove
                 totalFailoverJobs++;
             }
 
-            if (node != null) {
+            if (node != null)
                 U.warn(log, "Failed over job to a new node [newNode=" + node.id() +
                     ", oldNode=" + ctx.getJobResult().getNode().id() +
                     ", sesId=" + ctx.getTaskSession().getId() +
                     ", job=" + ctx.getJobResult().getJob() +
                     ", jobCtx=" + ctx.getJobResult().getJobContext() +
                     ", task=" + ctx.getTaskSession().getTaskName() + ']');
-            }
 
             return node;
         }

@@ -10,7 +10,6 @@
 package org.gridgain.grid.spi.collision.priorityqueue;
 
 import org.gridgain.grid.*;
-import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.spi.*;
@@ -50,7 +49,7 @@ import java.util.concurrent.atomic.*;
  * <li>
  *      Default priority increase value (see {@link #getStarvationIncrement()}).
  *      It is used for increasing priority when job gets bumped down.
- *      This future is used for preventing starvation waiting jobs execution. 
+ *      This future is used for preventing starvation waiting jobs execution.
  * </li>
  * <li>
  *      Default increasing priority flag value (see {@link #isStarvationPreventionEnabled()}).
@@ -151,23 +150,16 @@ import java.util.concurrent.atomic.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.22082011")
+    version = "3.5.0c.24082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridPriorityQueueCollisionSpi extends GridSpiAdapter implements GridCollisionSpi,
     GridPriorityQueueCollisionSpiMBean {
-    /** Running (not held) jobs predicate. */
-    private static final GridPredicate<GridCollisionJobContext> RUNNING_JOBS = new P1<GridCollisionJobContext>() {
-        @Override public boolean apply(GridCollisionJobContext ctx) {
-            return !ctx.getJobContext().heldcc();
-        }
-    };
-
     /**
      * Default number of parallel jobs allowed (value is {@code 95} which is
      * slightly less same as default value of threads in the execution thread pool
@@ -426,16 +418,17 @@ public class GridPriorityQueueCollisionSpi extends GridSpiAdapter implements Gri
     }
 
     /** {@inheritDoc} */
-    @Override public void onCollision(Collection<GridCollisionJobContext> waitJobs,
-        Collection<GridCollisionJobContext> activeJobs) {
-        assert waitJobs != null;
-        assert activeJobs != null;
+    @Override public void onCollision(GridCollisionContext ctx) {
+        assert ctx != null;
 
-        int activeSize = F.size(activeJobs, RUNNING_JOBS);
+        Collection<GridCollisionJobContext> activeJobs = ctx.activeJobs();
+        Collection<GridCollisionJobContext> waitJobs = ctx.waitingJobs();
+
+        int activeSize = activeJobs.size();
 
         waitingCnt.set(waitJobs.size());
         runningCnt.set(activeSize);
-        heldCnt.set(activeJobs.size() - activeSize);
+        heldCnt.set(ctx.heldJobs().size());
 
         int waitSize = waitJobs.size();
 
@@ -539,7 +532,7 @@ public class GridPriorityQueueCollisionSpi extends GridSpiAdapter implements Gri
         }
 
         assert false : "Failed to find collision context [ctx=" + ctx + ", ctxs=" + ctxs + ']';
-        
+
         return -1;
     }
 

@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * This class provides necessary synchronization for thread-safe access.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @SuppressWarnings( {"SynchronizeOnNonFinalField"})
 public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {

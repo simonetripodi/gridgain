@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Responsible for all grid job execution and communication.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @SuppressWarnings({"deprecation"})
 public class GridJobProcessor extends GridProcessorAdapter {
@@ -417,14 +417,18 @@ public class GridJobProcessor extends GridProcessorAdapter {
 
             snapshot = new CollisionSnapshot();
 
+            // Create collection of active contexts. Note that we don't
+            // care about cancelled jobs that are still running.
+            for (GridJobWorker job : activeJobs.values()) {
+                if (job.held())
+                    snapshot.addHeld(job);
+                else
+                    snapshot.addActive(job);
+            }
+
             // Create collection of passive contexts.
             for (GridJobWorker job : passiveJobs.values())
                 snapshot.addPassive(job);
-
-            // Create collection of active contexts. Note that we don't
-            // care about cancelled jobs that are still running.
-            for (GridJobWorker job : activeJobs.values())
-                snapshot.addActive(job);
 
             // Even though lastSnapshot is atomic, we still set
             // it inside of synchronized block because we want
@@ -439,6 +443,18 @@ public class GridJobProcessor extends GridProcessorAdapter {
         // Outside of synchronization handle whichever snapshot was added last
         if ((snapshot = lastSnapshot.getAndSet(null)) != null)
             snapshot.onCollision();
+    }
+
+    /**
+     * Decrements call counter.
+     */
+    private void decrementCallCount() {
+        synchronized (mux) {
+            callCnt--;
+
+            if (callCnt == 0)
+                mux.notifyAll();
+        }
     }
 
     /** {@inheritDoc} */
@@ -464,10 +480,13 @@ public class GridJobProcessor extends GridProcessorAdapter {
     /** */
     private class CollisionSnapshot {
         /** */
-        private final Collection<GridCollisionJobContext> passiveCtxs = new LinkedList<GridCollisionJobContext>();
+        private Collection<GridCollisionJobContext> passiveCtxs;
 
         /** */
-        private final Collection<GridCollisionJobContext> activeCtxs = new LinkedList<GridCollisionJobContext>();
+        private Collection<GridCollisionJobContext> activeCtxs;
+
+        /** Held contexts. */
+        private Collection<GridCollisionJobContext> heldCtxs;
 
         /** */
         private int startedCtr;
@@ -497,6 +516,9 @@ public class GridJobProcessor extends GridProcessorAdapter {
          * @param job Passive job.
          */
         void addPassive(GridJobWorker job) {
+            if (passiveCtxs == null)
+                passiveCtxs = new LinkedList<GridCollisionJobContext>();
+
             passiveCtxs.add(new CollisionJobContext(job, true));
         }
 
@@ -504,7 +526,28 @@ public class GridJobProcessor extends GridProcessorAdapter {
          * @param job Active job.
          */
         void addActive(GridJobWorker job) {
+            if (activeCtxs == null)
+                activeCtxs = new LinkedList<GridCollisionJobContext>();
+
             activeCtxs.add(new CollisionJobContext(job, false));
+        }
+
+        /**
+         * @param job Held job.
+         */
+        void addHeld(GridJobWorker job) {
+            if (heldCtxs == null)
+                heldCtxs = new LinkedList<GridCollisionJobContext>();
+
+            heldCtxs.add(new CollisionJobContext(job, false));
+        }
+
+        /**
+         * @param c Collection of job contexts, possibly {@code null}.
+         * @return Non-null collection.
+         */
+        private Collection<GridCollisionJobContext> mask(@Nullable Collection<GridCollisionJobContext> c) {
+            return c == null ? Collections.<GridCollisionJobContext>emptyList() : c;
         }
 
         /**
@@ -512,10 +555,10 @@ public class GridJobProcessor extends GridProcessorAdapter {
          */
         void onCollision() {
             // Invoke collision SPI.
-            ctx.collision().onCollision(passiveCtxs, activeCtxs);
+            ctx.collision().onCollision(mask(passiveCtxs), mask(activeCtxs), mask(heldCtxs));
 
             // Process waiting list.
-            for (GridCollisionJobContext c : passiveCtxs) {
+            for (GridCollisionJobContext c : mask(passiveCtxs)) {
                 CollisionJobContext jobCtx = (CollisionJobContext)c;
 
                 if (jobCtx.isCancelled()) {
@@ -559,7 +602,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
             }
 
             // Process active list.
-            for (GridCollisionJobContext c : activeCtxs) {
+            for (GridCollisionJobContext c : mask(activeCtxs)) {
                 CollisionJobContext ctx = (CollisionJobContext)c;
 
                 if (ctx.isCancelled()) {
@@ -719,12 +762,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                 handleCollisions();
             }
             finally {
-                synchronized (mux) {
-                    callCnt--;
-
-                    if (callCnt == 0)
-                        mux.notifyAll();
-                }
+                decrementCallCount();
             }
         }
     }
@@ -797,12 +835,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                 handleCollisions();
             }
             finally {
-                synchronized (mux) {
-                    callCnt--;
-
-                    if (callCnt == 0)
-                        mux.notifyAll();
-                }
+                decrementCallCount();
             }
         }
     }
@@ -906,12 +939,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                 handleCollisions();
             }
             finally {
-                synchronized (mux) {
-                    callCnt--;
-
-                    if (callCnt == 0)
-                        mux.notifyAll();
-                }
+                decrementCallCount();
             }
         }
     }
@@ -920,7 +948,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Handles job execution requests.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.22082011
+     * @version 3.5.0c.24082011
      */
     private class JobExecutionListener implements GridMessageListener {
         @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
@@ -1030,6 +1058,8 @@ public class GridJobProcessor extends GridProcessorAdapter {
                         req.getTaskNodeId(),
                         evtLsnr);
 
+                    jobCtx.job(job);
+
                     if (job.initialize(dep, dep.deployedClass(req.getTaskClassName()))) {
                         synchronized (mux) {
                             // Check if job or task has already been canceled.
@@ -1082,12 +1112,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                 }
             }
             finally {
-                synchronized (mux) {
-                    callCnt--;
-
-                    if (callCnt == 0)
-                        mux.notifyAll();
-                }
+                decrementCallCount();
             }
         }
 
@@ -1247,12 +1272,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                 U.error(log, "Failed to deserialize session attributes.", e);
             }
             finally {
-                synchronized (mux) {
-                    callCnt--;
-
-                    if (callCnt == 0)
-                        mux.notifyAll();
-                }
+                decrementCallCount();
             }
         }
     }
@@ -1261,7 +1281,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.22082011
+     * @version 3.5.0c.24082011
      */
     private class JobDiscoveryListener implements GridLocalEventListener {
         /**
@@ -1379,12 +1399,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
                 }
             }
             finally {
-                synchronized (mux) {
-                    callCnt--;
-
-                    if (callCnt == 0)
-                        mux.notifyAll();
-                }
+                decrementCallCount();
             }
         }
     }

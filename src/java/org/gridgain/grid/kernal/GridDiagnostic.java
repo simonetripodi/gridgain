@@ -22,7 +22,7 @@ import java.util.concurrent.*;
  * reports errors or suspicious results.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 final class GridDiagnostic {
     /** */
@@ -105,7 +105,7 @@ final class GridDiagnostic {
                         U.warn(log, "This operating system has been tested less rigorously: " + U.osString() +
                             ". Our team will appreciate the feedback if you experience any problems running " +
                             "gridgain in this environment. You can always send your feedback to support@gridgain.com",
-                            "This OS is not fully supported: " + U.osString());
+                            "This OS is tested less rigorously: " + U.osString());
                     }
                 }
             });

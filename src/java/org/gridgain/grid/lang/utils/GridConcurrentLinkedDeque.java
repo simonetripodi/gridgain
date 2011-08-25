@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.*;
  * at http://creativecommons.org/publicdomain/zero/1.0/
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @SuppressWarnings( {"ALL"})
 public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implements Deque<E> {
@@ -650,7 +650,6 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
 
             // Try to gc-unlink, if possible
             if ((isFirst | isLast) &&
-
                 // Recheck expected state of predecessor and successor
                 (activePred.next == activeSucc) &&
                 (activeSucc.prev == activePred) &&

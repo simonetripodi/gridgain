@@ -137,7 +137,7 @@ import java.util.concurrent.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>>, GridMetadataAware {
     /**
@@ -3889,7 +3889,7 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * Gets partition ids for which nodes of the given projection has backup
      * ownership. Note that you can find a back up at a certain level, e.g.
      * {@code first} backup or {@code third} backup by specifying the
-     * {@code 'levels} paramater. If no {@code 'level'} is specified then
+     * {@code 'levels} parameter. If no {@code 'level'} is specified then
      * all backup partitions are returned.
      * <p>
      * Note that since {@link GridRichNode} implements {@link GridProjection},

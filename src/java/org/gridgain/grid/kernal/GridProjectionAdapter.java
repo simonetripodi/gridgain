@@ -35,7 +35,7 @@ import static org.gridgain.grid.util.nodestart.GridNodeStartUtils.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** Empty rich node predicate array. */
@@ -144,35 +144,137 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public void affRun(String cacheName, Object affKey, @Nullable Runnable job,
+    @Override public void affRun(String cacheName, @Nullable Object affKey, @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         affRunAsync(cacheName, affKey, job, p).get();
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<?> affRunAsync(final String cacheName, final Object affKey,
+    @Override public GridFuture<?> affRunAsync(final String cacheName, @Nullable final Object affKey,
         @Nullable final Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         A.notNull(cacheName, "cacheName");
-        A.notNull(affKey, "affKey");
 
         guard();
 
         try {
-            return ctx.closure().runAsync(BALANCE, job == null ? null : new CA() {
-                @GridCacheName
-                private String cn = cacheName;
+            return affKey == null ? new GridFinishedFuture(ctx) :
+                ctx.closure().runAsync(BALANCE, job == null ? null : new CA() {
+                    @GridCacheName
+                    private String cn = cacheName;
 
-                @GridCacheAffinityMapped
-                private Object ak = affKey;
+                    @GridCacheAffinityMapped
+                    private Object ak = affKey;
 
-                @Override public void apply() {
-                    job.run();
-                }
-            }, F.retain(nodes(), true, p));
+                    @Override public void apply() {
+                        job.run();
+                    }
+                }, F.retain(nodes(), true, p));
         }
         finally {
             unguard();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> GridFuture<Collection<R>> affCallAsync(final String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable final Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        A.notNull(cacheName, "cacheName");
+
+        guard();
+
+        try {
+            if (affKeys == null || affKeys.isEmpty())
+                return new GridFinishedFuture<Collection<R>>(ctx);
+
+            Collection<GridFuture<R>> futs = new ArrayList<GridFuture<R>>(affKeys.size());
+
+            Collection<GridRichNode> prj = F.retain(nodes(), true, p);
+
+            for (final Object affKey : affKeys)
+                futs.add(
+                    ctx.closure().callAsync(BALANCE, job == null ? null : new CO<R>() {
+                        @GridCacheName
+                        private String cn = cacheName;
+
+                        @GridCacheAffinityMapped
+                        private Object ak = affKey;
+
+                        @Override public R apply() {
+                            try {
+                                return job.call();
+                            }
+                            catch (Exception e) {
+                                throw F.wrap(e);
+                            }
+                        }
+                    }, prj)
+                );
+
+            ArrayList<R> res = new ArrayList<R>(futs.size());
+
+            for (GridFuture<R> fut : futs)
+                fut.get();
+
+            return new GridFinishedFuture<Collection<R>>(ctx, res);
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> GridFuture<R> affCallAsync(final String cacheName, @Nullable final Object affKey,
+        @Nullable final Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        A.notNull(cacheName, "cacheName");
+
+        guard();
+
+        try {
+            return affKey == null ? new GridFinishedFuture<R>(ctx) :
+                ctx.closure().callAsync(BALANCE, job == null ? null : new CO<R>() {
+                    @GridCacheName
+                    private String cn = cacheName;
+
+                    @GridCacheAffinityMapped
+                    private Object ak = affKey;
+
+                    @Override public R apply() {
+                        try {
+                            return job.call();
+                        }
+                        catch (Exception e) {
+                            throw F.wrap(e);
+                        }
+                    }
+                }, F.retain(nodes(), true, p));
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> Collection<R> affCall(String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return affCallAsync(cacheName, affKeys, job, p).get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> R affCall(String cacheName, Object affKey, @Nullable Callable<R> job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return affCallAsync(cacheName, affKey, job, p).get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> affRunAsync(String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return null; // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public void affRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        affRunAsync(cacheName, affKeys, job, p).get();
     }
 
     /** {@inheritDoc} */

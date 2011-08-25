@@ -148,14 +148,14 @@ import static org.gridgain.grid.GridEventType.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @SuppressWarnings( {"SynchronizationOnLocalVariableOrMethodParameter", "deprecation"})
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.22082011")
+    version = "3.5.0c.24082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridJobStealingCollisionSpi extends GridSpiAdapter implements GridCollisionSpi,
     GridJobStealingCollisionSpiMBean {
@@ -406,7 +406,7 @@ public class GridJobStealingCollisionSpi extends GridSpiAdapter implements GridC
 
     /**
      * Configuration parameter to enable stealing to/from only nodes that
-     * have these attributes set (see {@link GridNode#getAttribute(String)} and
+     * have these attributes set (see {@link GridNode#attribute(String)} and
      * {@link GridConfiguration#getUserAttributes()} methods).
      *
      * @param stealAttrs Node attributes to enable job stealing for.
@@ -604,10 +604,16 @@ public class GridJobStealingCollisionSpi extends GridSpiAdapter implements GridC
     }
 
     /** {@inheritDoc} */
-    @Override public void onCollision(Collection<GridCollisionJobContext> waitJobs,
-        Collection<GridCollisionJobContext> activeJobs) {
+    @Override public void onCollision(GridCollisionContext ctx) {
+        assert ctx != null;
+
+        Collection<GridCollisionJobContext> activeJobs = ctx.activeJobs();
+        Collection<GridCollisionJobContext> waitJobs = ctx.waitingJobs();
+
         assert activeJobs.size() <= activeJobsThreshold : "Amount of active jobs exceeds threshold [activeJobs=" +
             activeJobs.size() + ", activeJobsThreshold=" + activeJobsThreshold + ']';
+
+        heldCnt.set(ctx.heldJobs().size());
 
         // Check if there are any jobs to activate or reject.
         int rejected = checkBusy(waitJobs, activeJobs);
@@ -639,11 +645,10 @@ public class GridJobStealingCollisionSpi extends GridSpiAdapter implements GridC
     private int checkBusy(Collection<GridCollisionJobContext> waitJobs,
         Collection<GridCollisionJobContext> activeJobs) {
 
-        int activeSize = F.size(activeJobs, RUNNING_JOBS);
+        int activeSize = activeJobs.size();
 
         waitingCnt.set(waitJobs.size());
         runningCnt.set(activeSize);
-        heldCnt.set(activeJobs.size() - activeSize);
 
         GridSpiContext ctx = getSpiContext();
 

@@ -19,10 +19,42 @@ import java.util.Arrays
 import scala.util.control.Breaks._
 
 /**
+ * Prime Number calculation example based on Scalar.
  *
+ * ==Starting Remote Nodes==
+ * To try this example you should (but don't have to) start remote grid instances.
+ * You can start as many as you like by executing the following script:
+ * `{GRIDGAIN_HOME}/bin/ggstart.{bat|sh}`
+ *
+ * Once remote instances are started, you can execute this example from
+ * Eclipse, IntelliJ IDEA, or NetBeans (and any other Java IDE) by simply hitting run
+ * button. You will see that all nodes discover each other and
+ * all of the nodes will participate in task execution (check node
+ * output).
+ *
+ * Note that when running this example on a multi-core box, simply
+ * starting additional grid node on the same box will speed up
+ * prime number calculation by a factor of 2.
+ *
+ * ==XML Configuration==
+ * If no specific configuration is provided, GridGain will start with
+ * all defaults. For information about GridGain default configuration
+ * refer to `GridFactory` documentation. If you would like to
+ * try out different configurations you should pass a path to Spring
+ * configuration file as 1st command line argument into this example.
+ *
+ * The path can be relative to `GRIDGAIN_HOME environment variable.
+ * You should also pass the same configuration file to all other
+ * grid nodes by executing startup script as follows (you will need
+ * to change the actual file name):
+ * `{GRIDGAIN_HOME}/bin/ggstart.{bat|sh} examples/config/specific-config-file.xml`
+ * <p>
+ * GridGain examples come with multiple configuration files you can try.
+ * All configuration files are located under `GRIDGAIN_HOME/examples/config`
+ * folder.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 object ScalarPrimeExample {
     /**
@@ -42,12 +74,12 @@ object ScalarPrimeExample {
 
             checkVals.foreach(checkVal => {
                 val divisor = g @< (SPREAD, closures(g.size(), checkVal),
-                    (s: Seq[Long]) => s.find(p => p != null))
+                    (s: Seq[Option[Long]]) => s.find(p => p.isDefined))
 
                 if (!divisor.isDefined)
                     println(">>> Value '" + checkVal + "' is a prime number")
                 else
-                    println(">>> Value '" + checkVal + "' is divisible by '" + divisor.get + '\'')
+                    println(">>> Value '" + checkVal + "' is divisible by '" + divisor.get.get + '\'')
             })
 
             val totalTime = System.currentTimeMillis - start
@@ -71,8 +103,8 @@ object ScalarPrimeExample {
      * @param val Value to check.
      * @return Collection of closures.
      */
-    private def closures(gridSize: Int, checkVal: Long): Seq[() => Long] = {
-        var cls = Seq.empty[() => Long]
+    private def closures(gridSize: Int, checkVal: Long): Seq[() => Option[Long]] = {
+        var cls = Seq.empty[() => Option[Long]]
 
         val taskMinRange = 2L
         val numbersPerTask = if (checkVal / gridSize < 10) 10L else checkVal / gridSize
@@ -89,16 +121,19 @@ object ScalarPrimeExample {
             if (maxRange > checkVal)
                 maxRange = checkVal
 
+            val min = minRange
+            val max = maxRange
+
             cls +:= (() => {
-                var divisor = null.asInstanceOf[Long]
+                var divisor: Option[Long] = None
 
                 breakable {
-                    (minRange to maxRange).foreach(d => {
-                         if (d != 1 && d != checkVal && checkVal % d == 0) {
-                             divisor = d
+                    (min to max).foreach(d => {
+                        if (d != 1 && d != checkVal && checkVal % d == 0) {
+                             divisor = Some(d)
 
                              break()
-                         }
+                        }
                     })
                 }
 

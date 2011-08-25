@@ -61,7 +61,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -188,6 +188,42 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
         assert g != null;
 
         return g.random();
+    }
+
+    /** {@inheritDoc} */
+    @Override public void affRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> affRunAsync(String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return null; // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> R affCall(String cacheName, @Nullable Object affKey, @Nullable Callable<R> job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return null; // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> Collection<R> affCall(String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return null; // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> GridFuture<R> affCallAsync(String cacheName, @Nullable Object affKey,
+        @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return null; // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public <R> GridFuture<Collection<R>> affCallAsync(String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        return null; // TODO
     }
 
     /** {@inheritDoc} */

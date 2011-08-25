@@ -29,7 +29,7 @@ import static org.gridgain.grid.GridEventType.*;
  * cache: {@code 'ggstart.sh examples/config/spring-cache.xml'}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridCacheRichExample {
     /** Ensure singleton. */
@@ -53,10 +53,8 @@ public class GridCacheRichExample {
             // Uncomment any configured cache instance to observe
             // different cache behavior for different cache modes.
             GridCache<UUID, Object> cache = grid.cache("partitioned");
-            /*
-            GridCache<UUID, Object> cache = grid.cache("replicated");
-            GridCache<UUID, Object> cache = grid.cache("local");
-            */
+            // GridCache<UUID, Object> cache = grid.cache("replicated");
+            // GridCache<UUID, Object> cache = grid.cache("local");
 
             // Demonstrates concurrent-map-like operations on cache.
             concurrentMap(cache);

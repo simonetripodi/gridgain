@@ -21,7 +21,7 @@ import java.util.*;
  * Preload batch message that carries some number of entries.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridReplicatedPreloadBatchRequest<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Partition. */
@@ -44,6 +44,10 @@ public class GridReplicatedPreloadBatchRequest<K, V> extends GridCacheMessage<K,
     @GridToStringExclude
     private List<GridCacheEntryInfo<K, V>> entries =
         new LinkedList<GridCacheEntryInfo<K, V>>();
+
+    /** Entry keys that are in this batch (transient). */
+    @GridToStringExclude
+    private Collection<K> keys = new LinkedList<K>();
 
     /**
      * Required by {@link Externalizable}.
@@ -134,6 +138,13 @@ public class GridReplicatedPreloadBatchRequest<K, V> extends GridCacheMessage<K,
     }
 
     /**
+     * @return Keys in this batch.
+     */
+    public Collection<K> keys() {
+        return keys;
+    }
+
+    /**
      * @param info Preload entry info.
      * @param ctx Cache context.
      * @return Serialized preload entry.
@@ -152,12 +163,16 @@ public class GridReplicatedPreloadBatchRequest<K, V> extends GridCacheMessage<K,
     /**
      * Adds {@link GridCacheEntryInfo} object in serialized form.
      *
+     * @param key Entry key.
      * @param entry Entry to add.
      */
-    public void addSerializedEntry(byte[] entry) {
+    public void addSerializedEntry(K key, byte[] entry) {
+        assert key != null;
         assert entry != null;
 
         entryBytes.add(entry);
+
+        keys.add(key);
     }
 
     /**
@@ -179,6 +194,11 @@ public class GridReplicatedPreloadBatchRequest<K, V> extends GridCacheMessage<K,
      */
     public boolean isEmpty() {
         return entryBytes.isEmpty();
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean ignoreClassErrors() {
+        return true;
     }
 
     /** {@inheritDoc} */

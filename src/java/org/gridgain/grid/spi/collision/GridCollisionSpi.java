@@ -13,8 +13,6 @@ import org.gridgain.grid.*;
 import org.gridgain.grid.spi.*;
 import org.jetbrains.annotations.*;
 
-import java.util.*;
-
 /**
  * Collision SPI allows to regulate how grid jobs get executed when they arrive on a
  * destination node for execution. Its functionality is similar to tasks management via
@@ -36,7 +34,7 @@ import java.util.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public interface GridCollisionSpi extends GridSpi, GridSpiJsonConfigurable {
     /**
@@ -46,18 +44,14 @@ public interface GridCollisionSpi extends GridSpi, GridSpiJsonConfigurable {
      * this method is called (i.e., when grid job is finished it will not appear in any list
      * in collision resolution).
      * <p>
-     * Implementation of this method should act on two lists, each of which contains collision
-     * job contexts that define a set of operations available during collision resolution. Refer to
-     * {@link GridCollisionJobContext} documentation for more information.
+     * Implementation of this method should act on all lists, each of which contains collision
+     * job contexts that define a set of operations available during collision resolution. Refer
+     * to {@link GridCollisionContext} and {@link GridCollisionJobContext} documentation for
+     * more information.
      *
-     * @param waitJobs Ordered collection of collision contexts for jobs that are currently waiting
-     *      for execution. It can be empty but never {@code null}. Note that a new newly
-     *      arrived job, if any, will always be represented by the last item in this list.
-     * @param activeJobs Ordered collection of collision contexts for jobs that are currently executing.
-     *      It can be empty but never {@code null}.
+     * @param ctx Collision context which contains all collision lists.
      */
-    public void onCollision(Collection<GridCollisionJobContext> waitJobs,
-        Collection<GridCollisionJobContext> activeJobs);
+    public void onCollision(GridCollisionContext ctx);
 
     /**
      * Listener to be set for notification of external collision events (e.g. job stealing).

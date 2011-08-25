@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.*;
  * This class defines a collision manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridCollisionManager extends GridManagerAdapter<GridCollisionSpi> {
     /** */
@@ -85,9 +85,12 @@ public class GridCollisionManager extends GridManagerAdapter<GridCollisionSpi> {
     /**
      * @param waitJobs List of waiting jobs.
      * @param activeJobs List of active jobs.
+     * @param heldJobs List of held jobs.
      */
-    public void onCollision(Collection<GridCollisionJobContext> waitJobs,
-        Collection<GridCollisionJobContext> activeJobs) {
+    public void onCollision(
+        final Collection<GridCollisionJobContext> waitJobs,
+        final Collection<GridCollisionJobContext> activeJobs,
+        final Collection<GridCollisionJobContext> heldJobs) {
 
         // Do not log "empty" collision resolution.
         if (!waitJobs.isEmpty() || !activeJobs.isEmpty()) {
@@ -95,6 +98,18 @@ public class GridCollisionManager extends GridManagerAdapter<GridCollisionSpi> {
                 log.debug("Resolving job collisions [waitJobs=" + waitJobs + ", activeJobs=" + activeJobs + ']');
         }
 
-        getSpi().onCollision(waitJobs, activeJobs);
+        getSpi().onCollision(new GridCollisionContext() {
+            @Override public Collection<GridCollisionJobContext> activeJobs() {
+                return activeJobs;
+            }
+
+            @Override public Collection<GridCollisionJobContext> waitingJobs() {
+                return waitJobs;
+            }
+
+            @Override public Collection<GridCollisionJobContext> heldJobs() {
+                return heldJobs;
+            }
+        });
     }
 }

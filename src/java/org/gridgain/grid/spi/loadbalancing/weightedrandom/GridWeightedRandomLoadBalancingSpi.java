@@ -146,13 +146,13 @@ import static org.gridgain.grid.GridEventType.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.22082011")
+    version = "3.5.0c.24082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implements GridLoadBalancingSpi,
     GridWeightedRandomLoadBalancingSpiMBean {
@@ -163,7 +163,7 @@ public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implement
      * Name of node attribute used to indicate load weight of a node
      * (value is {@code "gridgain.node.weight.attr.name"}).
      *
-     * @see GridNode#getAttributes()
+     * @see GridNode#attributes()
      */
     public static final String NODE_WEIGHT_ATTR_NAME = "gridgain.node.weight.attr.name";
 
@@ -354,7 +354,7 @@ public class GridWeightedRandomLoadBalancingSpi extends GridSpiAdapter implement
      * Holder for weighted topology.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.22082011
+     * @version 3.5.0c.24082011
      */
     private class WeightedTopology {
         /** Total topology weight. */

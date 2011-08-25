@@ -39,7 +39,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Class that takes care about entries preloading in replicated cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** */
@@ -76,7 +76,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     /** Latch to wait for the end of preloading on. */
     private final GridFutureAdapter<?> syncPreloadFut;
 
-    /** {node id, partition, mod} -> session */
+    /** {node ID, partition, mod} -> session */
     private final ConcurrentMap<GridTuple3<UUID, Integer, Integer>, Session> ses =
         new ConcurrentHashMap<GridTuple3<UUID, Integer, Integer>, Session>();
 
@@ -141,13 +141,19 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
         cctx.events().addPreloadEvent(-1, EVT_CACHE_PRELOAD_STARTED, cctx.discovery().shadow(cctx.localNode()),
             EVT_NODE_JOINED, cctx.localNode().metrics().getNodeStartTime());
 
-        if (log.isInfoEnabled())
-            log.info("Preloading started.");
+        if (cctx.config().getPreloadMode() == SYNC)
+            if (log.isInfoEnabled())
+                log.info("Starting preloading in SYNC mode...");
+
+        long start = System.currentTimeMillis();
 
         sendInitialPreloadRequests();
 
-        if (cctx.config().getPreloadMode() == SYNC)
+        if (cctx.config().getPreloadMode() == SYNC) {
             syncPreloadFut.get();
+
+            U.log(log, "Completed preloading in SYNC mode in " + (System.currentTimeMillis() - start) + " ms.");
+        }
     }
 
     /**
@@ -561,15 +567,15 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      *
      */
     private void finish() {
-        finished.set(true);
+        if (finished.compareAndSet(false, true)) {
+            syncPreloadFut.onDone();
 
-        syncPreloadFut.onDone();
+            cctx.events().addPreloadEvent(-1, EVT_CACHE_PRELOAD_STOPPED, cctx.discovery().shadow(cctx.localNode()),
+                EVT_NODE_JOINED, cctx.localNode().metrics().getNodeStartTime());
 
-        cctx.events().addPreloadEvent(-1, EVT_CACHE_PRELOAD_STOPPED, cctx.discovery().shadow(cctx.localNode()),
-            EVT_NODE_JOINED, cctx.localNode().metrics().getNodeStartTime());
-
-        if (log.isInfoEnabled())
-            log.info("Preloading finished.");
+            if (log.isDebugEnabled())
+                log.debug("Preloading finished.");
+        }
     }
 
     /**
@@ -764,7 +770,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
                     if (node == null) {
                         if (log.isDebugEnabled())
-                            log.debug("Node has left the grid, batch will be sent: [node=" + nodeId + "]");
+                            log.debug("Node has left the grid, batch will not be sent [node=" + nodeId +
+                                ", batch=" + batch + ']');
 
                         continue;
                     }
@@ -850,9 +857,28 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
          * @param batchReq Batch request.
          */
         private void processBatch(UUID nodeId, GridReplicatedPreloadBatchRequest<K, V> batchReq) {
-            // We need to set p2p context manually because we receive and process
-            // batches in different threads.
-            p2pContext(nodeId, batchReq);
+            if (batchReq.classError() != null) {
+                if (log.isDebugEnabled())
+                    log.debug("Class got undeployed during preloading: " + batchReq.classError());
+
+                GridReplicatedPreloadBatchResponse<K, V> res = new GridReplicatedPreloadBatchResponse<K, V>(
+                    batchReq.partition(), batchReq.mod(), batchReq.index(), true);
+
+                try {
+                    cctx.io().send(nodeId, res);
+                }
+                catch (GridTopologyException ignored) {
+                    if (log.isDebugEnabled())
+                        log.debug("Failed to send batch response since the node left grid [node=" +
+                            nodeId + ", batch=" + batchReq + ", res=" + res + ']');
+                }
+                catch (GridException e) {
+                    U.error(log, "Failed to send batch response [node=" + nodeId + ", batch=" + batchReq +
+                        ", res=" + res + ']', e);
+                }
+
+                return;
+            }
 
             if (batchReq.entries() != null) {
                 for (GridCacheEntryInfo<K, V> preloaded : batchReq.entries()) {
@@ -891,19 +917,20 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                     finish();
             }
 
+            GridReplicatedPreloadBatchResponse<K, V> res = new GridReplicatedPreloadBatchResponse<K, V>(
+                batchReq.partition(), batchReq.mod(), batchReq.index());
+
             try {
-                cctx.io().send(
-                    nodeId,
-                    new GridReplicatedPreloadBatchResponse<K, V>(batchReq.partition(), batchReq.mod(), batchReq.index())
-                );
+                cctx.io().send(nodeId, res);
             }
             catch (GridTopologyException ignored) {
                 if (log.isDebugEnabled())
                     log.debug("Failed to send batch response since the node left grid [node=" +
-                        nodeId + ", batch=" + batchReq + "]");
+                        nodeId + ", batch=" + batchReq + ", res=" + res + ']');
             }
             catch (GridException e) {
-                U.error(log, "Failed to send batch response [node=" + nodeId + ", batch=" + batchReq + "]", e);
+                U.error(log, "Failed to send batch response [node=" + nodeId + ", batch=" + batchReq +
+                    ", res=" + res + ']', e);
             }
         }
     }
@@ -1118,7 +1145,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 GridCacheEntryEx<K, V> entry = entryIter.next();
 
                 // Mod entry hash to the number of nodes.
-                if (entry.hashCode() % nodeCnt != mod || cctx.partition(entry.key()) != part)
+                if (Math.abs(entry.hashCode() % nodeCnt) != mod || cctx.partition(entry.key()) != part)
                     continue;
 
                 if (log.isDebugEnabled())
@@ -1160,7 +1187,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 byte[] entryBytes = batch.marshal(preloadInfo, cctx);
 
                 if (batchSize + entryBytes.length <= cctx.config().getPreloadBatchSize() || batch.isEmpty()) {
-                    batch.addSerializedEntry(entryBytes);
+                    batch.addSerializedEntry(entry.key(), entryBytes);
 
                     return entryBytes.length;
                 }
@@ -1196,7 +1223,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                     }
 
                     // We have to create a copy because communication manager may cache
-                    // serialized message with old message id.
+                    // serialized message with old message ID.
                     GridReplicatedPreloadBatchRequest<K, V> newBatch =
                         new GridReplicatedPreloadBatchRequest<K, V>(batch);
 
@@ -1250,10 +1277,18 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
             if (!lastBatch.compareAndSet(batch, null))
                 return;
 
-            if (batch.last()) {
+            if (!res.retry() && batch.last()) {
+                // Request was successfully processed.
                 finish();
 
                 return;
+            }
+
+            if (res.retry()) {
+                if (log.isDebugEnabled())
+                    log.debug("Remote node failed to process request, need to retry with keys: " + batch.keys());
+
+                hangingKeys.addAll(batch.keys());
             }
 
             try {

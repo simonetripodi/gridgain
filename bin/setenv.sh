@@ -7,7 +7,7 @@
 #  / /_/ /  _  /    _  /  / /_/ /  / /_/ /  / /_/ / _  /  _  / / /
 #  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 #
-# Version: 3.5.0c.22082011
+# Version: 3.5.0c.24082011
 #
 
 #
@@ -41,7 +41,7 @@ case "`uname`" in
 esac
 
 # The following libraries are required for GridGain.
-GRIDGAIN_LIBS="${USE_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-jexl-2.0.jar
+GRIDGAIN_LIBS="${USER_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-jexl-2.0.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-logging-1.1.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-lang-2.5.jar
 GRIDGAIN_LIBS="${GRIDGAIN_LIBS}${SEPARATOR}${GRIDGAIN_HOME}"/libs/commons-collections-3.2.jar

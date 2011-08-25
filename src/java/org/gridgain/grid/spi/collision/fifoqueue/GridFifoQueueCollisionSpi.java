@@ -9,12 +9,10 @@
 
 package org.gridgain.grid.spi.collision.fifoqueue;
 
-import org.gridgain.grid.lang.*;
 import org.gridgain.grid.logger.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.spi.*;
 import org.gridgain.grid.spi.collision.*;
-import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 
 import java.util.*;
@@ -66,23 +64,16 @@ import java.util.concurrent.atomic.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.22082011")
+    version = "3.5.0c.24082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridFifoQueueCollisionSpi extends GridSpiAdapter implements GridCollisionSpi,
     GridFifoQueueCollisionSpiMBean {
-    /** Running (not held) jobs predicate. */
-    private static final GridPredicate<GridCollisionJobContext> RUNNING_JOBS = new P1<GridCollisionJobContext>() {
-        @Override public boolean apply(GridCollisionJobContext ctx) {
-            return !ctx.getJobContext().heldcc();
-        }
-    };
-
     /**
      * Default number of parallel jobs allowed (value is {@code 95} which is
      * slightly less same as default value of threads in the execution thread pool
@@ -112,7 +103,7 @@ public class GridFifoQueueCollisionSpi extends GridSpiAdapter implements GridCol
     /** Number of jobs that were waiting for execution last time. */
     private final AtomicInteger waitingCnt = new AtomicInteger(0);
 
-    /** Number of currently held jobs. */
+    /** Number of jobs that are held. */
     private final AtomicInteger heldCnt = new AtomicInteger(0);
 
     /**
@@ -155,7 +146,7 @@ public class GridFifoQueueCollisionSpi extends GridSpiAdapter implements GridCol
 
     /** {@inheritDoc} */
     @Override public int getCurrentActiveJobsNumber() {
-        return runningCnt.get() + heldCnt.get();
+        return runningCnt.get();
     }
 
     /** {@inheritDoc} */
@@ -202,25 +193,32 @@ public class GridFifoQueueCollisionSpi extends GridSpiAdapter implements GridCol
     }
 
     /** {@inheritDoc} */
-    @Override public void onCollision(Collection<GridCollisionJobContext> waitJobs,
-        Collection<GridCollisionJobContext> activeJobs) {
-        assert waitJobs != null;
-        assert activeJobs != null;
+    @Override public void onCollision(GridCollisionContext ctx) {
+        assert ctx != null;
 
-        int activeSize = F.size(activeJobs, RUNNING_JOBS);
+        Collection<GridCollisionJobContext> activeJobs = ctx.activeJobs();
+        Collection<GridCollisionJobContext> waitJobs = ctx.waitingJobs();
 
+        int activeSize = activeJobs.size();
         int waitSize = waitJobs.size();
 
         waitingCnt.set(waitSize);
         runningCnt.set(activeSize);
-        heldCnt.set(activeJobs.size() - activeSize);
+        heldCnt.set(ctx.heldJobs().size());
 
         int activateCnt = parallelJobsNum.get() - activeSize;
 
+        Iterator<GridCollisionJobContext> it = null;
+
         if (activateCnt > 0 && !waitJobs.isEmpty()) {
+            if (it == null)
+                it = waitJobs.iterator();
+
             int cnt = 0;
 
-            for (GridCollisionJobContext waitCtx : waitJobs) {
+            while (it.hasNext()) {
+                GridCollisionJobContext waitCtx = it.next();
+
                 if (cnt++ == activateCnt)
                     break;
 
@@ -233,18 +231,17 @@ public class GridFifoQueueCollisionSpi extends GridSpiAdapter implements GridCol
         int waitJobsNum = this.waitJobsNum.get();
 
         if (waitSize > waitJobsNum) {
-            int skip = waitJobs.size() - waitSize;
+            if (it == null)
+                it = waitJobs.iterator();
 
-            int i = 0;
+            while (it.hasNext()) {
+                GridCollisionJobContext waitCtx = it.next();
 
-            for (GridCollisionJobContext waitCtx : waitJobs) {
-                if (++i >= skip) {
-                    waitCtx.cancel();
+                 waitCtx.cancel();
 
-                    if (--waitSize <= waitJobsNum)
-                        break;
-                }
-            }
+                 if (--waitSize <= waitJobsNum)
+                     break;
+             }
         }
     }
 

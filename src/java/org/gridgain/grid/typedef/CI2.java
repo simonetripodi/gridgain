@@ -17,7 +17,7 @@ import org.gridgain.grid.lang.*;
  * concise code in cases when readability won't be sacrificed. For more information see {@link GridInClosure2}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  * @param <E1> Type of the first parameter.
  * @param <E2> Type of hte second parameter.
  * @see GridFunc

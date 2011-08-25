@@ -8,7 +8,7 @@
     \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
 
     Copyright (C) GridGain Systems, Inc. Licensed under GPLv3, http://www.gnu.org/licenses/gpl.html
-    Version: 3.5.0c.22082011
+    Version: 3.5.0c.24082011
 -->
 
 <!--
@@ -130,6 +130,12 @@
                     <property name="startSize" value="20"/>
 
                     <!--
+                        Allow to index key-value pairs where key type may be associated with different
+                        value types, and vice versa, value type may be associated with different key types.
+                    -->
+                    <property name="indexFixedTyping" value="false" />
+
+                    <!--
                         Turn on the auto-indexing of primitive types for SQL queries.
                         Turn it off for to improve performance.
                     -->
@@ -148,6 +154,12 @@
 
                     <!-- Initial cache size. -->
                     <property name="startSize" value="20"/>
+
+                    <!--
+                        Allow to index key-value pairs where key type may be associated with different
+                        value types, and vice versa, value type may be associated with different key types.
+                    -->
+                    <property name="indexFixedTyping" value="false" />
 
                     <!--
                         Turn on the auto-indexing of primitive types for SQL queries.

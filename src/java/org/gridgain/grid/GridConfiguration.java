@@ -52,7 +52,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public interface GridConfiguration {
     /**
@@ -276,8 +276,8 @@ public interface GridConfiguration {
 
     /**
      * Should return any user-defined attributes to be added to this node. These attributes can
-     * then be accessed on nodes by calling {@link GridNode#getAttribute(String)} or
-     * {@link GridNode#getAttributes()} methods.
+     * then be accessed on nodes by calling {@link GridNode#attribute(String)} or
+     * {@link GridNode#attributes()} methods.
      * <p>
      * Note that system adds the following (among others) attributes automatically:
      * <ul>

@@ -19,7 +19,7 @@ import java.util.*;
  * and its subfolders.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public final class GridConfigurationFinder {
     /** Path to default configuration file. */
@@ -43,7 +43,14 @@ public final class GridConfigurationFinder {
     public static List<String> getConfigurationFiles() throws IOException {
         LinkedList<String> files = getConfigurationFiles(new File(U.getGridGainHome()));
 
-        Collections.sort(files);
+        Collections.sort(files, new Comparator<String>() {
+            @Override public int compare(String s1, String s2) {
+                String tmp1 = s1.startsWith("(?) ") ? s1.substring(4) : s1;
+                String tmp2 = s2.startsWith("(?) ") ? s2.substring(4) : s2;
+
+                return tmp1.compareTo(tmp2);
+            }
+        });
 
         files.addFirst(DFLT_CFG);
 
@@ -68,22 +75,34 @@ public final class GridConfigurationFinder {
             if (file.isDirectory())
                 files.addAll(getConfigurationFiles(file));
             else if (file.getName().endsWith(".xml")) {
-                String path = "(?) " + file.getAbsolutePath().replace(U.getGridGainHome() + File.separator, "");
+                boolean springCfg = false;
+                boolean ggCfg = false;
 
-                if (!path.equals(DFLT_CFG)) {
-                    BufferedReader reader = new BufferedReader(new FileReader(file));
+                BufferedReader reader = new BufferedReader(new FileReader(file));
 
-                    String line;
+                String line;
 
-                    while ((line = reader.readLine()) != null) {
-                        if (line.contains("class=\"org.gridgain.grid.GridConfigurationAdapter\"")) {
-                            path = path.substring(4);
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("http://www.springframework.org/schema/beans"))
+                        springCfg = true;
 
-                            break;
-                        }
+                    if (line.contains("class=\"org.gridgain.grid.GridConfigurationAdapter\""))
+                        ggCfg = true;
+
+                    if (springCfg && ggCfg)
+                        break;
+                }
+
+                if (springCfg) {
+                    String path = file.getAbsolutePath().substring(
+                        U.getGridGainHome().length() + File.separator.length());
+
+                    if (!path.equals(DFLT_CFG)) {
+                        if (!ggCfg)
+                            path = "(?) " + path;
+
+                        files.add(path);
                     }
-
-                    files.add(path);
                 }
             }
         }

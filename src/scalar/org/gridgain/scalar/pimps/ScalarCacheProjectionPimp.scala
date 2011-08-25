@@ -26,7 +26,7 @@ import scalaz._
  * Companion object.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 object ScalarCacheProjectionPimp {
     /**
@@ -66,7 +66,7 @@ object ScalarCacheProjectionPimp {
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 class ScalarCacheProjectionPimp[@specialized K, @specialized V] extends PimpedType[GridCacheProjection[K, V]]
     with Iterable[GridCacheEntry[K, V]] {

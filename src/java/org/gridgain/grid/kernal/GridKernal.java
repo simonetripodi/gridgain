@@ -78,14 +78,14 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
     private static final String VER = "3.5.0c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "22082011";
+    private static final String BUILD = "24082011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
@@ -563,6 +563,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         ackEnvironmentVariables();
         ackSmtpConfiguration();
         ackCacheConfiguration();
+        ackP2pConfiguration();
 
         // Run background network diagnostics.
         GridDiagnostic.runBackgroundCheck(gridName, cfg.getExecutorService(), log);
@@ -1964,6 +1965,9 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
         }
     }
 
+    /**
+     *
+     */
     private void ackCacheConfiguration() {
         GridCacheConfiguration[] cacheCfgs = cfg.getCacheConfiguration();
 
@@ -1979,6 +1983,22 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
 
             U.log(log, "Configured caches [" + names.substring(0, names.length() - 2) + ']');
         }
+    }
+
+    /**
+     *
+     */
+    private void ackP2pConfiguration() {
+        assert cfg != null;
+
+        if (!cfg.isPeerClassLoadingEnabled())
+            U.warn(
+                log,
+                "P2P class loading is disabled. Visor monitoring will not work. In most cases you should enabled " +
+                "P2P class loading but limit the classes that are P2P loaded using 'peerClassLoadingClassPathExclude' " +
+                "configuration property, if necessary.",
+                "P2P class loading is disabled. Visor monitoring will not work."
+            );
     }
 
     /**

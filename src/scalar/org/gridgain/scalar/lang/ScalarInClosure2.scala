@@ -18,7 +18,7 @@ import org.gridgain.grid.lang.GridInClosure2
  * Peer deploy aware adapter for Java's `GridInClosure2`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 class ScalarInClosure2[T1, T2](private val f: (T1, T2) => Unit) extends GridInClosure2[T1, T2] {
     assert(f != null)

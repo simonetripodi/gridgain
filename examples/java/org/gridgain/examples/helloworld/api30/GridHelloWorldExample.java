@@ -7,7 +7,7 @@
  *  \____/   /_/     /_/   \_,__/   \____/   \__,_/  /_/   /_/ /_/
  */
 
-package org.gridgain.examples.helloworld.api30;
+    package org.gridgain.examples.helloworld.api30;
 
 import org.gridgain.grid.*;
 import org.gridgain.grid.lang.*;
@@ -48,7 +48,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * folder.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public final class GridHelloWorldExample {
     /**

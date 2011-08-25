@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -104,11 +104,7 @@ public class GridDhtPartitionDemandPool<K, V> {
 
         poolSize = cctx.preloadEnabled() ? cctx.config().getPreloadThreadPoolSize() : 1;
 
-        barrier = new CyclicBarrier(poolSize, new Runnable() {
-            @Override public void run() {
-                GridDhtPartitionDemandPool.this.cctx.deploy().unwind();
-            }
-        });
+        barrier = new CyclicBarrier(poolSize);
 
         dmdWorkers = new ArrayList<DemandWorker>(poolSize);
 
@@ -676,6 +672,8 @@ public class GridDhtPartitionDemandPool<K, V> {
                         if (supply.classError() != null) {
                             if (log.isDebugEnabled())
                                 log.debug("Class got undeployed during preloading: " + supply.classError());
+
+                            retry = true;
 
                             // Quit preloading.
                             break;

@@ -24,7 +24,7 @@ import java.util.*;
  * Remote job context implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public class GridJobContextImpl extends GridMetadataAwareAdapter implements GridJobContext {
     /** Kernal context ({@code null} for job result context). */
@@ -32,6 +32,9 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
 
     /** */
     private UUID jobId;
+
+    /** Job worker. */
+    private transient GridJobWorker job;
 
     /** */
     @GridToStringInclude private final Map<Object, Object> attrs = new HashMap<Object, Object>(1);
@@ -59,6 +62,15 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
         synchronized (this.attrs) {
             this.attrs.putAll(attrs);
         }
+    }
+
+    /**
+     * @param job Job worker.
+     */
+    public void job(GridJobWorker job) {
+        assert job != null;
+
+        this.job = job;
     }
 
     /** {@inheritDoc} */
@@ -107,12 +119,14 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
             return false;
         }
 
-        GridJobWorker job = ctx.job().activeJob(jobId);
+        if (job == null)
+            job = ctx.job().activeJob(jobId);
 
         return job != null && job.held();
     }
 
     /** {@inheritDoc} */
+    @SuppressWarnings( {"RedundantTypeArguments"})
     @Override public <T> T holdcc() {
         return this.<T>holdcc(0);
     }
@@ -120,7 +134,8 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
     /** {@inheritDoc} */
     @Override public <T> T holdcc(long timeout) {
         if (ctx != null) {
-            GridJobWorker job = ctx.job().activeJob(jobId);
+            if (job == null)
+                job = ctx.job().activeJob(jobId);
 
             // Completed?
             if (job != null) {
@@ -157,12 +172,12 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
     /** {@inheritDoc} */
     @Override public void callcc() {
         if (ctx != null) {
-            GridJobWorker job = ctx.job().activeJob(jobId);
+            if (job == null)
+                job = ctx.job().activeJob(jobId);
 
-            if (job != null) {
+            if (job != null)
                 // Execute in the same thread.
                 job.execute();
-            }
         }
     }
 

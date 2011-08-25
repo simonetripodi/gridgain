@@ -68,13 +68,13 @@ import org.gridgain.grid.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.22082011
+ * @version 3.5.0c.24082011
  */
 public interface GridAdaptiveLoadProbe {
     /**
      * Calculates load value for a given node. Specific implementations would
      * usually take into account some of the values provided by
-     * {@link GridNode#getMetrics()} method. For example, load can be calculated
+     * {@link GridNode#metrics()} method. For example, load can be calculated
      * based on job execution time or number of active jobs, or CPU/Heap utilization.
      * <p>
      * Note that if this method returns a value of {@code 0},
