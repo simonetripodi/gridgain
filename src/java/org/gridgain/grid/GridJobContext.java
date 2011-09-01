@@ -9,11 +9,13 @@
 
 package org.gridgain.grid;
 
+import org.gridgain.grid.lang.*;
 import org.gridgain.grid.resources.*;
 import org.gridgain.grid.spi.collision.*;
 import org.gridgain.grid.spi.failover.*;
 import org.jetbrains.annotations.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Context attached to every job executed on the grid. Note that unlike
@@ -49,9 +51,41 @@ import java.util.*;
  * Attribute names that start with {@code "gridgain:"} are reserved for internal system use.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public interface GridJobContext extends GridJobContinuation, GridMetadataAware {
+    /**
+     * Gets cache name for which job was co-located.
+     *
+     * @return Cache name if job was co-located or {@code null} otherwise.
+     * @see #affinityKey()
+     * @see GridProjection#affinityCall(String, Collection, Callable, GridPredicate[])
+     * @see GridProjection#affinityCall(String, Object, Callable, GridPredicate[])
+     * @see GridProjection#affinityCallAsync(String, Object, Callable, GridPredicate[])
+     * @see GridProjection#affinityCallAsync(String, Object, Callable, GridPredicate[])
+     * @see GridProjection#affinityRun(String, Collection, Runnable, GridPredicate[])
+     * @see GridProjection#affinityRun(String, Object, Runnable, GridPredicate[])
+     * @see GridProjection#affinityRunAsync(String, Collection, Runnable, GridPredicate[])
+     * @see GridProjection#affinityRunAsync(String, Collection, Runnable, GridPredicate[])
+     */
+    public String cacheName();
+
+    /**
+     * Gets affinity key with which job was co-located.
+     *
+     * @return Affinity key if job was co-located or {@code null} otherwise.
+     * @see #cacheName()
+     * @see GridProjection#affinityCall(String, Collection, Callable, GridPredicate[])
+     * @see GridProjection#affinityCall(String, Object, Callable, GridPredicate[])
+     * @see GridProjection#affinityCallAsync(String, Object, Callable, GridPredicate[])
+     * @see GridProjection#affinityCallAsync(String, Object, Callable, GridPredicate[])
+     * @see GridProjection#affinityRun(String, Collection, Runnable, GridPredicate[])
+     * @see GridProjection#affinityRun(String, Object, Runnable, GridPredicate[])
+     * @see GridProjection#affinityRunAsync(String, Collection, Runnable, GridPredicate[])
+     * @see GridProjection#affinityRunAsync(String, Collection, Runnable, GridPredicate[])
+     */
+    public Object affinityKey();
+
     /**
      * Gets ID of the job this context belongs to.
      *

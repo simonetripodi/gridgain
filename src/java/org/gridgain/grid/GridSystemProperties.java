@@ -20,7 +20,7 @@ import org.gridgain.grid.thread.*;
  * properties and variables can be used to affect the behavior of GridGain.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  * @see GridTestVmParameters
  */
 public final class GridSystemProperties {
@@ -301,6 +301,13 @@ public final class GridSystemProperties {
      * @see GridThread
      */
     public static final String GG_ASSERT_SEND_DISABLED = "GRIDGAIN_ASSERT_SEND_DISABLED";
+
+    /**
+     * Property controlling size of buffer holding completed transaction versions. Such buffer
+     * is used to detect duplicate transaction and has a default value of {@code 102400}. In
+     * most cases this value is large enough and does not need to be changed.
+     */
+    public static final String GG_MAX_COMPLETED_TX_COUNT = "GRIDGAIN_MAX_COMPLETED_TX_COUNT";
 
     /**
      * Enforces singleton.

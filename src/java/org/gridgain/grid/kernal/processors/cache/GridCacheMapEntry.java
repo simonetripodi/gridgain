@@ -21,6 +21,7 @@ import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.cache.GridCacheFlag.*;
@@ -32,10 +33,13 @@ import static org.gridgain.grid.cache.GridCachePeekMode.*;
  * Adapter for cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
 public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter implements GridCacheEntryEx<K, V> {
+    /** Static logger to avoid re-creation. */
+    private static final AtomicReference<GridLogger> logRef = new AtomicReference<GridLogger>();
+
     /** Cache registry. */
     @GridToStringExclude
     protected final GridCacheContext<K, V> cctx;
@@ -129,7 +133,7 @@ public abstract class GridCacheMapEntry<K, V> extends GridMetadataAwareAdapter i
 
         expireTime = toExpireTime(ttl);
 
-        log = cctx.logger(getClass());
+        log = U.logger(cctx.kernalContext(), logRef, this);
 
         metrics = new GridCacheMetricsAdapter(cctx.cache().metrics0());
 

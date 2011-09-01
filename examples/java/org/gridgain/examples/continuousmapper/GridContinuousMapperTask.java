@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.*;
  * and therefore don't need to accumulate them be be processed at reduction step.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @GridTaskNoResultCache
 public class GridContinuousMapperTask extends GridTaskAdapter<String, Integer> {
@@ -43,7 +43,7 @@ public class GridContinuousMapperTask extends GridTaskAdapter<String, Integer> {
     private final AtomicInteger totalChrCnt = new AtomicInteger(0);
 
     /** {@inheritDoc} */
-    @Override public Map<? extends GridJob, GridNode> map(List<GridNode> arg0, String phrase) throws GridException {
+    @Override public Map<? extends GridJob, GridNode> map(List<GridNode> grid, String phrase) throws GridException {
         if (F.isEmpty(phrase))
             throw new GridException("Phrase is empty.");
 
@@ -53,7 +53,7 @@ public class GridContinuousMapperTask extends GridTaskAdapter<String, Integer> {
         // Sends first word.
         sendWord();
 
-        // Since we have send at least one job, we are allowed to return
+        // Since we have sent at least one job, we are allowed to return
         // 'null' from map method.
         return null;
     }

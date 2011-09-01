@@ -52,7 +52,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public interface GridConfiguration {
     /**
@@ -819,4 +819,14 @@ public interface GridConfiguration {
      * @return Frequency of metrics log print out.
      */
     public int getMetricsLogFrequency();
+
+    /**
+     * Gets map of pre-configured local event listeners.
+     * Each listener is mapped to array of event types.
+     *
+     * @return Pre-configured event listeners map.
+     * @see Grid#addLocalEventListener(GridLocalEventListener, int[])
+     * @see GridEventType
+     */
+    @Nullable public Map<GridLocalEventListener, int[]> getLocalEventListeners();
 }

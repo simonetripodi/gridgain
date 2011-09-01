@@ -14,19 +14,21 @@ import org.gridgain.grid.cache.*;
 import org.gridgain.grid.kernal.managers.deployment.*;
 import org.gridgain.grid.kernal.processors.cache.query.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.lang.utils.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 /**
  * Deployment manager for cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
     /** Node filter. */
@@ -40,6 +42,12 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
 
     /** Cache class loader */
     private volatile ClassLoader ldr;
+
+    /** Undeployed class loaders. */
+    private final Collection<UUID> deadClsLdrs = new GridBoundedLinkedHashSet<UUID>(1024);
+
+    /** Undeploys. */
+    private final ConcurrentLinkedQueue<CA> undeploys = new ConcurrentLinkedQueue<CA>();
 
     /** Per-thread deployment context. */
     private ThreadLocal<GridTupleV> depBean = new GridThreadLocalEx<GridTupleV>() {
@@ -99,6 +107,14 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
     }
 
     /**
+     * Undeploy all queued up closures.
+     */
+    public void unwind() {
+        for (CA c = undeploys.poll(); c != null; c = undeploys.poll())
+            c.apply();
+    }
+
+    /**
      * Undeploys given class loader.
      *
      * @param leftNodeId Left node ID.
@@ -114,91 +130,104 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
                 ", cacheCls=" + cctx.cache().getClass().getSimpleName() + ", cacheSize=" + cache.size() + ']');
         }
 
-        Collection<K> keys = new LinkedList<K>(
-            cache.keySet(cctx.vararg(
-                new P1<GridCacheEntry<K, V>>() {
-                    @Override public boolean apply(GridCacheEntry<K, V> e) {
-                        return cctx.isNear() ?
-                            undeploy(e, cctx.near()) || undeploy(e, cctx.near().dht()) : undeploy(e, cctx.cache());
-                    }
+        undeploys.add(new CA() {
+            @Override public void apply() {
+                GridCacheAdapter<K, V> cache = cctx.cache();
 
-                    private boolean undeploy(GridCacheEntry<K, V> e, GridCacheAdapter<K, V> cache) {
-                        K k = e.getKey();
-
-                        GridCacheEntryEx<K, V> entry = cache.peekEx(e.getKey());
-
-                        if (entry == null)
-                            return false;
-
-                        V v;
-
-                        try {
-                            v = entry.peek(GridCachePeekMode.GLOBAL, CU.<K, V>empty());
-                        }
-                        catch (GridCacheEntryRemovedException ignore) {
-                            return false;
-                        }
-
-                        assert k != null : "Key cannot be null for cache entry: " + e;
-
-                        ClassLoader keyLdr = k.getClass().getClassLoader();
-                        ClassLoader valLdr = v == null ? null : v.getClass().getClassLoader();
-
-                        if (keyLdr == null)
-                            keyLdr = sysLdr;
-
-                        if (v != null && valLdr == null)
-                            valLdr = sysLdr;
-
-                        boolean res = ldr.equals(keyLdr) || ldr.equals(valLdr);
-
-                        if (res) {
-                            try {
-                                cctx.swap().remove(entry.getOrMarshalKeyBytes());
-
-                                if (log.isDebugEnabled())
-                                    log.debug("Removed entry from swap: " + k);
+                Collection<K> keys = new LinkedList<K>(
+                    cache.keySet(cctx.vararg(
+                        new P1<GridCacheEntry<K, V>>() {
+                            @Override public boolean apply(GridCacheEntry<K, V> e) {
+                                return cctx.isNear() ?
+                                    undeploy(e, cctx.near()) ||
+                                        undeploy(e, cctx.near().dht()) : undeploy(e, cctx.cache());
                             }
-                            catch (GridException ex) {
-                                U.error(log, "Failed to undeploy swapped entry: " + e, ex);
 
-                                return false;
+                            private boolean undeploy(GridCacheEntry<K, V> e, GridCacheAdapter<K, V> cache) {
+                                K k = e.getKey();
+
+                                GridCacheEntryEx<K, V> entry = cache.peekEx(e.getKey());
+
+                                if (entry == null)
+                                    return false;
+
+                                V v;
+
+                                try {
+                                    v = entry.peek(GridCachePeekMode.GLOBAL, CU.<K, V>empty());
+                                }
+                                catch (GridCacheEntryRemovedException ignore) {
+                                    return false;
+                                }
+
+                                assert k != null : "Key cannot be null for cache entry: " + e;
+
+                                ClassLoader keyLdr = U.detectObjectClassLoader(k);
+                                ClassLoader valLdr = U.detectObjectClassLoader(v);
+
+                                boolean res = F.eq(ldr, keyLdr) || F.eq(ldr, valLdr);
+
+                                if (res) {
+                                    try {
+                                        boolean b = cctx.swap().remove(entry.getOrMarshalKeyBytes());
+
+                                        if (b && log.isDebugEnabled())
+                                            log.debug("Removed entry from swap: " + k);
+                                    }
+                                    catch (GridException ex) {
+                                        U.error(log, "Failed to undeploy swapped entry: " + e, ex);
+
+                                        return false;
+                                    }
+                                }
+
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Finished examining entry [entryCls=" + e.getClass() +
+                                        ", key=" + k + ", keyCls=" + k.getClass() +
+                                        ", valCls=" + (v != null ? v.getClass() : "null") +
+                                        ", keyLdr=" + keyLdr + ", valLdr=" + valLdr + ", res=" + res + ']');
+                                }
+
+                                return res;
                             }
-                        }
+                        }))
+                );
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Finished examining entry [entryCls=" + e.getClass() +
-                                ", key=" + k + ", keyCls=" + k.getClass() +
-                                ", valCls=" + (v != null ? v.getClass() : "null") +
-                                ", keyLdr=" + keyLdr + ", valLdr=" + valLdr + ", res=" + res + ']');
-                        }
+                if (log.isDebugEnabled())
+                    log.debug("Finished searching keys for undeploy [keysCnt=" + keys.size() + ']');
 
-                        return res;
-                    }
-                }))
-        );
+                cache.clearAll(keys, true);
 
-        if (log.isDebugEnabled())
-            log.debug("Finished searching keys for undeploy [keysCnt=" + keys.size() + ']');
+                if (cctx.isNear())
+                    cctx.near().dht().clearAll(keys, true);
 
-        cache.clearAll(keys, true);
+                // TODO: do it properly accounting relations between class loaders.
+                GridCacheQueryManager<K, V> qryMgr = cctx.queries();
 
-        if (cctx.isNear())
-            cctx.near().dht().clearAll(keys, true);
+                if (qryMgr != null)
+                    qryMgr.onUndeploy(ldr);
+                else if (log.isDebugEnabled())
+                    log.debug("Query manager is null.");
 
-        // TODO: do it properly accounting relations between class loaders.
-        GridCacheQueryManager<K, V> qryMgr = cctx.queries();
+                if (log.isInfoEnabled())
+                    log.info("Undeployed all entries (if any) for obsolete class loader [undeployCnt=" + keys.size() +
+                        ", clsLdr=" + ldr.getClass().getName() + ']');
 
-        if (qryMgr != null)
-            qryMgr.onUndeploy(ldr);
-        else if (log.isDebugEnabled())
-            log.debug("Query manager is null.");
+                if (ldr instanceof GridDeploymentInfo)
+                    deadClsLdrs.add(((GridDeploymentInfo)ldr).classLoaderId());
 
-        if (log.isInfoEnabled())
-            log.info("Undeployed all entries (if any) for obsolete class loader [undeployCnt=" + keys.size() +
-                ", clsLdr=" + ldr.getClass().getName() + ']');
+                // Avoid class caching issues inside classloader.
+                GridCacheDeploymentManager.this.ldr = new CacheClassLoader();
+            }
+        });
+    }
 
-        this.ldr = new CacheClassLoader();
+    /**
+     * @param ldr Class loader to check (may be null).
+     * @return {@code True} if class loader has been recently undeployed.
+     */
+    public boolean deadClassLoader(@Nullable ClassLoader ldr) {
+        return ldr instanceof GridDeploymentInfo && deadClsLdrs.contains(((GridDeploymentInfo)ldr).classLoaderId());
     }
 
     /**
@@ -249,9 +278,8 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
 
             registerClass(p.deployClass(), p.classLoader());
         }
-        else {
+        else
             registerClass(obj instanceof Class ? (Class)obj : obj.getClass());
-        }
     }
 
     /**
@@ -259,9 +287,8 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
      * @throws GridException If failed.
      */
     public void registerClass(Class<?> cls) throws GridException {
-        if (cls == null) {
+        if (cls == null)
             return;
-        }
 
         registerClass(cls, U.detectClassLoader(cls));
     }
@@ -341,6 +368,15 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
             log.debug("Prepared grid cache deployable [locDep=" + dep + ", deployable=" + deployable + ']');
     }
 
+    /** {@inheritDoc} */
+    @Override protected void printMemoryStats() {
+        X.println(">>> ");
+        X.println(">>> Cache deployment manager memory stats [grid=" + cctx.gridName() +
+            ", cache=" + cctx.name() + ']');
+        X.println(">>>   Undeploys: " + undeploys.size());
+        X.println(">>>   Dead class loaders: " + deadClsLdrs.size());
+    }
+
     /**
      * Cache class loader.
      */
@@ -386,31 +422,29 @@ public class GridCacheDeploymentManager<K, V> extends GridCacheManager<K, V> {
             if (d != null) {
                 Class cls = d.deployedClass(name);
 
-                if (cls != null) {
+                if (cls != null)
                     return cls;
-                }
             }
 
-            throw new ClassNotFoundException("Failed to load class [name=" + name + ", ctx=" + t + ']');
+            throw new ClassNotFoundException("Failed to load class [name=" + name+ ", ctx=" + t + ']');
         }
     }
 
     /**
-     * @param ldr Class loader to get id for.
-     * @return Id for given class loader or {@code null} if given loader is not
+     * @param ldr Class loader to get ID for.
+     * @return ID for given class loader or {@code null} if given loader is not
      *      grid deployment class loader.
      */
     @Nullable public UUID getClassLoaderId(@Nullable ClassLoader ldr) {
-        if (ldr == null) {
+        if (ldr == null)
             return null;
-        }
 
         return cctx.gridDeploy().getClassLoaderId(ldr);
     }
 
     /**
-     * @param ldrId Class loader id.
-     * @return Class loader id or {@code null} if loader not found.
+     * @param ldrId Class loader ID.
+     * @return Class loader ID or {@code null} if loader not found.
      */
     @Nullable public ClassLoader getClassLoader(UUID ldrId) {
         assert ldrId != null;

@@ -21,7 +21,7 @@ import java.util.*;
  * {@code Null}-keys are not supported.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Cloneable {
     /** Implementation used internally. */
@@ -31,10 +31,10 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
     private int batchCntr;
 
     /**
-     * Constructs empty lean map.
+     * Constructs lean map with initial size of {@code 3}.
      */
     public GridLeanMap() {
-        /* No-op. */
+        this(3);
     }
 
     /**

@@ -43,7 +43,7 @@
 Java and Scala GridGain components.</p><p>It is very important to review this class as it defines what <code>implicit</code> conversions
 will take place when using Scalar. Note that object <code>scalar</code> mixes in this
 trait and therefore brings with it all implicits into the scope.
-</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.5 build: 24082011
+</p></div><dl class="attributes block"> <dt>Version</dt><dd><p>GridGain 3.5 build: 31082011
 </p></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
@@ -277,26 +277,26 @@ trait and therefore brings with it all implicits into the scope.
 </p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>Java-side closure to pimp.
 </p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#closureDotScala" data-isabs="false">
-      <a id="closureDotScala[A, R](GridClosure[A, R]):AnyRef { def scala: (A) =<span class='angle_bracket'>&gt;</span> R }"></a>
+      <a id="closureDotScala[A, R](GridClosure[A, R]):AnyRef { def scala: A =<span class='angle_bracket'>&gt;</span> R }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">closureDotScala</span>
         <span class="tparams">[<span name="A">A</span>, <span name="R">R</span>]</span>
-        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridClosure" class="extype">GridClosure</span>[A, R]</span>)</span><span class="result">: AnyRef { def scala: (A) =<span class='angle_bracket'>&gt;</span> R }</span>
+        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridClosure" class="extype">GridClosure</span>[A, R]</span>)</span><span class="result">: AnyRef { def scala: A =<span class='angle_bracket'>&gt;</span> R }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
 </p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>Java-side closure to pimp.
 </p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#closureXDotScala" data-isabs="false">
-      <a id="closureXDotScala[A, R](GridClosureX[A, R]):AnyRef { def scala: (A) =<span class='angle_bracket'>&gt;</span> R }"></a>
+      <a id="closureXDotScala[A, R](GridClosureX[A, R]):AnyRef { def scala: A =<span class='angle_bracket'>&gt;</span> R }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">closureXDotScala</span>
         <span class="tparams">[<span name="A">A</span>, <span name="R">R</span>]</span>
-        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridClosureX" class="extype">GridClosureX</span>[A, R]</span>)</span><span class="result">: AnyRef { def scala: (A) =<span class='angle_bracket'>&gt;</span> R }</span>
+        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridClosureX" class="extype">GridClosureX</span>[A, R]</span>)</span><span class="result">: AnyRef { def scala: A =<span class='angle_bracket'>&gt;</span> R }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
@@ -790,7 +790,7 @@ trait and therefore brings with it all implicits into the scope.
         <span class="params">()</span><span class="result">: java.lang.Class[_]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>final </dd><dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#hashCode" data-isabs="false">
       <a id="hashCode():Int"></a>
       <h4 class="signature">
@@ -855,26 +855,26 @@ trait and therefore brings with it all implicits into the scope.
 </p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>Java-side closure to pimp.
 </p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#inClosureDotScala" data-isabs="false">
-      <a id="inClosureDotScala[T](GridInClosure[T]):AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Unit }"></a>
+      <a id="inClosureDotScala[T](GridInClosure[T]):AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Unit }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">inClosureDotScala</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridInClosure" class="extype">GridInClosure</span>[T]</span>)</span><span class="result">: AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Unit }</span>
+        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridInClosure" class="extype">GridInClosure</span>[T]</span>)</span><span class="result">: AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Unit }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
 </p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>Java-side closure to pimp.
 </p></dd></dl><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#inClosureXDotScala" data-isabs="false">
-      <a id="inClosureXDotScala[T](GridInClosureX[T]):AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Unit }"></a>
+      <a id="inClosureXDotScala[T](GridInClosureX[T]):AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Unit }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">inClosureXDotScala</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridInClosureX" class="extype">GridInClosureX</span>[T]</span>)</span><span class="result">: AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Unit }</span>
+        <span class="params">(<span name="f">f: <span name="org.gridgain.grid.lang.GridInClosureX" class="extype">GridInClosureX</span>[T]</span>)</span><span class="result">: AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Unit }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
@@ -999,25 +999,25 @@ trait and therefore brings with it all implicits into the scope.
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
 </p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#predicateDotScala" data-isabs="false">
-      <a id="predicateDotScala[T](GridPredicate[T]):AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Boolean }"></a>
+      <a id="predicateDotScala[T](GridPredicate[T]):AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Boolean }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">predicateDotScala</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="p">p: <span name="org.gridgain.grid.lang.GridPredicate" class="extype">GridPredicate</span>[T]</span>)</span><span class="result">: AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Boolean }</span>
+        <span class="params">(<span name="p">p: <span name="org.gridgain.grid.lang.GridPredicate" class="extype">GridPredicate</span>[T]</span>)</span><span class="result">: AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Boolean }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
 </p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#predicateXDotScala" data-isabs="false">
-      <a id="predicateXDotScala[T](GridPredicateX[T]):AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Boolean }"></a>
+      <a id="predicateXDotScala[T](GridPredicateX[T]):AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Boolean }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">predicateXDotScala</span>
         <span class="tparams">[<span name="T">T</span>]</span>
-        <span class="params">(<span name="p">p: <span name="org.gridgain.grid.lang.GridPredicateX" class="extype">GridPredicateX</span>[T]</span>)</span><span class="result">: AnyRef { def scala: (T) =<span class='angle_bracket'>&gt;</span> Boolean }</span>
+        <span class="params">(<span name="p">p: <span name="org.gridgain.grid.lang.GridPredicateX" class="extype">GridPredicateX</span>[T]</span>)</span><span class="result">: AnyRef { def scala: T =<span class='angle_bracket'>&gt;</span> Boolean }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
@@ -1047,13 +1047,13 @@ trait and therefore brings with it all implicits into the scope.
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
 </p></div><dl class="attributes block"> <dt>Attributes</dt><dd>implicit </dd></dl></div>
     </li><li visbl="pub" name="org.gridgain.scalar.ScalarConversions#reducerDotScala" data-isabs="false">
-      <a id="reducerDotScala[E, R](GridReducer[E, R]):AnyRef { def scala: (Seq[E]) =<span class='angle_bracket'>&gt;</span> R }"></a>
+      <a id="reducerDotScala[E, R](GridReducer[E, R]):AnyRef { def scala: Seq[E] =<span class='angle_bracket'>&gt;</span> R }"></a>
       <h4 class="signature">
       <span class="kind">implicit def</span>
       <span class="symbol"> 
         <span class="name">reducerDotScala</span>
         <span class="tparams">[<span name="E">E</span>, <span name="R">R</span>]</span>
-        <span class="params">(<span name="r">r: <span name="org.gridgain.grid.lang.GridReducer" class="extype">GridReducer</span>[E, R]</span>)</span><span class="result">: AnyRef { def scala: (Seq[E]) =<span class='angle_bracket'>&gt;</span> R }</span>
+        <span class="params">(<span name="r">r: <span name="org.gridgain.grid.lang.GridReducer" class="extype">GridReducer</span>[E, R]</span>)</span><span class="result">: AnyRef { def scala: Seq[E] =<span class='angle_bracket'>&gt;</span> R }</span>
       </span>
       </h4>
       <p class="shortcomment cmt">Pimp for adding explicit conversion method <code>scala</code>.</p><div class="fullcomment"><div class="comment cmt"><p>Pimp for adding explicit conversion method <code>scala</code>.
@@ -1908,6 +1908,8 @@ will use <code>peek()
     </li></ol>
             </div>
 
+        
+
         <div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
@@ -1925,7 +1927,7 @@ will use <code>peek()
                         <td align="left" valign="center">
                             <nobr>GridGain - High Performance Cloud Computing</nobr>
                             <br>
-                            <b>Version:</b> 3.5 build: 24082011
+                            <b>Version:</b> 3.5 build: 31082011
                             <br>
                             <a target=_blank href="http://www.gridgain.com"><nobr>2005-2011 Copyright &#169; GridGain Systems, Inc.</nobr></a>
                         </td>

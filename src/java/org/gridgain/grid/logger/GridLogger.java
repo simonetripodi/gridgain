@@ -49,16 +49,16 @@ import org.jetbrains.annotations.*;
  * logger in your task/job code. See {@link GridLoggerResource} annotation about logger
  * injection.
  * <h1 class="header">Quiet Mode</h1>
- * By default GridGain 3.0 starts in quite mode suppressing {@code INFO} and {@code DEBUG}
+ * By default GridGain 3.0 starts in "quite" mode suppressing {@code INFO} and {@code DEBUG}
  * log output. If system property {@code GRIDGAIN_QUIET} is set to {@code false} than GridGain
  * will operate in normal un-suppressed logging mode. Note that all output in "quiet" mode is
  * done through standard output (STDOUT). 
  * <p>
- * Note that GridGain's standard startup scripts <tt>$GRIDGAIN_HOME/bin/ggstart.{sh|bat}</tt> accept
- * {@code -q} arguments to turn on 'quiet' mode.
+ * Note that GridGain's standard startup scripts <tt>$GRIDGAIN_HOME/bin/ggstart.{sh|bat}</tt> start
+ * by default in "quiet" mode. Both scripts accept {@code -v} arguments to turn off "quiet" mode.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @GridToStringExclude
 public interface GridLogger extends GridMetadataAware {

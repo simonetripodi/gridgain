@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -38,7 +38,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     private static final boolean CONSISTENCY_CHECK = false;
 
     /** Flag to control amount of output for full map. */
-    private static final boolean FULL_MAP_DEBUG = true;
+    private static final boolean FULL_MAP_DEBUG = false;
 
     /** Context. */
     private final GridCacheContext<K, V> cctx;
@@ -188,6 +188,7 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
 
             long updateSeq = this.updateSeq.incrementAndGet();
 
+            // If this is the oldest node.
             if (oldest.id().equals(loc.id())) {
                 if (node2part == null) {
                     node2part = new GridDhtPartitionFullMap(loc.id(), loc.order(), updateSeq);

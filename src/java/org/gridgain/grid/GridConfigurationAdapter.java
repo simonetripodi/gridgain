@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * will automatically pick default values for all values that are not set.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridConfigurationAdapter implements GridConfiguration {
     /** Optional grid name. */
@@ -216,6 +216,9 @@ public class GridConfigurationAdapter implements GridConfiguration {
     /** Frequency of metrics log print out. */
     private int metricsLogFreq;
 
+    /** Local event listeners. */
+    private Map<GridLocalEventListener, int[]> lsnrs;
+
     /**
      * Creates valid grid configuration with all default values.
      */
@@ -266,6 +269,7 @@ public class GridConfigurationAdapter implements GridConfiguration {
         lifeCycleEmailNtf = cfg.isLifeCycleEmailNotification();
         locHost = cfg.getLocalHost();
         log = cfg.getGridLogger();
+        lsnrs = cfg.getLocalEventListeners();
         marsh = cfg.getMarshaller();
         mbeanSrv = cfg.getMBeanServer();
         metricsHistSize = cfg.getMetricsHistorySize();
@@ -1251,6 +1255,21 @@ public class GridConfigurationAdapter implements GridConfiguration {
      */
     public void setMetricsLogFrequency(int metricsLogFreq) {
         this.metricsLogFreq = metricsLogFreq;
+    }
+
+    /** {@inheritDoc} */
+    @Override @Nullable public Map<GridLocalEventListener, int[]> getLocalEventListeners() {
+        return lsnrs;
+    }
+
+    /**
+     * Sets map of pre-configured local event listeners.
+     * Each listener is mapped to array of event types.
+     *
+     * @param lsnrs Pre-configured event listeners map.
+     */
+    public void setLocalEventListeners(Map<GridLocalEventListener, int[]> lsnrs) {
+        this.lsnrs = lsnrs;
     }
 
     /** {@inheritDoc} */

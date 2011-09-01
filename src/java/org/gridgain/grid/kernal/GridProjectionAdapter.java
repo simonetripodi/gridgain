@@ -35,7 +35,7 @@ import static org.gridgain.grid.util.nodestart.GridNodeStartUtils.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** Empty rich node predicate array. */
@@ -144,78 +144,107 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public void affRun(String cacheName, @Nullable Object affKey, @Nullable Runnable job,
+    @Override public void affinityRun(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
-        affRunAsync(cacheName, affKey, job, p).get();
+        affinityRunAsync(cacheName, affKey, job, p).get();
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<?> affRunAsync(final String cacheName, @Nullable final Object affKey,
-        @Nullable final Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+    @Override public GridFuture<?> affinityRunAsync(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         A.notNull(cacheName, "cacheName");
 
         guard();
 
         try {
-            return affKey == null ? new GridFinishedFuture(ctx) :
-                ctx.closure().runAsync(BALANCE, job == null ? null : new CA() {
-                    @GridCacheName
-                    private String cn = cacheName;
-
-                    @GridCacheAffinityMapped
-                    private Object ak = affKey;
-
-                    @Override public void apply() {
-                        job.run();
-                    }
-                }, F.retain(nodes(), true, p));
+            return (affKey == null || job == null) ?
+                new GridFinishedFuture(ctx) :
+                ctx.closure().runAsync(BALANCE, wrapRun(cacheName, affKey, job), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
         }
     }
 
+    /**
+     *
+     * @param cacheName Cache name.
+     * @param affKey Affinity key.
+     * @param run Run to wrap.
+     * @return Wrapped call.
+     */
+    private CA wrapRun(final String cacheName, final Object affKey, final Runnable run) {
+        return new CA() {
+            @GridCacheName
+            private final String cn = cacheName;
+
+            @GridCacheAffinityMapped
+            private final Object ak = affKey;
+
+            @Override public void apply() {
+                run.run();
+            }
+        };
+    }
+
+    /**
+     *
+     * @param cacheName Cache name.
+     * @param affKey Affinity key.
+     * @param call Call to wrap.
+     * @param <R> Type of the {@code call} return value.
+     * @return Wrapped call.
+     */
+    private <R> CO<R> wrapCall(final String cacheName, final Object affKey, final Callable<R> call) {
+        return new CO<R>() {
+            @GridCacheName
+            private final String cn = cacheName;
+
+            @GridCacheAffinityMapped
+            private final Object ak = affKey;
+
+            @Override public R apply() {
+                try {
+                    return call.call();
+                }
+                catch (Exception e) {
+                    throw F.wrap(e);
+                }
+            }
+        };
+    }
+
     /** {@inheritDoc} */
-    @Override public <R> GridFuture<Collection<R>> affCallAsync(final String cacheName, @Nullable Collection<?> affKeys,
-        @Nullable final Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+    @Override public <R> GridFuture<Collection<R>> affinityCallAsync(
+        final String cacheName,
+        @Nullable Collection<?> affKeys,
+        @Nullable final Callable<R> job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         A.notNull(cacheName, "cacheName");
 
         guard();
 
         try {
-            if (affKeys == null || affKeys.isEmpty())
-                return new GridFinishedFuture<Collection<R>>(ctx);
-
-            Collection<GridFuture<R>> futs = new ArrayList<GridFuture<R>>(affKeys.size());
-
-            Collection<GridRichNode> prj = F.retain(nodes(), true, p);
-
-            for (final Object affKey : affKeys)
-                futs.add(
-                    ctx.closure().callAsync(BALANCE, job == null ? null : new CO<R>() {
-                        @GridCacheName
-                        private String cn = cacheName;
-
-                        @GridCacheAffinityMapped
-                        private Object ak = affKey;
-
-                        @Override public R apply() {
-                            try {
-                                return job.call();
-                            }
-                            catch (Exception e) {
-                                throw F.wrap(e);
+            return (affKeys == null || affKeys.isEmpty() || job == null) ?
+                new GridFinishedFuture<Collection<R>>(ctx) :
+                ctx.closure().callAsync(
+                    BALANCE,
+                    F.transform(
+                        affKeys,
+                        new C1<Object, CO<R>>() {
+                            @Override public CO<R> apply(Object affKey) {
+                                return wrapCall(cacheName, affKey, job);
                             }
                         }
-                    }, prj)
+                    ),
+                    F.retain(nodes(), true, p)
                 );
-
-            ArrayList<R> res = new ArrayList<R>(futs.size());
-
-            for (GridFuture<R> fut : futs)
-                fut.get();
-
-            return new GridFinishedFuture<Collection<R>>(ctx, res);
         }
         finally {
             unguard();
@@ -223,30 +252,19 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public <R> GridFuture<R> affCallAsync(final String cacheName, @Nullable final Object affKey,
-        @Nullable final Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+    @Override public <R> GridFuture<R> affinityCallAsync(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Callable<R> job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         A.notNull(cacheName, "cacheName");
 
         guard();
 
         try {
-            return affKey == null ? new GridFinishedFuture<R>(ctx) :
-                ctx.closure().callAsync(BALANCE, job == null ? null : new CO<R>() {
-                    @GridCacheName
-                    private String cn = cacheName;
-
-                    @GridCacheAffinityMapped
-                    private Object ak = affKey;
-
-                    @Override public R apply() {
-                        try {
-                            return job.call();
-                        }
-                        catch (Exception e) {
-                            throw F.wrap(e);
-                        }
-                    }
-                }, F.retain(nodes(), true, p));
+            return (affKey == null || job == null) ?
+                new GridFinishedFuture<R>(ctx) :
+                ctx.closure().callAsync(BALANCE, wrapCall(cacheName, affKey, job), F.retain(nodes(), true, p));
         }
         finally {
             unguard();
@@ -254,27 +272,57 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /** {@inheritDoc} */
-    @Override public <R> Collection<R> affCall(String cacheName, @Nullable Collection<?> affKeys,
-        @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
-        return affCallAsync(cacheName, affKeys, job, p).get();
-    }
-
-    /** {@inheritDoc} */
-    @Override public <R> R affCall(String cacheName, Object affKey, @Nullable Callable<R> job,
+    @Override public <R> Collection<R> affinityCall(
+        String cacheName,
+        @Nullable Collection<?> affKeys,
+        @Nullable Callable<R> job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
-        return affCallAsync(cacheName, affKey, job, p).get();
+        return affinityCallAsync(cacheName, affKeys, job, p).get();
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<?> affRunAsync(String cacheName, @Nullable Collection<?> affKeys,
-        @Nullable Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
-        return null; // TODO
-    }
-
-    /** {@inheritDoc} */
-    @Override public void affRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+    @Override public <R> R affinityCall(
+        String cacheName,
+        Object affKey,
+        @Nullable Callable<R> job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
-        affRunAsync(cacheName, affKeys, job, p).get();
+        return affinityCallAsync(cacheName, affKey, job, p).get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> affinityRunAsync(
+        final String cacheName,
+        @Nullable Collection<?> affKeys,
+        @Nullable final Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+
+        guard();
+
+        try {
+            return (affKeys == null || affKeys.isEmpty() || job == null) ?
+                new GridFinishedFuture(ctx) :
+                ctx.closure().runAsync(
+                    BALANCE,
+                    F.transform(
+                        affKeys,
+                        new C1<Object, CA>() {
+                            @Override public CA apply(Object affKey) {
+                                return wrapRun(cacheName, affKey, job);
+                            }
+                        }
+                    ),
+                    F.retain(nodes(), true, p)
+                );
+        }
+        finally {
+            unguard();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void affinityRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        affinityRunAsync(cacheName, affKeys, job, p).get();
     }
 
     /** {@inheritDoc} */

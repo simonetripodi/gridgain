@@ -24,7 +24,7 @@ import java.util.*;
  * Remote job context implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridJobContextImpl extends GridMetadataAwareAdapter implements GridJobContext {
     /** Kernal context ({@code null} for job result context). */
@@ -115,9 +115,8 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
 
     /** {@inheritDoc} */
     @Override public boolean heldcc() {
-        if (ctx == null) {
+        if (ctx == null)
             return false;
-        }
 
         if (job == null)
             job = ctx.job().activeJob(jobId);
@@ -179,6 +178,16 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
                 // Execute in the same thread.
                 job.execute();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override public String cacheName() {
+        return null; // TODO
+    }
+
+    /** {@inheritDoc} */
+    @Override public Object affinityKey() {
+        return null; // TODO
     }
 
     /** {@inheritDoc} */

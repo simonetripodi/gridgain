@@ -22,7 +22,7 @@ import org.gridgain.grid.GridClosureCallMode._
  * Scalar-based Monte-Carlo example.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 object ScalarCreditRiskExample {
     def main(args: Array[String]) {
@@ -104,7 +104,7 @@ object ScalarCreditRiskExample {
  * risk assessment application.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 private case class Credit(
     remAmnt: Double, // Remaining crediting amount.
@@ -130,7 +130,7 @@ private case class Credit(
  * This class abstracts out the calculation of risk for a credit portfolio.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 private class CreditRiskManager {
     /**

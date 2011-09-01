@@ -27,6 +27,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.GridEventType.*;
+import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.cache.GridCacheTxState.*;
 import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
 
@@ -34,11 +35,11 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
-    private static final int MAX_COMPLETED_TX_CNT = 102400;
+    private static final int MAX_COMPLETED_TX_CNT = Integer.getInteger(GG_MAX_COMPLETED_TX_COUNT, 102400);
 
     /** Committing transactions. */
     private final ThreadLocal<GridCacheTxEx> threadCtx = new GridThreadLocalEx<GridCacheTxEx>();

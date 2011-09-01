@@ -30,7 +30,7 @@ import org.gridgain.grid.typedef.*;
  * edition is used respectively.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public final class GridCacheAffinitySimpleExample {
     /** Number of keys. */
@@ -67,7 +67,6 @@ public final class GridCacheAffinitySimpleExample {
 
             // Co-locates closures with data in data grid.
             visit(cache);
-
         }
         finally {
             G.stop(true);
@@ -86,9 +85,9 @@ public final class GridCacheAffinitySimpleExample {
             // Affinity key is cache key for this example.
             final int key = i;
 
-            g.affRun("partitioned", key, new CA() {
-                // That closure will execute on the remote node where
-                // data with they 'key' is located. Since it will be co-located
+            g.affinityRun("partitioned", key, new CA() {
+                // This closure will execute on the remote node where
+                // data with the 'key' is located. Since it will be co-located
                 // we can use local 'peek' operation safely.
                 @Override public void apply() {
                     // Value should never be 'null' as we are co-located and using local 'peek'

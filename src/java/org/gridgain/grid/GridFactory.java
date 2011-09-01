@@ -128,7 +128,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridFactory {
     /**
@@ -1287,7 +1287,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.24082011
+     * @version 3.5.0c.31082011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1470,6 +1470,7 @@ public class GridFactory {
             myCfg.setIncludeProperties(cfg.getIncludeProperties());
             myCfg.setLifeCycleEmailNotification(cfg.isLifeCycleEmailNotification());
             myCfg.setMetricsLogFrequency(cfg.getMetricsLogFrequency());
+            myCfg.setLocalEventListeners(cfg.getLocalEventListeners());
 
             String ntfStr = X.getSystemOrEnv(GG_LIFECYCLE_EMAIL_NOTIFY);
 
@@ -2112,7 +2113,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.5.0c.24082011
+         * @version 3.5.0c.31082011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

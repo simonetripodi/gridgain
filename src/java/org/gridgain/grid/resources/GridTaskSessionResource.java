@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 
 /**
  * Annotates a field or a setter method for injection of {@link GridTaskSession} resource.
- * Logger can be injected into instances of following classes:
+ * Task session can be injected into instances of following classes:
  * <p>
  * Distributed Task Session can be injected into instances of following classes:
  * <ul>
@@ -46,7 +46,7 @@ import java.lang.annotation.*;
  * </pre>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

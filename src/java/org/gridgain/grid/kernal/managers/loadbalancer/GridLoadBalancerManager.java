@@ -32,7 +32,7 @@ import java.util.concurrent.locks.*;
  * Load balancing manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridLoadBalancerManager extends GridManagerAdapter<GridLoadBalancingSpi> {
     /** Number of entries to keep in annotation cache. */

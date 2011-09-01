@@ -17,18 +17,14 @@ import org.jetbrains.annotations.*;
 
 /**
  * Logger to use in JBoss loaders. Implementation simply delegates to
- * <a target=_new href="http://www.jboss.org/developers/guides/logging">JBoss</a> logging.
- * <p>
- * Please take a look at <a target=_new href="http://wiki.jboss.org/wiki/Logging">JBoss Wiki</a>
- * and <a target=_new href="http://docs.jboss.org/process-guide/en/html/logging.html>Logging guide</a>
- * for additional information.
+ * <a target=_new href="http://docs.jboss.org/process-guide/en/html/logging.html">JBoss</a> logging.
  * <p>
  * It's recommended to use GridGain logger injection instead of using/instantiating
  * logger in your task/job code. See {@link GridLoggerResource} annotation about logger
  * injection.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridJbossLogger extends GridMetadataAwareAdapter implements GridLogger {
     /** Log4j implementation proxy. */

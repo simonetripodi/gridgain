@@ -22,7 +22,7 @@ import java.util.concurrent.locks.*;
  * Convenient way to represent topology for {@link GridTcpDiscoverySpi}
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridTcpDiscoveryNodesRing {
     /** Local node. */
@@ -291,6 +291,10 @@ public class GridTcpDiscoveryNodesRing {
         rwLock.writeLock().lock();
 
         try {
+            if (nodes.isEmpty())
+                // Nothing to clear.
+                return;
+
             nodes = new TreeSet<GridTcpDiscoveryNode>();
 
             nodes.add(locNode);
@@ -335,7 +339,8 @@ public class GridTcpDiscoveryNodesRing {
         rwLock.readLock().lock();
 
         try {
-            Collection<GridTcpDiscoveryNode> filtered = F.isEmpty(excluded) ? nodes : F.lose(nodes, true, excluded);
+            Collection<GridTcpDiscoveryNode> filtered = F.isEmpty(excluded) ? nodes :
+                F.view(nodes, F.notContains(excluded));
 
             if (F.isEmpty(filtered))
                 return null;

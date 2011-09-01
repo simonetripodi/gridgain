@@ -66,7 +66,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1437,7 +1437,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.24082011
+     * @version 3.5.0c.31082011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -3817,13 +3817,14 @@ public abstract class GridUtils {
     }
 
     /**
-     * Detects class loader for given class and returns class loaded by appropriate class loader.
+     * Detects class loader for given class.
+     * <p>
      * This method will first check if {@link Thread#getContextClassLoader()} is appropriate.
      * If yes, then context class loader will be returned, otherwise
      * the {@link Class#getClassLoader()} will be returned.
      *
      * @param cls Class to find class loader for.
-     * @return Class loader for given class (never {@code null}}
+     * @return Class loader for given class (never {@code null}).
      */
     public static ClassLoader detectClassLoader(Class<?> cls) {
         ClassLoader ldr = Thread.currentThread().getContextClassLoader();
@@ -3851,6 +3852,22 @@ public abstract class GridUtils {
             ldr = GridUtils.class.getClassLoader();
 
         return ldr;
+    }
+
+    /**
+     * Detects class loader for given object's class.
+     *
+     * @param obj Object to find class loader for class of.
+     * @return Class loader for given object (possibly {@code null}).
+     */
+    @Nullable public static ClassLoader detectObjectClassLoader(@Nullable Object obj) {
+        if (obj == null)
+            return null;
+
+        if (obj instanceof GridPeerDeployAware)
+            return ((GridPeerDeployAware)obj).classLoader();
+
+        return detectClassLoader(obj.getClass());
     }
 
     /**
@@ -5415,5 +5432,25 @@ public abstract class GridUtils {
      */
     public static String newLine() {
         return NL;
+    }
+
+    /**
+     * Initializes logger into/from log reference passed in.
+     *
+     * @param ctx Context.
+     * @param logRef Log reference.
+     * @param obj Object to get logger for.
+     * @return Logger for the object.
+     */
+    public static GridLogger logger(GridKernalContext ctx, AtomicReference<GridLogger> logRef, Object obj) {
+        GridLogger log = logRef.get();
+
+        if (log == null) {
+            logRef.compareAndSet(null, ctx.log(obj.getClass()));
+
+            log = logRef.get();
+        }
+
+        return log;
     }
 }

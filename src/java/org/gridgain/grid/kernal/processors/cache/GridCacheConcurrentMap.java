@@ -17,8 +17,8 @@ import org.gridgain.grid.typedef.internal.*;
 import org.jetbrains.annotations.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.cache.GridCacheFlag.*;
@@ -27,50 +27,39 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Concurrent implementation of cache map.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
-public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/ {
+public class GridCacheConcurrentMap<K, V> {
     /** Random. */
     private static final Random RAND = new Random();
 
     /** The default load factor for this map. */
-    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    private static final float DFLT_LOAD_FACTOR = 0.75f;
 
     /** The default concurrency level for this map. */
-    private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
+    private static final int DFLT_CONCUR_LEVEL = 256;
 
     /**
      * The maximum capacity, used if a higher value is implicitly specified by either
      * of the constructors with arguments. Must be a power of two <= 1<<30 to ensure
      * that entries are indexable using integers.
      */
-    private static final int MAXIMUM_CAPACITY = 1 << 30;
+    private static final int MAX_CAP = 1 << 30;
 
     /** The maximum number of segments to allow. */
-    private static final int MAX_SEGMENTS = 1 << 16; // slightly conservative
-
-    /**
-     * Number of unsynchronized retries in size and containsValue
-     * methods before resorting to locking. This is used to avoid
-     * unbounded retries if tables undergo continuous modification
-     * which would make it impossible to obtain an accurate result.
-     */
-    private static final int RETRIES_BEFORE_LOCK = 2;
+    private static final int MAX_SEGS = 1 << 16; // slightly conservative
 
     /**
      * Mask value for indexing into segments. The upper bits of a
      * key's hash code are used to choose the segment.
      */
-    private final int segmentMask;
+    private final int segMask;
 
     /** Shift value for indexing within segments. */
-    private final int segmentShift;
+    private final int segShift;
 
     /** The segments, each of which is a specialized hash table. */
-    private final Segment<K, V>[] segments;
-
-    /** Segment bits. */
-    private final BitSet segBits;
+    private final Segment[] segs;
 
     /** */
     private GridCacheMapEntryFactory<K, V> factory;
@@ -79,13 +68,10 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
     private final GridCacheContext<K, V> ctx;
 
     /** */
-    private final AtomicInteger bucketCnt = new AtomicInteger();
+    private volatile int mapPubSize;
 
     /** */
-    private final AtomicInteger pubSize = new AtomicInteger();
-
-    /** */
-    private final AtomicInteger size = new AtomicInteger();
+    private volatile int mapSize;
 
     /** Filters cache internal entry. */
     private static final P1<GridCacheEntry<?, ?>> NON_INTERNAL =
@@ -96,7 +82,15 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         };
 
     /** Non-internal predicate array. */
-    public static final GridPredicate[] NON_INTERNAL_ARR = new P1[]{NON_INTERNAL};
+    public static final GridPredicate[] NON_INTERNAL_ARR = new P1[] {NON_INTERNAL};
+
+    /** Filters obsolete cache map entry. */
+    private final GridPredicate<GridCacheMapEntry<K, V>> obsolete =
+        new P1<GridCacheMapEntry<K, V>>() {
+            @Override public boolean apply(GridCacheMapEntry<K, V> entry) {
+                return entry.obsolete();
+            }
+        };
 
     /**
      * Applies a supplemental hash function to a given hashCode, which
@@ -126,8 +120,8 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      * @param hash The hash code for the key.
      * @return The segment.
      */
-    private Segment<K, V> segmentFor(int hash) {
-        return segments[(hash >>> segmentShift) & segmentMask];
+    private Segment segmentFor(int hash) {
+        return segs[(hash >>> segShift) & segMask];
     }
 
     /**
@@ -155,8 +149,8 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         if (!(loadFactor > 0) || initialCapacity < 0 || concurrencyLevel <= 0)
             throw new IllegalArgumentException();
 
-        if (concurrencyLevel > MAX_SEGMENTS)
-            concurrencyLevel = MAX_SEGMENTS;
+        if (concurrencyLevel > MAX_SEGS)
+            concurrencyLevel = MAX_SEGS;
 
         // Find power-of-two sizes best matching arguments
         int sshift = 0;
@@ -167,12 +161,12 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
             ssize <<= 1;
         }
 
-        segmentShift = 32 - sshift;
-        segmentMask = ssize - 1;
-        segments = new Segment[ssize];
+        segShift = 32 - sshift;
+        segMask = ssize - 1;
+        segs = (Segment[])Array.newInstance(Segment.class, ssize);
 
-        if (initialCapacity > MAXIMUM_CAPACITY)
-            initialCapacity = MAXIMUM_CAPACITY;
+        if (initialCapacity > MAX_CAP)
+            initialCapacity = MAX_CAP;
 
         int c = initialCapacity / ssize;
 
@@ -184,10 +178,8 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         while (cap < c)
             cap <<= 1;
 
-        for (int i = 0; i < segments.length; ++i)
-            segments[i] = new Segment<K, V>(i, cap, loadFactor);
-
-        segBits = new BitSet(segments.length);
+        for (int i = 0; i < segs.length; ++i)
+            segs[i] = new Segment(cap, loadFactor);
     }
 
     /**
@@ -204,7 +196,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      *      elements is negative or the load factor is non-positive.
      */
     public GridCacheConcurrentMap(GridCacheContext<K, V> ctx, int initialCapacity, float loadFactor) {
-        this(ctx, initialCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL);
+        this(ctx, initialCapacity, loadFactor, DFLT_CONCUR_LEVEL);
     }
 
     /**
@@ -218,7 +210,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      *      elements is negative.
      */
     public GridCacheConcurrentMap(GridCacheContext<K, V> ctx, int initialCapacity) {
-        this(ctx, initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
+        this(ctx, initialCapacity, DFLT_LOAD_FACTOR, DFLT_CONCUR_LEVEL);
     }
 
     /**
@@ -236,40 +228,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      * @return {@code True} if this map is empty.
      */
     public boolean isEmpty() {
-        Segment<K, V>[] segments = this.segments;
-
-        /*
-         * We keep track of per-segment modCounts to avoid ABA
-         * problems in which an element in one segment was added and
-         * in another removed during traversal, in which case the
-         * table was never actually empty at any point. Note the
-         * similar use of modCounts in the size() and containsValue()
-         * methods, which are the only other methods also susceptible
-         * to ABA problems.
-         */
-
-        int[] mc = new int[segments.length];
-
-        int mcsum = 0;
-
-        for (int i = 0; i < segments.length; ++i) {
-            if (segments[i].cnt != 0)
-                return false;
-            else
-                mcsum += mc[i] = segments[i].modCnt;
-        }
-
-        // If mcsum happens to be zero, then we know we got a snapshot
-        // before any modifications at all were made.  This is
-        // probably common enough to bother tracking.
-        if (mcsum != 0) {
-            for (int i = 0; i < segments.length; ++i) {
-                if (segments[i].cnt != 0 || mc[i] != segments[i].modCnt)
-                    return false;
-            }
-        }
-
-        return true;
+        return mapSize == 0;
     }
 
     /**
@@ -278,69 +237,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      * @return the number of key-value mappings in this map.
      */
     public int size() {
-        return size.get();
-    }
-
-    /**
-     * For test purposes.
-     *
-     * @return Map size.
-     */
-    @SuppressWarnings( {"LockAcquiredButNotSafelyReleased"})
-    public int size0() {
-        Segment<K, V>[] segments = this.segments;
-
-        long sum = 0;
-
-        long check = 0;
-
-        int[] mc = new int[segments.length];
-
-        // Try a few times to get accurate count. On failure due to
-        // continuous async changes in table, resort to locking.
-        for (int k = 0; k < RETRIES_BEFORE_LOCK; ++k) {
-            check = 0;
-
-            sum = 0;
-
-            int mcsum = 0;
-
-            for (int i = 0; i < segments.length; ++i) {
-                sum += segments[i].cnt;
-
-                mcsum += mc[i] = segments[i].modCnt;
-            }
-
-            if (mcsum != 0) {
-                for (int i = 0; i < segments.length; ++i) {
-                    check += segments[i].cnt;
-
-                    if (mc[i] != segments[i].modCnt) {
-                        check = -1; // force retry
-
-                        break;
-                    }
-                }
-            }
-
-            if (check == sum)
-                break;
-        }
-
-        if (check != sum) { // Resort to locking all segments
-            sum = 0;
-
-            for (Segment<K, V> segment : segments)
-                segment.readLock().lock();
-
-            for (Segment<K, V> segment : segments)
-                sum += segment.count();
-
-            for (Segment<K, V> segment : segments)
-                segment.readLock().unlock();
-        }
-
-        return sum > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)sum;
+        return mapSize;
     }
 
     /**
@@ -364,32 +261,38 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
     }
 
     /**
-     * TODO: optimize, what if we have 500 internals and only 1 public?
-     *
      * @return Random entry out of hash map.
      */
     @Nullable public GridCacheMapEntry<K, V> randomEntry() {
         while (true) {
-            if (publicSize() == 0)
+            if (mapPubSize == 0)
                 return null;
 
-            int segIdx = segBits.nextSetBit(RAND.nextInt(segments.length));
+            // Desired and current indexes.
+            int segIdx = RAND.nextInt(segs.length);
+            int i = 0;
 
-            if (segIdx == -1)
-                segIdx = segBits.nextSetBit(0);
+            Segment seg = null;
 
-            if (segIdx == -1)
+            for (Segment s : segs) {
+                if (s.publicSize() > 0) {
+                    seg = s;
+
+                    if (segIdx == i++)
+                        break;
+                }
+            }
+
+            if (seg == null)
+                // It happened so that all public values had been removed from segments.
                 return null;
-
-            Segment<K, V> seg = segments[segIdx];
-
-            if (seg.count() == 0)
-                continue;
 
             GridCacheMapEntry<K, V> entry = seg.randomEntry();
 
-            if (entry instanceof GridCacheInternal)
-                continue; // Retry.
+            if (entry == null)
+                continue;
+
+            assert !(entry.key() instanceof GridCacheInternal);
 
             return entry;
         }
@@ -399,26 +302,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      * @return Public size.
      */
     public int publicSize() {
-        return pubSize.get();
-    }
-
-    /**
-     * @return Bucket count.
-     */
-    public int buckets() {
-        return bucketCnt.get();
-    }
-
-    /**
-     * @return Average bucket size.
-     */
-    public double averageBucketSize() {
-        int bucketsCnt = bucketCnt.get();
-
-        if (bucketsCnt == 0)
-            return 0;
-
-        return (double)size() / bucketsCnt;
+        return mapPubSize;
     }
 
     /**
@@ -446,11 +330,28 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      */
     public GridCacheMapEntry<K, V> putEntry(long topVer, K key, @Nullable V val, long ttl) {
         assert key != null;
-        assert val != null;
 
         int hash = hash(key.hashCode());
 
         return segmentFor(hash).put(key, hash, val, topVer, ttl);
+    }
+
+    /**
+     * @param topVer Topology version.
+     * @param key Key.
+     * @param val Value.
+     * @param ttl Time to live.
+     * @param create Create flag.
+     * @return Triple where the first element is current entry associated with the key,
+     *      the second is created entry and the third is doomed (all may be null).
+     */
+    public GridTriple<GridCacheMapEntry<K, V>> putEntryIfObsoleteOrAbsent(long topVer, K key, @Nullable V val,
+        long ttl, boolean create) {
+        assert key != null;
+
+        int hash = hash(key.hashCode());
+
+        return segmentFor(hash).putIfObsolete(key, hash, val, topVer, ttl, create);
     }
 
     /**
@@ -475,12 +376,57 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      * @param key Key.
      * @return Removed entry, possibly {@code null}.
      */
-    @Nullable public GridCacheMapEntry<K, V> removeEntry(Object key) {
+    @Nullable public GridCacheMapEntry<K, V> removeEntry(K key) {
         assert key != null;
 
         int hash = hash(key.hashCode());
 
-        return segmentFor(hash).remove(key, hash);
+        return segmentFor(hash).remove(key, hash, null);
+    }
+
+    /**
+     * Removes passed in entry if it presents in the map.
+     *
+     * @param e Entry to remove.
+     * @return {@code True} if remove happened.
+     */
+    public boolean removeEntry(GridCacheEntryEx<K, V> e) {
+        assert e != null;
+
+        K key = e.key();
+
+        int hash = hash(key.hashCode());
+
+        return segmentFor(hash).remove(key, hash, same(e)) != null;
+    }
+
+    /**
+     * @param p Entry to check equality.
+     * @return Predicate to filter the same (equal by ==) entry.
+     */
+    private GridPredicate<GridCacheMapEntry<K, V>> same(final GridCacheEntryEx<K, V> p) {
+        return new P1<GridCacheMapEntry<K,V>>() {
+            @Override public boolean apply(GridCacheMapEntry<K, V> e) {
+                return e == p;
+            }
+        };
+    }
+
+    /**
+     * Removes and returns the entry associated with the specified key
+     * in the HashMap if entry is obsolete. Returns null if the HashMap
+     * contains no mapping for this key.
+     *
+     * @param key Key.
+     * @return Removed entry, possibly {@code null}.
+     */
+    @SuppressWarnings( {"unchecked"})
+    @Nullable public GridCacheMapEntry<K, V> removeEntryIfObsolete(K key) {
+        assert key != null;
+
+        int hash = hash(key.hashCode());
+
+        return segmentFor(hash).remove(key, hash, obsolete);
     }
 
     /**
@@ -492,7 +438,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
      *           also indicate that the map previously associated {@code null}
      *           with the specified key.
      */
-    @Nullable public V remove(Object key) {
+    @Nullable public V remove(K key) {
         GridCacheMapEntry<K, V> e = removeEntry(key);
 
         return (e == null ? null : e.rawGet());
@@ -561,27 +507,9 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         return F.view(allValues(filter), F.<V>notNull());
     }
 
-    /**
-     * TODO: remove this method.
-     *
-     * @param topVer Topology version.
-     * @param key Cache key.
-     * @param hash Key hash value.
-     * @param val Entry value.
-     * @param next Next entry in the linked list.
-     * @param ttl Time to live.
-     * @return New cache entry.
-     */
-    @SuppressWarnings( {"unchecked"})
-    GridCacheMapEntry<K, V> create(long topVer, Object key, int hash, Object val,
-        GridCacheMapEntry<K, V> next, long ttl) {
-        return factory.create(ctx, topVer, (K)key, hash, (V)val, next, ttl);
-    }
-
     /** {@inheritDoc} */
     @Override public String toString() {
-        return S.toString(GridCacheConcurrentMap.class, this, "size", size(),
-            "pubSize", publicSize(), "buckets", bucketCnt.get());
+        return S.toString(GridCacheConcurrentMap.class, this, "size", mapSize, "pubSize", mapPubSize);
     }
 
     /**
@@ -592,24 +520,31 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         private volatile int cnt;
 
         /** */
-        private volatile HashEntry<K, V> entry;
+        private volatile int pubCnt;
+
+        /** */
+        private volatile HashEntry<K, V> root;
 
         /**
-         * @param entry Entry.
+         * @param root Entry.
          */
-        private Bucket(HashEntry<K, V> entry) {
-            assert entry != null;
+        Bucket(HashEntry<K, V> root) {
+            assert root != null;
 
-            this.entry = entry;
+            this.root = root;
 
-            for (HashEntry<K, V> e = entry; e != null; e = e.next())
+            for (HashEntry<K, V> e = root; e != null; e = e.next) {
                 cnt++;
+
+                if (!(root.key instanceof GridCacheInternal))
+                    pubCnt++;
+            }
         }
 
         /**
          *
          */
-        private Bucket() {
+        Bucket() {
             // No-op.
         }
 
@@ -621,39 +556,43 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         }
 
         /**
+         * @return Bucket count.
+         */
+        int publicCount() {
+            return pubCnt;
+        }
+
+        /**
          * @return Entry.
          */
         HashEntry<K, V> entry() {
-            return entry;
+            return root;
         }
 
         /**
-         * @param entry New root.
-         * @return New count.
+         * @param root New root.
          */
-        int onAdd(HashEntry<K, V> entry) {
-            this.entry = entry;
+        void onAdd(HashEntry<K, V> root) {
+            this.root = root;
 
-            return ++cnt;
+            cnt++;
+
+            if (!(root.key instanceof GridCacheInternal))
+                pubCnt++;
         }
 
         /**
-         * @param entry New root.
-         * @return New count.
+         * @param root New root.
+         * @param rmvPub {@code True} if public entry was removed from the bucket.
          */
-        int onRemove(HashEntry<K, V> entry) {
-            this.entry = entry;
+        void onRemove(HashEntry<K, V> root, boolean rmvPub) {
+            this.root = root;
 
-            return --cnt;
+            cnt--;
+
+            if (rmvPub)
+                pubCnt--;
         }
-
-        /**
-         * @return New count.
-         */
-        int onRemove() {
-            return --cnt;
-        }
-
 
         /** {@inheritDoc} */
         @Override public String toString() {
@@ -690,7 +629,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         private final int hash;
 
         /** */
-        private final GridCacheMapEntry<K, V> value;
+        private final GridCacheMapEntry<K, V> val;
 
         /** */
         private final HashEntry<K, V> next;
@@ -699,50 +638,22 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @param key Key.
          * @param hash Hash.
          * @param next Next.
-         * @param value Value.
+         * @param val Value.
          */
-        HashEntry(K key, int hash, HashEntry<K, V> next, GridCacheMapEntry<K, V> value) {
+        HashEntry(K key, int hash, HashEntry<K, V> next, GridCacheMapEntry<K, V> val) {
             this.key = key;
             this.hash = hash;
             this.next = next;
-            this.value = value;
-        }
-
-        /**
-         * @return Value.
-         */
-        public GridCacheMapEntry<K, V> value() {
-            return value;
-        }
-
-        /**
-         * @return Key.
-         */
-        public K key() {
-            return key;
-        }
-
-        /**
-         * @return Next.
-         */
-        @Nullable public HashEntry<K, V> next() {
-            return next;
-        }
-
-        /**
-         * @return Hash.
-         */
-        public int hash() {
-            return hash;
+            this.val = val;
         }
     }
 
     /**
      * Segments are specialized versions of hash tables.  This
-     * subclasses from ReentrantLock opportunistically, just to
-     * simplify some locking and avoid separate construction.
+     * subclasses from ReentrantLock opportunistically,
+     * just to simplify some locking and avoid separate construction.
      */
-    private class Segment<K, V> extends ReentrantReadWriteLock {
+    private class Segment extends ReentrantLock {
         /*
          * Segments maintain a table of entry lists that are ALWAYS
          * kept in a consistent state, so can be read without locking.
@@ -783,17 +694,12 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         /**
          * The number of elements in this segment's region.
          */
-        private volatile int cnt;
+        private volatile int segSize;
 
         /**
-         * Number of updates that alter the size of the table. This is
-         * used during bulk-read methods to make sure they see a
-         * consistent snapshot: If modCounts change during a traversal
-         * of segments computing size or checking containsValue, then
-         * we might have an inconsistent view of state so (usually)
-         * must retry.
+         * The number of public elements in this segment's region.
          */
-        private int modCnt;
+        private volatile int segPubSize;
 
         /**
          * The table is rehashed when its size exceeds this threshold.
@@ -804,12 +710,6 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         /** The per-segment table. */
         private volatile Bucket<K, V>[] table;
 
-        /** Existing buckets. */
-        private volatile BitSet bucketBits;
-
-        /** Segment index. */
-        private final int segIdx;
-
         /**
          * The load factor for the hash table. Even though this value
          * is same for all segments, it is replicated to avoid needing
@@ -819,22 +719,18 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
         private final float loadFactor;
 
         /**
-         * @param segIdx Segment index.
-         * @param initialCapacity Initial capacity.
+         * @param initCap Initial capacity.
          * @param lf Load factor.
          */
-        Segment(int segIdx, int initialCapacity, float lf) {
-            this.segIdx = segIdx;
-
+        Segment(int initCap, float lf) {
             loadFactor = lf;
 
-            setTable(Bucket.<K, V>newArray(initialCapacity));
-
-            bucketBits = new BitSet(table.length);
+            setTable(Bucket.<K, V>newArray(initCap));
         }
 
         /**
-         * Sets table to new HashEntry array.
+         * Sets table to new buckets array.
+         * <p>
          * Call only while holding lock or in constructor.
          *
          * @param newTable New table.
@@ -851,10 +747,12 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @param hash Hash.
          * @return Entry for hash.
          */
-        HashEntry<K, V> getFirst(int hash) {
+        @Nullable HashEntry<K, V> getFirst(int hash) {
             Bucket<K, V>[] tab = table;
 
-            return tab[hash & (tab.length - 1)].entry();
+            Bucket<K, V> bucket = tab[hash & (tab.length - 1)];
+
+            return bucket != null ? bucket.entry() : null;
         }
 
         /**
@@ -868,13 +766,13 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @return Read value.
          */
         GridCacheMapEntry<K, V> readValueUnderLock(HashEntry<K, V> e) {
-            writeLock().lock();
+            lock();
 
             try {
-                return e.value;
+                return e.val;
             }
             finally {
-                writeLock().unlock();
+                unlock();
             }
         }
 
@@ -884,12 +782,12 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @return Value.
          */
         @Nullable GridCacheMapEntry<K, V> get(Object key, int hash) {
-            if (cnt != 0) { // read-volatile
+            if (segSize != 0) {
                 HashEntry<K, V> e = getFirst(hash);
 
                 while (e != null) {
                     if (e.hash == hash && key.equals(e.key)) {
-                        GridCacheMapEntry<K, V> v = e.value;
+                        GridCacheMapEntry<K, V> v = e.val;
 
                         if (v != null)
                             return v;
@@ -910,7 +808,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @return {@code True} if segment contains value.
          */
         boolean containsKey(Object key, int hash) {
-            if (cnt != 0) { // read-volatile
+            if (segSize != 0) {
                 HashEntry<K, V> e = getFirst(hash);
 
                 while (e != null) {
@@ -924,135 +822,6 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
             return false;
         }
 
-//        boolean containsValue(Object val) {
-//            if (cnt != 0) { // read-volatile
-//                HashEntry<K, V>[] tab = table;
-//
-//                int len = tab.length;
-//
-//                for (int i = 0 ; i < len; i++) {
-//                    for (HashEntry<K, V> e = tab[i]; e != null; e = e.next) {
-//                        V v = e.value;
-//
-//                        if (v == null) // recheck
-//                            v = readValueUnderLock(e);
-//
-//                        if (val.equals(v))
-//                            return true;
-//                    }
-//                }
-//            }
-//
-//            return false;
-//        }
-
-        /**
-         * @param key Key.
-         * @param hash Hash.
-         * @param oldValue Old value.
-         * @param newValue New value.
-         * @return {@code True} if replaced.
-         */
-//        boolean replace(K key, int hash, V oldValue, V newValue) {
-//            lock();
-//
-//            try {
-//                HashEntry<K, V> e = getFirst(hash);
-//
-//                while (e != null && (e.hash != hash || !key.equals(e.key)))
-//                    e = e.next;
-//
-//                boolean replaced = false;
-//
-//                if (e != null && oldValue.equals(e.value)) {
-//                    replaced = true;
-//
-//                    e.value = newValue;
-//                }
-//
-//                return replaced;
-//            }
-//            finally {
-//                unlock();
-//            }
-//        }
-
-        /**
-         * @param key Key.
-         * @param hash Hash.
-         * @param newValue New value.
-         * @return Previous value.
-         */
-//        @Nullable V replace(K key, int hash, V newValue) {
-//            lock();
-//
-//            try {
-//                HashEntry<K, V> e = getFirst(hash);
-//
-//                while (e != null && (e.hash != hash || !key.equals(e.key)))
-//                    e = e.next;
-//
-//                V oldVal = null;
-//
-//                if (e != null) {
-//                    oldVal = e.value;
-//
-//                    e.value = newValue;
-//                }
-//
-//                return oldVal;
-//            }
-//            finally {
-//                unlock();
-//            }
-//        }
-
-//        /**
-//         * Add a new entry with the specified key, value and hash code to
-//         * the specified bucket.  It is the responsibility of this
-//         * method to resize the table if appropriate.
-//         *
-//         * @param topVer Topology version
-//         * @param hash Hash.
-//         * @param key Key.
-//         * @param val Value.
-//         * @param ttl Time to live.
-//         * @param idx Bucket index.
-//         * @return Added entry.
-//         */
-//        private GridCacheMapEntry<K, V> addEntry(long topVer, int hash, K key, V val, int idx, long ttl) {
-//            Bucket<K, V> b = table[idx];
-//
-//            GridCacheMapEntry<K, V> prev = b == null ? null : b.entry().value;
-//
-//
-//
-//            // Create bucket after creating entry, so we don't end up with empty
-//            // bucket in case if there is exception.
-//            if (b == null) {
-//                b = new Bucket<K, V>();
-//
-//                table[idx] = b;
-//
-//                bits.set(idx);
-//
-//                bucketCnt++;
-//            }
-//
-//            b.onAdd(e);
-//
-//            // Calculate only non internal entry.
-//            if (!(key instanceof GridCacheInternal))
-//                pubSize.getAndIncrement();
-//
-//            assert b.entry() != null;
-//
-//            if (size.getAndIncrement() >= threshold)
-//                resize(2 * table.length);
-//
-//            return e;
-//        }
-
         /**
          * @param key Key.
          * @param hash Hash.
@@ -1062,11 +831,11 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @return Associated value.
          */
         @SuppressWarnings({"unchecked"})
-        GridCacheMapEntry<K, V> put(Object key, int hash, Object val, long topVer, long ttl) {
-            writeLock().lock();
+        GridCacheMapEntry<K, V> put(K key, int hash, @Nullable V val, long topVer, long ttl) {
+            lock();
 
             try {
-                int c = cnt;
+                int c = segSize;
 
                 if (c++ > threshold) // ensure capacity
                     rehash();
@@ -1075,15 +844,10 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
 
                 int idx = hash & (tab.length - 1);
 
-                Bucket<K, V> bucket = table[idx];
+                Bucket<K, V> bucket = tab[idx];
 
-                if (bucket == null) {
-                    table[idx] = bucket = new Bucket<K, V>();
-
-                    bucketCnt.incrementAndGet();
-
-                    bucketBits.set(idx);
-                }
+                if (bucket == null)
+                    tab[idx] = bucket = new Bucket<K, V>();
 
                 HashEntry<K, V> first = bucket.entry();
 
@@ -1095,37 +859,95 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
                 GridCacheMapEntry<K, V> retVal;
 
                 if (e != null) {
-                    retVal = e.value;
+                    retVal = e.val;
 
-                    e.value.rawPut((V)val, ttl);
+                    e.val.rawPut(val, ttl);
                 }
                 else {
-                    ++modCnt;
+                    GridCacheMapEntry next = bucket.entry() != null ? bucket.entry().val : null;
 
-                    if (!(key instanceof GridCacheInternal))
-                        pubSize.incrementAndGet();
-
-                    size.incrementAndGet();
-
-                    GridCacheMapEntry next = bucket.entry() != null ? bucket.entry().value() : null;
-
-                    GridCacheMapEntry newEntry = create(topVer, key, hash, val, next, ttl);
+                    GridCacheMapEntry newEntry = factory.create(ctx, topVer, key, hash, val, next, ttl);
 
                     retVal = newEntry;
 
-                    HashEntry<K, V> newRoot = new HashEntry<K, V>((K)key, hash, first, newEntry);
+                    HashEntry<K, V> newRoot = new HashEntry<K, V>(key, hash, first, newEntry);
 
                     bucket.onAdd(newRoot);
 
-                    cnt = c; // write-volatile
-                }
+                    // Modify counters.
+                    if (!(key instanceof GridCacheInternal)) {
+                        mapPubSize++;
 
-                segBits.set(segIdx);
+                        segPubSize++;
+                    }
+
+                    mapSize++;
+
+                    segSize = c;
+                }
 
                 return retVal;
             }
             finally {
-                writeLock().unlock();
+                unlock();
+            }
+        }
+
+        /**
+         * @param key Key.
+         * @param hash Hash.
+         * @param val Value.
+         * @param topVer Topology version.
+         * @param ttl TTL.
+         * @param create Create flag.
+         * @return Triple where the first element is current entry associated with the key,
+         *      the second is created entry and the third is doomed (all may be null).
+         */
+        @SuppressWarnings( {"unchecked"})
+        GridTriple<GridCacheMapEntry<K, V>> putIfObsolete(K key, int hash, @Nullable V val,
+            long topVer, long ttl, boolean create) {
+            lock();
+
+            try {
+                Bucket<K, V>[] tab = table;
+
+                int idx = hash & (tab.length - 1);
+
+                Bucket<K, V> bucket = tab[idx];
+
+                GridCacheMapEntry<K, V> cur = null;
+                GridCacheMapEntry<K, V> created = null;
+                GridCacheMapEntry<K, V> doomed = null;
+
+                if (bucket == null) {
+                    if (create)
+                        cur = created = put(key, hash, val, topVer, ttl);
+
+                    return new GridTriple<GridCacheMapEntry<K, V>>(cur, created, doomed);
+                }
+
+                HashEntry<K, V> e = bucket.entry();
+
+                while (e != null && (e.hash != hash || !key.equals(e.key)))
+                    e = e.next;
+
+                if (e != null) {
+                    if (e.val.obsolete()) {
+                        doomed = remove(key, hash, null);
+
+                        if (create)
+                            cur = created = put(key, hash, val, topVer, ttl);
+                    }
+                    else
+                        cur = e.val;
+                }
+                else if (create)
+                    cur = created = put(key, hash, val, topVer, ttl);
+
+                return new GridTriple<GridCacheMapEntry<K, V>>(cur, created, doomed);
+            }
+            finally {
+                unlock();
             }
         }
 
@@ -1137,7 +959,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
 
             int oldCapacity = oldTable.length;
 
-            if (oldCapacity >= MAXIMUM_CAPACITY)
+            if (oldCapacity >= MAX_CAP)
                 return;
 
             /*
@@ -1155,8 +977,6 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
              */
             Bucket<K, V>[] newTable = Bucket.newArray(oldCapacity << 1);
 
-            BitSet newBucketBits = new BitSet(newTable.length);
-
             threshold = (int)(newTable.length * loadFactor);
 
             int sizeMask = newTable.length - 1;
@@ -1164,14 +984,12 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
             for (int i = 0; i < oldCapacity ; i++) {
                 // We need to guarantee that any existing reads of old Map can proceed.
                 // So, we cannot yet null out each bin.
-                Bucket<K, V> bucket = oldTable[i];
+                Bucket<K, V> b1 = oldTable[i];
 
-                if (bucket == null)
+                if (b1 == null)
                     continue;
 
-                bucketCnt.decrementAndGet();
-
-                HashEntry<K, V> e = bucket.entry();
+                HashEntry<K, V> e = b1.entry();
 
                 assert e != null;
 
@@ -1180,13 +998,8 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
                 int idx = e.hash & sizeMask;
 
                 //  Single node on list
-                if (next == null) {
-                    newTable[idx] = bucket;
-
-                    bucketCnt.incrementAndGet();
-
-                    newBucketBits.set(idx);
-                }
+                if (next == null)
+                    newTable[idx] = b1;
                 else {
                     // Reuse trailing consecutive sequence at same slot.
                     HashEntry<K, V> lastRun = e;
@@ -1202,40 +1015,27 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
                         }
                     }
 
-                    Bucket<K, V> b = new Bucket<K, V>(lastRun);
+                    Bucket<K, V> b2 = new Bucket<K, V>(lastRun);
 
-                    bucketCnt.incrementAndGet();
-
-                    newTable[lastIdx] = b;
-
-                    newBucketBits.set(lastIdx);
+                    newTable[lastIdx] = b2;
 
                     // Clone all remaining nodes.
                     for (HashEntry<K, V> p = e; p != lastRun; p = p.next) {
                         int k = p.hash & sizeMask;
 
-                        Bucket<K, V> b1 = newTable[k];
+                        Bucket<K, V> b3 = newTable[k];
 
-                        if (b1 == null) {
-                            newTable[k] = b1 = new Bucket<K, V>();
+                        if (b3 == null)
+                            newTable[k] = b3 = new Bucket<K, V>();
 
-                            bucketCnt.incrementAndGet();
+                        HashEntry<K, V> newRoot = new HashEntry<K, V>(p.key, p.hash, b3.entry(), p.val);
 
-                            newBucketBits.set(k);
-                        }
-
-                        HashEntry<K, V> n = b1.entry();
-
-                        HashEntry<K, V> newRoot = new HashEntry<K, V>(p.key, p.hash, n, p.value);
-
-                        b1.onAdd(newRoot);
+                        b3.onAdd(newRoot);
                     }
                 }
             }
 
             table = newTable;
-
-            bucketBits = newBucketBits;
         }
 
         /**
@@ -1243,14 +1043,14 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          *
          * @param key Key.
          * @param hash Hash.
+         * @param filter Optional predicate.
          * @return Removed value.
          */
-        @Nullable GridCacheMapEntry<K, V> remove(Object key, int hash) {
-            writeLock().lock();
+        @Nullable GridCacheMapEntry<K, V> remove(Object key, int hash,
+            @Nullable GridPredicate<GridCacheMapEntry<K, V>> filter) {
+            lock();
 
             try {
-                int c = cnt - 1;
-
                 Bucket<K, V>[] tab = table;
 
                 int idx = hash & (tab.length - 1);
@@ -1264,100 +1064,119 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
 
                 HashEntry<K, V> e = first;
 
-                while (e != null && (e.hash() != hash || !key.equals(e.key())))
+                while (e != null && (e.hash != hash || !key.equals(e.key)))
                     e = e.next;
 
                 GridCacheMapEntry<K, V> oldValue = null;
 
                 if (e != null) {
-                    oldValue = e.value();
+                    oldValue = e.val;
 
-                    ++modCnt;
-
-                    if (!(e.key instanceof GridCacheInternal))
-                        pubSize.decrementAndGet();
-
-                    size.decrementAndGet();
+                    if (filter != null && !filter.apply(oldValue))
+                        return null;
 
                     // All entries following removed node can stay in list,
                     // but all preceding ones need to be cloned.
                     HashEntry<K, V> newFirst = e.next;
 
                     for (HashEntry<K, V> p = first; p != e; p = p.next)
-                        newFirst = new HashEntry<K, V>(p.key, p.hash, newFirst, p.value);
+                        newFirst = new HashEntry<K, V>(p.key, p.hash, newFirst, p.val);
 
-                    if (newFirst == null) {
-                        table[idx] = null;
+                    // Is this public entry?
+                    boolean rmvPub = !(e.key instanceof GridCacheInternal);
 
-                        bucketCnt.decrementAndGet();
+                    if (newFirst == null)
+                        tab[idx] = null;
+                    else {
+                        Bucket<K, V> b = tab[idx];
 
-                        bucketBits.clear(idx);
+                        b.onRemove(newFirst, rmvPub);
                     }
-                    else
-                        tab[idx].onRemove(newFirst);
 
-                    cnt = c; // write-volatile
+                    // Modify counters.
+                    if (rmvPub) {
+                        mapPubSize--;
 
-                    if (cnt == 0)
-                        segBits.clear(segIdx);
+                        segPubSize--;
+                    }
+
+                    mapSize--;
+
+                    segSize--;
                 }
 
                 return oldValue;
             }
             finally {
-                writeLock().unlock();
+                unlock();
             }
         }
 
         /**
          * @return Entries count within segment.
          */
-        int count() {
-            return cnt;
+        int size() {
+            return segSize;
+        }
+
+        /**
+         * @return Public entries count within segment.
+         */
+        int publicSize() {
+            return segPubSize;
         }
 
         /**
          * @return Random cache map entry from this segment.
          */
-        @Nullable public GridCacheMapEntry<K, V> randomEntry() {
-            readLock().lock();
+        @Nullable GridCacheMapEntry<K, V> randomEntry() {
+            Bucket<K, V>[] tab = table;
 
-            try {
-                if (cnt == 0)
-                    return null;
+            Collection<HashEntry<K, V>> entries = new ArrayList<HashEntry<K, V>>(3);
 
-                int bucketIdx = bucketBits.nextSetBit(RAND.nextInt(table.length));
+            int pubCnt = 0;
 
-                if (bucketIdx == -1)
-                    bucketIdx = bucketBits.nextSetBit(0);
+            int start = RAND.nextInt(tab.length);
 
-                assert bucketIdx >= 0;
+            for (int i = start; i < start + tab.length; i++) {
+                Bucket<K, V> bucket = tab[i % tab.length];
 
-                Bucket<K, V> b = table[bucketIdx];
+                if (bucket == null || bucket.publicCount() == 0)
+                    continue;
 
-                assert b.count() > 0 : "Invalid entries count: " + b;
+                entries.add(bucket.entry());
 
-                int entryIdx = RAND.nextInt(b.count());
+                pubCnt += bucket.publicCount();
 
-                HashEntry<K, V> e = b.entry();
+                if (entries.size() == 3)
+                    break;
+            }
 
-                for (int i = 1; i < entryIdx; i++) {
-                    assert e != null;
+            if (entries.isEmpty())
+                return null;
 
-                    e = e.next();
+            if (pubCnt == 0)
+                return null;
+
+            // Desired and current indexes.
+            int idx = RAND.nextInt(pubCnt);
+            int i = 0;
+
+            GridCacheMapEntry<K, V> retVal = null;
+
+            for (HashEntry<K, V> e : entries) {
+                for (; e != null; e = e.next) {
+                    if (!(e.key instanceof GridCacheInternal)) {
+                        // In case desired entry was deleted, we return the closest one from left.
+                        retVal = e.val;
+
+                        if (idx == i++)
+                            break;
+                    }
                 }
-
-                assert e != null;
-
-                GridCacheMapEntry<K, V> val = e.value();
-
-                assert val != null;
-
-                return val;
             }
-            finally {
-                readLock().unlock();
-            }
+
+            return retVal;
         }
     }
 
@@ -1426,7 +1245,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
 
             ctx = map.ctx;
 
-            nextSegmentIndex = map.segments.length - 1;
+            nextSegmentIndex = map.segs.length - 1;
             nextTableIndex = -1;
 
             advance();
@@ -1448,9 +1267,9 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
             }
 
             while (nextSegmentIndex >= 0) {
-                GridCacheConcurrentMap.Segment seg = map.segments[nextSegmentIndex--];
+                GridCacheConcurrentMap.Segment seg = map.segs[nextSegmentIndex--];
 
-                if (seg.count() != 0) {
+                if (seg.size() != 0) {
                     currentTable = seg.table;
 
                     for (int j = currentTable.length - 1; j >= 0; --j) {
@@ -1472,14 +1291,15 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
          * @return {@code True} if advance succeeded.
          */
         @SuppressWarnings( {"unchecked"})
-        private boolean advanceInBucket(HashEntry<K, V> e, boolean skipFirst) {
-            assert e != null;
+        private boolean advanceInBucket(@Nullable HashEntry<K, V> e, boolean skipFirst) {
+            if (e == null)
+                return false;
 
             nextEntry = e;
 
             do {
                 if (!skipFirst) {
-                    next = nextEntry.value();
+                    next = nextEntry.val;
 
                     if (isVal) {
                         nextVal = next.wrap(true).peek(CU.<K, V>empty());
@@ -1495,7 +1315,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
                 // Perform checks in any case.
                 skipFirst = false;
             }
-            while ((nextEntry = nextEntry.next()) != null);
+            while ((nextEntry = nextEntry.next) != null);
 
             assert nextEntry == null;
 
@@ -1737,9 +1557,7 @@ public class GridCacheConcurrentMap<K, V> /*implements /* ConcurrentMap<K, V>,*/
             ctx = (GridCacheContext<K, V>)in.readObject();
             filter = (GridPredicate<? super GridCacheEntry<K, V>>[])in.readObject();
 
-            // TODO: change return type.
-            throw new UnsupportedOperationException("Change return type.");
-            // map = ctx.cache().map();
+            map = ctx.cache().map();
         }
     }
 

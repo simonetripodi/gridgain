@@ -18,7 +18,7 @@ import org.gridgain.grid.util.{GridUtils => U}
  * Peer deploy aware adapter for Java's `GridJob`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 class ScalarJob(val inner: () => Any) extends GridJobAdapterEx {
     assert(inner != null)

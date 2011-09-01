@@ -17,7 +17,7 @@ import org.gridgain.grid.util.mbean.*;
  * Management MBean for {@link GridJdkLocalMetricsSpi} SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @GridMBeanDescription("MBean that provides access to JDK local metrics SPI configuration.")
 public interface GridJdkLocalMetricsSpiMBean extends GridLocalMetrics, GridSpiManagementMBean {
@@ -34,4 +34,23 @@ public interface GridJdkLocalMetricsSpiMBean extends GridLocalMetrics, GridSpiMa
      */
     @GridMBeanDescription("Parameter indicating if Hyperic Sigar should be used regardless of JDK version.")
     public boolean isPreferSigar();
+
+    /**
+     * Checks whether file system metrics are enabled. These metrics may be expensive to get in
+     * certain environments and are disabled by default.
+     *
+     * @return Flag indicating whether file system metrics are enabled.
+     * @see GridJdkLocalMetricsSpi#setFileSystemMetricsEnabled(boolean)
+     */
+    @GridMBeanDescription("Flag indicating whether file system metrics are enabled.")
+    public boolean isFileSystemMetricsEnabled();
+
+    /**
+     * Gets root from which file space metrics should be counted. This property only makes sense
+     * if {@link #isFileSystemMetricsEnabled()} set to {@code true}.
+     *
+     * @return Root from which file space metrics should be counted.
+     */
+    @GridMBeanDescription("Root from which file space metrics should be counted.")
+    public String getFileSystemRoot();
 }

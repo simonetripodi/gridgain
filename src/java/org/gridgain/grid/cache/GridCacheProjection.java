@@ -137,7 +137,7 @@ import java.util.concurrent.*;
  * No explicit deployment step is required.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>>, GridMetadataAware {
     /**
@@ -2129,7 +2129,8 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @param clause Query clause (should be {@code null} for {@link GridCacheQueryType#SCAN} queries).
      * @return Created query.
      */
-    public GridCacheQuery<K, V> createQuery(GridCacheQueryType type, @Nullable Class<?> cls, @Nullable String clause);
+    public GridCacheQuery<K, V> createQuery(GridCacheQueryType type, @Nullable Class<?> cls,
+        @Nullable String clause);
 
     /**
      * Creates user's query for given query type, queried class, and query clause which is generally
@@ -2166,8 +2167,8 @@ public interface GridCacheProjection<K, V> extends Iterable<GridCacheEntry<K, V>
      * @param clause Query clause (should be {@code null} for {@link GridCacheQueryType#SCAN} queries).
      * @return Created query.
      */
-    public <T> GridCacheTransformQuery<K, V, T> createTransformQuery(GridCacheQueryType type, @Nullable Class<?> cls,
-        @Nullable String clause);
+    public <T> GridCacheTransformQuery<K, V, T> createTransformQuery(GridCacheQueryType type,
+        @Nullable Class<?> cls, @Nullable String clause);
 
     /**
      * Creates user's transform query. For more information refer to {@link GridCacheQuery} documentation.

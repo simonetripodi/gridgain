@@ -61,7 +61,7 @@ import java.util.concurrent.*;
  * <p>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, DisposableBean, InitializingBean,
     ApplicationContextAware {
@@ -191,55 +191,55 @@ public class GridSpringBean extends GridMetadataAwareAdapter implements Grid, Di
     }
 
     /** {@inheritDoc} */
-    @Override public void affRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+    @Override public void affinityRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         // TODO
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<?> affRunAsync(String cacheName, @Nullable Collection<?> affKeys,
+    @Override public GridFuture<?> affinityRunAsync(String cacheName, @Nullable Collection<?> affKeys,
         @Nullable Runnable job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         return null; // TODO
     }
 
     /** {@inheritDoc} */
-    @Override public <R> R affCall(String cacheName, @Nullable Object affKey, @Nullable Callable<R> job,
+    @Override public <R> R affinityCall(String cacheName, @Nullable Object affKey, @Nullable Callable<R> job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         return null; // TODO
     }
 
     /** {@inheritDoc} */
-    @Override public <R> Collection<R> affCall(String cacheName, @Nullable Collection<?> affKeys,
+    @Override public <R> Collection<R> affinityCall(String cacheName, @Nullable Collection<?> affKeys,
         @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         return null; // TODO
     }
 
     /** {@inheritDoc} */
-    @Override public <R> GridFuture<R> affCallAsync(String cacheName, @Nullable Object affKey,
+    @Override public <R> GridFuture<R> affinityCallAsync(String cacheName, @Nullable Object affKey,
         @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         return null; // TODO
     }
 
     /** {@inheritDoc} */
-    @Override public <R> GridFuture<Collection<R>> affCallAsync(String cacheName, @Nullable Collection<?> affKeys,
+    @Override public <R> GridFuture<Collection<R>> affinityCallAsync(String cacheName, @Nullable Collection<?> affKeys,
         @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         return null; // TODO
     }
 
     /** {@inheritDoc} */
-    @Override public void affRun(String cacheName, Object affKey, @Nullable Runnable job,
-        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
-        assert g != null;
-
-        g.affRun(cacheName, affKey, job, p);
-    }
-
-    /** {@inheritDoc} */
-    @Override public GridFuture<?> affRunAsync(String cacheName, Object affKey, @Nullable Runnable job,
+    @Override public void affinityRun(String cacheName, Object affKey, @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
         assert g != null;
 
-        return g.affRunAsync(cacheName, affKey, job, p);
+        g.affinityRun(cacheName, affKey, job, p);
+    }
+
+    /** {@inheritDoc} */
+    @Override public GridFuture<?> affinityRunAsync(String cacheName, Object affKey, @Nullable Runnable job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException {
+        assert g != null;
+
+        return g.affinityRunAsync(cacheName, affKey, job, p);
     }
 
     /** {@inheritDoc} */

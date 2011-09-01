@@ -42,13 +42,13 @@ import java.net.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.24082011")
+    version = "3.5.0c.31082011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalMetricsSpi,
     GridJdkLocalMetricsSpiMBean {
@@ -95,6 +95,9 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
     /** */
     private File fsRootFile;
 
+    /** */
+    private boolean enableFsMetrics;
+
     /** {@inheritDoc} */
     @Override public boolean isPreferSigar() {
         return preferSigar;
@@ -127,6 +130,33 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
     @GridSpiConfiguration(optional = true)
     public void setFileSystemRoot(String fsRoot) {
         this.fsRoot = fsRoot;
+    }
+
+    /** {@inheritDoc} */
+    @Override public String getFileSystemRoot() {
+        return fsRoot;
+    }
+
+    /**
+     * Enables or disables file system metrics (default is {@code false}). These metrics may be
+     * expensive to get in certain environments and are disabled by default. Following metrics
+     * are part of file system metrics:
+     * <ul>
+     * <li>{@link GridLocalMetrics#getFileSystemFreeSpace()}</li>
+     * <li>{@link GridLocalMetrics#getFileSystemTotalSpace()}</li>
+     * <li>{@link GridLocalMetrics#getFileSystemUsableSpace()}</li>
+     * </ul>
+     *
+     * @param enableFsMetrics Flag indicating whether file system metrics are enabled.
+     */
+    @GridSpiConfiguration(optional = true)
+    public void setFileSystemMetricsEnabled(boolean enableFsMetrics) {
+        this.enableFsMetrics = enableFsMetrics;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isFileSystemMetricsEnabled() {
+        return enableFsMetrics;
     }
 
     /** {@inheritDoc} */
@@ -163,27 +193,29 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
             }
         }
         else if (sigar != null) {
-            if (log.isInfoEnabled()) {
+            if (log.isInfoEnabled())
                 log.info("Hyperic Sigar 'CpuPerc.getCombined()' method will be used to detect average CPU load.");
-            }
         }
         else {
             U.warn(log, "System CPU load cannot be detected (add Hyperic Sigar to classpath). " +
                 "CPU load will be returned as -1.");
         }
 
-        if (fsRoot != null) {
-            fsRootFile = new File(fsRoot);
+        if (enableFsMetrics) {
+            if (fsRoot != null) {
+                fsRootFile = new File(fsRoot);
 
-            if (!fsRootFile.exists()) {
-                U.warn(log, "Invalid file system root name: " + fsRoot);
+                if (!fsRootFile.exists()) {
+                    U.warn(log, "Invalid file system root name: " + fsRoot);
 
-                fsRootFile = null;
+                    fsRootFile = null;
+                }
             }
+            else
+                fsRootFile = getDefaultFileSystemRoot();
         }
-        else {
-            fsRootFile = getDefaultFileSystemRoot();
-        }
+        else
+            fsRootFile = null;
 
         metrics = getMetrics();
 
@@ -198,9 +230,8 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
     @Override public void spiStop() throws GridSpiException {
         unregisterMBean();
 
-        if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled())
             log.debug(stopInfo());
-        }
     }
 
     /** */
@@ -226,9 +257,8 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
             // Don't warn about Sigar in enterprise edition
             // since Sigar is not shipped with enterprise edition due to
             // GPL license limitation.
-            if (!getSpiContext().isEnterprise()) {
+            if (!getSpiContext().isEnterprise())
                 U.warn(log, "Failed to find Hyperic Sigar in classpath: " + e.getMessage());
-            }
         }
     }
 
@@ -248,8 +278,9 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
 
     /** {@inheritDoc} */
     @Override public GridLocalMetrics getMetrics() {
-        MemoryUsage heap = mem.getHeapMemoryUsage();
-        MemoryUsage nonHeap;
+        final MemoryUsage heap = mem.getHeapMemoryUsage();
+
+        MemoryUsage nonHeap0;
 
         // Workaround of exception in WebSphere.
         // We received the following exception:
@@ -261,33 +292,91 @@ public class GridJdkLocalMetricsSpi extends GridSpiAdapter implements GridLocalM
         //
         // We so had to workaround this with exception handling, because we can not control classes from WebSphere.
         try {
-            nonHeap = mem.getNonHeapMemoryUsage();
+            nonHeap0 = mem.getNonHeapMemoryUsage();
         }
         catch (IllegalArgumentException ignore) {
-            nonHeap = new MemoryUsage(0, 0, 0, 0);
+            nonHeap0 = new MemoryUsage(0, 0, 0, 0);
         }
 
-        metrics = new GridLocalMetricsAdapter(
-            os.getAvailableProcessors(),
-            getCpuLoad(),
-            heap.getInit(),
-            heap.getUsed(),
-            heap.getCommitted(),
-            heap.getMax(),
-            nonHeap.getInit(),
-            nonHeap.getUsed(),
-            nonHeap.getCommitted(),
-            nonHeap.getMax(),
-            rt.getUptime(),
-            rt.getStartTime(),
-            threads.getThreadCount(),
-            threads.getPeakThreadCount(),
-            threads.getTotalStartedThreadCount(),
-            threads.getDaemonThreadCount(),
-            fsRootFile == null ? -1 : fsRootFile.getFreeSpace(),
-            fsRootFile == null ? -1 : fsRootFile.getTotalSpace(),
-            fsRootFile == null ? -1 : fsRootFile.getUsableSpace()
-        );
+        final MemoryUsage nonHeap = nonHeap0;
+
+        metrics = new GridLocalMetrics() {
+            @Override public int getAvailableProcessors() {
+                return os.getAvailableProcessors();
+            }
+
+            @Override public double getCurrentCpuLoad() {
+                return getCpuLoad();
+            }
+
+            @Override public long getHeapMemoryInitialized() {
+                return heap.getInit();
+            }
+
+            @Override public long getHeapMemoryUsed() {
+                return heap.getUsed();
+            }
+
+            @Override public long getHeapMemoryCommitted() {
+                return heap.getCommitted();
+            }
+
+            @Override public long getHeapMemoryMaximum() {
+                return heap.getMax();
+            }
+
+            @Override public long getNonHeapMemoryInitialized() {
+                return nonHeap.getInit();
+            }
+
+            @Override public long getNonHeapMemoryUsed() {
+                return nonHeap.getUsed();
+            }
+
+            @Override public long getNonHeapMemoryCommitted() {
+                return nonHeap.getCommitted();
+            }
+
+            @Override public long getNonHeapMemoryMaximum() {
+                return nonHeap.getMax();
+            }
+
+            @Override public long getUptime() {
+                return rt.getUptime();
+            }
+
+            @Override public long getStartTime() {
+                return rt.getStartTime();
+            }
+
+            @Override public int getThreadCount() {
+                return threads.getThreadCount();
+            }
+
+            @Override public int getPeakThreadCount() {
+                return threads.getPeakThreadCount();
+            }
+
+            @Override public long getTotalStartedThreadCount() {
+                return threads.getTotalStartedThreadCount();
+            }
+
+            @Override public int getDaemonThreadCount() {
+                return threads.getDaemonThreadCount();
+            }
+
+            @Override public long getFileSystemFreeSpace() {
+                return fsRootFile == null ? -1 : fsRootFile.getFreeSpace();
+            }
+
+            @Override public long getFileSystemTotalSpace() {
+                return fsRootFile == null ? -1 : fsRootFile.getTotalSpace();
+            }
+
+            @Override public long getFileSystemUsableSpace() {
+                return fsRootFile == null ? -1 : fsRootFile.getUsableSpace();
+            }
+        };
 
         return metrics;
     }

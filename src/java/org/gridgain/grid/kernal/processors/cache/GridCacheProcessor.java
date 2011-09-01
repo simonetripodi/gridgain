@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -389,6 +389,8 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                     tm,
                     dataStructuresMgr);
 
+                assert cache instanceof GridNearCache;
+
                 GridNearCache near = (GridNearCache)cache;
                 GridDhtCache dht = new GridDhtCache(cacheCtx);
 
@@ -437,21 +439,22 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                         throw new GridException("Cache mode mismatch (fix cache mode in configuration or specify " +
                             "empty cache configuration list if default cache should not be started) [cacheName=" +
                             a1.cacheName() + ", localCacheMode=" + a2.cacheMode() +
-                            ", remoteCacheMode=" + a1.cacheMode() + ']');
+                            ", remoteCacheMode=" + a1.cacheMode() + ", rmtNodeId=" + rmt.id() + ']');
 
-                    if (a1.cachePreloadMode() != a2.cachePreloadMode())
+                    if (a1.cachePreloadMode() != a2.cachePreloadMode() && a1.cacheMode() != LOCAL)
                         throw new GridException("Cache preload mode mismatch (fix cache preload mode in " +
                             "configuration or specify empty cache configuration list if default cache should " +
                             "not be started) [cacheName=" + a1.cacheName() +
                             ", localCachePreloadMode=" + a2.cachePreloadMode() +
-                            ", remoteCachePreloadMode=" + a1.cachePreloadMode() + ']');
+                            ", remoteCachePreloadMode=" + a1.cachePreloadMode() +
+                            ", rmtNodeId=" + rmt.id() + ']');
 
                     if (!F.eq(a1.cacheAffinityClassName(), a2.cacheAffinityClassName()))
                         throw new GridException(U.compact("Cache affinity mismatch (fix cache affinity in " +
                             "configuration or specify empty cache configuration list if default cache should " +
                             "not be started) [cacheName=" + a1.cacheName() +
                             ", localCacheAffinity=" + a2.cacheAffinityClassName() +
-                            ", remoteCacheAffinity=" + a1.cacheAffinityClassName() + ']'));
+                            ", remoteCacheAffinity=" + a1.cacheAffinityClassName() + ", rmtNodeId=" + rmt.id() + ']'));
                 }
             }
         }
@@ -781,6 +784,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
      * @param near Near flag.
      * @throws GridException If registration failed.
      */
+    @SuppressWarnings( {"unchecked"})
     private void registerMbean(Object o, @Nullable String cacheName, boolean near)
         throws GridException {
         assert o != null;
@@ -796,7 +800,8 @@ public class GridCacheProcessor extends GridProcessorAdapter {
         for (Class<?> itf : o.getClass().getInterfaces()) {
             if (itf.getName().endsWith("MBean")) {
                 try {
-                    U.registerCacheMBean(srvr, ctx.gridName(), cacheName, o.getClass().getName(), o, (Class<Object>)itf);
+                    U.registerCacheMBean(srvr, ctx.gridName(), cacheName, o.getClass().getName(), o,
+                        (Class<Object>)itf);
                 }
                 catch (JMException e) {
                     throw new GridException("Failed to register MBean for component: " + o, e);

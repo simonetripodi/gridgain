@@ -39,7 +39,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid event storage SPI manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridEventStorageManager extends GridManagerAdapter<GridEventStorageSpi> {
     /** Internally-used events. */
@@ -162,6 +162,13 @@ public class GridEventStorageManager extends GridManagerAdapter<GridEventStorage
         if (!ArrayUtils.isEmpty(inclEvtTypes) && !ArrayUtils.isEmpty(exclEvtTypes))
             throw new GridException("Both 'include' event types and 'exclude' event types cannot be provided " +
                 "in configuration.");
+
+        Map<GridLocalEventListener, int[]> evtLsnrs = ctx.config().getLocalEventListeners();
+
+        if (evtLsnrs != null) {
+            for (GridLocalEventListener lsnr : evtLsnrs.keySet())
+                addLocalEventListener(lsnr, evtLsnrs.get(lsnr));
+        }
 
         startSpi();
 

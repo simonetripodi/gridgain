@@ -20,7 +20,7 @@ import java.io.*;
  * until message does not reach coordinator. Coordinator responds directly to node.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridTcpDiscoveryStatusCheckMessage extends GridTcpDiscoveryAbstractMessage {
     /** Status OK. */

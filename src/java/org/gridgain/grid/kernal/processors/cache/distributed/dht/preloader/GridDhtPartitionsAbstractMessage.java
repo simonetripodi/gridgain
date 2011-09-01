@@ -18,7 +18,7 @@ import java.io.*;
  * Request for single partition info.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 class GridDhtPartitionsAbstractMessage<K, V> extends GridCacheMessage<K, V> {
     /** Exchange ID. */

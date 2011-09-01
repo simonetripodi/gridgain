@@ -36,7 +36,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Job worker.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridJobWorker extends GridWorker implements GridTimeoutObject {
     /** Per-thread halted flag. */
@@ -45,6 +45,9 @@ public class GridJobWorker extends GridWorker implements GridTimeoutObject {
             return false;
         }
     };
+
+    /** Static logger to avoid re-creation. */
+    private static final AtomicReference<GridLogger> logRef = new AtomicReference<GridLogger>();
 
     /** */
     private final long createTime;
@@ -153,7 +156,8 @@ public class GridJobWorker extends GridWorker implements GridTimeoutObject {
         this.jobBytes = jobBytes;
         this.taskNodeId = taskNodeId;
 
-        log = ctx.log().getLogger(getClass());
+        log = U.logger(ctx, logRef, this);
+
         marshaller = ctx.config().getMarshaller();
 
         locNodeId = ctx.discovery().localNode().id();
@@ -167,6 +171,7 @@ public class GridJobWorker extends GridWorker implements GridTimeoutObject {
      *
      * @return Deployed job.
      */
+    @Nullable
     public GridJob getJob() {
         return job.get();
     }

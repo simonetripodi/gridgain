@@ -25,7 +25,7 @@ import java.util.*;
  * Deployment manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi> {
     /** Local deployment storage. */
@@ -359,15 +359,14 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
                     if (!locDep.userVersion().equals(meta.userVersion())) {
                         U.warn(log, "Failed to deploy class in SHARED or CONTINUOUS mode for given user version " +
                             "(class is locally deployed for a different user version) [cls=" + meta.className() +
-                            ", localVer=" + locDep.userVersion() +
-                            ", otherVer=" + meta.userVersion() + ']',
+                            ", localVer=" + locDep.userVersion() + ", otherVer=" + meta.userVersion() + ']',
                             "Failed to deploy class in SHARED or CONTINUOUS mode.");
 
                         return null;
                     }
 
                     if (log.isDebugEnabled())
-                        log.debug("Reusing local deployment for shared mode: " + locDep);
+                        log.debug("Reusing local deployment for SHARED or CONTINUOUS mode: " + locDep);
 
                     return locDep;
                 }
@@ -406,8 +405,8 @@ public class GridDeploymentManager extends GridManagerAdapter<GridDeploymentSpi>
     }
 
     /**
-     * @param ldr Class loader to get id for.
-     * @return Id for given class loader or {@code null} if given loader is not
+     * @param ldr Class loader to get ID for.
+     * @return ID for given class loader or {@code null} if given loader is not
      *      grid deployment class loader.
      */
     @Nullable public UUID getClassLoaderId(ClassLoader ldr) {

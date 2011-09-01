@@ -145,14 +145,14 @@ import static org.gridgain.grid.spi.discovery.tcp.topologystore.GridTcpDiscovery
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  * @see GridDiscoverySpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.24082011")
+    version = "3.5.0c.31082011")
 @GridSpiMultipleInstancesSupport(true)
 @GridDiscoverySpiOrderSupport(true)
 @GridDiscoverySpiReconnectSupport(true)
@@ -286,7 +286,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
     private final GridTcpDiscoveryNodesRing ring = new GridTcpDiscoveryNodesRing();
 
     /** Discovery state. */
-    private GridTcpDiscoverySpiState spiState;
+    private GridTcpDiscoverySpiState spiState = DISCONNECTED;
 
     /** Socket readers. */
     private final Collection<SocketReader> readers = new LinkedList<SocketReader>();
@@ -936,7 +936,7 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
         U.join(statsPrinter, log);
 
         if (!restart) {
-            // Do these stuff only on final stop.
+            // This is final stop.
             unregisterMBean();
 
             printStatistics();
@@ -944,14 +944,13 @@ public class GridTcpDiscoverySpi extends GridSpiAdapter implements GridDiscovery
             if (log.isDebugEnabled())
                 log.debug(stopInfo());
         }
-        else {
+        else
             getSpiContext().deregisterPorts();
 
-            ring.clear();
+        ring.clear();
 
-            synchronized (mux) {
-                spiState = DISCONNECTING;
-            }
+        synchronized (mux) {
+            spiState = DISCONNECTED;
         }
     }
 

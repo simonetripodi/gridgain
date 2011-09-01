@@ -22,7 +22,7 @@ import java.io.*;
  * Node metrics for any node can be accessed via {@link GridNode#metrics()}
  * method. Keep in mind that there will be a certain network delay (usually
  * equal to heartbeat delay) for the accuracy of node metrics. However, when accessing
- * metrics on local node {@link Grid#localNode() Grid.localNode().metrics()}
+ * metrics on local node {@link Grid#localNode() Grid.localNode().getMetrics()}
  * the metrics are always accurate and up to date.
  * <p>
  * Local node metrics are registered as {@code MBean} and can be accessed from
@@ -31,7 +31,7 @@ import java.io.*;
  * as a graph.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  * @see GridProjectionMetrics
  */
 public interface GridNodeMetrics extends Serializable {

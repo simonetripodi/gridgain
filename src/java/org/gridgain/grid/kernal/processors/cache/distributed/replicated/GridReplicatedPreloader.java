@@ -32,6 +32,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
+import static java.util.concurrent.TimeUnit.*;
 import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.cache.GridCachePreloadMode.*;
 
@@ -39,7 +40,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Class that takes care about entries preloading in replicated cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** */
@@ -135,7 +136,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
             waitFrom.removeAll(startFut.gotFrom);
 
             throw new GridException("Failed to wait for start message from remote nodes: [waitFrom=" + waitFrom +
-                ", local=" + cctx.nodeId() + "]", e);
+                ", local=" + cctx.nodeId() + ']', e);
         }
 
         cctx.events().addPreloadEvent(-1, EVT_CACHE_PRELOAD_STARTED, cctx.discovery().shadow(cctx.localNode()),
@@ -160,41 +161,49 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      *
      */
     private void registerHandlers() {
-        cctx.events().addListener(new GridLocalEventListener() {
+        cctx.events().addListener(
+            new GridLocalEventListener() {
                 @Override public void onEvent(GridEvent evt) {
                     onDiscoveryEvent((GridDiscoveryEvent)evt);
                 }
-            }, EVTS_DISCOVERY);
+            },
+            EVT_NODE_JOINED, EVT_NODE_LEFT, EVT_NODE_FAILED);
 
-        cctx.io().addHandler(GridReplicatedStartSignalMessage.class, new CI2<UUID, GridReplicatedStartSignalMessage<K, V>>() {
-            @Override public void apply(UUID nodeId, GridReplicatedStartSignalMessage<K, V> msg) {
-                if (log.isDebugEnabled())
-                    log.debug("Processing start signal message from node [nodeId=" + nodeId + ",msg=" + msg + "]");
+        cctx.io().addHandler(
+            GridReplicatedStartSignalMessage.class,
+            new CI2<UUID, GridReplicatedStartSignalMessage<K, V>>() {
+                @Override public void apply(UUID nodeId, GridReplicatedStartSignalMessage<K, V> msg) {
+                    if (log.isDebugEnabled())
+                        log.debug("Processing start signal message from node [nodeId=" + nodeId + ", msg=" + msg + ']');
 
-                if (msg.request()) {
-                    startFut.onReceive(nodeId);
+                    if (msg.request()) {
+                        startFut.onReceive(nodeId);
 
-                    if (cctx.node(nodeId) != null)
-                        sendStartSignalResponse(nodeId);
+                        if (cctx.node(nodeId) != null)
+                            sendStartSignalResponse(nodeId);
+                    }
+                    else {
+                        // Remove node id from waiting collection.
+                        startRess.remove(nodeId);
+                    }
                 }
-                else {
-                    // Remove node id from waiting collection.
-                    startRess.remove(nodeId);
+            });
+
+        cctx.io().addHandler(
+            GridReplicatedPreloadRequest.class,
+            new CI2<UUID, GridReplicatedPreloadRequest<K, V>>() {
+                @Override public void apply(UUID nodeId, GridReplicatedPreloadRequest<K, V> req) {
+                    processInitialPreloadRequest(nodeId, req);
                 }
-            }
-        });
+            });
 
-        cctx.io().addHandler(GridReplicatedPreloadRequest.class, new CI2<UUID, GridReplicatedPreloadRequest<K, V>>() {
-            @Override public void apply(UUID nodeId, GridReplicatedPreloadRequest<K, V> req) {
-                processInitialPreloadRequest(nodeId, req);
-            }
-        });
-
-        cctx.io().addHandler(GridReplicatedPreloadResponse.class, new CI2<UUID, GridReplicatedPreloadResponse<K, V>>() {
-            @Override public void apply(UUID nodeId, GridReplicatedPreloadResponse<K, V> res) {
-                processInitialPreloadResponse(nodeId, res);
-            }
-        });
+        cctx.io().addHandler(
+            GridReplicatedPreloadResponse.class,
+            new CI2<UUID, GridReplicatedPreloadResponse<K, V>>() {
+                @Override public void apply(UUID nodeId, GridReplicatedPreloadResponse<K, V> res) {
+                    processInitialPreloadResponse(nodeId, res);
+                }
+            });
 
         cctx.io().addHandler(GridReplicatedPreloadBatchRequest.class,
             new CI2<UUID, GridReplicatedPreloadBatchRequest<K, V>>() {
@@ -260,7 +269,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     @SuppressWarnings({"unchecked"})
     private void onNodeJoined(final UUID nodeId, long topVer) {
         if (log.isDebugEnabled())
-            log.debug("Node joined [nodeId=" + nodeId + ", local=" + cctx.nodeId() + "]");
+            log.debug("Node joined [nodeId=" + nodeId + ", local=" + cctx.nodeId() + ']');
 
         GridRichNode node = cctx.node(nodeId);
 
@@ -323,7 +332,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     private void onNodeLeft(UUID nodeId) {
         if (log.isDebugEnabled())
-            log.debug("Node left [nodeId=" + nodeId + ", local=" + cctx.nodeId() + "]");
+            log.debug("Node left [nodeId=" + nodeId + ", local=" + cctx.nodeId() + ']');
 
         startFut.onReceive(nodeId);
 
@@ -338,7 +347,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     private void sendStartSignalRequest(UUID nodeId) {
         if (log.isDebugEnabled())
-            log.debug("Sending start signal request to node [nodeId=" + nodeId + ", local=" + cctx.nodeId() + "]");
+            log.debug("Sending start signal request to node [nodeId=" + nodeId + ", local=" + cctx.nodeId() + ']');
 
         try {
             startRess.add(nodeId);
@@ -382,6 +391,9 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
 
             @Override public void onTimeout() {
                 if (cctx.node(nodeId) != null && startRess.contains(nodeId)) {
+                    U.warn(log, "Timed out waiting for preloading start signal response from node, " +
+                        "will resend (you may need to increase 'networkTimeout' configuration property): " + nodeId);
+
                     sendStartSignalRequest(nodeId);
                 }
             }
@@ -393,7 +405,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     private void sendStartSignalResponse(UUID nodeId) {
         if (log.isDebugEnabled())
-            log.debug("Sending start signal response to node [nodeId=" + nodeId + ", local=" + cctx.nodeId() + "]");
+            log.debug("Sending start signal response to node [nodeId=" + nodeId + ", local=" + cctx.nodeId() + ']');
 
         try {
             cctx.io().send(nodeId, new GridReplicatedStartSignalMessage<K, V>(/* response */false));
@@ -458,7 +470,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                     }
                     catch (GridException e) {
                         U.error(log, "Failed to send initial preload request to node [node=" +
-                            node.id() + ", req=" + req + "]", e);
+                            node.id() + ", req=" + req + ']', e);
 
                         it.remove();
                     }
@@ -534,7 +546,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     private void processPreloadBatchRequest(UUID nodeId, GridReplicatedPreloadBatchRequest<K, V> req) {
         if (log.isDebugEnabled())
-            log.debug("Processing preload batch request [node=" + nodeId + ", req=" + req + "]");
+            log.debug("Processing preload batch request [node=" + nodeId + ", req=" + req + ']');
 
         ldr.addBatch(nodeId, req);
     }
@@ -545,7 +557,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     private void processPreloadBatchResponse(UUID nodeId, GridReplicatedPreloadBatchResponse<K, V> res) {
         if (log.isDebugEnabled())
-            log.debug("Processing preload batch response [node=" + nodeId + ", res=" + res + "]");
+            log.debug("Processing preload batch response [node=" + nodeId + ", res=" + res + ']');
 
         Session ses = nodeSession(nodeId, res.partition(), res.mod());
 
@@ -640,17 +652,18 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      * @param mod Mod.
      * @param nodeCnt Number of nodes.
      */
-    public void resendPreloadRequest(UUID failedNodeId, int part, int mod, int nodeCnt) {
+    public void resendPreloadRequest(final UUID failedNodeId, int part, int mod, int nodeCnt) {
         assert failedNodeId != null;
 
         if (log.isDebugEnabled())
             log.debug("Resending initial preloader request [failedNodeId=" + failedNodeId + ", part=" + part +
-                ", mod=" + mod + ", nodeCnt=" + nodeCnt + "]");
+                ", mod=" + mod + ", nodeCnt=" + nodeCnt + ']');
 
-        GridRichNode failedNode = cctx.node(failedNodeId);
-
-        if (failedNode != null)
-            initRmts.remove(failedNode);
+        F.lose(initRmts, false, new P1<GridRichNode>() {
+            @Override public boolean apply(GridRichNode n) {
+                return failedNodeId.equals(n.id());
+            }
+        });
 
         GridReplicatedPreloadRequest<K, V> req = new GridReplicatedPreloadRequest<K, V>(part, mod, nodeCnt);
 
@@ -676,7 +689,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 catch (GridTopologyException ignored) {
                     if (log.isDebugEnabled())
                         log.debug("Failed to resend initial preload request since node left grid [nodeId=" +
-                            node.id() + ", req=" + req + "]");
+                            node.id() + ", req=" + req + ']');
                 }
                 catch (GridException e) {
                     U.error(log, "Failed to send initial preload request to node [nodeId=" +
@@ -689,6 +702,9 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                     log.debug("Cannot resend initial preload request to any node (will be skipped): " + req);
 
                 progress.remove(F.t(part, mod));
+
+                if (progress.isEmpty())
+                    finish();
             }
         }
         else {
@@ -786,7 +802,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                     }
                     catch (GridException e) {
                         U.error(log, "Failed to send preload batch to node (did node leave grid?)" +
-                            " [node=" + nodeId + ", batch=" + batch + "]", e);
+                            " [node=" + nodeId + ", batch=" + batch + ']', e);
 
                         if (ses != null)
                             ses.onSendFailure(batch);
@@ -831,14 +847,20 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 log.debug("Starting batch loader.");
 
             while (!isCancelled()) {
-                GridTuple2<UUID, GridReplicatedPreloadBatchRequest<K, V>> t = queue.take();
+                // Unwind undeploys.
+                cctx.deploy().unwind();
+
+                GridTuple2<UUID, GridReplicatedPreloadBatchRequest<K, V>> t = queue.poll(
+                    cctx.gridConfig().getNetworkTimeout(), MILLISECONDS);
+
+                if (t == null)
+                    continue;
 
                 UUID nodeId = t.get1();
                 GridReplicatedPreloadBatchRequest<K, V> batchReq = t.get2();
 
                 if (log.isDebugEnabled())
-                    log.debug("Took batch from preload queue [batch=" + batchReq +
-                        ", queue size=" + queue.size() + "]");
+                    log.debug("Took batch from preload queue [batch=" + batchReq + ", queueSize=" + queue.size() + ']');
 
                 if (!enterBusy())
                     break;
@@ -861,48 +883,45 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 if (log.isDebugEnabled())
                     log.debug("Class got undeployed during preloading: " + batchReq.classError());
 
-                GridReplicatedPreloadBatchResponse<K, V> res = new GridReplicatedPreloadBatchResponse<K, V>(
-                    batchReq.partition(), batchReq.mod(), batchReq.index(), true);
-
-                try {
-                    cctx.io().send(nodeId, res);
-                }
-                catch (GridTopologyException ignored) {
-                    if (log.isDebugEnabled())
-                        log.debug("Failed to send batch response since the node left grid [node=" +
-                            nodeId + ", batch=" + batchReq + ", res=" + res + ']');
-                }
-                catch (GridException e) {
-                    U.error(log, "Failed to send batch response [node=" + nodeId + ", batch=" + batchReq +
-                        ", res=" + res + ']', e);
-                }
+                sendBatchResponse(nodeId, batchReq, true);
 
                 return;
             }
 
             if (batchReq.entries() != null) {
                 for (GridCacheEntryInfo<K, V> preloaded : batchReq.entries()) {
+                    ClassLoader keyLdr = U.detectObjectClassLoader(preloaded.key());
+                    ClassLoader valLdr = U.detectObjectClassLoader(preloaded.value());
+
+                    // Check whether class loader has already been undeployed while preloading.
+                    if (cctx.deploy().deadClassLoader(keyLdr) || cctx.deploy().deadClassLoader(valLdr)) {
+                        if (log.isDebugEnabled())
+                            log.debug("Key or value class loaders got undeployed during preloading: " + preloaded);
+
+                        sendBatchResponse(nodeId, batchReq, true);
+
+                        return;
+                    }
+
+                    GridCacheEntryEx<K, V> cached = null;
+
                     try {
-                        GridCacheEntryEx<K, V> cached = null;
+                        cached = cctx.cache().entryEx(preloaded.key());
 
-                        try {
-                            cached = cctx.cache().entryEx(preloaded.key());
-
-                            if (!cached.initialValue(
-                                preloaded.value(),
-                                preloaded.valueBytes(),
-                                preloaded.version(),
-                                preloaded.ttl(),
-                                preloaded.expireTime(),
-                                preloaded.metrics())) {
-                                if (log.isDebugEnabled())
-                                    log.debug("Preloading entry is already in cache (will ignore): " + cached);
-                            }
-                        }
-                        catch (GridCacheEntryRemovedException ignored) {
+                        if (!cached.initialValue(
+                            preloaded.value(),
+                            preloaded.valueBytes(),
+                            preloaded.version(),
+                            preloaded.ttl(),
+                            preloaded.expireTime(),
+                            preloaded.metrics())) {
                             if (log.isDebugEnabled())
-                                log.debug("Entry has been concurrently removed while preloading: " + cached);
+                                log.debug("Preloading entry is already in cache (will ignore): " + cached);
                         }
+                    }
+                    catch (GridCacheEntryRemovedException ignored) {
+                        if (log.isDebugEnabled())
+                            log.debug("Entry has been concurrently removed while preloading: " + cached);
                     }
                     catch (GridException e) {
                         U.error(log, "Failed to put preloaded entry.", e);
@@ -910,18 +929,31 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 }
             }
 
+            sendBatchResponse(nodeId, batchReq, false);
+
             if (batchReq.last()) {
                 progress.remove(F.t(batchReq.partition(), batchReq.mod()));
 
                 if (progress.isEmpty())
                     finish();
             }
+        }
 
+        /**
+         * @param nodeId Node ID to respond to.
+         * @param batchReq Request to respond to.
+         * @param retry Retry flag.
+         */
+        private void sendBatchResponse(UUID nodeId, GridReplicatedPreloadBatchRequest<K, V> batchReq,
+            boolean retry) {
             GridReplicatedPreloadBatchResponse<K, V> res = new GridReplicatedPreloadBatchResponse<K, V>(
-                batchReq.partition(), batchReq.mod(), batchReq.index());
+                batchReq.partition(), batchReq.mod(), batchReq.index(), retry);
 
             try {
                 cctx.io().send(nodeId, res);
+
+                if (log.isDebugEnabled())
+                    log.debug("Sent batch response [node=" + nodeId + ", batch=" + batchReq + ", res=" + res + ']');
             }
             catch (GridTopologyException ignored) {
                 if (log.isDebugEnabled())
@@ -1096,7 +1128,7 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
             if (lastBatch.compareAndSet(null, batch))
                 sender.addBatch(nodeId, batch);
             else {
-                U.error(log, "Try to send next batch while the previous was not confirmed [ses=" + this + "]");
+                U.error(log, "Try to send next batch while the previous was not confirmed for session: " + this);
 
                 assert false;
             }
@@ -1230,6 +1262,9 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                     if (lastBatch.compareAndSet(batch, newBatch)) {
                         if (log.isDebugEnabled())
                             log.debug("Resending last batch as it was not confirmed: " + batch);
+
+                        U.warn(log, "Timed out waiting for batch confirmation, will resend (you may need " +
+                            "to change 'networkTimeout' or 'preloadBatchSize' configuration properties).");
 
                         sender.addBatch(nodeId, newBatch);
                     }

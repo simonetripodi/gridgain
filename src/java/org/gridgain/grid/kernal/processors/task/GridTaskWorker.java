@@ -24,6 +24,7 @@ import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.kernal.GridTopic.*;
@@ -34,7 +35,7 @@ import static org.gridgain.grid.kernal.processors.task.GridTaskThreadContextKey.
  * Grid task worker. Handles full task life cycle.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  * @param <T> Task argument type.
  * @param <R> Task return value type.
  */
@@ -53,6 +54,9 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
         /** */
         FINISHING
     }
+
+    /** Static logger to avoid re-creation. */
+    private static final AtomicReference<GridLogger> logRef = new AtomicReference<GridLogger>();
 
     /** */
     private final GridKernalContext ctx;
@@ -195,7 +199,7 @@ class GridTaskWorker<T, R> extends GridWorker implements GridTimeoutObject {
         this.evtLsnr = evtLsnr;
         this.thCtx = thCtx;
 
-        log = ctx.config().getGridLogger().getLogger(getClass());
+        log = U.logger(ctx, logRef, this);
 
         marshaller = ctx.config().getMarshaller();
     }

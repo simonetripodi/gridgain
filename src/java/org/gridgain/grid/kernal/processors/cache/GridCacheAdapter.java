@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -60,7 +60,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** Local map. */
     @GridToStringExclude
-    protected GridCacheMap<K, V> map;
+    protected GridCacheConcurrentMap<K, V> map;
 
     /** Local node ID. */
     @GridToStringExclude
@@ -113,7 +113,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
         locNodeId = ctx.gridConfig().getNodeId();
 
-        map = new GridCacheMap<K, V>(ctx, startSize, 0.75F);
+        map = new GridCacheConcurrentMap<K, V>(ctx, startSize, 0.75F);
 
         log = ctx.gridConfig().getGridLogger().getLogger(getClass());
 
@@ -144,7 +144,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     /**
      * @return Base map.
      */
-    GridCacheMap<K, V> map() {
+    GridCacheConcurrentMap<K, V> map() {
         return map;
     }
 
@@ -166,34 +166,6 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
      * @return Preloader.
      */
     protected abstract GridCachePreloader<K, V> preloader();
-
-    /**
-     * Read lock.
-     */
-    void readLock() {
-        map.readLock();
-    }
-
-    /**
-     * Read unlock.
-     */
-    void readUnlock() {
-        map.readUnlock();
-    }
-
-    /**
-     * Write lock.
-     */
-    void writeLock() {
-        map.writeLock();
-    }
-
-    /**
-     * Write unlock.
-     */
-    void writeUnlock() {
-        map.writeUnlock();
-    }
 
     /** {@inheritDoc} */
     @SuppressWarnings({"unchecked", "RedundantCast"})
@@ -1076,64 +1048,30 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /**
-     *
      * @param key Entry key.
      * @param topVer Topology version at the time of creation.
      * @param create Flag to create entry if it does not exist.
      * @return Entry or <tt>null</tt>.
      */
-    @SuppressWarnings({"TooBroadScope"})
     @Nullable private GridCacheEntryEx<K, V> entry0(K key, long topVer, boolean create) {
-        GridCacheEntryEx<K, V> entry = null;
+        GridTriple<GridCacheMapEntry<K, V>> t = map.putEntryIfObsoleteOrAbsent(topVer, key, null,
+            ctx.config().getDefaultTimeToLive(), create);
 
-        readLock();
+        GridCacheEntryEx<K, V> cur = t.get1();
+        GridCacheEntryEx<K, V> created = t.get2();
+        GridCacheEntryEx<K, V> doomed = t.get3();
 
-        try {
-            entry = map.getEntry(key);
-        }
-        finally {
-            readUnlock();
-        }
+        if (doomed != null)
+            // Event notification.
+            ctx.events().addEvent(doomed.partition(), doomed.key(), locNodeId, (UUID)null, null,
+                EVT_CACHE_ENTRY_DESTROYED, null, null);
 
-        if ((entry != null && entry.obsolete()) || (entry == null && create)) {
-            writeLock();
+        if (created != null)
+            // Event notification.
+            ctx.events().addEvent(created.partition(), created.key(), locNodeId, (UUID)null, null,
+                EVT_CACHE_ENTRY_CREATED, null, null);
 
-            try {
-                // Double check.
-                entry = map.getEntry(key);
-
-                GridCacheEntryEx<K, V> doomed = null;
-
-                if (entry != null && entry.obsolete()) {
-                    doomed = map.removeEntry(key);
-
-                    entry = null;
-                }
-
-                boolean created = false;
-
-                if (entry == null && create) {
-                    entry = map.putEntry(topVer, key, null, ctx.config().getDefaultTimeToLive());
-
-                    created = true;
-                }
-
-                if (doomed != null)
-                    // Event notification.
-                    ctx.events().addEvent(doomed.partition(), doomed.key(), locNodeId, (UUID)null, null,
-                        EVT_CACHE_ENTRY_DESTROYED, null, null);
-
-                if (created)
-                    // Event notification.
-                    ctx.events().addEvent(entry.partition(), entry.key(), locNodeId, (UUID)null, null,
-                        EVT_CACHE_ENTRY_CREATED, null, null);
-            }
-            finally {
-                writeUnlock();
-            }
-        }
-
-        return entry;
+        return cur;
     }
 
     /**
@@ -1349,34 +1287,22 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
      * @param key Entry key.
      */
     public void removeIfObsolete(K key) {
-        writeLock();
+        assert key != null;
 
-        try {
-            GridCacheEntryEx<K, V> entry = map.getEntry(key);
+        GridCacheEntryEx<K, V> entry = map.removeEntryIfObsolete(key);
 
-            if (entry != null) {
-                if (!entry.obsolete()) {
-                    if (log.isDebugEnabled())
-                        log.debug("Remove will not be done (obsolete entry got replaced): " + entry);
-                }
-                else {
-                    GridCacheEntryEx<K, V> doomed = map.removeEntry(key);
+        if (entry != null) {
+            assert entry.obsolete() : "Removed non-obsolete entry: " + entry;
 
-                    assert doomed != null;
-                    assert doomed.obsolete() : "Removed non-obsolete entry: " + doomed;
+            if (log.isDebugEnabled())
+                log.debug("Removed entry from cache: " + entry);
 
-                    if (log.isDebugEnabled())
-                        log.debug("Removed entry from cache: " + doomed);
-
-                    // Event notification.
-                    ctx.events().addEvent(doomed.partition(), doomed.key(), locNodeId, (UUID)null, null,
-                        EVT_CACHE_ENTRY_DESTROYED, null, null);
-                }
-            }
+            // Event notification.
+            ctx.events().addEvent(entry.partition(), entry.key(), locNodeId, (UUID)null, null,
+                EVT_CACHE_ENTRY_DESTROYED, null, null);
         }
-        finally {
-            writeUnlock();
-        }
+        else if (log.isDebugEnabled())
+            log.debug("Remove will not be done for key (obsolete entry got replaced or removed): " + key);
     }
 
     /** {@inheritDoc} */
@@ -1571,18 +1497,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /**
-     * @param entry Removes obsolete entry from cache.
+     * @param entry Removes entry from cache if currently mapped value is the same as passed.
      */
-    void removeEntry(GridCacheEntryEx entry) {
-        writeLock();
-
-        try {
-            if (map.getEntry(entry.key()) == entry)
-                map.removeEntry(entry.key());
-        }
-        finally {
-            writeUnlock();
-        }
+    void removeEntry(GridCacheEntryEx<K, V> entry) {
+        map.removeEntry(entry);
     }
 
     /** {@inheritDoc} */
@@ -2919,18 +2837,8 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     }
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"TooBroadScope"})
     @Nullable @Override public GridCacheEntry<K, V> randomEntry() {
-        GridCacheMapEntry<K, V> e;
-
-        readLock();
-
-        try {
-            e = map.randomEntry();
-        }
-        finally {
-            readUnlock();
-        }
+        GridCacheMapEntry<K, V> e  = map.randomEntry();
 
         return e == null || e.obsolete() ? null : e.wrap(true);
     }

@@ -27,9 +27,12 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Key partition.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalPartition> {
+    /** Static logger to avoid re-creation. */
+    private static final AtomicReference<GridLogger> logRef = new AtomicReference<GridLogger>();
+
     /** Partition ID. */
     private final int id;
 
@@ -68,7 +71,7 @@ public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalParti
         this.id = id;
         this.cctx = cctx;
 
-        log = cctx.logger(getClass());
+        log = U.logger(cctx.kernalContext(), logRef, this);
 
         rent = new GridFutureAdapter<Object>(cctx.kernalContext());
     }

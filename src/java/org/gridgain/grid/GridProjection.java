@@ -41,13 +41,13 @@ import java.util.concurrent.*;
  * in {@link NullPointerException} and may be harder to catch.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAware {
     /**
      * Executes given closure on the node where data for provided affinity key is located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key).
      * <p>
      * This method will block until its execution is complete or an exception is thrown.
      * All default SPI implementations configured for this grid instance will be
@@ -75,20 +75,27 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      resulting collection of nodes is empty - the exception will be thrown.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRunAsync(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRunAsync(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public void affRun(String cacheName, @Nullable Object affKey, @Nullable Runnable job,
+    public void affinityRun(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the nodes where data for provided affinity keys are located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key). Note that implementation of multiple executions of the same closure will
+     * be wrapped as a single task that splits into multiple {@code job}s that will be mapped to nodes
+     * with provided affinity keys.
      * <p>
      * This method will block until its execution is complete or an exception is thrown.
      * All default SPI implementations configured for this grid instance will be
@@ -117,22 +124,27 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      resulting collection of nodes is empty - the exception will be thrown.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRunAsync(String, Collection, Runnable, GridPredicate[])
+     * @see #affinityRunAsync(String, Collection, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public void affRun(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+    public void affinityRun(
+        String cacheName,
+        @Nullable Collection<?> affKeys,
+        @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the node where data for provided affinity key is located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key).
      * <p>
-     * Unlike its sibling method {@link #affRun(String, Object, Runnable, GridPredicate[])}  this method does
+     * Unlike its sibling method {@link #affinityRun(String, Object, Runnable, GridPredicate[])} this method does
      * not block and returns immediately with future. All default SPI implementations
      * configured for this grid instance will be used (i.e. failover, load balancing, collision resolution, etc.).
      * Note that if you need greater control on any aspects of Java code execution on the grid
@@ -166,22 +178,29 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @return Non-cancellable future of this execution.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRun(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRun(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public GridFuture<?> affRunAsync(String cacheName, @Nullable Object affKey, @Nullable Runnable job,
+    public GridFuture<?> affinityRunAsync(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the nodes where data for provided affinity keys are located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key). Note that implementation of multiple executions of the same closure will
+     * be wrapped as a single task that splits into multiple {@code job}s that will be mapped to nodes
+     * with provided affinity keys.
      * <p>
-     * Unlike its sibling method {@link #affRun(String, Collection, Runnable, GridPredicate[])}  this method does
+     * Unlike its sibling method {@link #affinityRun(String, Collection, Runnable, GridPredicate[])} this method does
      * not block and returns immediately with future. All default SPI implementations
      * configured for this grid instance will be used (i.e. failover, load balancing, collision resolution, etc.).
      * Note that if you need greater control on any aspects of Java code execution on the grid
@@ -216,20 +235,25 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      * @return Non-cancellable future of this execution.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRun(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRun(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public GridFuture<?> affRunAsync(String cacheName, @Nullable Collection<?> affKeys, @Nullable Runnable job,
+    public GridFuture<?> affinityRunAsync(
+        String cacheName,
+        @Nullable Collection<?> affKeys,
+        @Nullable Runnable job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the node where data for provided affinity key is located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key).
      * <p>
      * This method will block until its execution is complete or an exception is thrown.
      * All default SPI implementations configured for this grid instance will be
@@ -258,20 +282,27 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      resulting collection of nodes is empty - the exception will be thrown.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRunAsync(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRunAsync(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public <R> R affCall(String cacheName, @Nullable Object affKey, @Nullable Callable<R> job,
+    public <R> R affinityCall(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Callable<R> job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the nodes where data for provided affinity keys are located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key). Note that implementation of multiple executions of the same closure will
+     * be wrapped as a single task that splits into multiple {@code job}s that will be mapped to nodes
+     * with provided affinity keys.
      * <p>
      * This method will block until its execution is complete or an exception is thrown.
      * All default SPI implementations configured for this grid instance will be
@@ -301,22 +332,27 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      resulting collection of nodes is empty - the exception will be thrown.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRunAsync(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRunAsync(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public <R> Collection<R> affCall(String cacheName, @Nullable Collection<?> affKeys, @Nullable Callable<R> job,
+    public <R> Collection<R> affinityCall(
+        String cacheName,
+        @Nullable Collection<?> affKeys,
+        @Nullable Callable<R> job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the node where data for provided affinity key is located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key).
      * <p>
-     * Unlike its sibling method {@link #affCall(String, Object, Callable, GridPredicate[])} this method does
+     * Unlike its sibling method {@link #affinityCall(String, Object, Callable, GridPredicate[])} this method does
      * not block and returns immediately with future. All default SPI implementations
      * configured for this grid instance will be used (i.e. failover, load balancing, collision resolution, etc.).
      * Note that if you need greater control on any aspects of Java code execution on the grid
@@ -343,22 +379,29 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      resulting collection of nodes is empty - the exception will be thrown.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRunAsync(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRunAsync(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public <R> GridFuture<R> affCallAsync(String cacheName, @Nullable Object affKey, @Nullable Callable<R> job,
+    public <R> GridFuture<R> affinityCallAsync(
+        String cacheName,
+        @Nullable Object affKey,
+        @Nullable Callable<R> job,
         @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Executes given closure on the nodes where data for provided affinity keys are located. This
      * is known as affinity co-location between compute grid (a closure) and in-memory data grid
-     * (affinity key).
+     * (value with affinity key). Note that implementation of multiple executions of the same closure will
+     * be wrapped as a single task that splits into multiple {@code job}s that will be mapped to nodes
+     * with provided affinity keys.
      * <p>
-     * Unlike its sibling method {@link #affCall(String, Object, Callable, GridPredicate[])} this method does
+     * Unlike its sibling method {@link #affinityCall(String, Object, Callable, GridPredicate[])} this method does
      * not block and returns immediately with future. All default SPI implementations
      * configured for this grid instance will be used (i.e. failover, load balancing, collision resolution, etc.).
      * Note that if you need greater control on any aspects of Java code execution on the grid
@@ -387,15 +430,19 @@ public interface GridProjection extends Iterable<GridRichNode>, GridMetadataAwar
      *      resulting collection of nodes is empty - the exception will be thrown.
      * @throws GridInterruptedException Subclass of {@link GridException} thrown if the wait was interrupted.
      * @throws GridFutureCancelledException Subclass of {@link GridException} throws if computation was cancelled.
-     * @see #affRunAsync(String, Object, Runnable, GridPredicate[])
+     * @see #affinityRunAsync(String, Object, Runnable, GridPredicate[])
      * @see #withCheckpointSpi(String)
      * @see #withFailoverSpi(String)
      * @see #withName(String)
      * @see #withResultClosure(GridClosure2X)
      * @see #withTopologySpi(String)
+     * @see GridJobContext#cacheName()
+     * @see GridJobContext#affinityKey()
      */
-    public <R> GridFuture<Collection<R>> affCallAsync(String cacheName, @Nullable Collection<?> affKeys,
-        @Nullable Callable<R> job, @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
+    public <R> GridFuture<Collection<R>> affinityCallAsync(
+        String cacheName, @Nullable Collection<?> affKeys,
+        @Nullable Callable<R> job,
+        @Nullable GridPredicate<? super GridRichNode>... p) throws GridException;
 
     /**
      * Gets a metrics snapshot for this projection.

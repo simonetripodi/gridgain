@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.query.GridCacheQueryType.*;
  * Query and index manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @SuppressWarnings({"UnnecessaryFullyQualifiedName"})
 public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V> {
@@ -292,14 +292,20 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
     }
 
     /**
-     * @param obj Object to inject resources to.
+     * @param o Object to inject resources to.
      * @throws GridException If failure occurred while injecting resources.
      */
-    private void injectResources(@Nullable Object obj) throws GridException {
-        GridKernalContext ctx = cctx.kernalContext();
+    private void injectResources(@Nullable Object o) throws GridException {
+        if (o != null) {
+            GridKernalContext ctx = cctx.kernalContext();
 
-        if (obj != null)
-            ctx.resource().inject(ctx.deploy().getDeployment(obj.getClass().getName()), obj.getClass(), obj);
+            ClassLoader ldr = o.getClass().getClassLoader();
+
+            if (ctx.deploy().isGlobalLoader(ldr))
+                ctx.resource().inject(ctx.deploy().getDeployment(ctx.deploy().getClassLoaderId(ldr)), o.getClass(), o);
+            else
+                ctx.resource().inject(ctx.deploy().getDeployment(o.getClass().getName()), o.getClass(), o);
+        }
     }
 
     /**
@@ -523,10 +529,14 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
             throw new GridException("Type must be set for query.");
 
         if (qry.type() == SQL) {
-            if (qry.className() == null || qry.className().length() == 0)
+            String qryClsName = qry.className();
+
+            if (qryClsName == null || qryClsName.length() == 0)
                 throw new GridException("Class must be set for SQL query.");
 
-            if (qry.clause() == null || qry.clause().length() == 0)
+            String qryClause = qry.clause();
+
+            if (qryClause == null || qryClause.length() == 0)
                 throw new GridException("Clause must be set for SQL query.");
         }
 
@@ -705,8 +715,9 @@ public abstract class GridCacheQueryManager<K, V> extends GridCacheManager<K, V>
      * @param flags Projection flags
      * @return Created query.
      */
-    public <R1, R2> GridCacheReduceQuery<K, V, R1, R2> createReduceQuery(GridCacheQueryType type, Class<?> cls,
-        String clause, @Nullable GridPredicate<GridCacheEntry<K, V>> filter, Set<GridCacheFlag> flags) {
+    public <R1, R2> GridCacheReduceQuery<K, V, R1, R2> createReduceQuery(GridCacheQueryType type,
+        Class<?> cls, String clause, @Nullable GridPredicate<GridCacheEntry<K, V>> filter,
+        Set<GridCacheFlag> flags) {
         return new GridCacheReduceQueryAdapter<K, V, R1, R2>(cctx, type, clause,
             (cls != null ? cls.getName() : null), filter, flags);
     }

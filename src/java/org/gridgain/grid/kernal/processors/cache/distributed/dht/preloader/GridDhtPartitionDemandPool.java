@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -104,7 +104,11 @@ public class GridDhtPartitionDemandPool<K, V> {
 
         poolSize = cctx.preloadEnabled() ? cctx.config().getPreloadThreadPoolSize() : 1;
 
-        barrier = new CyclicBarrier(poolSize);
+        barrier = new CyclicBarrier(poolSize, new Runnable() {
+            @Override public void run() {
+                GridDhtPartitionDemandPool.this.cctx.deploy().unwind();
+            }
+        });
 
         dmdWorkers = new ArrayList<DemandWorker>(poolSize);
 
@@ -617,8 +621,8 @@ public class GridDhtPartitionDemandPool<K, V> {
                         if (s == null) {
                             if (msgQ.isEmpty()) { // Safety check.
                                 U.warn(log, "Timed out waiting for partitions to load, will retry in " + timeout +
-                                    "ms (you may need to increase 'networkTimeout' or 'preloadBatchSize' " +
-                                    "in configuration)");
+                                    " ms (you may need to increase 'networkTimeout' or 'preloadBatchSize'" +
+                                    " configuration properties).");
 
                                 growTimeout(timeout);
 
@@ -669,6 +673,7 @@ public class GridDhtPartitionDemandPool<K, V> {
 
                         GridDhtPartitionSupplyMessage<K, V> supply = s.supply();
 
+                        // Check whether there were class loading errors on unmarshalling.
                         if (supply.classError() != null) {
                             if (log.isDebugEnabled())
                                 log.debug("Class got undeployed during preloading: " + supply.classError());
@@ -847,7 +852,7 @@ public class GridDhtPartitionDemandPool<K, V> {
                                 GridDhtPartitionDemandMessage<K, V> d = assigns.remove(node);
 
                                 // If another thread is already processing this message,
-                                // move tot the next node.
+                                // move to the next node.
                                 if (d == null)
                                     continue; // For.
 

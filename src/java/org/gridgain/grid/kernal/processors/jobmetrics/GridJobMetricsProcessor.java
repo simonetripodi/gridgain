@@ -17,14 +17,13 @@ import org.gridgain.grid.typedef.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 /**
  * Processes job metrics.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.24082011
+ * @version 3.5.0c.31082011
  */
 public class GridJobMetricsProcessor extends GridProcessorAdapter {
     /** Time to live. */
@@ -106,7 +105,7 @@ public class GridJobMetricsProcessor extends GridProcessorAdapter {
         );
 
     /** */
-    private Queue<GridJobMetricsSnapshot> queue = new ConcurrentLinkedQueue<GridJobMetricsSnapshot>();
+    private Queue<GridJobMetricsSnapshot> queue = new GridConcurrentLinkedDeque<GridJobMetricsSnapshot>();
 
     /** */
     private MetricCounters cntrs = new MetricCounters();
@@ -247,7 +246,7 @@ public class GridJobMetricsProcessor extends GridProcessorAdapter {
      * All metrics counters.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.24082011
+     * @version 3.5.0c.31082011
      */
     private class MetricCounters {
         /** */
