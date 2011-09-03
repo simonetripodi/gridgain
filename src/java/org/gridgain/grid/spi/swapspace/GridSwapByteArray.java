@@ -19,7 +19,7 @@ import java.util.*;
  * Utility wrapper class that represents {@code byte} array or a sub-array.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridSwapByteArray implements Serializable {
     /** Underlying array. */

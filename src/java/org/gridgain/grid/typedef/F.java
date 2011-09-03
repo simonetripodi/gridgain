@@ -17,7 +17,7 @@ import org.gridgain.grid.lang.*;
  * concise code in cases when readability won't be sacrificed. For more information see {@link GridFunc}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  * @see GridFunc
  */
 @SuppressWarnings({"ExtendsUtilityClass"})

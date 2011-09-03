@@ -26,7 +26,7 @@ import java.util.concurrent.*;
  * This class provides necessary synchronization for thread-safe access.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 @SuppressWarnings( {"SynchronizeOnNonFinalField"})
 public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {
@@ -60,11 +60,12 @@ public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {
     /**
      * Ensures that internal data storage is created.
      *
+     * @param size Ammout of data to ensure.
      * @return {@code true} if data storage was created.
      */
-    private boolean ensureData() {
+    private boolean ensureData(int size) {
         if (data == null) {
-            data = new GridLeanMap<String, Object>();
+            data = new GridLeanMap<String, Object>(size);
 
             return true;
         }
@@ -77,7 +78,9 @@ public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {
         A.notNull(from, "from");
 
         synchronized (mux) {
-            ensureData();
+            Map m = from.allMeta();
+
+            ensureData(m.size());
 
             data.putAll(from.allMeta());
         }
@@ -88,7 +91,7 @@ public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {
         A.notNull(data, "data");
 
         synchronized (mux) {
-            ensureData();
+            ensureData(data.size());
 
             this.data.putAll(data);
         }
@@ -100,7 +103,7 @@ public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {
         A.notNull(name, "name", val, "val");
 
         synchronized (mux) {
-            ensureData();
+            ensureData(1);
 
             return (V)data.put(name, val);
         }
@@ -108,8 +111,7 @@ public class GridMetadataAwareAdapter implements GridMetadataAware, Cloneable {
 
     /** {@inheritDoc} */
     @SuppressWarnings({"unchecked"})
-    @Nullable
-    @Override public <V> V meta(String name) {
+    @Override @Nullable public <V> V meta(String name) {
         A.notNull(name, "name");
 
         synchronized (mux) {

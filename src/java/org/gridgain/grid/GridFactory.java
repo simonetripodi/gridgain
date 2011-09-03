@@ -128,7 +128,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * For more information refer to {@link GridSpringBean} documentation.
 
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridFactory {
     /**
@@ -150,6 +150,9 @@ public class GridFactory {
 
     /** Default configuration path relative to GridGain home. */
     private static final String DFLT_CFG = "config/default-spring.xml";
+
+    /** License file name. */
+    private static final String LIC_FILE_NAME = "gridgain-license.xml";
 
     /** Default grid. */
     private static GridNamedInstance dfltGrid;
@@ -1287,7 +1290,7 @@ public class GridFactory {
      * Grid data container.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.31082011
+     * @version 3.5.0c.02092011
      */
     private static final class GridNamedInstance {
         /** Map of registered MBeans. */
@@ -1430,22 +1433,42 @@ public class GridFactory {
 
             myCfg.setGridName(cfg.getGridName());
 
+            UUID nodeId = cfg.getNodeId();
+
+            if (nodeId == null)
+                nodeId = UUID.randomUUID();
+
+            GridLogger cfgLog = cfg.getGridLogger();
+
+            if (cfgLog == null) {
+                URL url = U.resolveGridGainUrl("config/default-log4j.xml");
+
+                cfgLog = url == null || GridLog4jLogger.isConfigured() ? new GridLog4jLogger() :
+                    new GridLog4jLogger(url);
+            }
+
+            assert cfgLog != null;
+
+            cfgLog = new GridLoggerProxy(cfgLog, null, name, U.id8(nodeId));
+
+            // Initialize factory's log.
+            log = cfgLog.getLogger(G.class);
+
             String ggHome = cfg.getGridGainHome();
 
             // Set GridGain home.
             if (ggHome == null)
                 ggHome = U.getGridGainHome();
+            else
+                // If user provided GRIDGAIN_HOME - set it as a
+                // system property.
+                System.setProperty(GG_HOME, ggHome);
 
             // Check GridGain home folder.
-            if (ggHome == null) {
-                if (log == null && cfg.getGridLogger() != null)
-                    log = cfg.getGridLogger();
-
-                if (log != null)
-                    U.warn(log, "Failed to detect GridGain installation home. It was neither provided in " +
-                        "GridConfiguration nor it could be detected from " + GG_HOME +
-                        " system property or environmental variable.", "Failed to detect GridGain installation home.");
-            }
+            if (ggHome == null)
+                U.warn(log, "Failed to detect GridGain installation home. It was neither provided in " +
+                    "GridConfiguration nor it could be detected from " + GG_HOME +
+                    " system property or environmental variable.", "Failed to detect GridGain installation home.");
             else {
                 File ggHomeFile = new File(ggHome);
 
@@ -1454,6 +1477,30 @@ public class GridFactory {
             }
 
             myCfg.setGridGainHome(ggHome);
+
+            // Handle the license URL only for Enterprise Edition.
+            if (U.isEnterprise()) {
+                String licUrl = cfg.getLicenseUrl();
+
+                if (licUrl == null) {
+                    URL url = U.resolveGridGainUrl(LIC_FILE_NAME);
+
+                    if (url != null)
+                        try {
+                           licUrl = url.toURI().toASCIIString();
+                        }
+                        catch (URISyntaxException ignore) {
+                            // Ignore here.
+                        }
+
+                    if (licUrl == null)
+                        throw new GridException("License URL is not provided and cannot be determined.");
+                }
+
+                assert licUrl != null;
+
+                myCfg.setLicenseUrl(licUrl);
+            }
 
             // Copy values that don't need extra processing.
             myCfg.setPeerClassLoadingEnabled(cfg.isPeerClassLoadingEnabled());
@@ -1510,8 +1557,6 @@ public class GridFactory {
 
             MBeanServer mbSrv = cfg.getMBeanServer();
 
-            UUID nodeId = cfg.getNodeId();
-
             GridMarshaller marsh = cfg.getMarshaller();
 
             String[] p2pExclude = cfg.getPeerClassLoadingClassPathExclude();
@@ -1527,25 +1572,6 @@ public class GridFactory {
             GridFailoverSpi[] failSpi = cfg.getFailoverSpi();
             GridLoadBalancingSpi[] loadBalancingSpi = cfg.getLoadBalancingSpi();
             GridSwapSpaceSpi[] swapspaceSpi = cfg.getSwapSpaceSpi();
-
-            if (nodeId == null)
-                nodeId = UUID.randomUUID();
-
-            GridLogger cfgLog = cfg.getGridLogger();
-
-            if (cfgLog == null) {
-                URL url = U.resolveGridGainUrl("config/default-log4j.xml");
-
-                cfgLog = url == null || GridLog4jLogger.isConfigured() ? new GridLog4jLogger() :
-                    new GridLog4jLogger(url);
-            }
-
-            assert cfgLog != null;
-
-            cfgLog = new GridLoggerProxy(cfgLog, null, name, U.id8(nodeId));
-
-            // Initialize factory's log.
-            log = cfgLog.getLogger(G.class);
 
             execSvc = cfg.getExecutorService();
             sysExecSvc = cfg.getSystemExecutorService();
@@ -2113,7 +2139,7 @@ public class GridFactory {
          * Contains necessary data for selected MBeanServer.
          *
          * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-         * @version 3.5.0c.31082011
+         * @version 3.5.0c.02092011
          */
         private static class GridMBeanServerData {
             /** Set of grid names for selected MBeanServer. */

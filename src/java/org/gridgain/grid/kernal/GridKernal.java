@@ -78,20 +78,17 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * misspelling.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridKernal extends GridProjectionAdapter implements Grid, GridKernalMBean, Externalizable {
     /** Ant-augmented version number. */
     private static final String VER = "3.5.0c";
 
     /** Ant-augmented build number. */
-    private static final String BUILD = "31082011";
+    private static final String BUILD = "02092011";
 
     /** Ant-augmented copyright blurb. */
     private static final String COPYRIGHT = "2005-2011 Copyright (C) GridGain Systems, Inc.";
-
-    /** */
-    private static final String LICENSE_FILE = "gridgain-license.txt";
 
     /** System line separator. */
     private static final String NL = System.getProperty("line.separator");
@@ -226,7 +223,7 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
     @Override public String getLicenseFilePath() {
         assert cfg != null;
 
-        return cfg.getGridGainHome() + File.separator + LICENSE_FILE;
+        return cfg.getLicenseUrl();
     }
 
     /** {@inheritDoc} */
@@ -774,29 +771,30 @@ public class GridKernal extends GridProjectionAdapter implements Grid, GridKerna
             metricsLogTimer = new Timer("gridgain-metrics-logger");
 
             metricsLogTimer.scheduleAtFixedRate(new GridTimerTask() {
+                private final DecimalFormat dblFmt = new DecimalFormat("#.##");
+
                 @Override protected void safeRun() {
-                    DecimalFormat dblFmt = new DecimalFormat("#.##");
+                    if (log.isInfoEnabled()) {
+                        GridNodeMetrics m = localNode().metrics();
 
-                    GridNodeMetrics m = localNode().metrics();
+                        double cpuLoadPct = m.getCurrentCpuLoad() * 100;
+                        double avgCpuLoadPct = m.getAverageCpuLoad() * 100;
 
-                    double cpuLoadPct = m.getCurrentCpuLoad() * 100;
-                    double avgCpuLoadPct = m.getAverageCpuLoad() * 100;
+                        long heapUsed = m.getHeapMemoryUsed();
+                        long heapMax = m.getHeapMemoryMaximum();
 
-                    long heapUsed = m.getHeapMemoryUsed();
-                    long heapMax = m.getHeapMemoryMaximum();
+                        double heapUsedPct = heapUsed * 100.0 / heapMax;
 
-                    double heapUsedPct = heapUsed * 100.0 / heapMax;
+                        SB sb = new SB();
 
-                    SB sb = new SB();
+                        sb.a("Metrics [").
+                            a("curCpuLoad=").a(dblFmt.format(cpuLoadPct)).a("%").
+                            a(", avgCpuLoad=").a(dblFmt.format(avgCpuLoadPct)).a("%").
+                            a(", heapUsed=").a(dblFmt.format(heapUsedPct)).a("%").
+                            a("]");
 
-                    sb.a("Metrics [").
-                        a("currentCpuLoad=").a(dblFmt.format(cpuLoadPct)).a("%").
-                        a(", avgCpuLoad=").a(dblFmt.format(avgCpuLoadPct)).a("%").
-                        a(", heapUsed=").a(dblFmt.format(heapUsedPct)).a("%").
-                        a("]");
-
-                    if (log.isInfoEnabled())
                         log.info(sb.toString());
+                    }
                 }
             }, metricsLogFreq, metricsLogFreq);
         }

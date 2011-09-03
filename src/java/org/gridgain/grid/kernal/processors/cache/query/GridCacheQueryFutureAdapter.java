@@ -29,7 +29,7 @@ import java.util.*;
  *
  * @param <R> Result type.
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public abstract class GridCacheQueryFutureAdapter<K, V, R> extends GridFutureAdapter<Collection<R>>
     implements GridCacheQueryFuture<R>, GridTimeoutObject {

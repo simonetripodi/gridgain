@@ -13,6 +13,31 @@ package org.gridgain.scalar.pimps
 
 import org.gridgain.grid._
 import scalaz._
+import org.jetbrains.annotations.Nullable
+
+/**
+ * Companion object.
+ *
+ * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
+ * @version 3.5.0c.02092011
+ */
+object ScalarGridPimp {
+    /**
+     * Creates new Scalar grid pimp with given Java-side implementation.
+     *
+     * @param value Java-side implementation.
+     */
+    def apply(impl: Grid) = {
+        if (impl == null)
+            throw new NullPointerException("impl")
+
+        val pimp = new ScalarGridPimp
+
+        pimp.impl = impl
+
+        pimp
+    }
+}
 
 /**
  * ==Overview==
@@ -34,30 +59,34 @@ import scalaz._
  * Scala's side method with `$` suffix.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
-class ScalarGridPimp extends ScalarProjectionPimp[Grid] with ScalarTaskThreadContext[Grid]
-
-/**
- * Companion object.
- *
- * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
- */
-object ScalarGridPimp {
+class ScalarGridPimp extends ScalarProjectionPimp[Grid] with ScalarTaskThreadContext[Grid] {
     /**
-     * Creates new Scalar grid pimp with given Java-side implementation.
+     * Schedules closure for execution using local cron-based scheduling.
      *
-     * @param value Java-side implementation.
+     * @param s Closure to schedule to run as a background cron-based job.
+     * @param ptrn  Scheduling pattern in UNIX cron format with optional prefix `{n1, n2}`
+     *     where `n1` is delay of scheduling in seconds and `n2` is the number of execution. Both
+     *     parameters are optional.
      */
-    def apply(impl: Grid) = {
-        if (impl == null)
-            throw new NullPointerException("impl")
+    def scheduleLocalCall[R](@Nullable s: Call[R], ptrn: String): GridScheduleFuture[R] = {
+        assert(ptrn != null)
 
-        val pimp = new ScalarGridPimp
+        value.scheduleLocal(toOutClosure(s), ptrn)
+    }
 
-        pimp.impl = impl
+    /**
+     * Schedules closure for execution using local cron-based scheduling.
+     *
+     * @param s Closure to schedule to run as a background cron-based job.
+     * @param ptrn  Scheduling pattern in UNIX cron format with optional prefix `{n1, n2}`
+     *     where `n1` is delay of scheduling in seconds and `n2` is the number of execution. Both
+     *     parameters are optional.
+     */
+    def scheduleLocalRun(@Nullable s: Run, ptrn: String): GridScheduleFuture[_] = {
+        assert(ptrn != null)
 
-        pimp
+        value.scheduleLocal(toAbsClosure(s), ptrn)
     }
 }

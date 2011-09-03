@@ -22,7 +22,7 @@ import java.util.*;
  * Future which waits for completion of one or more transactions.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridCacheMultiTxFuture<K, V> extends GridFutureAdapter<Boolean> {
     /** Transactions to wait for. */

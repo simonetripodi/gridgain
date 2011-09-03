@@ -18,7 +18,7 @@ import java.util.*;
  * nodes (for distributed cache) or anywhere else at cache startup.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public interface GridCachePreloader<K, V> {
     /**

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
 import static org.gridgain.grid.cache.GridCacheFlag.*;
@@ -27,7 +28,7 @@ import static org.gridgain.grid.cache.GridCacheFlag.*;
  * Concurrent implementation of cache map.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridCacheConcurrentMap<K, V> {
     /** Random. */
@@ -68,10 +69,10 @@ public class GridCacheConcurrentMap<K, V> {
     private final GridCacheContext<K, V> ctx;
 
     /** */
-    private volatile int mapPubSize;
+    private final AtomicInteger mapPubSize = new AtomicInteger();
 
     /** */
-    private volatile int mapSize;
+    private final AtomicInteger mapSize = new AtomicInteger();
 
     /** Filters cache internal entry. */
     private static final P1<GridCacheEntry<?, ?>> NON_INTERNAL =
@@ -228,7 +229,7 @@ public class GridCacheConcurrentMap<K, V> {
      * @return {@code True} if this map is empty.
      */
     public boolean isEmpty() {
-        return mapSize == 0;
+        return mapSize.get() == 0;
     }
 
     /**
@@ -237,7 +238,14 @@ public class GridCacheConcurrentMap<K, V> {
      * @return the number of key-value mappings in this map.
      */
     public int size() {
-        return mapSize;
+        return mapSize.get();
+    }
+
+    /**
+     * @return Public size.
+     */
+    public int publicSize() {
+        return mapPubSize.get();
     }
 
     /**
@@ -265,7 +273,7 @@ public class GridCacheConcurrentMap<K, V> {
      */
     @Nullable public GridCacheMapEntry<K, V> randomEntry() {
         while (true) {
-            if (mapPubSize == 0)
+            if (mapPubSize.get() == 0)
                 return null;
 
             // Desired and current indexes.
@@ -296,13 +304,6 @@ public class GridCacheConcurrentMap<K, V> {
 
             return entry;
         }
-    }
-
-    /**
-     * @return Public size.
-     */
-    public int publicSize() {
-        return mapPubSize;
     }
 
     /**
@@ -876,12 +877,12 @@ public class GridCacheConcurrentMap<K, V> {
 
                     // Modify counters.
                     if (!(key instanceof GridCacheInternal)) {
-                        mapPubSize++;
+                        mapPubSize.incrementAndGet();
 
                         segPubSize++;
                     }
 
-                    mapSize++;
+                    mapSize.incrementAndGet();
 
                     segSize = c;
                 }
@@ -1095,12 +1096,12 @@ public class GridCacheConcurrentMap<K, V> {
 
                     // Modify counters.
                     if (rmvPub) {
-                        mapPubSize--;
+                        mapPubSize.decrementAndGet();
 
                         segPubSize--;
                     }
 
-                    mapSize--;
+                    mapSize.decrementAndGet();
 
                     segSize--;
                 }

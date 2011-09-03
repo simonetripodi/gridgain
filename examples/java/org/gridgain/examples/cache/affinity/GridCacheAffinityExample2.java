@@ -35,7 +35,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * edition is used respectively.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridCacheAffinityExample2 {
     /**
@@ -85,7 +85,7 @@ public class GridCacheAffinityExample2 {
                 Map<GridRichNode, Collection<String>> mappings = g.mapKeysToNodes(NAME, keys);
 
                 // If on community edition, we have to get mappings from GridCache
-                // directly as affinity mapping without have cache started
+                // directly as affinity mapping without cache started
                 // is not supported on community edition.
                 if (mappings == null)
                     mappings = g.<String, String>cache(NAME).mapKeysToNodes(keys);

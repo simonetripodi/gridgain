@@ -38,7 +38,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Responsible for all grid job execution and communication.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 @SuppressWarnings({"deprecation"})
 public class GridJobProcessor extends GridProcessorAdapter {
@@ -948,7 +948,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Handles job execution requests.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.31082011
+     * @version 3.5.0c.02092011
      */
     private class JobExecutionListener implements GridMessageListener {
         @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
@@ -1281,7 +1281,7 @@ public class GridJobProcessor extends GridProcessorAdapter {
      * Listener to node discovery events.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.31082011
+     * @version 3.5.0c.02092011
      */
     private class JobDiscoveryListener implements GridLocalEventListener {
         /**

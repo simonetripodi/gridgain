@@ -52,7 +52,7 @@ import static org.gridgain.grid.segmentation.GridSegmentationPolicy.*;
  * property.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public interface GridConfiguration {
     /**
@@ -114,6 +114,9 @@ public interface GridConfiguration {
 
     /** Default segment check frequency in discovery manager. */
     public static final int DFLT_SEG_CHK_FREQ = 10000;
+
+    /** */
+    public static final int DFLT_METRICS_LOG_FREQ = 0;
 
     /**
      * Whether or not send email notifications on node start and stop. Note if enabled

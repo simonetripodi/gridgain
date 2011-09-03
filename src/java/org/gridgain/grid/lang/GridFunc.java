@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridFunc {
     /** */
@@ -937,15 +937,21 @@ public class GridFunc {
             private double sum;
             private int i;
 
+            private final Object lock = new Object();
+
             @Override public boolean collect(T e) {
-                sum += e.doubleValue();
-                i++;
+                synchronized (lock) {
+                    sum += e.doubleValue();
+                    i++;
+                }
 
                 return true;
             }
 
             @Override public Double apply() {
-                return sum / i;
+                synchronized (lock) {
+                    return sum / i;
+                }
             }
         };
     }
@@ -988,18 +994,24 @@ public class GridFunc {
             private double sum;
             private int i;
 
+            private final Object lock = new Object();
+
             @Override public boolean collect(T e) {
                 double d = e.doubleValue();
 
-                sum += d * d;
+                synchronized (lock) {
+                    sum += d * d;
 
-                i++;
+                    i++;
+                }
 
                 return true;
             }
 
             @Override public Double apply() {
-                return Math.sqrt(sum / i);
+                synchronized (lock) {
+                    return Math.sqrt(sum / i);
+                }
             }
         };
     }
@@ -1040,16 +1052,22 @@ public class GridFunc {
             private double sum;
             private int i;
 
-            @Override public boolean collect(T e) {
-                sum *= e.doubleValue();
+            private final Object lock = new Object();
 
-                i++;
+            @Override public boolean collect(T e) {
+                synchronized (lock) {
+                    sum *= e.doubleValue();
+
+                    i++;
+                }
 
                 return true;
             }
 
             @Override public Double apply() {
-                return Math.pow(sum, 1f / i);
+                synchronized (lock) {
+                    return Math.pow(sum, 1f / i);
+                }
             }
         };
     }
@@ -1122,6 +1140,7 @@ public class GridFunc {
             private T obj;
 
             @Override public boolean collect(T e) {
+                // No synchronization needed here.
                 obj = e;
 
                 return false;
@@ -1166,16 +1185,22 @@ public class GridFunc {
             private double sum;
             private int i;
 
-            @Override public boolean collect(T e) {
-                sum += 1 / e.doubleValue();
+            private final Object lock = new Object();
 
-                i++;
+            @Override public boolean collect(T e) {
+                synchronized (lock) {
+                    sum += 1 / e.doubleValue();
+
+                    i++;
+                }
 
                 return true;
             }
 
             @Override public Double apply() {
-                return i / sum;
+                synchronized (lock) {
+                    return i / sum;
+                }
             }
         };
     }
@@ -1190,16 +1215,16 @@ public class GridFunc {
     @SuppressWarnings("unchecked")
     public static GridReducer<Integer, Integer> sumIntReducer() {
         return new R1<Integer, Integer>() {
-            private int sum;
+            private AtomicInteger sum = new AtomicInteger(0);
 
             @Override public boolean collect(Integer e) {
-                sum += e;
+                sum.addAndGet(e);
 
                 return true;
             }
 
             @Override public Integer apply() {
-                return sum;
+                return sum.get();
             }
         };
     }
@@ -1216,14 +1241,20 @@ public class GridFunc {
         return new R1<Double, Double>() {
             private double sum;
 
+            private final Object lock = new Object();
+
             @Override public boolean collect(Double e) {
-                sum += e;
+                synchronized (lock) {
+                    sum += e;
+                }
 
                 return true;
             }
 
             @Override public Double apply() {
-                return sum;
+                synchronized (lock) {
+                    return sum;
+                }
             }
         };
     }
@@ -1263,14 +1294,20 @@ public class GridFunc {
         return new R1<BigDecimal, BigDecimal>() {
             private BigDecimal sum = BigDecimal.ZERO;
 
+            private final Object lock = new Object();
+
             @Override public boolean collect(BigDecimal e) {
-                sum = sum.add(e);
+                synchronized (lock) {
+                    sum = sum.add(e);
+                }
 
                 return true;
             }
 
             @Override public BigDecimal apply() {
-                return sum;
+                synchronized (lock) {
+                    return sum;
+                }
             }
         };
     }
@@ -1287,14 +1324,20 @@ public class GridFunc {
         return new R1<BigInteger, BigInteger>() {
             private BigInteger sum = BigInteger.ZERO;
 
+            private final Object lock = new Object();
+
             @Override public boolean collect(BigInteger e) {
-                sum = sum.add(e);
+                synchronized (lock) {
+                    sum = sum.add(e);
+                }
 
                 return true;
             }
 
             @Override public BigInteger apply() {
-                return sum;
+                synchronized (lock) {
+                    return sum;
+                }
             }
         };
     }
@@ -1311,19 +1354,25 @@ public class GridFunc {
 
             private boolean first = true;
 
+            private final Object lock = new Object();
+
             @Override public boolean collect(String s) {
-                if (!first && !isEmpty(delim))
-                    sb.a(delim);
+                synchronized (lock) {
+                    if (!first && !isEmpty(delim))
+                        sb.a(delim);
 
-                sb.a(s);
+                    sb.a(s);
 
-                first = false;
+                    first = false;
+                }
 
                 return true;
             }
 
             @Override public String apply() {
-                return sb.toString();
+                synchronized (lock) {
+                    return sb.toString();
+                }
             }
         };
     }

@@ -21,14 +21,11 @@ import java.util.*;
  * {@code Null}-keys are not supported.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Cloneable {
     /** Implementation used internally. */
-    private Map<K, V> map;
-
-    /** Counter for batch puts. */
-    private int batchCntr;
+    private LeanMap<K, V> map;
 
     /**
      * Constructs lean map with initial size of {@code 3}.
@@ -55,29 +52,20 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
     public GridLeanMap(int size) {
         assert size >= 0;
 
-        batchCntr = size;
-
-        if (size == 0) {
-            // No-op.
-        }
-        else if (size == 1) {
+        if (size == 0)
+            map = null;
+        else if (size == 1)
             map = new Map1<K, V>();
-        }
-        else if (size == 2) {
+        else if (size == 2)
             map = new Map2<K, V>();
-        }
-        else if (size == 3) {
+        else if (size == 3)
             map = new Map3<K, V>();
-        }
-        else if (size == 4) {
+        else if (size == 4)
             map = new Map4<K, V>();
-        }
-        else if (size == 5) {
+        else if (size == 5)
             map = new Map5<K, V>();
-        }
-        else {
-            map = new HashMap<K, V>(size, 1.0f);
-        }
+        else
+            map = new LeanHashMap<K, V>(size, 1.0f);
     }
 
     /**
@@ -95,9 +83,8 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
     private void buildFrom(Map<K, V> m) {
         Iterator<Entry<K, V>> iter = m.entrySet().iterator();
 
-        if (m.isEmpty()) {
+        if (m.isEmpty())
             map = null;
-        }
         else if (m.size() == 1) {
             Entry<K, V> e = iter.next();
 
@@ -135,9 +122,8 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
             map = new Map5<K, V>(e1.getKey(), e1.getValue(), e2.getKey(), e2.getValue(), e3.getKey(), e3.getValue(),
                 e4.getKey(), e4.getValue(), e5.getKey(), e5.getValue());
         }
-        else {
-            map = new HashMap<K, V>(m);
-        }
+        else
+            map = new LeanHashMap<K, V>(m);
     }
 
     /** {@inheritDoc} */
@@ -170,33 +156,14 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
     @Override public V put(K key, V val) throws NullPointerException {
         A.notNull(key, "key");
 
-        if (key == null) {
-            throw new NullPointerException("Null-keys are not supported.");
-        }
-
         if (map == null) {
             map = new Map1<K, V>(key, val);
 
             return null;
         }
 
-        if (map.containsKey(key)) {
-            V old = get(key);
-
-            map.put(key, val);
-
-            return old;
-        }
-
-        if (batchCntr > 0) {
-            batchCntr--;
-
-            V old = get(key);
-
-            map.put(key, val);
-
-            return old;
-        }
+        if (!map.isFull() || map.containsKey(key))
+            return map.put(key, val);
 
         int size = map.size();
 
@@ -224,15 +191,14 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         else if (size == 5) {
             Map<K, V> m = map;
 
-            map = new HashMap<K, V>(6, 1.0f);
+            map = new LeanHashMap<K, V>(6, 1.0f);
 
             map.putAll(m);
 
             map.put(key, val);
         }
-        else {
+        else
             map.put(key, val);
-        }
 
         return null;
     }
@@ -241,23 +207,32 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
     @Nullable @Override public V remove(Object key) {
         A.notNull(key, "key");
 
-        if (map == null) {
-            return null;
-        }
+        V old;
 
-        Map<K, V> tmpMap = new HashMap<K, V>(map);
+        if (map instanceof LeanHashMap) {
+            old = map.remove(key);
 
-        V removed = tmpMap.remove(key);
+            if (map.size() > 5)
+                return old;
+            else {
+                buildFrom(map);
 
-        if (tmpMap.size() <= 5) {
-            buildFrom(tmpMap);
+                return old;
+            }
         }
         else {
-            // If removing results to hash map then do not recreate it.
-            map.remove(key);
-        }
+            if (map == null)
+                return null;
 
-        return removed;
+            int size = map.size();
+
+            old = map.remove(key);
+
+            if (map.size() < size)
+                buildFrom(map);
+
+            return old;
+        }
     }
 
     /** {@inheritDoc} */
@@ -307,9 +282,8 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
                 @SuppressWarnings({"IfMayBeConditional"})
                 private Iterator<Entry<K, V>> getMapIterator(boolean forceNew) {
                     if (mapIter == null || forceNew) {
-                        if (map != null) {
+                        if (map != null)
                             mapIter = map.entrySet().iterator();
-                        }
                         else {
                             mapIter = new Iterator<Entry<K, V>>() {
                                 @Override public boolean hasNext() { return false; }
@@ -324,12 +298,13 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
                     return mapIter;
                 }
 
-                @Override public boolean hasNext() { return map != null && getMapIterator(false).hasNext(); }
+                @Override public boolean hasNext() {
+                    return map != null && getMapIterator(false).hasNext();
+                }
 
                 @Override public Entry<K, V> next() {
-                    if (!hasNext()) {
+                    if (!hasNext())
                         throw new NoSuchElementException();
-                    }
 
                     idx++;
 
@@ -337,9 +312,8 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
                 }
 
                 @Override public void remove() {
-                    if (curEnt == null) {
+                    if (curEnt == null)
                         throw new IllegalStateException();
-                    }
 
                     GridLeanMap.this.remove(curEnt.getKey());
 
@@ -347,9 +321,8 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
 
                     mapIter = getMapIterator(true);
 
-                    for (int i = 0; i < idx && mapIter.hasNext(); i++) {
+                    for (int i = 0; i < idx && mapIter.hasNext(); i++)
                         mapIter.next();
-                    }
 
                     idx--;
                 }
@@ -362,12 +335,19 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
     }
 
     /**
-     * Map for single entry.
      *
-     * @param <K>
-     * @param <V>
      */
-    private static class Map1<K, V> extends AbstractMap<K, V> implements Serializable {
+    private interface LeanMap<K, V> extends Map<K, V> {
+        /**
+         * @return {@code True} if map is full.
+         */
+        public boolean isFull();
+    }
+
+    /**
+     * Map for single entry.
+     */
+    private static class Map1<K, V> extends AbstractMap<K, V> implements LeanMap<K, V>, Serializable {
         /** */
         protected K k1;
 
@@ -393,6 +373,25 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
+        @Override public boolean isFull() {
+            return size() == 1;
+        }
+
+        /** {@inheritDoc} */
+        @Nullable @Override public V remove(Object key) {
+            V res = null;
+
+            if (F.eq(key, k1)) {
+                res = v1;
+
+                v1 = null;
+                k1 = null;
+            }
+
+            return res;
+        }
+
+        /** {@inheritDoc} */
         @Override public int size() {
             return k1 != null ? 1 : 0;
         }
@@ -413,8 +412,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
-        @Nullable
-        @Override public V get(Object key) {
+        @Override @Nullable public V get(Object key) {
             return k1 != null && F.eq(key, k1) ? v1 : null;
         }
 
@@ -428,8 +426,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
          * @param value Value.
          * @return Previous value associated with given key.
          */
-        @Nullable
-        @Override public V put(K key, V value) {
+        @Override @Nullable public V put(K key, V value) {
             V oldVal = get(key);
 
             if (k1 == null || F.eq(k1, key)) {
@@ -447,11 +444,9 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         protected Set<K> keySet(K... keys) {
             Set<K> set = new HashSet<K>(size(), 1.0f);
 
-            for (K k : keys) {
-                if (k != null) {
+            for (K k : keys)
+                if (k != null)
                     set.add(k);
-                }
-            }
 
             return set;
         }
@@ -472,11 +467,9 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         protected Set<Entry<K, V>> entrySet(Entry<K, V>... entries) {
             Set<Entry<K, V>> set = new HashSet<Entry<K, V>>(size(), 1.0f);
 
-            for (Entry<K, V> e : entries) {
-                if (e.getKey() != null) {
+            for (Entry<K, V> e : entries)
+                if (e.getKey() != null)
                     set.add(e);
-                }
-            }
 
             return set;
         }
@@ -488,11 +481,9 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         protected Collection<V> values(Entry<K, V>... entries) {
             Collection<V> set = new HashSet<V>(size(), 1.0f);
 
-            for (Entry<K, V> e : entries) {
-                if (e.getKey() != null) {
+            for (Entry<K, V> e : entries)
+                if (e.getKey() != null)
                     set.add(e.getValue());
-                }
-            }
 
             return set;
         }
@@ -546,6 +537,25 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
+        @Override public boolean isFull() {
+            return size() == 2;
+        }
+
+        /** {@inheritDoc} */
+        @Nullable @Override public V remove(Object key) {
+            if (F.eq(key, k2)) {
+                V res = v2;
+
+                v2 = null;
+                k2 = null;
+
+                return res;
+            }
+
+            return super.remove(key);
+        }
+
+        /** {@inheritDoc} */
         @Override public int size() {
             return super.size() + (k2 != null ? 1 : 0);
         }
@@ -577,8 +587,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
          * @param value Value.
          * @return Previous value associated with given key.
          */
-        @Nullable
-        @Override public V put(K key, V value) throws NullPointerException {
+        @Override @Nullable public V put(K key, V value) throws NullPointerException {
             V oldVal = get(key);
 
             if (k1 == null || F.eq(k1, key)) {
@@ -644,6 +653,25 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
+        @Override public boolean isFull() {
+            return size() == 3;
+        }
+
+        /** {@inheritDoc} */
+        @Nullable @Override public V remove(Object key) {
+            if (F.eq(key, k3)) {
+                V res = v3;
+
+                v3 = null;
+                k3 = null;
+
+                return res;
+            }
+
+            return super.remove(key);
+        }
+
+        /** {@inheritDoc} */
         @Override public int size() {
             return super.size() + (k3 != null ? 1 : 0);
         }
@@ -659,7 +687,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
-        @Override public V get(Object k) {
+        @Override @Nullable public V get(Object k) {
             V v = super.get(k);
 
             return v != null ? v : (k3 != null && F.eq(k, k3)) ? v3 : null;
@@ -675,7 +703,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
          * @param value Value.
          * @return Previous value associated with given key.
          */
-        @Override public V put(K key, V value) throws NullPointerException {
+        @Override @Nullable public V put(K key, V value) throws NullPointerException {
             V oldVal = get(key);
 
             if (k1 == null || F.eq(k1, key)) {
@@ -747,6 +775,25 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
+        @Override public boolean isFull() {
+            return size() == 4;
+        }
+
+        /** {@inheritDoc} */
+        @Nullable @Override public V remove(Object key) {
+            if (F.eq(key, k4)) {
+                V res = v4;
+
+                v4 = null;
+                k4 = null;
+
+                return res;
+            }
+
+            return super.remove(key);
+        }
+
+        /** {@inheritDoc} */
         @Override public int size() {
             return super.size() + (k4 != null ? 1 : 0);
         }
@@ -762,7 +809,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
-        @Override public V get(Object k) {
+        @Override @Nullable public V get(Object k) {
             V v = super.get(k);
 
             return v != null ? v : (k4 != null && F.eq(k, k4)) ? v4 : null;
@@ -778,7 +825,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
          * @param value Value.
          * @return Previous value associated with given key.
          */
-        @Override public V put(K key, V value) throws NullPointerException {
+        @Override @Nullable public V put(K key, V value) throws NullPointerException {
             V oldVal = get(key);
 
             if (k1 == null || F.eq(k1, key)) {
@@ -856,6 +903,25 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
+        @Override public boolean isFull() {
+            return size() == 5;
+        }
+
+        /** {@inheritDoc} */
+        @Nullable @Override public V remove(Object key) {
+            if (F.eq(key, k5)) {
+                V res = v5;
+
+                v5 = null;
+                k5 = null;
+
+                return res;
+            }
+
+            return super.remove(key);
+        }
+
+        /** {@inheritDoc} */
         @Override public int size() {
             return super.size() + (k5 != null ? 1 : 0);
         }
@@ -871,7 +937,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         }
 
         /** {@inheritDoc} */
-        @Override public V get(Object k) {
+        @Override @Nullable public V get(Object k) {
             V v = super.get(k);
 
             return v != null ? v : (k5 != null && F.eq(k, k5)) ? v5 : null;
@@ -887,7 +953,7 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
          * @param value Value.
          * @return Previous value associated with given key.
          */
-        @Override public V put(K key, V value) throws NullPointerException {
+        @Override @Nullable public V put(K key, V value) throws NullPointerException {
             V oldVal = get(key);
 
             if (k1 == null || F.eq(k1, key)) {
@@ -927,6 +993,31 @@ public class GridLeanMap<K, V> extends GridSerializableMap<K, V> implements Clon
         /** {@inheritDoc} */
         @Override public Collection<V> values() {
             return values(e(k1, v1), e(k2, v2), e(k3, v3), e(k4, v4), e(k5, v5));
+        }
+    }
+
+    /**
+     *
+     */
+    private static class LeanHashMap<K, V> extends HashMap<K, V> implements LeanMap<K, V> {
+        /**
+         * @param initCap Capacity.
+         * @param loadFactor Load factor.
+         */
+        private LeanHashMap(int initCap, float loadFactor) {
+            super(initCap, loadFactor);
+        }
+
+        /**
+         * @param m Map.
+         */
+        private LeanHashMap(Map<? extends K, ? extends V> m) {
+            super(m);
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean isFull() {
+            return false;
         }
     }
 }

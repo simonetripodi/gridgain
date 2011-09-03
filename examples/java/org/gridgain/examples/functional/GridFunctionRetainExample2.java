@@ -16,7 +16,7 @@ import java.util.*;
  * Demonstrates various functional APIs from {@link org.gridgain.grid.lang.GridFunc} class.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.31082011
+ * @version 3.5.0c.02092011
  */
 public class GridFunctionRetainExample2 {
     /**
@@ -77,7 +77,7 @@ public class GridFunctionRetainExample2 {
      * This class simply represents a city information.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.31082011
+     * @version 3.5.0c.02092011
      */
     private static class City {
         /** City name. */
