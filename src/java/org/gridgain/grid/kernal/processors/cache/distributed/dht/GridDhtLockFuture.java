@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.*;
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean>, GridDhtFuture<Boolean>, GridCacheMappedVersion {
@@ -46,6 +46,9 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
 
     /** Near lock version. */
     private GridCacheVersion nearLockVer;
+
+    /** Topology version. */
+    private long topVer;
 
     /** Thread. */
     private long threadId;
@@ -122,6 +125,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
      * @param cctx Cache context.
      * @param nearNodeId Near node ID.
      * @param nearLockVer Near lock version.
+     * @param topVer Topology version.
      * @param cnt Number of keys to lock.
      * @param read Read flag.
      * @param timeout Lock acquisition timeout.
@@ -132,6 +136,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
         GridCacheContext<K, V> cctx,
         UUID nearNodeId,
         GridCacheVersion nearLockVer,
+        long topVer,
         int cnt,
         boolean read,
         long timeout,
@@ -142,14 +147,19 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
         assert cctx != null;
         assert nearNodeId != null;
         assert nearLockVer != null;
+        assert topVer > 0;
 
         this.cctx = cctx;
         this.nearNodeId = nearNodeId;
         this.nearLockVer = nearLockVer;
+        this.topVer = topVer;
         this.read = read;
         this.timeout = timeout;
         this.filter = filter;
         this.tx = tx;
+
+        if (tx != null)
+            tx.topologyVersion(topVer);
 
         threadId = tx != null ? tx.threadId() : Thread.currentThread().getId();
 
@@ -319,7 +329,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
             return null;
 
         // Add local lock first, as it may throw GridCacheEntryRemovedException.
-        GridCacheMvccCandidate<K> c = entry.addDhtLocal(nearNodeId, nearLockVer, threadId, lockVer, timeout,
+        GridCacheMvccCandidate<K> c = entry.addDhtLocal(nearNodeId, nearLockVer, topVer, threadId, lockVer, timeout,
             /*reenter*/false, ec(), inTx());
 
         if (c == null && timeout < 0) {
@@ -756,7 +766,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                         if (log.isDebugEnabled())
                             log.debug("Mapping entries for DHT lock future: " + this);
 
-                        cctx.dhtMap(nearNodeId, entry, log, dhtMap, nearMap);
+                        cctx.dhtMap(nearNodeId, topVer, entry, log, dhtMap, nearMap);
 
                         GridCacheMvccCandidate<K> cand = entry.mappings(lockVer,
                             F.nodeIds(F.concat(false, dhtMap.keySet(), nearMap.keySet())));
@@ -774,7 +784,7 @@ public class GridDhtLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
                 }
             }
             catch (GridDhtInvalidPartitionException e) {
-                addInvalidPartition(e.partition());
+                assert false : "DHT lock should never get invalid partition [err=" + e + ", fut=" + this + ']';
             }
         }
 

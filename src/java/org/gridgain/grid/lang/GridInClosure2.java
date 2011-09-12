@@ -16,16 +16,16 @@ import org.gridgain.grid.typedef.*;
  * Since Java 6 doesn't provide a language construct for first-class function the closures are
  * implemented as interfaces.
  * <h2 class="header">Type Alias</h2>
- * To provide for more terse code you can use a typedef {@link org.gridgain.grid.typedef.CI2} class or various factory methods in
- * {@link GridFunc} class. Note, however, that since typedefs in Java rely on inheritance you should
- * not use these type aliases in signatures.
+ * To provide for more terse code you can use a typedef {@link org.gridgain.grid.typedef.CI2}
+ * class or various factory methods in {@link GridFunc} class. Note, however, that since typedefs
+ * in Java rely on inheritance you should not use these type aliases in signatures.
  * <h2 class="header">Thread Safety</h2>
  * Note that this interface does not impose or assume any specific thread-safety by its
  * implementations. Each implementation can elect what type of thread-safety it provides,
  * if any.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  * @param <E1> Type of the first free variable, i.e. the element the closure is called or closed on.
  * @param <E2> Type of the second free variable, i.e. the element the closure is called or closed on.
  * @see C2

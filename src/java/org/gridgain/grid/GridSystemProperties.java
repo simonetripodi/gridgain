@@ -20,7 +20,7 @@ import org.gridgain.grid.thread.*;
  * properties and variables can be used to affect the behavior of GridGain.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  * @see GridTestVmParameters
  */
 public final class GridSystemProperties {
@@ -98,7 +98,7 @@ public final class GridSystemProperties {
     public static final String GG_QUIET = "GRIDGAIN_QUIET";
 
     /**
-     * If set to any value will make default log level for Log4j to <tt>DEBUG</tt>.
+     * If set to any value will set default log level for Log4j to <tt>DEBUG</tt>.
      */
     public static final String GG_DFLT_LOG4J_DEBUG = "GRIDGAIN_DFLT_LOG4J_DEBUG";
 
@@ -269,8 +269,9 @@ public final class GridSystemProperties {
     public static final String GG_FUT_CONCURRENT_NOTIFICATION = "GRIDGAIN_FUTURE_CONCURRENT_NOTIFICATION";
 
     /**
-     * System property to enable or disable stop watch. If enabled, GridGain will watch
-     * various internal execution points and will print out stats at the end.
+     * System property to enable or disable stop watch ({@code true} or {@code false},
+     * default is {@code false}). If enabled, GridGain will watch various internal execution
+     * points and will print out stats at the end.
      */
     public static final String GG_STOPWATCH_ENABLED = "GRIDGAIN_STOPWATCH";
 
@@ -291,9 +292,17 @@ public final class GridSystemProperties {
 
     /**
      * System property to specify a threshold of eviction events accumulating before
-     * eviction policy gets notified.
+     * eviction policy gets notified. Default value is {@code 100}.  In most cases
+     * this value is large enough and does not need to be changed.
      */
     public static final String GG_EVICT_UNWIND_THRESHOLD = "GRIDGAIN_EVICT_UNWIND_THRESHOLD";
+
+    /**
+     * System property to specify eviction history size to handle simultaneous preloading
+     * and evictions. Default value is {@code 100000}.  In most cases this value is large
+     * enough and does not need to be changed.
+     */
+    public static final String GG_EVICTION_HISTORY_SIZE = "GRIDGAIN_EVICTION_HISTORY_SIZE";
 
     /**
      * System property to disable emailing of assertion errors.

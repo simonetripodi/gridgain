@@ -27,7 +27,7 @@ import java.util.*;
  *
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collection<GridCacheEntryInfo<K, V>>>
     implements GridDhtFuture<Collection<GridCacheEntryInfo<K, V>>> {
@@ -91,7 +91,7 @@ public class GridDhtGetFuture<K, V> extends GridCompoundIdentityFuture<Collectio
         @Nullable GridCacheTxLocalEx<K, V> tx,
         @Nullable GridPredicate<? super GridCacheEntry<K, V>>[] filters
     ) {
-        super(ctx.kernalContext(), CU.<GridCacheEntryInfo<K, V>>reducerCollections());
+        super(ctx.kernalContext(), CU.<GridCacheEntryInfo<K, V>>collectionsReducer());
 
         assert reader != null;
         assert ctx != null;

@@ -50,7 +50,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -275,10 +275,17 @@ public class GridCacheContext<K, V> implements Externalizable {
     }
 
     /**
-     * @return {@code True} is cache is near cache.
+     * @return {@code True} if cache is near cache.
      */
     public boolean isNear() {
         return cache instanceof GridNearCache;
+    }
+
+    /**
+     * @return {@code True} if cache is replicated cache.
+     */
+    public boolean isReplicated() {
+        return cache instanceof GridReplicatedCache;
     }
 
     /**
@@ -1356,16 +1363,17 @@ public class GridCacheContext<K, V> implements Externalizable {
 
     /**
      * @param nearNodeId Near node ID.
+     * @param topVer Topology version.
      * @param entry Entry.
      * @param log Log.
      * @param dhtMap Dht mappings.
      * @param nearMap Near mappings.
      * @throws GridCacheEntryRemovedException If reader for entry is removed.
      */
-    public void dhtMap(UUID nearNodeId, GridDhtCacheEntry<K, V> entry, GridLogger log,
+    public void dhtMap(UUID nearNodeId, long topVer, GridDhtCacheEntry<K, V> entry, GridLogger log,
         Map<GridNode, List<GridDhtCacheEntry<K, V>>> dhtMap,
         Map<GridNode, List<GridDhtCacheEntry<K, V>>> nearMap) throws GridCacheEntryRemovedException {
-        Collection<GridNode> dhtNodes = dht().topology().nodes(entry.partition());
+        Collection<GridNode> dhtNodes = dht().topology().nodes(entry.partition(), topVer);
 
         if (log.isDebugEnabled())
             log.debug("Mapping entry to DHT nodes [nodes=" + U.nodeIds(dhtNodes) + ", entry=" + entry + ']');

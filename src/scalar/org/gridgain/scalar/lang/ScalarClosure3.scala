@@ -18,7 +18,7 @@ import org.gridgain.grid.util.{GridUtils => U}
  * Peer deploy aware adapter for Java's `GridClosure3`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 class ScalarClosure3[E1, E2, E3, R](private val f: (E1, E2, E3) => R) extends GridClosure3[E1, E2, E3, R] {
     assert(f != null)

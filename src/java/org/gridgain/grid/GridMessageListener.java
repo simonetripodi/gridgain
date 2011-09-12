@@ -27,7 +27,7 @@ import java.util.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @Deprecated
 public interface GridMessageListener extends EventListener {

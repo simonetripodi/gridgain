@@ -26,7 +26,7 @@ import java.util.*;
  * generated to prevent starvation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridCacheMvcc<K> {
     /** Cache context. */
@@ -300,11 +300,14 @@ public class GridCacheMvcc<K> {
      * @return {@code True} if lock is empty.
      */
     public synchronized boolean isEmpty(GridCacheVersion... exclude) {
-        if (locs == null && rmts == null && exclude.length == 0)
+        if (locs == null && rmts == null && F.isEmpty(exclude))
             return true;
 
         if (locs != null) {
             assert !locs.isEmpty();
+
+            if (F.isEmpty(exclude))
+                return false;
 
             for (GridCacheMvccCandidate<K> cand : locs)
                 if (!U.containsObjectArray(exclude, cand.version()))
@@ -313,6 +316,9 @@ public class GridCacheMvcc<K> {
 
         if (rmts != null) {
             assert !rmts.isEmpty();
+
+            if (F.isEmpty(exclude))
+                return false;
 
             for (GridCacheMvccCandidate<K> cand : rmts)
                 if (!U.containsObjectArray(exclude, cand.version()))

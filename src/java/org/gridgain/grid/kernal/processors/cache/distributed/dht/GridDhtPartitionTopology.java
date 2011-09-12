@@ -20,7 +20,7 @@ import java.util.*;
  * DHT partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @GridToStringExclude
 public interface GridDhtPartitionTopology<K, V> {
@@ -79,8 +79,11 @@ public interface GridDhtPartitionTopology<K, V> {
      * @param key Cache key.
      * @param create If {@code true}, then partition will be created if it's not there.
      * @return Local partition.
+     * @throws GridDhtInvalidPartitionException If partition is evicted or absent and
+     *      does not belong to this node.
      */
-    @Nullable public GridDhtLocalPartition<K, V> localPartition(K key, boolean create);
+    @Nullable public GridDhtLocalPartition<K, V> localPartition(K key, boolean create)
+        throws GridDhtInvalidPartitionException;
 
     /**
      * @return All local partitions.
@@ -99,9 +102,10 @@ public interface GridDhtPartitionTopology<K, V> {
 
     /**
      * @param p Partition ID.
+     * @param topVer Topology version.
      * @return Collection of all nodes responsible for this partition with primary node being first.
      */
-    public List<GridNode> nodes(int p);
+    public List<GridNode> nodes(int p, long topVer);
 
     /**
      * @param p Partition ID.

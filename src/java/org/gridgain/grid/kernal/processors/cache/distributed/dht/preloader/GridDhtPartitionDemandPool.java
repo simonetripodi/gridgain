@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * and populating local cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @SuppressWarnings( {"NonConstantFieldWithUpperCaseName"})
 public class GridDhtPartitionDemandPool<K, V> {
@@ -504,6 +504,15 @@ public class GridDhtPartitionDemandPool<K, V> {
 
                 try {
                     cached = cctx.dht().entryEx(entry.key());
+
+                    if (!cctx.evicts().preloadingPermitted(entry.key(), entry.version())) {
+                        if (log.isDebugEnabled())
+                            log.debug("Preloading is not permitted for entry due to evictions [key= " + entry.key() +
+                                ", ver=" + entry.version() + ']');
+
+                        // Partition is valid, but preloading of the entry should be cancelled.
+                        return true;
+                    }
 
                     if (log.isDebugEnabled())
                         log.debug("Preloading key [key=" + entry.key() + ", part=" + p + ", node=" + pick.id() + ']');

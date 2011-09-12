@@ -20,10 +20,10 @@ import java.util.*;
  * Cache eviction response.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
-    /** Future id. */
+    /** Future ID. */
     private long futId;
 
     /** Rejected keys. */
@@ -34,6 +34,9 @@ public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
     @GridToStringExclude
     private Collection<byte[]> rejectedKeyBytes;
 
+    /** Flag to indicate whether request processing has finished with error. */
+    private boolean err;
+
     /**
      * Required by {@link Externalizable}.
      */
@@ -42,10 +45,19 @@ public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
     }
 
     /**
-     * @param futId Future id.
+     * @param futId Future ID.
      */
     GridCacheEvictionResponse(long futId) {
+        this(futId, false);
+    }
+
+    /**
+     * @param futId Future ID.
+     * @param err {@code True} if request processing has finished with error.
+     */
+    GridCacheEvictionResponse(long futId, boolean err) {
         this.futId = futId;
+        this.err = err;
     }
 
     /** {@inheritDoc} */
@@ -63,7 +75,7 @@ public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
     }
 
     /**
-     * @return Future id.
+     * @return Future ID.
      */
     long futureId() {
         return futId;
@@ -87,6 +99,18 @@ public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
         rejectedKeys.add(key);
     }
 
+    /**
+     * @return {@code True} if request processing has finished with error.
+     */
+    boolean error() {
+        return err;
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean ignoreClassErrors() {
+        return true;
+    }
+
     /** {@inheritDoc} */
     @Override public void writeExternal(ObjectOutput out) throws IOException {
         super.writeExternal(out);
@@ -94,6 +118,8 @@ public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
         out.writeLong(futId);
 
         U.writeCollection(out, rejectedKeyBytes);
+
+        out.writeBoolean(err);
     }
 
     /** {@inheritDoc} */
@@ -103,6 +129,8 @@ public class GridCacheEvictionResponse<K, V> extends GridCacheMessage<K, V> {
         futId = in.readLong();
 
         rejectedKeyBytes = U.readCollection(in);
+
+        err = in.readBoolean();
     }
 
     /** {@inheritDoc} */

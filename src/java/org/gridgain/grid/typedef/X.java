@@ -26,7 +26,7 @@ import java.util.*;
  * when this typedef <b>does not sacrifice</b> the code readability.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public final class X {
     /** Time span dividers. */
@@ -41,8 +41,7 @@ public final class X {
     public static final GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy> NO_FAILOVER =
         new GridClosure2X<GridJobResult, List<GridJobResult>, GridJobResultPolicy>() {
             @Override
-            public GridJobResultPolicy applyx(GridJobResult gridJobResult, List<GridJobResult> gridJobResults)
-                throws GridException {
+            public GridJobResultPolicy applyx(GridJobResult gridJobResult, List<GridJobResult> gridJobResults) {
                 return GridJobResultPolicy.WAIT;
             }
         };

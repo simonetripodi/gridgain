@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
@@ -88,6 +88,7 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
      *
      * @param nearNodeId Near node ID.
      * @param nearVer Near version.
+     * @param topVer Topology version.
      * @param threadId Owning thread ID.
      * @param ver Lock version.
      * @param timeout Timeout to acquire lock.
@@ -98,8 +99,8 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
      * @throws GridCacheEntryRemovedException If entry has been removed.
      * @throws GridDistributedLockCancelledException If lock was cancelled.
      */
-    @Nullable public GridCacheMvccCandidate<K> addDhtLocal(UUID nearNodeId, GridCacheVersion nearVer, long threadId,
-        GridCacheVersion ver, long timeout, boolean reenter, boolean ec, boolean tx)
+    @Nullable public GridCacheMvccCandidate<K> addDhtLocal(UUID nearNodeId, GridCacheVersion nearVer, long topVer,
+        long threadId, GridCacheVersion ver, long timeout, boolean reenter, boolean ec, boolean tx)
         throws GridCacheEntryRemovedException, GridDistributedLockCancelledException {
         GridCacheMvccCandidate<K> cand;
         GridCacheMvccCandidate<K> prev;
@@ -118,6 +119,8 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
             boolean emptyBefore = mvcc.isEmpty();
 
             cand = mvcc.addLocal(this, nearNodeId, nearVer, threadId, ver, timeout, reenter, ec, tx, true);
+
+            cand.topologyVersion(topVer);
 
             owner = mvcc.anyOwner();
 
@@ -148,8 +151,8 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
             GridDhtTxLocal<K, V> dhtTx = (GridDhtTxLocal<K, V>)tx;
 
             // Null is returned if timeout is negative and there is other lock owner.
-            return addDhtLocal(dhtTx.nearNodeId(), dhtTx.nearXidVersion(), tx.threadId(), tx.xidVersion(), timeout,
-                false, tx.ec(), true) != null;
+            return addDhtLocal(dhtTx.nearNodeId(), dhtTx.nearXidVersion(), tx.topologyVersion(), tx.threadId(),
+                tx.xidVersion(), timeout, false, tx.ec(), true) != null;
         }
 
         try {
@@ -380,6 +383,8 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     }
 
     /**
+     * Sets mappings into entry.
+     *
      * @param ver Version.
      * @param mappings Mappings to set.
      * @return Candidate, if one existed for the version, or {@code null} if candidate was not found.

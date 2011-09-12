@@ -32,7 +32,7 @@ import java.util.*;
  * should only change what they need.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /** Cache name. */
@@ -356,7 +356,7 @@ public class GridCacheConfigurationAdapter implements GridCacheConfiguration {
     /**
      * Sets maximum eviction overflow ratio.
      *
-     * @param maxEvictionOverflowRatio Ration.
+     * @param maxEvictionOverflowRatio Maximum eviction overflow ratio.
      */
     public void setMaxEvictionOverflowRatio(float maxEvictionOverflowRatio) {
         this.maxEvictionOverflowRatio = maxEvictionOverflowRatio;

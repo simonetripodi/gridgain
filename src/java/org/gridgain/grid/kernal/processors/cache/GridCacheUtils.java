@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -759,6 +759,9 @@ public abstract class GridCacheUtils {
      * @return Affinity nodes.
      */
     public static Collection<GridRichNode> allNodes(final GridCacheContext ctx, final long topOrder) {
+        if (topOrder < 0)
+            return allNodes(ctx);
+
         return F.viewReadOnly(ctx.discovery().allNodes(), ctx.rich().richNode(), new P1<GridNode>() {
             @Override public boolean apply(GridNode node) {
                 return node.order() <= topOrder && cacheNode(ctx, node);
@@ -1031,7 +1034,7 @@ public abstract class GridCacheUtils {
      */
     public static <K, V> GridReducer<Map<K, V>, Map<K, V>> mapsReducer(final int size) {
         return new GridReducer<Map<K, V>, Map<K, V>>() {
-            private final Map<K, V> ret = new GridLeanMap<K, V>(size);
+            private final Map<K, V> ret = new ConcurrentHashMap<K, V>(size);
 
             @Override public boolean collect(Map<K, V> map) {
                 if (map != null)
@@ -1057,9 +1060,9 @@ public abstract class GridCacheUtils {
      * @param <T> Collection element type.
      * @return Reducer.
      */
-    public static <T> GridReducer<Collection<T>, Collection<T>> reducerCollections() {
+    public static <T> GridReducer<Collection<T>, Collection<T>> collectionsReducer() {
         return new GridReducer<Collection<T>, Collection<T>>() {
-            private final Collection<T> ret = new LinkedList<T>();
+            private final Collection<T> ret = new ConcurrentLinkedQueue<T>();
 
             @Override public boolean collect(Collection<T> c) {
                 if (c != null)

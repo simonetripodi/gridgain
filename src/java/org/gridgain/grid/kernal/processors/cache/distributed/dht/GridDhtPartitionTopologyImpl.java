@@ -30,7 +30,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Partition topology.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @GridToStringExclude
 class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, V> {
@@ -515,8 +515,8 @@ class GridDhtPartitionTopologyImpl<K, V> implements GridDhtPartitionTopology<K, 
     }
 
     /** {@inheritDoc} */
-    @Override public List<GridNode> nodes(int p) {
-        Collection<UUID> affIds = F.viewReadOnly(cctx.affinity(p, CU.allNodes(cctx, lastJoinVer)), F.node2id());
+    @Override public List<GridNode> nodes(int p, long topVer) {
+        Collection<UUID> affIds = F.viewReadOnly(cctx.affinity(p, CU.allNodes(cctx, topVer)), F.node2id());
 
         lock.readLock().lock();
 

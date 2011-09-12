@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -168,6 +168,19 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
      */
     @Nullable public GridNearCacheEntry<K, V> peekExx(K key) {
         return (GridNearCacheEntry<K, V>)peekEx(key);
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean isLocked(K key) {
+        return super.isLocked(key) || dht.isLocked(key);
+    }
+
+    /**
+     * @param key Key.
+     * @return If near entry is locked.
+     */
+    public boolean isLockedNearOnly(K key) {
+        return super.isLocked(key);
     }
 
     /** {@inheritDoc} */
@@ -742,7 +755,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
             if (log.isDebugEnabled())
                 log.debug("Evicting dht-local entry from near cache [entry=" + e + ", tx=" + this + ']');
 
-            if (e != null && e.markObsolete(obsoleteVer, true))
+            if (e.markObsolete(obsoleteVer, true))
                 return true;
         }
 
@@ -850,28 +863,15 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
             return;
 
         try {
-            Collection<GridRichNode> affNodes = CU.allNodes(ctx);
+            Collection<GridRichNode> affNodes = null;
 
-            int keyCnt = (int)Math.ceil((double)keys.size() / affNodes.size());
+            int keyCnt = -1;
 
-            Map<GridNode, GridNearUnlockRequest<K, V>> map =
-                new HashMap<GridNode, GridNearUnlockRequest<K, V>>(affNodes.size());
+            Map<GridNode, GridNearUnlockRequest<K, V>> map = null;
 
             for (K key : keys) {
                 // Send request to remove from remote nodes.
                 GridNearUnlockRequest<K, V> req = null;
-
-                GridRichNode primary = CU.primary0(ctx.affinity(key, affNodes));
-
-                if (!primary.isLocal()) {
-                    req = map.get(primary);
-
-                    if (req == null) {
-                        map.put(primary, req = new GridNearUnlockRequest<K, V>(keyCnt));
-
-                        req.version(ver);
-                    }
-                }
 
                 while (true) {
                     GridDistributedCacheEntry<K, V> entry = peekExx(key);
@@ -881,6 +881,26 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                             GridCacheMvccCandidate<K> cand = entry.candidate(ver);
 
                             if (cand != null) {
+                                if (affNodes == null) {
+                                    affNodes = CU.allNodes(ctx, cand.topologyVersion());
+
+                                    keyCnt = (int)Math.ceil((double)keys.size() / affNodes.size());
+
+                                    map = new HashMap<GridNode, GridNearUnlockRequest<K, V>>(affNodes.size());
+                                }
+
+                                GridRichNode primary = CU.primary0(ctx.affinity(key, affNodes));
+
+                                if (!primary.isLocal()) {
+                                    req = map.get(primary);
+
+                                    if (req == null) {
+                                        map.put(primary, req = new GridNearUnlockRequest<K, V>(keyCnt));
+
+                                        req.version(ver);
+                                    }
+                                }
+
                                 // Remove candidate from local node first.
                                 if (entry.removeLock(cand.version())) {
                                     if (primary.isLocal())
@@ -904,7 +924,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                 }
             }
 
-            if (map.isEmpty())
+            if (map == null || map.isEmpty())
                 return;
 
             Collection<GridCacheVersion> committed = ctx.tm().committedVersions(ver);

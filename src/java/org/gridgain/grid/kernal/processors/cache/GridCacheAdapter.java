@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Adapter for different cache implementations.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter implements GridCache<K, V>,
     Externalizable {
@@ -1024,7 +1024,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     /**
      *
      * @param key Entry key.
-     * @return Entry or <tt>null</tt>.
+     * @return Entry (never {@code null}).
      */
     public GridCacheEntryEx<K, V> entryEx(K key) {
         GridCacheEntryEx<K, V> e = entry0(key, -1, true);
@@ -1037,7 +1037,7 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
     /**
      * @param topVer Topology version.
      * @param key Entry key.
-     * @return Entry or <tt>null</tt>.
+     * @return Entry (never {@code null}).
      */
     public GridCacheEntryEx<K, V> entryEx(K key, long topVer) {
         GridCacheEntryEx<K, V> e = entry0(key, topVer, true);
@@ -2056,6 +2056,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public V op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.put(key, val, filter);
             }
+
+            @Override public String toString() {
+                return "put [key=" + key + ", val=" + val + ", filter=" + Arrays.toString(filter) + ']';
+            }
         }));
     }
 
@@ -2069,6 +2073,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return ctx.wrapClone(asyncOp(new AsyncOp<V>(key) {
             @Override public GridFuture<V> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putAsync(key, val, filter);
+            }
+
+            @Override public String toString() {
+                return "putAsync [key=" + key + ", val=" + val + ", filter=" + Arrays.toString(filter) + ']';
             }
         }));
     }
@@ -2084,6 +2092,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public Boolean op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.putx(key, val, filter);
             }
+
+            @Override public String toString() {
+                return "putx [key=" + key + ", val=" + val + ", filter=" + Arrays.toString(filter) + ']';
+            }
         });
     }
 
@@ -2098,6 +2110,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public GridFuture<Boolean> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putxAsync(key, val, filter);
             }
+
+            @Override public String toString() {
+                return "putxAsync [key=" + key + ", val=" + val + ", filter=" + Arrays.toString(filter) + ']';
+            }
         });
     }
 
@@ -2110,6 +2126,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return ctx.cloneOnFlag(syncOp(new SyncOp<V>() {
             @Override public V op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.put(key, val, ctx.noPeekArray());
+            }
+
+            @Override public String toString() {
+                return "putIfAbsent [key=" + key + ", val=" + val + ']';
             }
         }));
     }
@@ -2124,6 +2144,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public GridFuture<V> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putAsync(key, val, ctx.noPeekArray());
             }
+
+            @Override public String toString() {
+                return "putIfAbsentAsync [key=" + key + ", val=" + val + ']';
+            }
         }));
     }
 
@@ -2137,6 +2161,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public Boolean op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.putx(key, val, ctx.noPeekArray());
             }
+
+            @Override public String toString() {
+                return "putxIfAbsent [key=" + key + ", val=" + val + ']';
+            }
         });
     }
 
@@ -2149,6 +2177,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return asyncOp(new AsyncOp<Boolean>(key) {
             @Override public GridFuture<Boolean> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putxAsync(key, val, ctx.noPeekArray());
+            }
+
+            @Override public String toString() {
+                return "putxIfAbsentAsync [key=" + key + ", val=" + val + ']';
             }
         });
     }
@@ -2164,6 +2196,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public V op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.put(key, val, ctx.hasPeekArray());
             }
+
+            @Override public String toString() {
+                return "replace [key=" + key + ", val=" + val + ']';
+            }
         }));
     }
 
@@ -2176,6 +2212,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return ctx.wrapClone(asyncOp(new AsyncOp<V>(key) {
             @Override public GridFuture<V> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putAsync(key, val, ctx.hasPeekArray());
+            }
+
+            @Override public String toString() {
+                return "replaceAsync [key=" + key + ", val=" + val + ']';
             }
         }));
     }
@@ -2190,6 +2230,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public Boolean op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.putx(key, val, ctx.hasPeekArray());
             }
+
+            @Override public String toString() {
+                return "replacex [key=" + key + ", val=" + val + ']';
+            }
         });
     }
 
@@ -2202,6 +2246,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return asyncOp(new AsyncOp<Boolean>(key) {
             @Override public GridFuture<Boolean> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putxAsync(key, val, ctx.hasPeekArray());
+            }
+
+            @Override public String toString() {
+                return "replacexAsync [key=" + key + ", val=" + val + ']';
             }
         });
     }
@@ -2218,6 +2266,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 ctx.deploy().registerClass(oldVal);
 
                 return tx.putx(key, newVal, ctx.equalsPeekArray(oldVal));
+            }
+
+            @Override public String toString() {
+                return "replace [key=" + key + ", oldVal=" + oldVal + ", newVal=" + newVal + ']';
             }
         });
     }
@@ -2240,6 +2292,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return tx.putxAsync(key, newVal, ctx.equalsPeekArray(oldVal));
             }
+
+            @Override public String toString() {
+                return "replaceAsync [key=" + key + ", oldVal=" + oldVal + ", newVal=" + newVal + ']';
+            }
         });
     }
 
@@ -2252,6 +2308,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public void inOp(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 tx.putAll(m, filter);
             }
+
+            @Override public String toString() {
+                return "putAll [map=" + m + ", filter=" + Arrays.toString(filter) + ']';
+            }
         });
     }
 
@@ -2263,6 +2323,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return asyncOp(new AsyncInOp(m.keySet()) {
             @Override public GridFuture<?> inOp(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.putAllAsync(m, false, filter);
+            }
+
+            @Override public String toString() {
+                return "putAllAsync [map=" + m + ", filter=" + Arrays.toString(filter) + ']';
             }
         });
     }
@@ -2279,6 +2343,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public V op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.remove(key, filter);
             }
+
+            @Override public String toString() {
+                return "remove [key=" + key + ", filter=" + Arrays.toString(filter) + ']';
+            }
         }));
     }
 
@@ -2293,6 +2361,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public GridFuture<V> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.removeAsync(key, filter);
             }
+
+            @Override public String toString() {
+                return "removeAsync [key=" + key + ", filter=" + Arrays.toString(filter) + ']';
+            }
         }));
     }
 
@@ -2305,6 +2377,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public void inOp(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 tx.removeAll(keys, filter);
             }
+
+            @Override public String toString() {
+                return "removeAll [keys=" + keys + ", filter=" + Arrays.toString(filter) + ']';
+            }
         });
     }
 
@@ -2316,6 +2392,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return asyncOp(new AsyncInOp(keys) {
             @Override public GridFuture<?> inOp(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.removeAllAsync(keys, tx.implicit(), false, filter);
+            }
+
+            @Override public String toString() {
+                return "removeAllAsync [keys=" + keys + ", filter=" + Arrays.toString(filter) + ']';
             }
         });
     }
@@ -2331,6 +2411,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public Boolean op(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 return tx.removex(key, filter);
             }
+
+            @Override public String toString() {
+                return "removex [key=" + key + ", filter=" + Arrays.toString(filter) + ']';
+            }
         });
     }
 
@@ -2344,6 +2428,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return asyncOp(new AsyncOp<Boolean>(key) {
             @Override public GridFuture<Boolean> op(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.removexAsync(key, filter);
+            }
+
+            @Override public String toString() {
+                return "removeAsync [key=" + key + ", filter=" + Arrays.toString(filter) + ']';
             }
         });
     }
@@ -2360,6 +2448,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
                 ctx.deploy().registerClass(val);
 
                 return tx.removex(key, ctx.vararg(F.<K, V>cacheContainsPeek(val)));
+            }
+
+            @Override public String toString() {
+                return "remove [key=" + key + ", val=" + val + ']';
             }
         });
     }
@@ -2382,6 +2474,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
                 return tx.removexAsync(key, ctx.vararg(F.<K, V>cacheContainsPeek(val)));
             }
+
+            @Override public String toString() {
+                return "removeAsync [key=" + key + ", val=" + val + ']';
+            }
         });
     }
 
@@ -2398,11 +2494,15 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             @Override public void inOp(GridCacheTxLocalAdapter<K, V> tx) throws GridException {
                 tx.removeAll(keySet(p), CU.<K, V>empty());
             }
+
+            @Override public String toString() {
+                return "removeAll [filter=" + Arrays.toString(p) + ']';
+            }
         });
     }
 
     /** {@inheritDoc} */
-    @Override public GridFuture<?> removeAllAsync(GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+    @Override public GridFuture<?> removeAllAsync(final GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         ctx.denyOnLocalRead();
 
         final Set<? extends K> keys = keySet(filter);
@@ -2410,6 +2510,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
         return asyncOp(new AsyncInOp(keys) {
             @Override public GridFuture<?> inOp(GridCacheTxLocalAdapter<K, V> tx) {
                 return tx.removeAllAsync(keys, tx.implicit(), false, CU.<K, V>empty());
+            }
+
+            @Override public String toString() {
+                return "removeAllAsync [filter=" + Arrays.toString(filter) + ']';
             }
         });
     }
@@ -2595,21 +2699,25 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
     /** {@inheritDoc} */
     @Override public boolean isLocked(K key) {
-        GridCacheEntryEx<K, V> entry = peekEx(key);
+        while (true) {
+            try {
+                GridCacheEntryEx<K, V> entry = peekEx(key);
 
-        return entry != null && entry.wrap(false).isLocked();
+                return entry != null && entry.lockedByAny();
+            }
+            catch (GridCacheEntryRemovedException ignore) {
+                // No-op.
+            }
+        }
     }
 
     /** {@inheritDoc} */
     @Override public boolean isAllLocked(Collection<? extends K> keys) {
         A.notNull(keys, "keys");
 
-        for (K key : keys) {
-            GridCacheEntryEx<K, V> entry = peekEx(key);
-
-            if (entry == null || entry.obsolete() || !entry.wrap(false).isLocked())
+        for (K key : keys)
+            if (!isLocked(key))
                 return false;
-        }
 
         return true;
     }
@@ -3430,7 +3538,10 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             return new GridFinishedFuture<T>(ctx.kernalContext(), e);
         }
 
-        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().localTx();
+        if (log.isDebugEnabled())
+            log.debug("Performing async op: " + op);
+
+        GridCacheTxLocalAdapter<K, V> tx = ctx.tm().threadLocalTx();
 
         if (tx == null) {
             tx = ctx.tm().onCreated(newTx(true));
@@ -3444,17 +3555,19 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
 
             final GridFutureAdapter<Object> fut = new GridFutureAdapter<Object>(ctx.kernalContext());
 
+            fut.syncNotify(true);
+
             tx.addFinishListener(new CI1<GridCacheTxEx<K, V>>() {
                 @Override public void apply(final GridCacheTxEx<K, V> tx) {
                     if (log.isDebugEnabled())
-                        log.debug("Previous transaction has changed its status to final: " + tx);
+                        log.debug("Previous transaction changed its status to final [op=" + op + ", tx=" + tx + ']');
 
                     // We can only grab finish future after transaction state was set to some final state.
                     // Otherwise, it would be possible for finish future to be null.
                     ((GridCacheTxLocalEx<K, V>)tx).finishFuture().listenAsync(new CI1<GridFuture<GridCacheTx>>() {
                         @Override public void apply(GridFuture<GridCacheTx> f) {
                             if (log.isDebugEnabled())
-                                log.debug("Finished waiting for previous transaction: " + tx);
+                                log.debug("Finished waiting for previous transaction [op=" + op + ", tx=" + tx + ']');
 
                             fut.onDone();
                         }
@@ -3466,7 +3579,8 @@ public abstract class GridCacheAdapter<K, V> extends GridMetadataAwareAdapter im
             return new GridEmbeddedFuture<T, Object>(fut, new C2<Object, Exception, GridFuture<T>>() {
                 @Override public GridFuture<T> apply(Object o, Exception e) {
                     if (log.isDebugEnabled())
-                        log.debug("Continuing with new transaction [keys=" + op.keys() + ", newTx=" + newTx + ']');
+                        log.debug("Continuing with new transaction [op=" + op + ", keys=" + op.keys() +
+                            ", newTx=" + newTx + ']');
 
                     return op.op(newTx);
                 }

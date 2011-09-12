@@ -18,7 +18,7 @@ import java.io.*;
  * This adapter allows for graceful exception when load balancer gets marshalled.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public abstract class GridLoadBalancerAdapter extends GridMetadataAwareAdapter implements GridLoadBalancer,
     Externalizable {

@@ -9,6 +9,8 @@
 
 package org.gridgain.grid.lang.utils;
 
+import org.gridgain.grid.lang.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.util.*;
 import org.jetbrains.annotations.*;
 import sun.misc.*;
@@ -60,7 +62,7 @@ import java.util.concurrent.atomic.*;
  * at http://creativecommons.org/publicdomain/zero/1.0/
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @SuppressWarnings( {"ALL"})
 public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implements Deque<E> {
@@ -284,8 +286,15 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
          *
          * @param item Item to initialize.
          */
-        Node(E item) {
+        public Node(E item) {
             UNSAFE.putObject(this, itemOffset, item);
+        }
+
+        /**
+         * @return Item.
+         */
+        @Nullable public E item() {
+            return item;
         }
 
         /**
@@ -470,6 +479,44 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
                         // and for newNode to become "live".
                         if (p != t) // hop two nodes at a time
                             casTail(t, newNode);  // Failure is OK.
+
+                        return;
+                    }
+                    // Lost CAS race to another thread; re-read next
+                }
+            }
+        }
+    }
+
+    /**
+     * Links n as last node.
+     *
+     * @param n Node to link.
+     */
+    private void linkLast(Node<E> n) {
+        checkNotNull(n);
+
+        size.incrementAndGet();
+
+        restartFromTail:
+        for (;;) {
+            for (Node<E> t = tail, p = t, q;;) {
+                if ((q = p.next) != null && (q = (p = q).next) != null)
+                    // Check for tail updates every other hop.
+                    // If p == q, we are sure to follow tail instead.
+                    p = (t != (t = tail)) ? t : q;
+                else if (p.prev == p) // NEXT_TERMINATOR
+                    continue restartFromTail;
+                else {
+                    // p is last node
+                    n.lazySetPrev(p); // CAS piggyback.
+
+                    if (p.casNext(null, n)) {
+                        // Successful CAS is the linearization point
+                        // for e to become an element of this deque,
+                        // and for newNode to become "live".
+                        if (p != t) // hop two nodes at a time
+                            casTail(t, n);  // Failure is OK.
 
                         return;
                     }
@@ -1145,6 +1192,21 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /**
+     * Inserts the specified node at the end of this deque.
+     * As the deque is unbounded, this method will never return {@code false}.
+     *
+     * <p>This method is equivalent to {@link #add(Node)}.
+     *
+     * @return {@code true} (as specified by {@link Deque#offerLast})
+     * @throws NullPointerException if the node is null
+     */
+    public boolean offerLast(Node<E> n) {
+        linkLast(n);
+
+        return true;
+    }
+
+    /**
      * Same as {@link #offerLast(Object)}, but returns new {@link Node}.
      *
      * @param e Element to add.
@@ -1203,6 +1265,21 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
                 return item;
             }
         }
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    public GridTuple2<E, Node<E>> pollFirstx() {
+        for (Node<E> p = first(); p != null; p = successor(p)) {
+            E item = p.item;
+
+            if (item != null && p.casItem(item, null)) {
+                unlink(p);
+
+                return F.t(item, p);
+            }
+        }
+
         return null;
     }
 
@@ -1268,6 +1345,18 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /**
+     * Inserts the specified node at the tail of this deque.
+     * As the deque is unbounded, this method will never throw
+     * {@link IllegalStateException} or return {@code false}.
+     *
+     * @return {@code true} (as specified by {@link Collection#add})
+     * @throws NullPointerException if the specified element is null
+     */
+    public boolean add(Node<E> n) {
+        return offerLast(n);
+    }
+
+    /**
      * Same as {@link #add(Object)}, but returns new node.
      *
      * @param e Element to add.
@@ -1280,6 +1369,16 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     /** {@inheritDoc} */
     @Override public E poll() {
         return pollFirst();
+    }
+
+    /**
+     * Returns tuple of item and node or {@code null}
+     * if deque is empty.
+     *
+     * @return Tuple of item and node or {@code null}.
+     */
+    @Nullable public GridTuple2<E, Node<E>> pollx() {
+        return pollFirstx();
     }
 
     /** {@inheritDoc} */

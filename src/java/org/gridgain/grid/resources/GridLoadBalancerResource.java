@@ -48,7 +48,7 @@ import java.lang.annotation.*;
  * See {@link GridConfiguration#getLoadBalancingSpi()} for Grid configuration details.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

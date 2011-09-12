@@ -40,7 +40,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Class that takes care about entries preloading in replicated cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, V> {
     /** */
@@ -81,12 +81,15 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
     private final ConcurrentMap<GridTuple3<UUID, Integer, Integer>, Session> ses =
         new ConcurrentHashMap<GridTuple3<UUID, Integer, Integer>, Session>();
 
-    /** {partition, mod} -> {node id, initial preload request} */
+    /** {partition, mod} -> {node ID, initial preload request} */
     private final Map<GridTuple2<Integer, Integer>, GridTuple2<UUID, GridReplicatedPreloadRequest<K, V>>> progress =
         new ConcurrentHashMap<GridTuple2<Integer, Integer>, GridTuple2<UUID, GridReplicatedPreloadRequest<K, V>>>();
 
     /** Initial remote nodes. */
     private Collection<GridRichNode> initRmts;
+
+    /** Lock to prevent preloading for the time of eviction. */
+    private final Lock lock = new ReentrantLock();
 
     /**
      * Constructor.
@@ -103,6 +106,8 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      * @throws GridException In case of error.
      */
     @Override public void start() throws GridException {
+        assert cctx.preloadEnabled();
+
         if (log.isDebugEnabled())
             log.debug("Starting replicated preloader...");
 
@@ -580,10 +585,10 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
      */
     private void finish() {
         if (finished.compareAndSet(false, true)) {
-            syncPreloadFut.onDone();
-
             cctx.events().addPreloadEvent(-1, EVT_CACHE_PRELOAD_STOPPED, cctx.discovery().shadow(cctx.localNode()),
                 EVT_NODE_JOINED, cctx.localNode().metrics().getNodeStartTime());
+
+            syncPreloadFut.onDone();
 
             if (log.isDebugEnabled())
                 log.debug("Preloading finished.");
@@ -733,6 +738,26 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
         return cctx.config().getPreloadMode() != SYNC ? startFut : syncPreloadFut;
     }
 
+    /**
+     * @return {@code True} if lock was acquired (this makes preloading impossible).
+     */
+    @SuppressWarnings( {"LockAcquiredButNotSafelyReleased"})
+    public boolean lock() {
+        if (finished.get())
+            return false;
+
+        lock.lock();
+
+        return true;
+    }
+
+    /**
+     * Makes preloading possible.
+     */
+    public void unlock() {
+        lock.unlock();
+    }
+
     /** {@inheritDoc} */
     @Override public String toString() {
         return S.toString(GridReplicatedPreloader.class, this);
@@ -859,16 +884,32 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
                 UUID nodeId = t.get1();
                 GridReplicatedPreloadBatchRequest<K, V> batchReq = t.get2();
 
+                if (finished.get()) {
+                    if (log.isDebugEnabled())
+                        log.debug("Batch will be ignored since preloading has been finished [batch=" + batchReq +
+                            ", nodeId=" + nodeId + ']');
+
+                    sendBatchResponse(nodeId, batchReq, false);
+
+                    return;
+                }
+
                 if (log.isDebugEnabled())
                     log.debug("Took batch from preload queue [batch=" + batchReq + ", queueSize=" + queue.size() + ']');
 
                 if (!enterBusy())
                     break;
 
+                // Lock to indicate that preloading is active.
+                boolean locked = lock();
+
                 try {
                     processBatch(nodeId, batchReq);
                 }
                 finally {
+                    if (locked)
+                        unlock();
+
                     leaveBusy();
                 }
             }
@@ -889,32 +930,40 @@ public class GridReplicatedPreloader<K, V> extends GridCachePreloaderAdapter<K, 
             }
 
             if (batchReq.entries() != null) {
-                for (GridCacheEntryInfo<K, V> preloaded : batchReq.entries()) {
-                    ClassLoader keyLdr = U.detectObjectClassLoader(preloaded.key());
-                    ClassLoader valLdr = U.detectObjectClassLoader(preloaded.value());
+                for (GridCacheEntryInfo<K, V> info : batchReq.entries()) {
+                    ClassLoader keyLdr = U.detectObjectClassLoader(info.key());
+                    ClassLoader valLdr = U.detectObjectClassLoader(info.value());
 
                     // Check whether class loader has already been undeployed while preloading.
                     if (cctx.deploy().deadClassLoader(keyLdr) || cctx.deploy().deadClassLoader(valLdr)) {
                         if (log.isDebugEnabled())
-                            log.debug("Key or value class loaders got undeployed during preloading: " + preloaded);
+                            log.debug("Key or value class loaders got undeployed during preloading: " + info);
 
                         sendBatchResponse(nodeId, batchReq, true);
 
                         return;
                     }
 
+                    if (!cctx.evicts().preloadingPermitted(info.key(), info.version())) {
+                        if (log.isDebugEnabled())
+                            log.debug("Preloading is not permitted for entry due to evictions [key=" + info.key() +
+                                ", ver=" + info.version() + ']');
+
+                        continue;
+                    }
+
                     GridCacheEntryEx<K, V> cached = null;
 
                     try {
-                        cached = cctx.cache().entryEx(preloaded.key());
+                        cached = cctx.cache().entryEx(info.key());
 
                         if (!cached.initialValue(
-                            preloaded.value(),
-                            preloaded.valueBytes(),
-                            preloaded.version(),
-                            preloaded.ttl(),
-                            preloaded.expireTime(),
-                            preloaded.metrics())) {
+                            info.value(),
+                            info.valueBytes(),
+                            info.version(),
+                            info.ttl(),
+                            info.expireTime(),
+                            info.metrics())) {
                             if (log.isDebugEnabled())
                                 log.debug("Preloading entry is already in cache (will ignore): " + cached);
                         }

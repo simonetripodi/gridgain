@@ -23,7 +23,7 @@ import org.gridgain.grover.lang.*
  * Demonstrates cache ad-hoc queries with Grover.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @Typed
 @Use(GroverCacheProjectionCategory)
@@ -170,7 +170,7 @@ class GroverCacheQueryExample {
      * Organization class.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.02092011
+     * @version 3.5.0c.11092011
      */
     private static class Organization {
         @GridCacheQuerySqlField
@@ -189,7 +189,7 @@ class GroverCacheQueryExample {
      * Person class.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.02092011
+     * @version 3.5.0c.11092011
      */
     private static class Person {
         final Organization org

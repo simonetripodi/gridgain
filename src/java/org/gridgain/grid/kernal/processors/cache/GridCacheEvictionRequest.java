@@ -23,7 +23,7 @@ import java.util.*;
  * Cache eviction request.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 class GridCacheEvictionRequest<K, V> extends GridCacheMessage<K, V> implements GridCacheDeployable {
     /** Future id. */
@@ -99,6 +99,11 @@ class GridCacheEvictionRequest<K, V> extends GridCacheMessage<K, V> implements G
         assert ver != null;
 
         keys.put(key, F.t(ver, near));
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean ignoreClassErrors() {
+        return true;
     }
 
     /** {@inheritDoc} */

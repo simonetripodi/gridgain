@@ -24,7 +24,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheMvccCandidate.M
  * Lock candidate.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<GridCacheMvccCandidate<K>> {
     /** ID generator. */
@@ -58,8 +58,9 @@ public class GridCacheMvccCandidate<K> implements Externalizable, Comparable<Gri
     private long id;
 
     /** Topology version. */
+    @SuppressWarnings( {"TransientFieldNotInitialized"})
     @GridToStringInclude
-    private transient volatile long topVer;
+    private transient volatile long topVer = -1;
 
     /** Linked reentry. */
     private GridCacheMvccCandidate<K> reentry;

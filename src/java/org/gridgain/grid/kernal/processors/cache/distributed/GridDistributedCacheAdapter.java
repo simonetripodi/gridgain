@@ -23,7 +23,7 @@ import java.util.*;
  * Distributed cache implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter<K, V> {
     /**
@@ -82,7 +82,6 @@ public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter
     }
 
     /**
-     *
      * @param keys Keys to lock.
      * @param timeout Timeout.
      * @param tx Transaction
@@ -106,7 +105,6 @@ public abstract class GridDistributedCacheAdapter<K, V> extends GridCacheAdapter
     @Override public abstract Map<GridRichNode, Collection<K>> mapKeysToNodes(Collection<? extends K> keys);
 
     /** {@inheritDoc} */
-    @SuppressWarnings({"unchecked"})
     @Override public abstract void unlockAll(Collection<? extends K> keys,
         GridPredicate<? super GridCacheEntry<K, V>>[] filter);
 

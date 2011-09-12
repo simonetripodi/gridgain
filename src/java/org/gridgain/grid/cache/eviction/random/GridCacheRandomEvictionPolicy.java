@@ -23,7 +23,7 @@ import org.gridgain.grid.typedef.internal.*;
  * key has the same probability of being accessed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
     GridCacheRandomEvictionPolicyMBean {
@@ -43,7 +43,7 @@ public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPol
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
     public GridCacheRandomEvictionPolicy(int max) {
-        A.ensure(max > 0, "max > 1");
+        A.ensure(max > 0, "max > 0");
 
         this.max = max;
     }
@@ -63,7 +63,7 @@ public class GridCacheRandomEvictionPolicy<K, V> implements GridCacheEvictionPol
      * @param max Maximum allowed size of cache before entry will start getting evicted.
      */
     @Override public void setMaxSize(int max) {
-        A.ensure(max > 0, "max > 1");
+        A.ensure(max > 0, "max > 0");
 
         this.max = max;
     }

@@ -21,7 +21,10 @@ import java.net.*;
 import java.util.*;
 
 /**
- * Local JVM-based IP finder.
+ * IP Finder which works only with pre-configured list of IP addresses specified
+ * via {@link #setAddresses(Iterable)} method. By default, this IP finder is
+ * not {@code shared}, which means that all grid nodes have to be configured with the
+ * same list of IP addresses when this IP finder is used.
  * <h1 class="header">Configuration</h1>
  * <h2 class="header">Mandatory</h2>
  * There are no mandatory configuration parameters.
@@ -32,7 +35,7 @@ import java.util.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridTcpDiscoveryVmIpFinder extends GridTcpDiscoveryIpFinderAdapter {
     /** Grid logger. */
@@ -54,6 +57,7 @@ public class GridTcpDiscoveryVmIpFinder extends GridTcpDiscoveryIpFinderAdapter 
      * Constructs new ip finder.
      *
      * @param shared {@code true} if ip finder is shared.
+     * @see {@link #setShared(boolean)}
      */
     public GridTcpDiscoveryVmIpFinder(boolean shared) {
         setShared(shared);

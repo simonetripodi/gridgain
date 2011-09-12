@@ -39,7 +39,7 @@ import static org.gridgain.grid.lang.utils.GridQueue.*;
  * algorithm by Sone Jiang and Xiaodong Zhang.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
 public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
@@ -82,7 +82,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
      * @param max Maximum allowed size of entries in cache.
      */
     public GridCacheLirsEvictionPolicy(int max) {
-        A.ensure(max > 0, "max > 1");
+        A.ensure(max > 0, "max > 0");
 
         this.max = max;
     }
@@ -95,7 +95,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
      * @param queueRatio Ratio of {@code HIRS} queue size compared to maximum allowed size.
      */
     public GridCacheLirsEvictionPolicy(int max, float queueRatio) {
-        A.ensure(max > 0, "max > 1");
+        A.ensure(max > 0, "max > 0");
         A.ensure(queueRatio > 0 && queueRatio <= 1, "queueRatio > 0 && queueRatio <= 1");
 
         this.max = max;
@@ -125,7 +125,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
     /**
      * Sets ratio of {@code HIRS} queue size compared to main stack size. Generally {@code HIRS}
-     * size should be much smaller than main stack size. The default value is {@code 0.01}
+     * size should be much smaller than main stack size. The default value is {@code 0.02}
      * defined by {@link #DFLT_QUEUE_SIZE_RATIO} constant.
      *
      * @param queueRatio Ratio of {@code HIRS} set size compared to main stack size.
@@ -216,7 +216,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 miss = true;
         }
 
-        // Replace removed entry.
+        // Replace removed capsule.
         if (c.cleared())
             entry.addMeta(meta, c = new Capsule(entry, initState));
 
@@ -462,12 +462,10 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 }
                 // If need to evict.
                 else if (c.state() == HIR_NR) {
-                    if (c.unstack()) {
-                        // It's OK to evict while holding lock on capsule.
+                    if (c.unstack())
                         if (!c.entry().evict())
                             // Add to the top again.
                             c.addStackNode(LIR);
-                    }
                 }
                 else {
                     ret = c;
@@ -671,12 +669,10 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
                 dequeue();
 
-                if (!inStack()) {
-                    // It's OK to evict while holding lock on capsule.
+                if (!inStack())
                     if (!entry.evict())
                         // Add to the top again.
                         addStackNode(LIR);
-                }
 
                 return true;
             }

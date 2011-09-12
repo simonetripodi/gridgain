@@ -35,7 +35,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -460,6 +460,16 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     @SuppressWarnings({"unchecked"})
     @Nullable public <T> T localTx() {
         GridCacheTxEx<K, V> tx = tx();
+
+        return tx != null && tx.local() ? (T)tx : null;
+    }
+
+    /**
+     * @return Transaction for current thread.
+     */
+    @SuppressWarnings({"unchecked"})
+    public <T> T threadLocalTx() {
+        GridCacheTxEx<K, V> tx = tx(Thread.currentThread().getId());
 
         return tx != null && tx.local() ? (T)tx : null;
     }
@@ -940,7 +950,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
                 committedQ.add(tx);
 
             // 10. Remove from per-thread storage.
-            threadMap.remove(tx.threadId());
+            threadMap.remove(tx.threadId(), tx);
 
             // 11. Unregister explicit locks.
             if (!tx.alternateVersions().isEmpty())
@@ -997,7 +1007,7 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             decrementStartVersionCount(tx);
 
             // 6. Remove from per-thread storage.
-            threadMap.remove(tx.threadId());
+            threadMap.remove(tx.threadId(), tx);
 
             // 7. Unregister explicit locks.
             if (!tx.alternateVersions().isEmpty())

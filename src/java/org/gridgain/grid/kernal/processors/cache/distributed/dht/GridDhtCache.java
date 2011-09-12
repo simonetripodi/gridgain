@@ -33,7 +33,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * DHT cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.02092011
+ * @version 3.5.0c.11092011
  */
 public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Near cache. */
@@ -1490,7 +1490,7 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
         assert tx != null;
 
         GridDhtLockFuture<K, V> fut = new GridDhtLockFuture<K, V>(ctx, tx.nearNodeId(), tx.nearXidVersion(),
-            keys.size(), isRead, timeout, tx, filter);
+            tx.topologyVersion(), keys.size(), isRead, timeout, tx, filter);
 
         for (K key : keys) {
             if (key == null)
@@ -1578,8 +1578,8 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                             GridDhtLockFuture<K, V> fut = null;
 
                             if (!req.inTx()) {
-                                fut = new GridDhtLockFuture<K, V>(ctx, nearNode.id(), req.version(), cnt, req.txRead(),
-                                    req.timeout(), tx, filter);
+                                fut = new GridDhtLockFuture<K, V>(ctx, nearNode.id(), req.version(),
+                                    req.topologyVersion(), cnt, req.txRead(), req.timeout(), tx, filter);
 
                                 // Add before mapping.
                                 if (!ctx.mvcc().addFuture(fut))
@@ -1693,6 +1693,8 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                                         return new GridDhtFinishedFuture<GridNearLockResponse<K, V>>(
                                             ctx.kernalContext(), new GridException(msg));
                                     }
+
+                                    tx.topologyVersion(req.topologyVersion());
                                 }
 
                                 ctx.tm().txContext(tx);
@@ -1989,15 +1991,17 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
     /**
      * @param nodeId Sender node ID.
+     * @param topVer Topology version.
      * @param cached Entry.
      * @param dhtMap DHT map.
      * @param nearMap Near map.
      * @throws GridException If failed.
      * @throws GridCacheEntryRemovedException If entry is removed.
      */
-    private void map(UUID nodeId, GridDhtCacheEntry<K, V> cached, Map<GridNode, List<T2<K, byte[]>>> dhtMap,
-        Map<GridNode, List<T2<K, byte[]>>> nearMap) throws GridException, GridCacheEntryRemovedException {
-        Collection<GridNode> dhtNodes = ctx.dht().topology().nodes(cached.partition());
+    private void map(UUID nodeId, long topVer, GridDhtCacheEntry<K, V> cached,
+        Map<GridNode, List<T2<K, byte[]>>> dhtMap, Map<GridNode, List<T2<K, byte[]>>> nearMap)
+        throws GridException, GridCacheEntryRemovedException {
+        Collection<GridNode> dhtNodes = ctx.dht().topology().nodes(cached.partition(), topVer);
 
         GridNode primary = CU.primary(dhtNodes);
 
@@ -2080,12 +2084,16 @@ public class GridDhtCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
                 try {
                     if (entry != null) {
+                        GridCacheMvccCandidate<K> cand = entry.candidate(dhtVer);
+
+                        long topVer = cand == null ? -1 : cand.topologyVersion();
+
                         // Note that we don't reorder completed versions here,
                         // as there is no point to reorder relative to the version
                         // we are about to remove.
                         if (entry.removeLock(dhtVer)) {
                             // Map to backups and near readers.
-                            map(nodeId, entry, dhtMap, nearMap);
+                            map(nodeId, topVer, entry, dhtMap, nearMap);
 
                             if (log.isDebugEnabled())
                                 log.debug("Removed lock [lockId=" + ver + ", key=" + key + ']');
