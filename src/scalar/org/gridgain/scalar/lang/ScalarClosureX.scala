@@ -19,7 +19,7 @@ import org.gridgain.grid._
  * Peer deploy aware adapter for Java's `GridClosureX`.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 class ScalarClosureX[E, R](private val f: E => R) extends GridClosureX[E, R] {
     assert(f != null)

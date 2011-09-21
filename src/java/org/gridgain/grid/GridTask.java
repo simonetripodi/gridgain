@@ -216,7 +216,7 @@ import java.util.*;
  * <a href="http://www.gridgainsystems.com:8080/wiki/display/GG15UG/HelloWorld+-+Gridify+With+Custom+Task" target="_top">Gridify HelloWorld Example</a>.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  * @param <T> Type of the task argument that is passed into {@link GridTask#map(List, Object)} method.
  * @param <R> Type of the task result returning from {@link GridTask#reduce(List)} method.
  */

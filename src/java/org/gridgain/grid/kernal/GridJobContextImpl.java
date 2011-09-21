@@ -10,9 +10,12 @@
 package org.gridgain.grid.kernal;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.cache.*;
+import org.gridgain.grid.cache.affinity.*;
 import org.gridgain.grid.kernal.processors.job.*;
 import org.gridgain.grid.kernal.processors.timeout.*;
 import org.gridgain.grid.lang.*;
+import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
 import org.gridgain.grid.util.tostring.*;
 import org.jetbrains.annotations.*;
@@ -24,7 +27,7 @@ import java.util.*;
  * Remote job context implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridJobContextImpl extends GridMetadataAwareAdapter implements GridJobContext {
     /** Kernal context ({@code null} for job result context). */
@@ -182,12 +185,22 @@ public class GridJobContextImpl extends GridMetadataAwareAdapter implements Grid
 
     /** {@inheritDoc} */
     @Override public String cacheName() {
-        return null; // TODO
+        try {
+            return (String)job.getDeployment().annotatedValue(job.getJob(), GridCacheName.class);
+        }
+        catch (GridException e) {
+            throw F.wrap(e);
+        }
     }
 
     /** {@inheritDoc} */
     @Override public Object affinityKey() {
-        return null; // TODO
+        try {
+            return job.getDeployment().annotatedValue(job.getJob(), GridCacheAffinityMapped.class);
+        }
+        catch (GridException e) {
+            throw F.wrap(e);
+        }
     }
 
     /** {@inheritDoc} */

@@ -35,7 +35,7 @@ import static org.gridgain.grid.util.nodestart.GridNodeStartUtils.*;
 
 /**
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements GridProjection {
     /** Empty rich node predicate array. */
@@ -902,11 +902,12 @@ abstract class GridProjectionAdapter extends GridMetadataAwareAdapter implements
     }
 
     /**
-     * Utility method that creates new grid projection with necessary short0circuit logic.
+     * Utility method that creates new grid projection with necessary short-circuit logic.
      *
      * @param nodes Nodes to create projection with.
      * @return Newly created projection.
      */
+    @SuppressWarnings({"ConstantConditions"})
     protected GridProjection newProjection(Collection<GridRichNode> nodes) {
         assert nodes != null;
 

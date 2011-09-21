@@ -10,6 +10,7 @@
 package org.gridgain.grid.kernal;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.kernal.managers.deployment.*;
 import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.*;
 import org.gridgain.grid.typedef.internal.*;
@@ -21,14 +22,14 @@ import java.util.*;
  * Task session.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements GridTaskSessionInternal {
     /** */
     private final String taskName;
 
     /** */
-    private final String userVer;
+    private final GridDeployment dep;
 
     /** */
     private final String taskClsName;
@@ -79,16 +80,12 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
     private String swapSpi;
 
     /** */
-    private long seqNum;
-
-    /** */
     private final Object mux = new Object();
 
     /**
      * @param taskNodeId Task node ID.
      * @param taskName Task name.
-     * @param userVer Task code version. Might be null if deployment failed.
-     * @param seqNum Task internal node version.
+     * @param dep Deployment.
      * @param taskClsName Task class name.
      * @param sesId Task session ID.
      * @param startTime Task execution start time.
@@ -100,8 +97,7 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
     public GridTaskSessionImpl(
         UUID taskNodeId,
         String taskName,
-        String userVer,
-        Long seqNum,
+        @Nullable GridDeployment dep,
         String taskClsName,
         UUID sesId,
         long startTime,
@@ -114,12 +110,10 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
         assert sesId != null;
         assert attrs != null;
         assert ctx != null;
-        assert seqNum != null;
 
         this.taskNodeId = taskNodeId;
         this.taskName = taskName;
-        this.userVer = userVer;
-        this.seqNum = seqNum;
+        this.dep = dep;
 
         // Note that class name might be null here if task was not explicitly
         // deployed.
@@ -361,7 +355,7 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
      * @return Task version.
      */
     public String getUserVersion() {
-        return userVer;
+        return dep == null ? "" : dep.userVersion();
     }
 
     /** {@inheritDoc} */
@@ -750,7 +744,14 @@ public class GridTaskSessionImpl extends GridMetadataAwareAdapter implements Gri
      * @return Task internal version.
      */
     public long getSequenceNumber() {
-        return seqNum;
+        return dep == null ? 0 : dep.sequenceNumber();
+    }
+
+    /**
+     * @return Deployment.
+     */
+    public GridDeployment deployment() {
+        return dep;
     }
 
     /** {@inheritDoc} */

@@ -13,7 +13,7 @@ package org.gridgain.grid.util.tostring;
  * TODO: add file description.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 class GridToStringFieldDescriptor {
     /** Field name. */

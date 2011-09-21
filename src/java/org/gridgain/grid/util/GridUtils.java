@@ -66,7 +66,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -1437,7 +1437,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.11092011
+     * @version 3.5.0c.20092011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
@@ -5219,7 +5219,9 @@ public abstract class GridUtils {
      * @param cacheName Cache name to check.
      * @return {@code True} if given node has specified cache started.
      */
-    public static boolean hasCache(GridNode n, String cacheName) {
+    public static boolean hasCache(GridNode n, @Nullable String cacheName) {
+        assert n != null;
+
         GridCacheAttributes[] caches = n.attribute(ATTR_CACHE);
 
         if (caches != null)

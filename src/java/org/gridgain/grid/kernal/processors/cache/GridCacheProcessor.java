@@ -16,7 +16,7 @@ import org.gridgain.grid.cache.affinity.partitioned.*;
 import org.gridgain.grid.cache.affinity.replicated.*;
 import org.gridgain.grid.cache.eviction.*;
 import org.gridgain.grid.cache.eviction.always.*;
-import org.gridgain.grid.cache.eviction.lirs.*;
+import org.gridgain.grid.cache.eviction.lru.*;
 import org.gridgain.grid.kernal.*;
 import org.gridgain.grid.kernal.processors.*;
 import org.gridgain.grid.kernal.processors.cache.datastructures.*;
@@ -42,7 +42,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache processor.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridCacheProcessor extends GridProcessorAdapter {
     /** Null cache name. */
@@ -124,7 +124,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
             cfg.setAffinityMapper(new GridCacheDefaultAffinityMapper());
 
         if (cfg.getEvictionPolicy() == null)
-            cfg.setEvictionPolicy(new GridCacheLirsEvictionPolicy(DFLT_CACHE_SIZE));
+            cfg.setEvictionPolicy(new GridCacheLruEvictionPolicy(DFLT_CACHE_SIZE));
 
         if (cfg.getPreloadMode() == null)
             cfg.setPreloadMode(ASYNC);
@@ -140,7 +140,7 @@ public class GridCacheProcessor extends GridProcessorAdapter {
                 GridCacheEvictionPolicy policy = cfg.getNearEvictionPolicy();
 
                 if (policy == null)
-                    cfg.setNearEvictionPolicy(new GridCacheLirsEvictionPolicy((DFLT_NEAR_SIZE)));
+                    cfg.setNearEvictionPolicy(new GridCacheLruEvictionPolicy((DFLT_NEAR_SIZE)));
             }
         }
     }

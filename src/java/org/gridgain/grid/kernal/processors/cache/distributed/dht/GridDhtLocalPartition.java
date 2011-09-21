@@ -27,7 +27,7 @@ import static org.gridgain.grid.kernal.processors.cache.distributed.dht.GridDhtP
  * Key partition.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridDhtLocalPartition<K, V> implements Comparable<GridDhtLocalPartition> {
     /** Static logger to avoid re-creation. */

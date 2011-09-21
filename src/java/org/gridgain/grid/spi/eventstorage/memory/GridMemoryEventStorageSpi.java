@@ -96,14 +96,14 @@ import static org.gridgain.grid.GridEventType.*;
  * For information about Spring framework visit <a href="http://www.springframework.org/">www.springframework.org</a>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  * @see GridEventStorageSpi
  */
 @GridSpiInfo(
     author = "GridGain Systems, Inc.",
     url = "www.gridgain.com",
     email = "support@gridgain.com",
-    version = "3.5.0c.11092011")
+    version = "3.5.0c.20092011")
 @GridSpiMultipleInstancesSupport(true)
 public class GridMemoryEventStorageSpi extends GridSpiAdapter implements GridEventStorageSpi,
     GridMemoryEventStorageSpiMBean {

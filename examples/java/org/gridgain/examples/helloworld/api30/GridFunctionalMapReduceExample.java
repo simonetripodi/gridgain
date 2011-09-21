@@ -10,6 +10,7 @@
 package org.gridgain.examples.helloworld.api30;
 
 import org.gridgain.grid.*;
+import org.gridgain.grid.lang.*;
 import org.gridgain.grid.typedef.*;
 import java.util.*;
 import static org.gridgain.grid.GridClosureCallMode.*;
@@ -46,7 +47,7 @@ import static org.gridgain.grid.GridClosureCallMode.*;
  * folder.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridFunctionalMapReduceExample {
     /**
@@ -57,11 +58,18 @@ public class GridFunctionalMapReduceExample {
      */
     public static void main(final String[] args) throws GridException {
         if (args.length == 1 && args[0].length() > 0)
-            G.in(new CIX1<Grid>() {
+            G.in(new GridInClosureX<Grid>() {
                 @Override public void applyx(Grid g) throws GridException {
-                    X.println("Length of input argument is " + G.grid().reduce(
+                    X.println("Length of input argument is " + g.reduce(
                         SPREAD,
-                        F.<String, Integer>cInvoke("length"),
+                        new GridClosure<String, Integer>() {
+                            @Override public Integer apply(String s) {
+                                System.out.println("Calculating for: " + s);
+
+                                return s.length();
+                            }
+                        },
+                        //F.<String, Integer>cInvoke("length"),
                         Arrays.asList(args[0].split(" ")),
                         F.sumIntReducer()
                     ));

@@ -26,7 +26,7 @@ import java.util.*;
  * synchronization, if needed.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  * @see GridFunc#t2()
  * @see GridFunc#t(Object, Object)
  */
@@ -144,7 +144,7 @@ public class GridTuple2<V1, V2> extends GridMetadataAwareAdapter implements Map<
     @Override public V2 setValue(V2 val) {
         V2 old = val2;
 
-        val2 = val;
+        set2(val);
 
         return old;
     }

@@ -39,7 +39,7 @@ import static org.gridgain.grid.lang.utils.GridQueue.*;
  * algorithm by Sone Jiang and Xiaodong Zhang.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
 public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolicy<K, V>,
@@ -51,11 +51,11 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
     public static final float DFLT_QUEUE_SIZE_RATIO = 0.02f;
 
     /** LIRS stack. */
-    @GridToStringInclude
+    @GridToStringExclude
     private final LirsStack stack = new LirsStack();
 
     /** LIRS queue. */
-    @GridToStringInclude
+    @GridToStringExclude
     private final HirsQueue queue = new HirsQueue();
 
     /** Maximum stack size. */
@@ -123,6 +123,11 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         return queueRatio;
     }
 
+    /** {@inheritDoc} */
+    @Override public String getMetaAttributeName() {
+        return meta;
+    }
+
     /**
      * Sets ratio of {@code HIRS} queue size compared to main stack size. Generally {@code HIRS}
      * size should be much smaller than main stack size. The default value is {@code 0.02}
@@ -186,9 +191,8 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         else {
             Capsule c = entry.meta(meta);
 
-            if (c != null) {
+            if (c != null)
                 c.clear();
-            }
         }
     }
 
@@ -197,8 +201,6 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
      */
     @SuppressWarnings( {"SynchronizationOnLocalVariableOrMethodParameter", "TooBroadScope"})
     private void touch(GridCacheEntry<K, V> entry) {
-        Capsule c = entry.meta(meta);
-
         boolean prune = false;
         boolean demote = false;
         boolean evict = false;
@@ -206,6 +208,8 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
         State initState = stack.size() < getMaxStackSize() ? LIR : HIR_R;
 
         boolean miss = false;
+
+        Capsule c = entry.meta(meta);
 
         if (c == null) {
             Capsule old = entry.putMetaIfAbsent(meta, c = new Capsule(entry, initState));
@@ -256,7 +260,6 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                         prune = true;
                     }
                 }
-
 
                 break;
             }
@@ -318,6 +321,19 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                 break;
             }
         }
+    }
+
+    /**
+     * Gets string representation of all queue and stack contents.
+     *
+     * @return String representation of all queue and stack contents.
+     */
+    public String toFullString() {
+        return S.toString(GridCacheLirsEvictionPolicy.class, this,
+            "maxStack", getMaxStackSize(),
+            "maxQueue", getMaxQueueSize(),
+            "stack", stack,
+            "queueSize", queue);
     }
 
     /** {@inheritDoc} */
@@ -420,7 +436,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(HirsQueue.class, this, "size", size());
+            return S.toString(HirsQueue.class, this, "size", size(), "elements", super.toString());
         }
     }
 
@@ -457,9 +473,8 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
                     continue;
                 }
 
-                if (c.state() == HIR_R) {
+                if (c.state() == HIR_R)
                     c.unstack();
-                }
                 // If need to evict.
                 else if (c.state() == HIR_NR) {
                     if (c.unstack())
@@ -489,7 +504,7 @@ public class GridCacheLirsEvictionPolicy<K, V> implements GridCacheEvictionPolic
 
         /** {@inheritDoc} */
         @Override public String toString() {
-            return S.toString(LirsStack.class, this, "size", size());
+            return S.toString(LirsStack.class, this, "size", size(), "elements", super.toString());
         }
     }
 

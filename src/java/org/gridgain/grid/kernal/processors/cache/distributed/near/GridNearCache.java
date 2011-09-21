@@ -32,7 +32,7 @@ import static org.gridgain.grid.cache.GridCacheTxConcurrency.*;
  * Near cache.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** DHT cache. */
@@ -181,6 +181,20 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
      */
     public boolean isLockedNearOnly(K key) {
         return super.isLocked(key);
+    }
+
+    /**
+     * @param keys Keys.
+     * @return If near entries for given keys are locked.
+     */
+    public boolean isAllLockedNearOnly(Iterable<? extends K> keys) {
+        A.notNull(keys, "keys");
+
+        for (K key : keys)
+            if (!isLockedNearOnly(key))
+                return false;
+
+        return true;
     }
 
     /** {@inheritDoc} */
@@ -763,71 +777,91 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     }
 
     /** {@inheritDoc} */
-    @Override public void unlockAll(Collection<? extends K> keys,
-        GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
+    @Override public void unlockAll(Collection<? extends K> keys, GridPredicate<? super GridCacheEntry<K, V>>[] filter) {
         if (keys.isEmpty())
             return;
 
         try {
             GridCacheVersion ver = null;
 
-            Collection<GridRichNode> affNodes = CU.allNodes(ctx);
+            Collection<GridRichNode> affNodes = null;
 
-            int keyCnt = (int)Math.ceil((double)keys.size() / affNodes.size());
+            int keyCnt = -1;
 
-            Map<GridRichNode, GridNearUnlockRequest<K, V>> map =
-                new HashMap<GridRichNode, GridNearUnlockRequest<K, V>>(affNodes.size());
+            Map<GridRichNode, GridNearUnlockRequest<K, V>> map = null;
 
             Collection<K> locKeys = new LinkedList<K>();
 
             GridCacheVersion obsoleteVer = ctx.versions().next();
 
             for (K key : keys) {
-                GridDistributedCacheEntry<K, V> entry = peekExx(key);
+                while (true) {
+                    GridDistributedCacheEntry<K, V> entry = peekExx(key);
 
-                if (entry == null || !ctx.isAll(entry.wrap(false), filter))
-                    continue;
+                    if (entry == null || !ctx.isAll(entry.wrap(false), filter))
+                        break; // While.
 
-                // Send request to remove from remote nodes.
-                GridRichNode primary = CU.primary0(ctx.affinity(key, affNodes));
+                    try {
+                        GridCacheMvccCandidate<K> cand = entry.candidate(ctx.nodeId(), Thread.currentThread().getId());
 
-                GridNearUnlockRequest<K, V> req = map.get(primary);
+                        if (cand != null) {
+                            ver = cand.version();
 
-                if (req == null)
-                    map.put(primary, req = new GridNearUnlockRequest<K, V>(keyCnt));
+                            if (affNodes == null) {
+                                affNodes = CU.allNodes(ctx, cand.topologyVersion());
 
-                // Remove candidate from local node first.
-                GridCacheMvccCandidate<K> rmv = entry.removeLock();
+                                keyCnt = (int)Math.ceil((double)keys.size() / affNodes.size());
 
-                if (rmv != null) {
-                    assert req != null;
+                                map = new HashMap<GridRichNode, GridNearUnlockRequest<K, V>>(affNodes.size());
+                            }
 
-                    if (!rmv.reentry()) {
-                        if (ver != null && !ver.equals(rmv.version()))
-                            throw new GridException("Failed to unlock (if keys were locked separately, " +
-                                "then they need to be unlocked separately): " + keys);
+                            // Send request to remove from remote nodes.
+                            GridRichNode primary = CU.primary0(ctx.affinity(key, affNodes));
 
-                        ver = rmv.version();
+                            GridNearUnlockRequest<K, V> req = map.get(primary);
 
-                        req.version(rmv.version());
+                            if (req == null) {
+                                map.put(primary, req = new GridNearUnlockRequest<K, V>(keyCnt));
 
-                        if (!primary.isLocal())
-                            req.addKey(entry.key(), entry.getOrMarshalKeyBytes(), ctx);
-                        else
-                            locKeys.add(key);
+                                req.version(ver);
+                            }
 
-                        if (log.isDebugEnabled())
-                            log.debug("Removed lock (will distribute): " + rmv);
+                            // Remove candidate from local node first.
+                            GridCacheMvccCandidate<K> rmv = entry.removeLock();
+
+                            if (rmv != null) {
+                                if (!rmv.reentry()) {
+                                    if (ver != null && !ver.equals(rmv.version()))
+                                        throw new GridException("Failed to unlock (if keys were locked separately, " +
+                                            "then they need to be unlocked separately): " + keys);
+
+                                    if (!primary.isLocal()) {
+                                        assert req != null;
+
+                                        req.addKey(entry.key(), entry.getOrMarshalKeyBytes(), ctx);
+                                    }
+                                    else
+                                        locKeys.add(key);
+
+                                    if (log.isDebugEnabled())
+                                        log.debug("Removed lock (will distribute): " + rmv);
+                                }
+                                else if (log.isDebugEnabled())
+                                    log.debug("Current thread still owns lock (or there are no other nodes)" +
+                                        " [lock=" + rmv + ", curThreadId=" + Thread.currentThread().getId() + ']');
+                            }
+
+                            // Try to evict near entry if it's dht-mapped locally.
+                            evictNearEntry(entry, obsoleteVer);
+                        }
+
+                        break;
                     }
-                    else {
+                    catch (GridCacheEntryRemovedException ignore) {
                         if (log.isDebugEnabled())
-                            log.debug("Current thread still owns lock (or there are no other nodes) [lock=" + rmv +
-                                ", curThreadId=" + Thread.currentThread().getId() + ']');
+                            log.debug("Attempted to unlock removed entry (will retry): " + entry);
                     }
                 }
-
-                // Try to evict near entry if it's dht-mapped locally.
-                evictNearEntry(entry, obsoleteVer);
             }
 
             if (ver == null)
@@ -839,7 +873,7 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
                 GridDistributedUnlockRequest<K, V> req = mapping.getValue();
 
                 if (n.isLocal())
-                    dht.removeLocks(ctx.nodeId(), req.version(), locKeys);
+                    dht.removeLocks(ctx.nodeId(), req.version(), locKeys, true);
                 else if (!req.keyBytes().isEmpty())
                     // We don't wait for reply to this message.
                     ctx.io().send(n, req);
@@ -903,11 +937,13 @@ public class GridNearCache<K, V> extends GridDistributedCacheAdapter<K, V> {
 
                                 // Remove candidate from local node first.
                                 if (entry.removeLock(cand.version())) {
-                                    if (primary.isLocal())
-                                        dht.removeLocks(primary.id(), ver, F.asList(key));
+                                    if (primary.isLocal()) {
+                                        dht.removeLocks(primary.id(), ver, F.asList(key), true);
 
-                                    if (req == null)
+                                        assert req == null;
+
                                         continue;
+                                    }
 
                                     req.addKey(entry.key(), entry.getOrMarshalKeyBytes(), ctx);
                                 }

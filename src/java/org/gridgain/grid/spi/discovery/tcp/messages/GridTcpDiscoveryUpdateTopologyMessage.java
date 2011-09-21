@@ -25,7 +25,7 @@ import java.util.*;
  * soon as it receives this message.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 @GridTcpDiscoveryEnsureDelivery
 public class GridTcpDiscoveryUpdateTopologyMessage extends GridTcpDiscoveryAbstractMessage {

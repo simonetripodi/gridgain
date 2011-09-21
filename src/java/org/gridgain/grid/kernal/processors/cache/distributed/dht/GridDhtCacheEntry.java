@@ -25,7 +25,7 @@ import java.util.*;
  * Replicated cache entry.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
     /** Gets node value from reader ID. */
@@ -120,6 +120,9 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
 
             cand = mvcc.addLocal(this, nearNodeId, nearVer, threadId, ver, timeout, reenter, ec, tx, true);
 
+            if (cand == null)
+                return null;
+
             cand.topologyVersion(topVer);
 
             owner = mvcc.anyOwner();
@@ -184,6 +187,17 @@ public class GridDhtCacheEntry<K, V> extends GridDistributedCacheEntry<K, V> {
         locPart.onUnlock();
 
         return ret;
+    }
+
+    /**
+     * @return Tuple with version and value of this entry, or {@code null} if entry is new.
+     * @throws GridCacheEntryRemovedException If entry has been removed.
+     */
+    @SuppressWarnings({"NonPrivateFieldAccessedInSynchronizedContext"})
+    @Nullable public GridTuple3<GridCacheVersion, V, byte[]> versionedValue() throws GridCacheEntryRemovedException {
+        synchronized (mux) {
+            return isNew() ? null : F.t(ver, val, valBytes);
+        }
     }
 
     /**

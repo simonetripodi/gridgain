@@ -33,7 +33,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache utility methods.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public abstract class GridCacheUtils {
     /** Peek flags. */
@@ -303,8 +303,11 @@ public abstract class GridCacheUtils {
             int writes = in.readInt();
             int hits = in.readInt();
             int misses = in.readInt();
+            int txCommits = in.readInt();
+            int txRollbacks = in.readInt();
 
-            return new GridCacheMetricsAdapter(createTime, readTime, writeTime, reads, writes, hits, misses);
+            return new GridCacheMetricsAdapter(createTime, readTime, writeTime, reads,
+                writes, hits, misses, txCommits, txRollbacks);
         }
 
         return null;

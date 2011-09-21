@@ -16,7 +16,7 @@ import org.gridgain.grid.util.mbean.*;
  * Management MBean for {@link GridLocalDeploymentSpi} SPI.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 @GridMBeanDescription("MBean that provides access to local deployment SPI configuration.")
 public interface GridLocalDeploymentSpiMBean extends GridSpiManagementMBean {

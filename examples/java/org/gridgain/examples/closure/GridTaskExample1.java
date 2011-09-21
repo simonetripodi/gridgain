@@ -22,7 +22,7 @@ import java.util.*;
  * example code to see the difference in coding approach.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  * @see GridClosureExample1
  */
 public class GridTaskExample1 {
@@ -74,7 +74,7 @@ public class GridTaskExample1 {
      * This class defines grid task for this example.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.11092011
+     * @version 3.5.0c.20092011
      */
     private static class GridFactorialTask extends GridTaskAdapter<Integer, BigInteger> {
         /** Execution node. */

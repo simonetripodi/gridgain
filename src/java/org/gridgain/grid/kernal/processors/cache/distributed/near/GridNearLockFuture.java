@@ -29,11 +29,13 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import static org.gridgain.grid.GridEventType.*;
+
 /**
  * Cache lock future.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean>
     implements GridCacheMvccLockFuture<K, V, Boolean> {
@@ -98,6 +100,9 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
     /** Mutex. */
     private final Object mux = new Object();
 
+    /** Map of current values. */
+    private Map<K, GridTuple3<GridCacheVersion, V, byte[]>> valMap;
+
     /**
      * Empty constructor required by {@link Externalizable}.
      */
@@ -149,6 +154,8 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
 
             cctx.time().addTimeoutObject(timeoutObj);
         }
+
+        valMap = new ConcurrentHashMap<K, GridTuple3<GridCacheVersion, V, byte[]>>(keys.size());
     }
 
     /** {@inheritDoc} */
@@ -741,12 +748,29 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                                             new T2<GridNearLockRequest<K, V>, Collection<K>>(req, mappedKeys));
                                     }
 
+                                    GridTuple3<GridCacheVersion, V, byte[]> val = entry.versionedValue();
+
+                                    if (val == null) {
+                                        GridDhtCacheEntry<K, V> dhtEntry = dht().peekExx(key);
+
+                                        if (dhtEntry != null)
+                                            val = dhtEntry.versionedValue();
+                                    }
+
+                                    GridCacheVersion dhtVer = null;
+
+                                    if (val != null) {
+                                        dhtVer = val.get1();
+
+                                        valMap.put(key, val);
+                                    }
+
                                     req.addKeyBytes(
                                         key,
                                         cand.reentry() ? null : entry.getOrMarshalKeyBytes(),
-                                        retval && entry.isNew(),
+                                        retval && dhtVer == null,
                                         Collections.<GridCacheMvccCandidate<K>>emptyList(),
-                                        entry.dhtVersion(), // Include DHT version to match remote DHT entry.
+                                        dhtVer, // Include DHT version to match remote DHT entry.
                                         cctx);
 
                                     distribute |= !cand.reentry();
@@ -840,14 +864,44 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                                             GridNearCacheEntry<K, V> entry = cctx.near().entryExx(k);
 
                                             try {
+                                                GridTuple3<GridCacheVersion, V, byte[]> oldValTup = valMap.get(entry.key());
+
+                                                V oldVal = entry.rawGet();
+                                                V newVal = res.value(i);
+                                                byte[] newBytes = res.valueBytes(i);
+
+                                                GridCacheVersion dhtVer = res.dhtVersion(i);
+
+                                                // On local node don't record twice if DHT cache already recorded.
+                                                boolean record = retval && oldValTup != null &&
+                                                    oldValTup.get1().equals(dhtVer);
+
+                                                if (newVal == null) {
+                                                    if (oldValTup != null) {
+                                                        if (oldValTup.get1().equals(dhtVer)) {
+                                                            newVal = oldValTup.get2();
+
+                                                            newBytes = oldValTup.get3();
+                                                        }
+
+                                                        oldVal = oldValTup.get2();
+                                                    }
+                                                }
+
                                                 // Lock is held at this point, so we can set the
                                                 // returned value if any.
-                                                entry.resetFromPrimary(res.value(i), res.valueBytes(i),
-                                                    lockVer, res.dhtVersion(i), node.id());
+                                                entry.resetFromPrimary(newVal, newBytes, lockVer, dhtVer, node.id());
 
                                                 entry.doneRemote(lockVer, tx == null ? lockVer : tx.minVersion(),
                                                     res.pending(), res.committedVersions(),
                                                     res.rolledbackVersions());
+
+                                                if (record) {
+                                                    cctx.events().addEvent(entry.partition(), entry.key(), tx, null,
+                                                        EVT_CACHE_OBJECT_READ, newVal, oldVal);
+
+                                                    ((GridCacheMetricsAdapter)entry.metrics()).onRead(oldVal != null);
+                                                }
 
                                                 if (ec())
                                                     entry.recheck();
@@ -1102,13 +1156,39 @@ public class GridNearLockFuture<K, V> extends GridCompoundIdentityFuture<Boolean
                                 return;
                             }
 
+                            GridTuple3<GridCacheVersion, V, byte[]> oldValTup = valMap.get(entry.key());
+
+                            V oldVal = entry.rawGet();
+                            V newVal = res.value(i);
+                            byte[] newBytes = res.valueBytes(i);
+
+                            GridCacheVersion dhtVer = res.dhtVersion(i);
+
+                            if (newVal == null) {
+                                if (oldValTup != null) {
+                                    if (oldValTup.get1().equals(dhtVer)) {
+                                        newVal = oldValTup.get2();
+
+                                        newBytes = oldValTup.get3();
+                                    }
+
+                                    oldVal = oldValTup.get2();
+                                }
+                            }
+
                             // Lock is held at this point, so we can set the
                             // returned value if any.
-                            entry.resetFromPrimary(res.value(i), res.valueBytes(i), lockVer, res.dhtVersion(i),
-                                node.id());
+                            entry.resetFromPrimary(newVal, newBytes, lockVer, dhtVer, node.id());
 
                             entry.doneRemote(lockVer, tx == null ? lockVer : tx.minVersion(), res.pending(),
                                 res.committedVersions(), res.rolledbackVersions());
+
+                            if (retval) {
+                                cctx.events().addEvent(entry.partition(), entry.key(), tx, null, EVT_CACHE_OBJECT_READ,
+                                    newVal, oldVal);
+
+                                ((GridCacheMetricsAdapter)entry.metrics()).onRead(oldVal != null);
+                            }
 
                             if (ec())
                                 entry.recheck();

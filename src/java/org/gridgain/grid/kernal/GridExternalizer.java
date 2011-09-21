@@ -25,7 +25,7 @@ import java.util.*;
  * Efficiently serializes and deserializes known classes.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridExternalizer {
     /** Byte to class lookup. */

@@ -42,6 +42,7 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import static org.gridgain.grid.cache.GridCacheFlag.*;
 import static org.gridgain.grid.cache.GridCachePreloadMode.*;
@@ -50,7 +51,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -129,6 +130,9 @@ public class GridCacheContext<K, V> implements Externalizable {
 
     /** No-op filter array. */
     private GridPredicate<GridCacheEntry<K, V>>[] trueArr;
+
+    /** Cached local rich node. */
+    private final AtomicReference<GridRichNode> localNode = new AtomicReference<GridRichNode>();
 
     /**
      * Thread local projection. If it's set it means that method call was initiated
@@ -404,11 +408,34 @@ public class GridCacheContext<K, V> implements Externalizable {
      * @return Local node.
      */
     public GridRichNode localNode() {
-        GridRichNode loc = ctx.rich().rich(ctx.discovery().localNode());
+        GridRichNode loc = localNode.get();
+
+        if (loc == null)
+            localNode.compareAndSet(null, loc = ctx.rich().rich(ctx.discovery().localNode()));
 
         assert loc != null;
 
         return loc;
+    }
+
+    /**
+     * @param n Node to check.
+     * @return {@code True} if node is local.
+     */
+    public boolean isLocalNode(GridNode n) {
+        assert n != null;
+
+        return localNode().id().equals(n.id());
+    }
+
+    /**
+     * @param id Node ID to check.
+     * @return {@code True} if node ID is local.
+     */
+    public boolean isLocalNode(UUID id) {
+        assert id != null;
+
+        return localNode().id().equals(id);
     }
 
     /**

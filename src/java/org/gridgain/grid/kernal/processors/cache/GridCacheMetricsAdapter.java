@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.*;
  * Adapter for cache metrics.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable {
     /** Create time. */
@@ -43,6 +43,12 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
 
     /** Number of misses. */
     private final AtomicInteger misses = new AtomicInteger();
+
+    /** Number of transaction commits. */
+    private final AtomicInteger txCommits = new AtomicInteger();
+
+    /** Number of transaction rollbacks. */
+    private final AtomicInteger txRollbacks = new AtomicInteger();
 
     /** Cache metrics. */
     @GridToStringExclude
@@ -72,9 +78,11 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
      * @param writes Writes.
      * @param hits Hits.
      * @param misses Misses.
+     * @param txCommits Transaction commits.
+     * @param txRollbacks Transaction rollbacks.
      */
     public GridCacheMetricsAdapter(long createTime, long readTime, long writeTime, int reads, int writes, int hits,
-        int misses) {
+        int misses, int txCommits, int txRollbacks) {
         this.createTime = createTime;
         this.readTime.set(readTime);
         this.writeTime.set(writeTime);
@@ -82,6 +90,8 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
         this.writes.set(writes);
         this.hits.set(hits);
         this.misses.set(misses);
+        this.txCommits.set(txCommits);
+        this.txRollbacks.set(txRollbacks);
     }
 
     /**
@@ -126,8 +136,18 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
         return misses.get();
     }
 
+    /** {@inheritDoc} */
+    @Override public int txCommits() {
+        return txCommits.get();
+    }
+
+    /** {@inheritDoc} */
+    @Override public int txRollbacks() {
+        return txRollbacks.get();
+    }
+
     /**
-     * Cache write callback.
+     * Cache read callback.
      * @param isHit Hit or miss flag.
      */
     public void onRead(boolean isHit) {
@@ -145,7 +165,7 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
     }
 
     /**
-     * Cache read callback.
+     * Cache write callback.
      */
     public void onWrite() {
         writeTime.set(System.currentTimeMillis());
@@ -154,6 +174,26 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
 
         if (delegate != null)
             delegate.onWrite();
+    }
+
+    /**
+     * Transaction commit callback.
+     */
+    public void onTxCommit() {
+        txCommits.incrementAndGet();
+
+        if (delegate != null)
+            delegate.onTxCommit();
+    }
+
+    /**
+     * Transaction rollback callback.
+     */
+    public void onTxRollback() {
+        txRollbacks.incrementAndGet();
+
+        if (delegate != null)
+            delegate.onTxRollback();
     }
 
     /**
@@ -172,7 +212,9 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
             m.reads(),
             m.writes(),
             m.hits(),
-            m.misses()
+            m.misses(),
+            m.txCommits(),
+            m.txRollbacks()
         );
     }
 
@@ -189,6 +231,8 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
         writes.set(0);
         hits.set(0);
         misses.set(0);
+        txCommits.set(0);
+        txRollbacks.set(0);
     }
 
     /** {@inheritDoc} */
@@ -201,6 +245,8 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
         out.writeInt(writes.get());
         out.writeInt(hits.get());
         out.writeInt(misses.get());
+        out.writeInt(txCommits.get());
+        out.writeInt(txRollbacks.get());
     }
 
     /** {@inheritDoc} */
@@ -213,6 +259,8 @@ public class GridCacheMetricsAdapter implements GridCacheMetrics, Externalizable
         writes.set(in.readInt());
         hits.set(in.readInt());
         misses.set(in.readInt());
+        txCommits.set(in.readInt());
+        txRollbacks.set(in.readInt());
     }
 
     /** {@inheritDoc} */

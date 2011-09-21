@@ -35,7 +35,7 @@ import static org.gridgain.grid.kernal.processors.cache.GridCacheOperation.*;
  * Cache transaction manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
     /** Maximum number of transactions that have completed (initialized to 100K). */
@@ -971,6 +971,10 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
             // 14. Unwind any left-over events.
             cctx.events().unwind();
 
+            // 15. Update metrics.
+            if (!tx.dht() && tx.local())
+                cctx.cache().metrics0().onTxCommit();
+
             if (log.isDebugEnabled())
                 log.debug("Committed from TM: " + tx);
         }
@@ -1020,6 +1024,10 @@ public class GridCacheTxManager<K, V> extends GridCacheManager<K, V> {
 
             // 9. Clear context.
             txContextReset();
+
+            // 10. Update metrics.
+            if (!tx.dht() && tx.local())
+                cctx.cache().metrics0().onTxRollback();
 
             if (log.isDebugEnabled())
                 log.debug("Rolled back from TM: " + tx);

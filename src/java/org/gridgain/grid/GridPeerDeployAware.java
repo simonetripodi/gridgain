@@ -20,7 +20,7 @@ import java.io.*;
  * information so that the user class could be peer-deployed as well.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public interface GridPeerDeployAware extends Serializable {
     /**

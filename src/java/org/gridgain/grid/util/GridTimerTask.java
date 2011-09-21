@@ -15,13 +15,10 @@ import java.util.*;
  * Utility extension for {@link TimerTask}.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.11092011
+ * @version 3.5.0c.20092011
  */
 public abstract class GridTimerTask extends TimerTask {
-    /**
-     * 
-     * @throws InterruptedException Thrown in case other thread interrupted this thread.
-     */
+    /** @throws InterruptedException Thrown in case other thread interrupted this thread. */
     protected abstract void safeRun() throws InterruptedException;
 
     /** {@inheritDoc} */
