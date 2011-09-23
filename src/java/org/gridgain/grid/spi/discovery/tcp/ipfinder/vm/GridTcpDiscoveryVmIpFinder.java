@@ -35,7 +35,7 @@ import java.util.*;
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public class GridTcpDiscoveryVmIpFinder extends GridTcpDiscoveryIpFinderAdapter {
     /** Grid logger. */
@@ -57,7 +57,7 @@ public class GridTcpDiscoveryVmIpFinder extends GridTcpDiscoveryIpFinderAdapter 
      * Constructs new ip finder.
      *
      * @param shared {@code true} if ip finder is shared.
-     * @see {@link #setShared(boolean)}
+     * @see #setShared(boolean)
      */
     public GridTcpDiscoveryVmIpFinder(boolean shared) {
         setShared(shared);

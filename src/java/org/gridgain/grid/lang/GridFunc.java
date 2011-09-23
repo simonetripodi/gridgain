@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.*;
  * typedef.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public class GridFunc {
     /** */
@@ -387,7 +387,7 @@ public class GridFunc {
     private static final GridPredicate CACHE_ENTRY_BACKUP = new GridPredicate() {
         @SuppressWarnings({"unchecked"})
         @Override public boolean apply(Object o) {
-            return !((GridCacheEntry)o).primary();
+            return ((GridCacheEntry)o).backup();
         }
 
         @Override public String toString() {

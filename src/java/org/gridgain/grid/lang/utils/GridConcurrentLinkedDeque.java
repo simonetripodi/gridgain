@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.*;
  * at http://creativecommons.org/publicdomain/zero/1.0/
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 @SuppressWarnings( {"ALL"})
 public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implements Deque<E> {
@@ -1217,7 +1217,7 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public E peekFirst() {
+    @Override public @Nullable E peekFirst() {
         for (Node<E> p = first(); p != null; p = successor(p)) {
             E item = p.item;
 
@@ -1229,7 +1229,7 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public E peekLast() {
+    @Override public @Nullable E peekLast() {
         for (Node<E> p = last(); p != null; p = predecessor(p)) {
             E item = p.item;
 
@@ -1255,7 +1255,7 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public E pollFirst() {
+    @Override public @Nullable E pollFirst() {
         for (Node<E> p = first(); p != null; p = successor(p)) {
             E item = p.item;
 
@@ -1265,11 +1265,17 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
                 return item;
             }
         }
+
         return null;
     }
 
-    /** {@inheritDoc} */
-    public GridTuple2<E, Node<E>> pollFirstx() {
+    /**
+     * Returns tuple of item and node or {@code null}
+     * if deque is empty.
+     *
+     * @return Tuple of item and node or {@code null}.
+     */
+    public @Nullable GridTuple2<E, Node<E>> pollFirstx() {
         for (Node<E> p = first(); p != null; p = successor(p)) {
             E item = p.item;
 
@@ -1284,7 +1290,7 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public E pollLast() {
+    @Override public @Nullable E pollLast() {
         for (Node<E> p = last(); p != null; p = predecessor(p)) {
             E item = p.item;
 
@@ -1294,6 +1300,7 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
                 return item;
             }
         }
+
         return null;
     }
 
@@ -1387,7 +1394,7 @@ public class GridConcurrentLinkedDeque<E> extends AbstractCollection<E> implemen
     }
 
     /** {@inheritDoc} */
-    @Override public E peek() {
+    @Override public @Nullable E peek() {
         return peekFirst();
     }
 

@@ -44,11 +44,14 @@ import static org.gridgain.grid.GridEventType.*;
  *      nodes that pass this filter will be selected as backup nodes and only nodes that
  *      don't pass this filter will be selected as primary nodes. If not provided, then
  *      primary and backup nodes will be selected out of all nodes available for this cache.
+ *      <p>
+ *      NOTE: In situations where there are no primary nodes at all, i.e. no nodes for which backup
+ *      filter returns {@code false}, first backup node for the key will be considered primary.
  * </li>
  * </ul>
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
     /** Default number of partitions. */
@@ -375,7 +378,7 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
 
                 Collection<UUID> backupIds = nodeHash.nodes(part, backups, backupIdFilter, F.contains(nodeIds));
 
-                if (F.isEmpty(backupIds)) {
+                if (F.isEmpty(backupIds) && primaryId != null) {
                     GridRichNode n = lookup.get(primaryId);
 
                     assert n != null;
@@ -383,7 +386,7 @@ public class GridCachePartitionedAffinity<K> implements GridCacheAffinity<K> {
                     return Collections.singletonList(n);
                 }
 
-                ids = F.concat(false, primaryId, backupIds);
+                ids = primaryId != null ? F.concat(false, primaryId, backupIds) : backupIds;
             }
             else {
                 if (!exclNeighbors || nodes.size() == 1) {

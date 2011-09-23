@@ -31,7 +31,7 @@ import static org.gridgain.grid.cache.GridCacheTxIsolation.*;
  * Fully replicated cache implementation.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V> {
     /** Preloader. */
@@ -988,10 +988,7 @@ public class GridReplicatedCache<K, V> extends GridDistributedCacheAdapter<K, V>
         Map<GridRichNode, Collection<K>> map = new HashMap<GridRichNode, Collection<K>>();
 
         for (K key : keys) {
-            Collection<GridRichNode> nodes = ctx.remoteNodes(key);
-
-            if (F.isEmpty(nodes))
-                nodes = F.asList(ctx.localNode());
+            Collection<GridRichNode> nodes = ctx.allNodes(key);
 
             for (GridRichNode node : nodes) {
                 Collection<K> keyCol = map.get(node);

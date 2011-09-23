@@ -42,7 +42,7 @@ import java.util.concurrent.*;
  * on Wiki.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public interface Grid extends GridProjection {
     /**
@@ -773,6 +773,14 @@ public interface Grid extends GridProjection {
 
     /**
      * Gets the configuration of this grid instance.
+     * <p>
+     * <b>NOTE:</b>
+     * <br>
+     * SPIs obtains through this method should never be used directly. SPIs provide
+     * internal view on the subsystem and is used internally by GridGain kernal. In rare use cases when
+     * access to a specific implementation of this SPI is required - an instance of this SPI can be obtained
+     * via this method to check its configuration properties or call other non-SPI
+     * methods.
      *
      * @return Grid configuration instance.
      */

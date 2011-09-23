@@ -21,7 +21,7 @@ import java.util.*;
  * Transaction managed by cache ({@code 'Ex'} stands for external).
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public interface GridCacheTxEx<K, V> extends GridCacheTx, GridTimeoutObject {
     /**

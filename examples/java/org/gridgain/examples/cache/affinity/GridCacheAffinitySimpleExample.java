@@ -30,7 +30,7 @@ import org.gridgain.grid.typedef.*;
  * edition is used respectively.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public final class GridCacheAffinitySimpleExample {
     /** Number of keys. */

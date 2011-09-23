@@ -17,7 +17,7 @@ import java.util.*;
  * JUnit 3 serializable test suite.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 class GridJunit3SerializableTestSuite implements GridJunit3SerializableTest {
     /** */

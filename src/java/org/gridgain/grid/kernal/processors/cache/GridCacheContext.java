@@ -51,7 +51,7 @@ import static org.gridgain.grid.cache.GridCachePreloadMode.*;
  * Cache context.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 @GridToStringExclude
 public class GridCacheContext<K, V> implements Externalizable {
@@ -1004,6 +1004,14 @@ public class GridCacheContext<K, V> implements Externalizable {
         assert primary != null : "Primary node returned by affinity cannot be null: " + p;
 
         return primary.id().equals(n.id());
+    }
+
+    /**
+     * @param key Key.
+     * @return Nodes for the key.
+     */
+    public Collection<GridRichNode> allNodes(K key) {
+        return cacheCfg.getAffinity().nodes(partition(key), CU.allNodes(this));
     }
 
     /**

@@ -15,7 +15,7 @@ import org.gridgain.grid.util.mbean.*;
  * MBean for {@code random} eviction policy.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 @GridMBeanDescription("MBean for random cache eviction policy.")
 public interface GridCacheRandomEvictionPolicyMBean {

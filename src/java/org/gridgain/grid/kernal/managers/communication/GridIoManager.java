@@ -41,7 +41,7 @@ import static org.gridgain.grid.kernal.managers.communication.GridIoPolicy.*;
  * Grid communication manager.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
     /** */
@@ -152,6 +152,14 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
 
                 if (log.isDebugEnabled())
                     log.debug("Received communication message: " + msg);
+
+                if (!(msg instanceof GridIoMessage)) {
+                    log.error("Communication manager received message of unknown type (will ignore): " +
+                        msg.getClass().getName() + ". Most likely GridCommunicationSpi is being used directly, " +
+                        "which is illegal - make sure to send messages only via GridProjection API.");
+
+                    return;
+                }
 
                 GridIoMessage commMsg = (GridIoMessage)msg;
 
@@ -1728,7 +1736,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a pair of listener and its corresponding message p.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.20092011
+     * @version 3.5.0c.22092011
      */
     @SuppressWarnings("deprecation")
     private class GridFilteredMessageListener implements GridMessageListener {
@@ -1780,7 +1788,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * This class represents a message listener wrapper that knows about peer deployment.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.20092011
+     * @version 3.5.0c.22092011
      */
     @SuppressWarnings("deprecation")
     private class GridUserMessageListener implements GridMessageListener {
@@ -1876,7 +1884,7 @@ public class GridIoManager extends GridManagerAdapter<GridCommunicationSpi> {
      * Ordered communication message set.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.20092011
+     * @version 3.5.0c.22092011
      */
     private class GridCommunicationMessageSet implements GridTimeoutObject {
         /** */

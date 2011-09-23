@@ -28,11 +28,16 @@ import java.util.*;
  * <ul>
  * <li>{@link GridMulticastDiscoverySpi}</li>
  * <li>{@link GridTcpDiscoverySpi}</li>
- *
  * </ul>
+ * <b>NOTE:</b> this SPI (i.e. methods in this interface) should never be used directly. SPIs provide
+ * internal view on the subsystem and is used internally by GridGain kernal. In rare use cases when
+ * access to a specific implementation of this SPI is required - an instance of this SPI can be obtained
+ * via {@link Grid#configuration()} method to check its configuration properties or call other non-SPI
+ * methods. Note again that calling methods from this interface on the obtained instance can lead
+ * to undefined behavior and explicitly not supported.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 public interface GridDiscoverySpi extends GridSpi, GridSpiJsonConfigurable {
     /**

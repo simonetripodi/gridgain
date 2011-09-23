@@ -59,6 +59,7 @@ import java.util.zip.*;
 
 import static org.fusesource.jansi.Ansi.Attribute.*;
 import static org.fusesource.jansi.Ansi.*;
+import static org.gridgain.grid.GridEventType.*;
 import static org.gridgain.grid.GridSystemProperties.*;
 import static org.gridgain.grid.kernal.GridNodeAttributes.*;
 
@@ -66,7 +67,7 @@ import static org.gridgain.grid.kernal.GridNodeAttributes.*;
  * Collection of utility methods used throughout the system.
  *
  * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
- * @version 3.5.0c.20092011
+ * @version 3.5.0c.22092011
  */
 @SuppressWarnings({"UnusedReturnValue", "UnnecessaryFullyQualifiedName"})
 public abstract class GridUtils {
@@ -391,6 +392,45 @@ public abstract class GridUtils {
 
         // Sort for fast event lookup.
         Arrays.sort(GRID_EVTS);
+
+        // We need to re-initialize EVTS_ALL and EVTS_ALL_MINUS_METRIC_UPDATE
+        // because they may have been initialized to null before GRID_EVTS were initialized.
+        if (EVTS_ALL == null || EVTS_ALL_MINUS_METRIC_UPDATE == null) {
+            try {
+                Unsafe unsafe = GridUnsafe.unsafe();
+
+                Field f1 = GridEventType.class.getDeclaredField("EVTS_ALL");
+                Field f2 = GridEventType.class.getDeclaredField("EVTS_ALL_MINUS_METRIC_UPDATE");
+
+                assert f1 != null;
+                assert f2 != null;
+
+                // We use unsafe operations to update static fields on interface because
+                // they are treated as static final and cannot be updated via standard reflection.
+                unsafe.putObjectVolatile(unsafe.staticFieldBase(f1), unsafe.staticFieldOffset(f1), gridEvents());
+                unsafe.putObjectVolatile(unsafe.staticFieldBase(f2), unsafe.staticFieldOffset(f2),
+                    gridEvents(EVT_NODE_METRICS_UPDATED));
+
+                assert EVTS_ALL != null;
+                assert EVTS_ALL.length == GRID_EVTS.length;
+
+                assert EVTS_ALL_MINUS_METRIC_UPDATE != null;
+                assert EVTS_ALL_MINUS_METRIC_UPDATE.length == GRID_EVTS.length - 1;
+
+                // Validate correctness.
+                for (int type : GRID_EVTS) {
+                    assert containsIntArray(EVTS_ALL, type);
+
+                    if (type != EVT_NODE_METRICS_UPDATED)
+                        assert containsIntArray(EVTS_ALL_MINUS_METRIC_UPDATE, type);
+                }
+
+                assert !containsIntArray(EVTS_ALL_MINUS_METRIC_UPDATE, EVT_NODE_METRICS_UPDATED);
+            }
+            catch (NoSuchFieldException e) {
+                throw new GridRuntimeException(e);
+            }
+        }
     }
 
     /**
@@ -1437,7 +1477,7 @@ public abstract class GridUtils {
      * Verifier always returns successful result for any host.
      *
      * @author 2005-2011 Copyright (C) GridGain Systems, Inc.
-     * @version 3.5.0c.20092011
+     * @version 3.5.0c.22092011
      */
     private static class DeploymentHostnameVerifier implements HostnameVerifier {
         // Remote host trusted by default.
