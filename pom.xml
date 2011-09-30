@@ -71,8 +71,12 @@
    <module>tomcat</module>
    <module>weblogic</module>
    <module>websphere</module>
+   <!-- other libraries -->
+   <module>xstream</module>
    <!-- tools -->
    <module>ant</module>
+   <!-- cloud providers -->
+   <module>s3</module>
   </modules>
 
   <scm>
