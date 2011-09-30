@@ -59,6 +59,7 @@
    <module>core</module>
    <!-- cache -->
    <module>hibernate</module>
+   <module>jta</module>
    <!-- IoC -->
    <module>spring</module>
    <!-- loggers -->
