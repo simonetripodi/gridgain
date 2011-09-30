@@ -18,8 +18,15 @@
     <relativePath>../</relativePath>
   </parent>
 
-  <groupId>org.gridgain</groupId>
-  <artifactId>gridgain</artifactId>
+  <artifactId>gridgain-core</artifactId>
   <packaging>jar</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>annotations</artifactId>
+      <version>9.0.4</version>
+    </dependency>
+  </dependencies>
 
 </project>
